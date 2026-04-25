@@ -1,0 +1,58 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Add this to your global CSS */
+/* Print only the table, hide everything else */
+/* Hide everything except table when printing */
+/* Print styles */
+@media print {
+    /* Hide everything except the table wrapper */
+    body * {
+        visibility: hidden;
+    }
+    .printable-table,
+    .printable-table * {
+        visibility: visible;
+    }
+    .printable-table {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+    }
+    /* Hide footer only on print */
+    .printable-table .TFooter {
+        display: none !important;
+    }
+
+    /* Force header styling */
+    table thead tr th {
+        -webkit-print-color-adjust: exact; /* Chrome, Safari */
+        print-color-adjust: exact; /* Firefox */
+        background-color: #64748b !important; /* Tailwind slate-500 */
+        color: white !important;
+        border: 1px solid #94a3b8 !important; /* Tailwind slate-400 */
+        padding: 8px !important;
+    }
+
+    /* Force body cells styling */
+    table tbody tr td {
+        border: 1px solid #cbd5e1 !important; /* Tailwind slate-300 */
+        padding: 8px !important;
+    }
+
+    /* Alternate row shading */
+    table tbody tr:nth-child(odd) {
+        background-color: #f1f5f9 !important; /* Tailwind slate-100 */
+    }
+    table tbody tr:nth-child(even) {
+        background-color: white !important;
+    }
+
+    /* Ensure full width and border collapse */
+    table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+    }
+}
