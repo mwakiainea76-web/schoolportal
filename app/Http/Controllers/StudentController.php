@@ -42,19 +42,18 @@ class StudentController extends Controller
                 'county' => ['required', 'string', 'max:70'],
                 'address' => ['required', 'string', 'min:3'],
                 'religion' => ['required', 'string', 'min:3'],
-            ],
-            2 => [
-                'previous_school' => ['required', 'string', 'max:255'],
-                // 'admission_date' => ['required', 'date'],
-                'current_module' => ['required', 'string'],
-                'fee_discount_percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            ],
-            3 => [
                 'is_pwd' => ['boolean'],
                 'disability_type' => ['nullable', 'string', 'max:255'],
                 'medical_condition' => ['nullable', 'string', 'max:255'],
             ],
-            4 => [
+            2 => [
+                'previous_school' => ['required', 'string', 'max:255'],
+                'course_id' => ['required', 'exists:courses,id'],
+                'current_module' => ['required', 'string'],
+                'fee_discount_percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            ],
+            3 => [
+
                 'kin_first_name' => ['required', 'string', 'max:255'],
                 'kin_last_name' => ['required', 'string', 'max:255'],
                 'kin_relationship' => ['required', 'string', 'max:255'],
