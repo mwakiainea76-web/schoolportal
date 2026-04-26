@@ -1,7 +1,7 @@
 import { Link, usePage } from "@inertiajs/react";
 import { useState, useEffect } from "react";
 import { ChevronLeft } from "lucide-react";
-import useRbac from "@/Hooks/useRbac";
+import useRbac from "@/Hooks/UseRBAC";
 import NavLink from "./SideBarLink";
 import { NAV_ITEMS, ICONS } from "../constants/navItems";
 import { safeRoute, isRouteCurrent, filterNav } from "../utils/sidebarHelpers";
