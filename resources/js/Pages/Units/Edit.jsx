@@ -6,7 +6,7 @@ import InputLabel from "@/Components/InputLabel";
 import TextInput from "@/Components/TextInput";
 import TextArea from "@/Components/TextArea";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
-import useRbac from "@/Hooks/useRbac";
+import useRbac from "@/Hooks/UseRBAC";
 const Edit = ({ unit }) => {
     const { can } = useRbac();
     const u = unit;

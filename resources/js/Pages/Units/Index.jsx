@@ -9,7 +9,7 @@ import Trow from "@/Components/Table/Trow";
 import Tdata from "@/Components/Table/Tdata";
 import formatDate from "@/utils/date";
 import SearchSelect from "@/Components/SearchSelect";
-import useRbac from "@/Hooks/useRbac";
+import useRbac from "@/Hooks/UseRBAC";
 export default function UnitsIndex({ units }) {
     const [sortField, setSortField] = useState(units.sort || "created_at");
     const [sortDirection, setSortDirection] = useState(
