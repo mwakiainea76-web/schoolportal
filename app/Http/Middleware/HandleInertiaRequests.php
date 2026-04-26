@@ -2,7 +2,7 @@
 
 namespace App\Http\Middleware;
 
-use App\Services\RbacService;
+use App\Services\RBACService;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -27,7 +27,7 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
 
-        $rbac = app(RbacService::class);
+        $rbac = app(RBACService::class);
         $user = $request->user();
 
         return array_merge(parent::share($request), [
