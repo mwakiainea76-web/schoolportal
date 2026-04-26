@@ -33,6 +33,11 @@ Route::get('/login', function () {
     return Inertia::render('Auth/Login');
 })->name('login');
 
+Route::get('/staffs', [StaffController::class, 'index'])->name('staffs.index');
+Route::get('/staffs/create', [StaffController::class, 'create'])->name('staffs.create');
+Route::get('/permissions', [PermissionController::class, 'index'])->name('permissions.index');
+Route::get('/staffs', [StaffController::class, 'index'])->name('staffs.index');
+
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
