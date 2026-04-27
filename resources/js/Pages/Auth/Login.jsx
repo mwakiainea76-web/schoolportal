@@ -89,7 +89,7 @@ export default function Login({ status, canResetPassword }) {
 
                             <InputError message={errors.password} />
                         </div>
-                        ;{/* Remember + Forgot */}
+                        {/* Remember + Forgot */}
                         <div className="flex items-center justify-between">
                             <ToggleSwitch
                                 label="Remember me"

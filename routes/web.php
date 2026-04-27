@@ -8,6 +8,7 @@ use App\Http\Controllers\CurriculumController;
 use App\Http\Controllers\CurriculumUnitController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\ExamBodyController;
+use App\Http\Controllers\FeeTemplateController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoleController;
@@ -165,6 +166,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/students/search', [StudentController::class, 'search'])->name('students.search');
     Route::post('/students/validate/step', [StudentController::class, 'validateStep'])
         ->name('students.validateStep');
+
+    Route::get('/fees/templates', [FeeTemplateController::class, 'index'])->name('fees.templates.index');
+    Route::get('/fees/templates/create', [FeeTemplateController::class, 'create'])->name('fees.templates.create');
+    Route::post('/fees/templates', [FeeTemplateController::class, 'store'])->name('fees.templates.store');
+    Route::get('/fees/templates/{template}/edit', [FeeTemplateController::class, 'edit'])->name('fees.templates.edit');
+    Route::put('/fees/templates/{template}', [FeeTemplateController::class, 'update'])->name('fees.templates.update');
+    Route::delete('/fees/templates/{template}', [FeeTemplateController::class, 'destroy'])->name('fees.templates.destroy');
+    Route::get('/fees/templates/search', [FeeTemplateController::class, 'search'])->name('fees.templates.search');
 
     Route::get('/academic/schedules', function () {
         return Inertia::render('Academic/Schedules');

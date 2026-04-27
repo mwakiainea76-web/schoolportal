@@ -173,6 +173,27 @@ export const NAV_ITEMS = [
             },
         ],
     },
+    {
+        key: "fee",
+        label: "Finance",
+        icon: "user",
+        basePath: "/fees",
+        permissions: ["students.view"],
+        children: [
+            {
+                routeName: "fees.templates.index",
+                fallback: "/fees/templates",
+                label: "Fee template",
+                permission: "students.view",
+            },
+            {
+                routeName: "students.create",
+                fallback: "/students/create",
+                label: "Add Student",
+                permission: "students.create",
+            },
+        ],
+    },
 ];
 
 export const ICONS = {
