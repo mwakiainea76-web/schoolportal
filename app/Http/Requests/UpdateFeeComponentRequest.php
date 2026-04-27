@@ -2,28 +2,45 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateFeeComponentRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, ValidationRule|array<mixed>|string>
-     */
     public function rules(): array
     {
+        $id = $this->route('feeComponent')?->id;
+
         return [
-            //
+            'fee_template_id' => ['required', 'exists:fee_templates,id'],
+
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+            ],
+
+            'type' => ['required', 'string', 'max:100'],
+
+            'amount' => ['required', 'numeric', 'min:0'],
+
+            'frequency' => ['required', 'in:admission,always,session,year'],
+
+            'is_optional' => ['boolean'],
+
+            'sort_order' => ['nullable', 'integer', 'min:0'],
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'is_optional' => filter_var($this->is_optional, FILTER_VALIDATE_BOOLEAN),
+            'sort_order' => $this->sort_order ?? 0,
+        ]);
     }
 }

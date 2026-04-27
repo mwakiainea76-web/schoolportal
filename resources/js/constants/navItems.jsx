@@ -187,9 +187,9 @@ export const NAV_ITEMS = [
                 permission: "students.view",
             },
             {
-                routeName: "students.create",
-                fallback: "/students/create",
-                label: "Add Student",
+                routeName: "fees.components.index",
+                fallback: "/fees/components",
+                label: "Fee component",
                 permission: "students.create",
             },
         ],

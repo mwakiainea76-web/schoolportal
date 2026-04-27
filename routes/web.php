@@ -8,6 +8,7 @@ use App\Http\Controllers\CurriculumController;
 use App\Http\Controllers\CurriculumUnitController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\ExamBodyController;
+use App\Http\Controllers\FeeComponentController;
 use App\Http\Controllers\FeeTemplateController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProfileController;
@@ -174,6 +175,15 @@ Route::middleware('auth')->group(function () {
     Route::put('/fees/templates/{template}', [FeeTemplateController::class, 'update'])->name('fees.templates.update');
     Route::delete('/fees/templates/{template}', [FeeTemplateController::class, 'destroy'])->name('fees.templates.destroy');
     Route::get('/fees/templates/search', [FeeTemplateController::class, 'search'])->name('fees.templates.search');
+
+    Route::prefix('fees/components')->name('fees.components.')->group(function () {
+        Route::get('/', [FeeComponentController::class, 'index'])->name('index');
+        Route::get('/create', [FeeComponentController::class, 'create'])->name('create');
+        Route::post('/', [FeeComponentController::class, 'store'])->name('store');
+        Route::get('/{feeComponent}/edit', [FeeComponentController::class, 'edit'])->name('edit');
+        Route::put('/{feeComponent}', [FeeComponentController::class, 'update'])->name('update');
+        Route::delete('/{feeComponent}', [FeeComponentController::class, 'destroy'])->name('destroy');
+    });
 
     Route::get('/academic/schedules', function () {
         return Inertia::render('Academic/Schedules');

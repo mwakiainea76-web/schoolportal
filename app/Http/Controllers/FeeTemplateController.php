@@ -37,8 +37,8 @@ class FeeTemplateController extends Controller
         FeeTemplate::create($request->validated());
 
         return redirect()
-            ->route('fees.templates.edit', $feeTemplate->id)
-            ->with('success', 'Fee template updated successfully.');
+            ->route('fees.templates.create')
+            ->with('success', 'Fee template created successfully.');
     }
 
     // ---------------- EDIT ----------------
