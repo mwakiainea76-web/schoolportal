@@ -112,6 +112,11 @@ class FeeModel extends Model
             });
     }
 
+    public function scopeForSession($query, $academicSessionId)
+    {
+        return $query->where('academic_session_id', $academicSessionId);
+    }
+
     public function scopeOrdered($query)
     {
         return $query->orderBy('priority', 'desc')

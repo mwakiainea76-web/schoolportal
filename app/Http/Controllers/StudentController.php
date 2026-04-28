@@ -260,4 +260,26 @@ class StudentController extends Controller
     {
         //
     }
+
+    /**
+     * Search for students.
+     */
+    public function search(Request $request)
+    {
+        $q = $request->get('q');
+
+        return Student::with('user')
+            ->where('registration_number', 'like', "%{$q}%")
+            ->orWhereHas('user', function ($query) use ($q) {
+                $query->where('first_name', 'like', "%{$q}%")
+                      ->orWhere('last_name', 'like', "%{$q}%")
+                      ->orWhere('email', 'like', "%{$q}%");
+            })
+            ->limit(10)
+            ->get()
+            ->map(fn ($s) => [
+                'id' => $s->id,
+                'name' => ($s->user->first_name ?? '') . ' ' . ($s->user->last_name ?? '') . ' (' . ($s->registration_number ?? 'N/A') . ')',
+            ]);
+    }
 }

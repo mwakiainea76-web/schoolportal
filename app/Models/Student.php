@@ -15,11 +15,9 @@ class Student extends Model
         'user_id',
         'registration_number',
         'previous_school',
-        'fee_discount_percentage',
         'current_module',
         'admission_date',
         'student_status',
-        'current_module',
     ];
 
     public function enrollments()

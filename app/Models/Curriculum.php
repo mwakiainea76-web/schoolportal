@@ -28,6 +28,19 @@ class Curriculum extends Model
         return $this->belongsTo(Course::class);
     }
 
+    // Access department through course
+    public function department()
+    {
+        return $this->hasOneThrough(
+            Department::class,
+            Course::class,
+            'id',           // Foreign key on courses table
+            'id',           // Foreign key on departments table
+            'course_id',    // Local key on curricula table
+            'department_id' // Local key on courses table
+        );
+    }
+
     public function curriculumUnits()
     {
         return $this->hasMany(curriculum_unit::class);

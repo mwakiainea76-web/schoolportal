@@ -37,19 +37,17 @@ export default function Sidebar({
         <>
             {/* Backdrop */}
             <div
-                className={`fixed inset-0 bg-black/40 z-40 transition lg:hidden ${
-                    mobileOpen ? "opacity-100" : "opacity-0 pointer-events-none"
-                }`}
+                className={`fixed inset-0 bg-black/40 z-40 transition lg:hidden ${mobileOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+                    }`}
                 onClick={() => setMobileOpen(false)}
             />
 
             {/* Sidebar */}
             <aside
-                className={`fixed lg:static inset-y-0 left-0 z-50 flex flex-col bg-[#1b263b] transform transition duration-300 ${
-                    mobileOpen
-                        ? "translate-x-0"
-                        : "-translate-x-full lg:translate-x-0"
-                } ${collapsed ? "w-20" : "w-64"}`}
+                className={`fixed lg:static inset-y-0 left-0 z-50 flex flex-col bg-[#1b263b] transform transition duration-300  h-screen overflow-hidden  ${mobileOpen
+                    ? "translate-x-0"
+                    : "-translate-x-full lg:translate-x-0"
+                    } ${collapsed ? "w-20" : "w-64"}`}
             >
                 {/* Logo */}
                 <div className="h-20 flex items-center px-5 border-b border-white/5">
@@ -72,17 +70,16 @@ export default function Sidebar({
                 </div>
 
                 {/* Nav */}
-                <nav className="flex-1 overflow-y-auto">
+                <nav className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                     {/* Dashboard */}
                     <div className="border-b border-white/5">
                         <Link
                             href={safeRoute("dashboard", "/dashboard")}
                             onClick={closeMobile}
-                            className={`flex items-center px-4 py-3 transition ${
-                                isDashboardActive
-                                    ? "bg-emerald-500 text-white"
-                                    : "text-zinc-400 hover:bg-white/5 hover:text-white"
-                            }`}
+                            className={`flex items-center px-4 py-3 transition ${isDashboardActive
+                                ? "bg-emerald-500 text-white"
+                                : "text-zinc-400 hover:bg-white/5 hover:text-white"
+                                }`}
                         >
                             {ICONS.dashboard}
                             {!collapsed && (
@@ -111,11 +108,10 @@ export default function Sidebar({
                                                 fallback,
                                             )}
                                             onClick={closeMobile}
-                                            className={`w-full flex items-center gap-3 px-4 py-3 text-sm transition ${
-                                                parentActive
-                                                    ? "bg-emerald-500 text-white"
-                                                    : "text-zinc-400 hover:bg-white/5 hover:text-white"
-                                            }`}
+                                            className={`w-full flex items-center gap-3 px-4 py-3 text-sm transition ${parentActive
+                                                ? "bg-emerald-500 text-white"
+                                                : "text-zinc-400 hover:bg-white/5 hover:text-white"
+                                                }`}
                                         >
                                             {ICONS[icon]}
                                             <span>{label}</span>
@@ -131,11 +127,10 @@ export default function Sidebar({
                                 >
                                     <button
                                         onClick={() => toggleMenu(key)}
-                                        className={`w-full flex items-center justify-between px-4 py-3 text-sm transition ${
-                                            parentActive
-                                                ? "bg-emerald-500 text-white"
-                                                : "text-zinc-400 hover:bg-white/5 hover:text-white"
-                                        }`}
+                                        className={`w-full flex items-center justify-between px-4 py-3 text-sm transition ${parentActive
+                                            ? "bg-emerald-500 text-white"
+                                            : "text-zinc-400 hover:bg-white/5 hover:text-white"
+                                            }`}
                                     >
                                         <div className="flex items-center gap-3">
                                             {ICONS[icon]}
@@ -143,21 +138,19 @@ export default function Sidebar({
                                         </div>
                                         {!collapsed && (
                                             <ChevronLeft
-                                                className={`w-4 h-4 transition-transform duration-300 ${
-                                                    isOpen
-                                                        ? "-rotate-90"
-                                                        : "rotate-0"
-                                                }`}
+                                                className={`w-4 h-4 transition-transform duration-300 ${isOpen
+                                                    ? "-rotate-90"
+                                                    : "rotate-0"
+                                                    }`}
                                             />
                                         )}
                                     </button>
 
                                     <div
-                                        className={`overflow-hidden transition-all duration-300 ${
-                                            isOpen && !collapsed
-                                                ? "max-h-96 opacity-100"
-                                                : "max-h-0 opacity-0"
-                                        }`}
+                                        className={`overflow-hidden transition-all duration-300 ${isOpen && !collapsed
+                                            ? "max-h-96 opacity-100"
+                                            : "max-h-0 opacity-0"
+                                            }`}
                                     >
                                         {children.map(
                                             ({

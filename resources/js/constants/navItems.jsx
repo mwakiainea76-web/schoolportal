@@ -1,13 +1,15 @@
 import {
     LayoutDashboard,
     BookOpen,
-    Award,
+    GraduationCap,
     Building2,
-    FileText,
-    Grid2X2,
-    CalendarDays,
+    BookMarked,
+    LayoutGrid,
+    CalendarRange,
     ShieldCheck,
-    User,
+    UserRound,
+    Users,
+    Wallet,
 } from "lucide-react";
 
 export const NAV_ITEMS = [
@@ -50,7 +52,7 @@ export const NAV_ITEMS = [
     {
         key: "courses",
         label: "Courses",
-        icon: "file",
+        icon: "courses",
         basePath: "/courses",
         permissions: ["courses.view"],
         children: [
@@ -134,7 +136,7 @@ export const NAV_ITEMS = [
     {
         key: "staffs",
         label: "Staffs",
-        icon: "user",
+        icon: "staff",
         basePath: "/staffs",
         permissions: ["staffs.view"],
         children: [
@@ -155,7 +157,7 @@ export const NAV_ITEMS = [
     {
         key: "students",
         label: "Students",
-        icon: "user",
+        icon: "students",
         basePath: "/students",
         permissions: ["students.view"],
         children: [
@@ -176,7 +178,7 @@ export const NAV_ITEMS = [
     {
         key: "fee",
         label: "Finance",
-        icon: "user",
+        icon: "finance",
         basePath: "/fees",
         permissions: ["students.view"],
         children: [
@@ -204,18 +206,55 @@ export const NAV_ITEMS = [
                 label: "Additional fee charges",
                 permission: "students.create",
             },
+            {
+                routeName: "fees.student-invoices.index",
+                fallback: "/fees/student-invoices",
+                label: "Student invoices",
+                permission: "students.view",
+            },
+            {
+                routeName: "fees.adjustments.index",
+                fallback: "/fees/adjustments",
+                label: "Fee adjustments",
+                permission: "students.view",
+            },
+            {
+                routeName: "fees.penalties.index",
+                fallback: "/fees/penalties",
+                label: "Penalties",
+                permission: "students.view",
+            },
+            {
+                routeName: "fees.payments.index",
+                fallback: "/fees/payments",
+                label: "Payments",
+                permission: "students.view",
+            },
+            {
+                routeName: "fees.student-credits.index",
+                fallback: "/fees/student-credits",
+                label: "Student credits",
+                permission: "students.view",
+            },
+            {
+                routeName: "fees.refunds.index",
+                fallback: "/fees/refunds",
+                label: "Refunds",
+                permission: "students.view",
+            },
         ],
     },
 ];
 
 export const ICONS = {
     dashboard: <LayoutDashboard className="w-5 h-5 shrink-0" />,
-    book: <BookOpen className="w-5 h-5 shrink-0" />,
-    certificate: <Award className="w-5 h-5 shrink-0" />,
-    department: <Building2 className="w-5 h-5 shrink-0" />,
-    file: <FileText className="w-5 h-5 shrink-0" />,
-    grid: <Grid2X2 className="w-5 h-5 shrink-0" />,
-    academic: <CalendarDays className="w-5 h-5 shrink-0" />,
-    roles: <ShieldCheck className="w-5 h-5 shrink-0" />,
-    user: <User className="w-5 h-5 shrink-0" />,
+    book: <BookOpen className="w-5 h-5 shrink-0" />,       // Exam Bodies
+    department: <Building2 className="w-5 h-5 shrink-0" />,      // Departments
+    courses: <BookMarked className="w-5 h-5 shrink-0" />,     // Courses (was FileText)
+    grid: <LayoutGrid className="w-5 h-5 shrink-0" />,     // Units (was Grid2X2)
+    academic: <CalendarRange className="w-5 h-5 shrink-0" />,  // Academic Calendar (was CalendarDays)
+    roles: <ShieldCheck className="w-5 h-5 shrink-0" />,    // Roles & Permissions
+    staff: <UserRound className="w-5 h-5 shrink-0" />,      // Staffs (was generic User)
+    students: <GraduationCap className="w-5 h-5 shrink-0" />,  // Students — distinct from staff
+    finance: <Wallet className="w-5 h-5 shrink-0" />,         // Finance (was User — wrong!)
 };

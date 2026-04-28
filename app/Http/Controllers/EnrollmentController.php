@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Enrollment;
 use App\Http\Requests\StoreEnrollmentRequest;
 use App\Http\Requests\UpdateEnrollmentRequest;
+use Illuminate\Http\Request;
 
 class EnrollmentController extends Controller
 {
@@ -62,5 +63,28 @@ class EnrollmentController extends Controller
     public function destroy(Enrollment $enrollment)
     {
         //
+    }
+
+    /**
+     * Search for enrollments.
+     */
+    public function search(Request $request)
+    {
+        $q = $request->get('q');
+
+        return Enrollment::with(['student.user'])
+            ->whereHas('student.user', function ($query) use ($q) {
+                $query->where('first_name', 'like', "%{$q}%")
+                      ->orWhere('last_name', 'like', "%{$q}%");
+            })
+            ->orWhereHas('student', function ($query) use ($q) {
+                $query->where('registration_number', 'like', "%{$q}%");
+            })
+            ->limit(10)
+            ->get()
+            ->map(fn ($e) => [
+                'id' => $e->id,
+                'name' => ($e->student->user->first_name ?? '') . ' ' . ($e->student->user->last_name ?? '') . ' (' . ($e->student->registration_number ?? 'N/A') . ')',
+            ]);
     }
 }

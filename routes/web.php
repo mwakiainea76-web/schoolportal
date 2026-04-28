@@ -18,6 +18,12 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\UnitController;
+use App\Http\Controllers\FeeAdjustmentController;
+use App\Http\Controllers\PenaltyController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\RefundController;
+use App\Http\Controllers\StudentCreditController;
+use App\Http\Controllers\StudentInvoicesController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -186,6 +192,10 @@ Route::middleware('auth')->group(function () {
         Route::post('/validate/step', [StudentController::class, 'validateStep'])->name('validateStep');
     });
 
+    Route::prefix('/enrollments')->name('enrollments.')->group(function () {
+        Route::get('/search', [EnrollmentController::class, 'search'])->name('search');
+    });
+
     Route::prefix('/fees/templates')->name('fees.templates.')->group(function () {
         Route::get('/', [FeeTemplateController::class, 'index'])->name('index');
         Route::get('/create', [FeeTemplateController::class, 'create'])->name('create');
@@ -214,6 +224,50 @@ Route::middleware('auth')->group(function () {
         Route::put('/{feeModel}', [FeeModelController::class, 'update'])->name('update');
         Route::delete('/{feeModel}', [FeeModelController::class, 'destroy'])->name('destroy');
         Route::get('/search', [FeeModelController::class, 'search'])->name('search');
+    });
+
+    Route::prefix('/fees/student-invoices')->name('fees.student-invoices.')->group(function () {
+        Route::get('/', [StudentInvoicesController::class, 'index'])->name('index');
+        Route::get('/create', [StudentInvoicesController::class, 'create'])->name('create');
+        Route::post('/', [StudentInvoicesController::class, 'store'])->name('store');
+        Route::get('/{studentInvoice}', [StudentInvoicesController::class, 'show'])->name('show');
+        Route::get('/{studentInvoice}/edit', [StudentInvoicesController::class, 'edit'])->name('edit');
+        Route::put('/{studentInvoice}', [StudentInvoicesController::class, 'update'])->name('update');
+        Route::delete('/{studentInvoice}', [StudentInvoicesController::class, 'destroy'])->name('destroy');
+        Route::get('/search', [StudentInvoicesController::class, 'search'])->name('search');
+    });
+
+    Route::prefix('/fees/adjustments')->name('fees.adjustments.')->group(function () {
+        Route::get('/', [FeeAdjustmentController::class, 'index'])->name('index');
+        Route::get('/create', [FeeAdjustmentController::class, 'create'])->name('create');
+        Route::post('/', [FeeAdjustmentController::class, 'store'])->name('store');
+        Route::get('/{feeAdjustment}/edit', [FeeAdjustmentController::class, 'edit'])->name('edit');
+        Route::put('/{feeAdjustment}', [FeeAdjustmentController::class, 'update'])->name('update');
+        Route::delete('/{feeAdjustment}', [FeeAdjustmentController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('/fees/penalties')->name('fees.penalties.')->group(function () {
+        Route::get('/', [PenaltyController::class, 'index'])->name('index');
+        Route::get('/create', [PenaltyController::class, 'create'])->name('create');
+        Route::post('/', [PenaltyController::class, 'store'])->name('store');
+        Route::delete('/{penalty}', [PenaltyController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('/fees/payments')->name('fees.payments.')->group(function () {
+        Route::get('/', [PaymentController::class, 'index'])->name('index');
+        Route::get('/create', [PaymentController::class, 'create'])->name('create');
+        Route::post('/', [PaymentController::class, 'store'])->name('store');
+        Route::delete('/{payment}', [PaymentController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('/fees/student-credits')->name('fees.student-credits.')->group(function () {
+        Route::get('/', [StudentCreditController::class, 'index'])->name('index');
+    });
+
+    Route::prefix('/fees/refunds')->name('fees.refunds.')->group(function () {
+        Route::get('/', [RefundController::class, 'index'])->name('index');
+        Route::post('/{refund}/process', [RefundController::class, 'process'])->name('process');
+        Route::post('/{refund}/fail', [RefundController::class, 'fail'])->name('fail');
     });
 
     Route::prefix('fees/additional-charges')->name('fees.additional-charges.')->group(function () {
