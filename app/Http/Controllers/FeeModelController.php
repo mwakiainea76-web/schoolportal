@@ -104,4 +104,23 @@ class FeeModelController extends Controller
             ->back()
             ->with('success', 'Fee model deleted successfully.');
     }
+
+    // ---------------- SEARCH ----------------
+    public function search(Request $request)
+    {
+        return FeeModel::with('template')
+            ->active()
+            ->whereHas('template', function ($q) use ($request) {
+                $q->where('name', 'like', '%'.$request->get('q').'%');
+            })
+            ->orWhere('display_name', 'like', '%'.$request->get('q').'%')
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($model) {
+                return [
+                    'id' => $model->id,
+                    'name' => $model->display_name,
+                ];
+            });
+    }
 }

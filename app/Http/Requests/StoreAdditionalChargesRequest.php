@@ -12,7 +12,7 @@ class StoreAdditionalChargesRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -23,7 +23,11 @@ class StoreAdditionalChargesRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'fee_model_id' => 'required|exists:fee_models,id',
+            'name' => 'required|string|max:255',
+            'amount' => 'required|numeric|min:0',
+            'frequency' => 'required|in:admission,session,year',
+            'description' => 'required|string|max:1000',
         ];
     }
 }

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AcademicSessionController;
 use App\Http\Controllers\AcademicYearController;
+use App\Http\Controllers\AdditionalChargeController;
 use App\Http\Controllers\CertificationLevelController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\CurriculumController;
@@ -212,6 +213,16 @@ Route::middleware('auth')->group(function () {
         Route::get('/{feeModel}/edit', [FeeModelController::class, 'edit'])->name('edit');
         Route::put('/{feeModel}', [FeeModelController::class, 'update'])->name('update');
         Route::delete('/{feeModel}', [FeeModelController::class, 'destroy'])->name('destroy');
+        Route::get('/search', [FeeModelController::class, 'search'])->name('search');
+    });
+
+    Route::prefix('fees/additional-charges')->name('fees.additional-charges.')->group(function () {
+        Route::get('/', [AdditionalChargeController::class, 'index'])->name('index');
+        Route::get('/create', [AdditionalChargeController::class, 'create'])->name('create');
+        Route::post('/', [AdditionalChargeController::class, 'store'])->name('store');
+        Route::get('/{additionalCharge}/edit', [AdditionalChargeController::class, 'edit'])->name('edit');
+        Route::put('/{additionalCharge}', [AdditionalChargeController::class, 'update'])->name('update');
+        Route::delete('/{additionalCharge}', [AdditionalChargeController::class, 'destroy'])->name('destroy');
     });
 
     Route::get('/academic/schedules', function () {

@@ -13,6 +13,14 @@ return new class extends Migration
     {
         Schema::create('additional_charges', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('fee_model_id')
+                ->constrained('fee_models', 'id')
+                ->cascadeOnDelete();
+            $table->string('name');
+            $table->decimal('amount', 12, 2);
+            $table->enum('frequency', ['admission', 'session', 'year'])->default('session');
+            $table->string('description');
+            $table->softDeletes();
             $table->timestamps();
         });
     }

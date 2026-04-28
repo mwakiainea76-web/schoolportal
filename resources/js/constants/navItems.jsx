@@ -198,6 +198,12 @@ export const NAV_ITEMS = [
                 label: "Fee model",
                 permission: "students.create",
             },
+            {
+                routeName: "fees.additional-charges.index",
+                fallback: "/fees/additional-charges",
+                label: "Additional fee charges",
+                permission: "students.create",
+            },
         ],
     },
 ];

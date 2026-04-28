@@ -72,6 +72,11 @@ class FeeModel extends Model
         return $this->belongsTo(User::class, 'updated_by');
     }
 
+    public function additionalCharges()
+    {
+        return $this->hasMany(AdditionalCharge::class);
+    }
+
     // ---------------- SCOPES ----------------
 
     public function scopeActive($query)
