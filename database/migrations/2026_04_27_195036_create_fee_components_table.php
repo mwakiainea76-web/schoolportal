@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('fee_components', function (Blueprint $table) {
             $table->id();
             $table->foreignId('fee_template_id')
-                ->constrained()
+                ->constrained('fee_templates', 'id')
                 ->cascadeOnDelete();
             $table->string('name');
             $table->string('type');

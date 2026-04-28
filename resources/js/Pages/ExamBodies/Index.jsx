@@ -23,7 +23,7 @@ export default function ExamBody({ examBodies }) {
         setSortField(field);
         setSortDirection(direction);
         router.get(
-            route("exam-bodies.index"),
+            route("exam.bodies.index"),
             { sort: field, direction, page: 1 },
             { preserveState: true, replace: true },
         );
@@ -37,7 +37,7 @@ export default function ExamBody({ examBodies }) {
     const submit = (e) => {
         e.preventDefault();
         router.get(
-            route("exam-bodies.index"),
+            route("exam.bodies.index"),
             { search: searchTerm, sort: sortField, direction: sortDirection },
             { preserveState: true, replace: true },
         );
@@ -59,7 +59,7 @@ export default function ExamBody({ examBodies }) {
             <div className=" mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
                 <Link
                     className="mb-4 px-4 py-1 bg-slate-400 text-white rounded hover:bg-slate-700 inline-block"
-                    href={route("exam-bodies.create")}
+                    href={route("exam.bodies.create")}
                 >
                     Add Exam Body
                 </Link>
@@ -128,7 +128,7 @@ export default function ExamBody({ examBodies }) {
                                         <div className="flex items-center justify-center gap-x-10">
                                             <Link
                                                 href={route(
-                                                    "exam-bodies.edit",
+                                                    "exam.bodies.edit",
                                                     examBody.id,
                                                 )}
                                                 className="text-emerald-600 hover:underline"

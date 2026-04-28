@@ -13,7 +13,7 @@ class FeeModelPolicy
      */
     public function viewAny(User $user): bool
     {
-        return false;
+        return $user->hasPermissionTo('view fee models');
     }
 
     /**
@@ -21,7 +21,7 @@ class FeeModelPolicy
      */
     public function view(User $user, FeeModel $feeModel): bool
     {
-        return false;
+        return $user->hasPermissionTo('view fee models');
     }
 
     /**
@@ -29,7 +29,7 @@ class FeeModelPolicy
      */
     public function create(User $user): bool
     {
-        return false;
+        return $user->hasPermissionTo('create fee models');
     }
 
     /**
@@ -37,7 +37,7 @@ class FeeModelPolicy
      */
     public function update(User $user, FeeModel $feeModel): bool
     {
-        return false;
+        return $user->hasPermissionTo('update fee models');
     }
 
     /**
@@ -45,7 +45,7 @@ class FeeModelPolicy
      */
     public function delete(User $user, FeeModel $feeModel): bool
     {
-        return false;
+        return $user->hasPermissionTo('delete fee models');
     }
 
     /**
@@ -53,7 +53,7 @@ class FeeModelPolicy
      */
     public function restore(User $user, FeeModel $feeModel): bool
     {
-        return false;
+        return $user->hasPermissionTo('restore fee models');
     }
 
     /**
@@ -61,6 +61,6 @@ class FeeModelPolicy
      */
     public function forceDelete(User $user, FeeModel $feeModel): bool
     {
-        return false;
+        return $user->hasPermissionTo('force delete fee models');
     }
 }

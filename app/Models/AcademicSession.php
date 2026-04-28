@@ -26,6 +26,11 @@ class AcademicSession extends Model
         return $this->belongsTo(AcademicYear::class);
     }
 
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+
     public function getRouteKeyName()
     {
         return 'id';

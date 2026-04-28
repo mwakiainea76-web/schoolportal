@@ -19,4 +19,9 @@ class FeeTemplate extends Model
         'is_active',
         'is_reusable',
     ];
+
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
 }

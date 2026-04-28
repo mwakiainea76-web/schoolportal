@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateAcademicSessionRequest;
 use App\Models\AcademicSession;
 use App\Models\AcademicYear;
 use App\Services\AcademicSessionService;
+use Illuminate\Http\Request;
 
 class AcademicSessionController extends Controller
 {
@@ -70,5 +71,13 @@ class AcademicSessionController extends Controller
         return redirect()
             ->route('academic.sessions.index')
             ->with('success', 'Academic session deleted successfully.');
+    }
+
+    public function search(Request $request)
+    {
+        return AcademicSession::active()
+            ->where('session_No', 'like', '%'.$request->get('q').'%')
+            ->orderBy('start_date', 'desc')
+            ->get(['id', 'session_No as name']);
     }
 }

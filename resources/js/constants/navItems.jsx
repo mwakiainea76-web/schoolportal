@@ -192,6 +192,12 @@ export const NAV_ITEMS = [
                 label: "Fee component",
                 permission: "students.create",
             },
+            {
+                routeName: "fees.models.index",
+                fallback: "/fees/models",
+                label: "Fee model",
+                permission: "students.create",
+            },
         ],
     },
 ];

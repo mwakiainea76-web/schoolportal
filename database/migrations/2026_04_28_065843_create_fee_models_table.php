@@ -14,19 +14,19 @@ return new class extends Migration
         Schema::create('fee_models', function (Blueprint $table) {
             $table->id();
             $table->foreignId('fee_template_id')
-                ->constrained()
+                ->constrained('fee_templates', 'id')
                 ->cascadeOnDelete();
             $table->foreignId('curricula_id')
                 ->nullable()
-                ->constrained()
+                ->constrained('curricula', 'id')
                 ->cascadeOnDelete();
             $table->foreignId('academic_session_id')
                 ->nullable()
-                ->constrained()
+                ->constrained('academic_sessions', 'id')
                 ->cascadeOnDelete();
             $table->foreignId('department_id')
                 ->nullable()
-                ->constrained()
+                ->constrained('departments', 'id')
                 ->cascadeOnDelete();
             $table->enum('scope', ['global', 'department', 'curriculum'])->default('global');
             $table->enum('priority', ['60', '70', '80'])->default('60');
@@ -35,13 +35,14 @@ return new class extends Migration
             $table->boolean('is_active')->default(true);
             $table->foreignId('created_by')
                 ->nullable()
-                ->constrained('users')
+                ->constrained('users', 'id')
                 ->nullOnDelete();
             $table->foreignId('updated_by')
                 ->nullable()
-                ->constrained('users')
+                ->constrained('users', 'id')
                 ->nullOnDelete();
             $table->integer('sort_order')->default(0);
+            $table->softDeletes();
             $table->timestamps();
         });
     }
