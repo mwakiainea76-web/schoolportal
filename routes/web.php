@@ -1,29 +1,34 @@
 <?php
 
 use App\Http\Controllers\AcademicSessionController;
+use App\Http\Controllers\AcademicSessionEnrollmentController;
 use App\Http\Controllers\AcademicYearController;
 use App\Http\Controllers\AdditionalChargeController;
 use App\Http\Controllers\CertificationLevelController;
 use App\Http\Controllers\CourseController;
+use App\Http\Controllers\CourseCurriculumController;
+use App\Http\Controllers\CourseEnrollmentController;
 use App\Http\Controllers\CurriculumController;
 use App\Http\Controllers\CurriculumUnitController;
 use App\Http\Controllers\DepartmentController;
+use App\Http\Controllers\EnrollmentController;
 use App\Http\Controllers\ExamBodyController;
+use App\Http\Controllers\FeeAdjustmentController;
 use App\Http\Controllers\FeeComponentController;
 use App\Http\Controllers\FeeModelController;
+use App\Http\Controllers\FeesController;
 use App\Http\Controllers\FeeTemplateController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PenaltyController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RefundController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\StudentController;
-use App\Http\Controllers\UnitController;
-use App\Http\Controllers\FeeAdjustmentController;
-use App\Http\Controllers\PenaltyController;
-use App\Http\Controllers\PaymentController;
-use App\Http\Controllers\RefundController;
 use App\Http\Controllers\StudentCreditController;
 use App\Http\Controllers\StudentInvoicesController;
+use App\Http\Controllers\UnitController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -75,7 +80,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/search', [CertificationLevelController::class, 'search'])->name('/search');
     });
 
-    Route::prefix('departments')->name('departments.')->group(function () {
+    Route::prefix('/departments')->name('departments.')->group(function () {
         Route::get('/', [DepartmentController::class, 'index'])->name('index');
         Route::post('/', [DepartmentController::class, 'store'])->name('store');
         Route::get('/{department}/edit', [DepartmentController::class, 'edit'])->name('edit');
@@ -85,7 +90,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/search', [DepartmentController::class, 'search'])->name('search');
     });
 
-    Route::prefix('courses')->name('courses.')->group(function () {
+    Route::prefix('/courses')->name('courses.')->group(function () {
         Route::get('/', [CourseController::class, 'index'])->name('index');
         Route::post('/', [CourseController::class, 'store'])->name('store');
         Route::get('/{course}/edit', [CourseController::class, 'edit'])->name('edit');
@@ -95,18 +100,28 @@ Route::middleware('auth')->group(function () {
         Route::get('/search', [CourseController::class, 'search'])->name('search');
     });
 
-    Route::prefix('/courses/curriculum')->name('courses.curriculum.')->group(function () {
+    Route::prefix('/curriculum')->name('curriculum.')->group(function () {
         Route::get('/', [CurriculumController::class, 'index'])->name('index');
         Route::post('/', [CurriculumController::class, 'store'])->name('store');
-        Route::get('/create', [CurriculumController::class, 'create'])->name('create');
-        Route::get('/search', [CurriculumController::class, 'search'])->name('search');
+        Route::get('/{curriculum}/edit', [CurriculumController::class, 'edit'])->name('edit');
         Route::put('/{curriculum}', [CurriculumController::class, 'update'])->name('update');
         Route::delete('/{curriculum}', [CurriculumController::class, 'destroy'])->name('destroy');
-        Route::get('/{curriculum}/edit', [CurriculumController::class, 'edit'])->name('edit');
+        Route::get('/create', [CurriculumController::class, 'create'])->name('create');
+        Route::get('/search', [CurriculumController::class, 'search'])->name('search');
+    });
+    Route::prefix('/courses/curriculum')->name('courses.curriculum.')->group(function () {
+        Route::get('/', [CourseCurriculumController::class, 'index'])->name('index');
+        Route::post('/', [CourseCurriculumController::class, 'store'])->name('store');
+        Route::get('/create', [CourseCurriculumController::class, 'create'])->name('create');
+        Route::get('/search', [CourseCurriculumController::class, 'search'])->name('search');
+        Route::get('/course-search', [CourseCurriculumController::class, 'courseSearch'])->name('course-search');
+        Route::put('/{curriculum}', [CourseCurriculumController::class, 'update'])->name('update');
+        Route::delete('/{curriculum}', [CourseCurriculumController::class, 'destroy'])->name('destroy');
+        Route::get('/{curriculum}/edit', [CourseCurriculumController::class, 'edit'])->name('edit');
 
     });
 
-    Route::prefix('/units)')->name('units.')->group(function () {
+    Route::prefix('/units')->name('units.')->group(function () {
         Route::get('/', [UnitController::class, 'index'])->name('index');
         Route::post('/', [UnitController::class, 'store'])->name('store');
         Route::get('/{unit?}/edit', [UnitController::class, 'edit'])->name('edit');
@@ -192,7 +207,15 @@ Route::middleware('auth')->group(function () {
         Route::post('/validate/step', [StudentController::class, 'validateStep'])->name('validateStep');
     });
 
-    Route::prefix('/enrollments')->name('enrollments.')->group(function () {
+    Route::prefix('/courses/enrollments')->name('courses.enrollments.')->group(function () {
+        Route::get('/', [CourseEnrollmentController::class, 'index'])->name('index');
+    });
+
+    Route::prefix('/academic/sessions/enrollments')->name('academic.sessions.enrollments.')->group(function () {
+        Route::get('/', [EnrollmentController::class, 'index'])->name('index');
+    });
+
+    Route::prefix('/course/enrollments')->name('enrollments.')->group(function () {
         Route::get('/search', [EnrollmentController::class, 'search'])->name('search');
     });
 
@@ -207,7 +230,7 @@ Route::middleware('auth')->group(function () {
 
     });
 
-    Route::prefix('fees/components')->name('fees.components.')->group(function () {
+    Route::prefix('/fees/components')->name('fees.components.')->group(function () {
         Route::get('/', [FeeComponentController::class, 'index'])->name('index');
         Route::get('/create', [FeeComponentController::class, 'create'])->name('create');
         Route::post('/', [FeeComponentController::class, 'store'])->name('store');
@@ -216,7 +239,7 @@ Route::middleware('auth')->group(function () {
         Route::delete('/{feeComponent}', [FeeComponentController::class, 'destroy'])->name('destroy');
     });
 
-    Route::prefix('fees/models')->name('fees.models.')->group(function () {
+    Route::prefix('/fees/models')->name('fees.models.')->group(function () {
         Route::get('/', [FeeModelController::class, 'index'])->name('index');
         Route::get('/create', [FeeModelController::class, 'create'])->name('create');
         Route::post('/', [FeeModelController::class, 'store'])->name('store');
@@ -226,15 +249,16 @@ Route::middleware('auth')->group(function () {
         Route::get('/search', [FeeModelController::class, 'search'])->name('search');
     });
 
-    Route::prefix('/fees/student-invoices')->name('fees.student-invoices.')->group(function () {
+    Route::prefix('/fees/students/invoices')->name('fees.students.invoices.')->group(function () {
         Route::get('/', [StudentInvoicesController::class, 'index'])->name('index');
-        Route::get('/create', [StudentInvoicesController::class, 'create'])->name('create');
         Route::post('/', [StudentInvoicesController::class, 'store'])->name('store');
+        Route::get('/create', [StudentInvoicesController::class, 'create'])->name('create');
+        Route::get('/search', [StudentInvoicesController::class, 'search'])->name('search'); // 👈 moved up
+
         Route::get('/{studentInvoice}', [StudentInvoicesController::class, 'show'])->name('show');
         Route::get('/{studentInvoice}/edit', [StudentInvoicesController::class, 'edit'])->name('edit');
         Route::put('/{studentInvoice}', [StudentInvoicesController::class, 'update'])->name('update');
         Route::delete('/{studentInvoice}', [StudentInvoicesController::class, 'destroy'])->name('destroy');
-        Route::get('/search', [StudentInvoicesController::class, 'search'])->name('search');
     });
 
     Route::prefix('/fees/adjustments')->name('fees.adjustments.')->group(function () {
@@ -270,7 +294,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/{refund}/fail', [RefundController::class, 'fail'])->name('fail');
     });
 
-    Route::prefix('fees/additional-charges')->name('fees.additional-charges.')->group(function () {
+    Route::prefix('/fees/additional-charges')->name('fees.additional.charges.')->group(function () {
         Route::get('/', [AdditionalChargeController::class, 'index'])->name('index');
         Route::get('/create', [AdditionalChargeController::class, 'create'])->name('create');
         Route::post('/', [AdditionalChargeController::class, 'store'])->name('store');
@@ -278,6 +302,19 @@ Route::middleware('auth')->group(function () {
         Route::put('/{additionalCharge}', [AdditionalChargeController::class, 'update'])->name('update');
         Route::delete('/{additionalCharge}', [AdditionalChargeController::class, 'destroy'])->name('destroy');
     });
+
+    Route::prefix('/academic/sessions/enrollments')->name('academic.sessions.enrollments.')
+        ->group(function () {
+            Route::get('/', [AcademicSessionEnrollmentController::class, 'index'])->name('index');
+            Route::get('/create', [AcademicSessionEnrollmentController::class, 'create'])->name('create');
+            Route::post('/', [AcademicSessionEnrollmentController::class, 'store'])->name('store');
+            Route::get('/search', [AcademicSessionEnrollmentController::class, 'search'])->name('search');
+            Route::get('/{academicSessionEnrollment}/edit', [AcademicSessionEnrollmentController::class, 'edit'])->name('edit');
+            Route::put('/{academicSessionEnrollment}', [AcademicSessionEnrollmentController::class, 'update'])->name('update');
+            Route::delete('/{academicSessionEnrollment}', [AcademicSessionEnrollmentController::class, 'destroy'])->name('destroy');
+        });
+
+    Route::get('/fees/statement', [FeesController::class, 'statement'])->name('fees.statement');
 
     Route::get('/academic/schedules', function () {
         return Inertia::render('Academic/Schedules');

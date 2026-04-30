@@ -25,10 +25,9 @@ const Edit = ({ unit }) => {
     const submit = (e) => {
         e.preventDefault();
 
-        put(route("units.update", u.id), {
+        put(route("units.update", encodeURIComponent(u.id)), {
             preserveState: true,
             preserveScroll: true,
-            onSuccess: () => router.visit(route("units.index")),
         });
     };
 
@@ -37,7 +36,9 @@ const Edit = ({ unit }) => {
             <Head title="Edit Unit" />
 
             <div className=" mx-auto w-full">
-                {/* FORM */}
+                <legend className=" text-white   border-b border-white/50  text-center py-2 bg-slate-400 rounded-t-lg w-full">
+                    Edit unit details
+                </legend>
                 <form
                     onSubmit={submit}
                     className="bg-white p-10 space-y-6 border rounded-lg"

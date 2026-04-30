@@ -22,7 +22,7 @@ class PermissionSeeder extends Seeder
             'users',
             'students',
             'staffs',
-            'exam_bodies',
+            'exam.bodies',
             'nextofkins',
             'fees',
             'payments',

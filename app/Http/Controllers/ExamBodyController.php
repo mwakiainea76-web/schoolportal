@@ -44,7 +44,7 @@ class ExamBodyController extends Controller
         $this->service->create($request->validated());
 
         return redirect()
-            ->route('exam-bodies.index')
+            ->route('exam.bodies.create')
             ->with('success', 'Exam body created successfully');
     }
 
@@ -67,7 +67,7 @@ class ExamBodyController extends Controller
         $this->service->update($exam_body, $request->validated());
 
         return redirect()
-            ->route('exam-bodies.edit', $exam_body->id)
+            ->route('exam.bodies.edit', $exam_body->id)
             ->with('success', 'Exam body updated successfully');
     }
 
@@ -77,12 +77,12 @@ class ExamBodyController extends Controller
 
         if (! $result['status']) {
             return redirect()
-                ->route('exam-bodies.index')
+                ->route('exam.bodies.index')
                 ->with('error', $result['message']);
         }
 
         return redirect()
-            ->route('exam-bodies.index')
+            ->route('exam.bodies.index')
             ->with('success', $result['message']);
     }
 

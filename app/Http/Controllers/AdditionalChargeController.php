@@ -57,7 +57,15 @@ class AdditionalChargeController extends Controller
     {
         $validated = $request->validated();
 
-        AdditionalCharge::create($validated);
+        AdditionalCharge::create(
+            [
+                'fee_model_id' => $request['fee_model_id'],
+                'name' => $request['name'],
+                'amount' => $request['amount'],
+                'frequency' => $request['frequency'],
+                'description' => $request['description'],
+            ]
+        );
 
         return redirect()
             ->route('fees.additional-charges.index')

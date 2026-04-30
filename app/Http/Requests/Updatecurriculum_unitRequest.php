@@ -22,9 +22,9 @@ class Updatecurriculum_unitRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'curriculum_id' => 'required|exists:curricula,id',
+            'course_curriculum_id' => 'required|exists:course_curriculum,id',
             'unit_id' => 'required|exists:units,id',
-            'module_taught' => 'required|string|max:255',
+            'module_taught' => 'required|integer|min:1|max:6',
         ];
     }
 }

@@ -8,7 +8,7 @@ export default function AcademicStep({
     data,
     setData,
     errors,
-    courses,
+    courseCurricula,
     isEdit = false,
 }) {
     const handleChange = (e) => setData(e.target.name, e.target.value);
@@ -30,12 +30,12 @@ export default function AcademicStep({
             <div>
                 <InputLabel value="Course" required />
                 <SearchSelect
-                    defaultOptions={courses}
-                    value={data.course_id}
-                    onChange={(m) => setData("course_id", m.id)}
-                    error={errors.course_id}
+                    defaultOptions={courseCurricula}
+                    value={data.course_curriculum_id}
+                    onChange={(m) => setData("course_curriculum_id", m.id)}
+                    error={errors.course_curriculum_id}
                 />
-                <InputError message={errors.course_id} />
+                <InputError message={errors.course_curriculum_id} />
             </div>
             <div>
                 <InputLabel value="Current Module" required />

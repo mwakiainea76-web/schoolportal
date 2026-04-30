@@ -47,7 +47,7 @@ const Edit = ({ exam_body }) => {
 
         if (!exam) return;
 
-        put(route("exam-bodies.update", encodeURIComponent(exam.id)), {
+        put(route("exam.bodies.update", encodeURIComponent(exam.id)), {
             preserveScroll: true,
             preserveState: true, // 🔥 CRITICAL: prevents form reset on validation failure
         });
@@ -115,7 +115,7 @@ const Edit = ({ exam_body }) => {
 
                         <div className="flex justify-between pt-4">
                             <Link
-                                href={route("exam-bodies.index")}
+                                href={route("exam.bodies.index")}
                                 className="px-4 py-2 bg-slate-400 text-white rounded hover:bg-slate-700"
                             >
                                 Cancel

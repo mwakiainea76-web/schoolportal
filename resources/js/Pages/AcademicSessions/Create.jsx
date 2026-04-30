@@ -25,6 +25,9 @@ export default function Create({ academic_years }) {
 
             <div className="max-w-4xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
                 <div className="bg-white rounded-lg border border-zinc-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden">
+                    <legend className=" text-white   border-b border-white/50  text-center py-2 bg-slate-400 rounded-t-lg w-full">
+                        Create new academic session
+                    </legend>
                     <form className="p-10 space-y-8" onSubmit={submit}>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div>

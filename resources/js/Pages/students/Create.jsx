@@ -28,7 +28,7 @@ const STEP_FIELDS = {
     ],
     2: [
         "previous_school",
-        "admission_date",
+        "course_curriculum_id",
         "current_module",
         "fee_discount_percentage",
     ],
@@ -42,7 +42,7 @@ const STEP_FIELDS = {
     ],
 };
 
-export default function CreateStudent({ courses }) {
+export default function CreateStudent({ courseCurricula }) {
     const [step, setStep] = useState(1);
     const [stepErrors, setStepErrors] = useState({});
     const [validating, setValidating] = useState(false);
@@ -64,8 +64,8 @@ export default function CreateStudent({ courses }) {
         medical_condition: "",
         // Academic
         previous_school: "",
-        course: "",
-        course_id: "",
+        course_curriculum_id: "",
+        current_module: "",
         fee_discount_percentage: "",
         // Kin
         kin_first_name: "",
@@ -188,7 +188,7 @@ export default function CreateStudent({ courses }) {
                             {step === 2 && (
                                 <AcademicStep
                                     data={data}
-                                    courses={courses}
+                                    courseCurricula={courseCurricula}
                                     setData={setData}
                                     errors={allErrors}
                                 />

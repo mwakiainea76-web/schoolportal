@@ -35,9 +35,26 @@ class Course extends Model
         return $this->belongsTo(CertificationLevel::class);
     }
 
+    public function courseCurricula()
+    {
+        return $this->hasMany(CourseCurriculum::class);
+    }
+
+    public function activeCourseCurriculum()
+    {
+        return $this->hasOne(CourseCurriculum::class)->where('is_active', true);
+    }
+
     public function curriculum()
     {
-        return $this->belongsTo(Curriculum::class);
+        return $this->hasOneThrough(
+            Curriculum::class,
+            CourseCurriculum::class,
+            'course_id',
+            'id',
+            'id',
+            'curriculum_id'
+        )->where('course_curriculum.is_active', true);
     }
 
     public function getDisplayNameAttribute(): string

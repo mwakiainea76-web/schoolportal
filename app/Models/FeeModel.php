@@ -18,7 +18,7 @@ class FeeModel extends Model
         'priority',
         'fee_template_id',
         'department_id',
-        'curricula_id',
+        'course_curriculum_id',
         'valid_from',
         'valid_until',
         'academic_session_id',
@@ -38,6 +38,7 @@ class FeeModel extends Model
     protected $appends = [
         'display_name',
         'is_valid',
+        'total_amount', // Add this to appends
     ];
 
     // ---------------- RELATIONSHIPS ----------------
@@ -52,9 +53,33 @@ class FeeModel extends Model
         return $this->belongsTo(Department::class);
     }
 
+    public function courseCurriculum()
+    {
+        return $this->belongsTo(CourseCurriculum::class);
+    }
+
     public function curriculum()
     {
-        return $this->belongsTo(Curriculum::class, 'curricula_id');
+        return $this->hasOneThrough(
+            Curriculum::class,
+            CourseCurriculum::class,
+            'id',
+            'id',
+            'course_curriculum_id',
+            'curriculum_id'
+        );
+    }
+
+    public function course()
+    {
+        return $this->hasOneThrough(
+            Course::class,
+            CourseCurriculum::class,
+            'id',
+            'id',
+            'course_curriculum_id',
+            'course_id'
+        );
     }
 
     public function academicSession()
@@ -95,10 +120,37 @@ class FeeModel extends Model
             ->where('department_id', $departmentId);
     }
 
-    public function scopeForCurriculum($query, $curriculumId)
+    public function scopeForCourseCurriculum($query, $courseCurriculumId)
     {
         return $query->where('scope', 'curriculum')
-            ->where('curricula_id', $curriculumId);
+            ->where('course_curriculum_id', $courseCurriculumId);
+    }
+
+    public function scopeForEnrollmentContext($query, Enrollment $enrollment)
+    {
+        $courseCurriculumId = $enrollment->courseEnrollment?->course_curriculum_id;
+        $departmentId = $enrollment->course?->department_id;
+        $academicSessionId = $enrollment->academic_session_id;
+
+        return $query
+            ->where('academic_session_id', $academicSessionId)
+            ->where(function ($scopedQuery) use ($courseCurriculumId, $departmentId) {
+                $scopedQuery->where('scope', 'global');
+
+                if ($departmentId) {
+                    $scopedQuery->orWhere(function ($departmentQuery) use ($departmentId) {
+                        $departmentQuery->where('scope', 'department')
+                            ->where('department_id', $departmentId);
+                    });
+                }
+
+                if ($courseCurriculumId) {
+                    $scopedQuery->orWhere(function ($curriculumQuery) use ($courseCurriculumId) {
+                        $curriculumQuery->where('scope', 'curriculum')
+                            ->where('course_curriculum_id', $courseCurriculumId);
+                    });
+                }
+            });
     }
 
     public function scopeValidForDate($query, $date = null)
@@ -126,24 +178,53 @@ class FeeModel extends Model
 
     // ---------------- ACCESSORS & MUTATORS ----------------
 
+    // App\Models\FeeModel.php
+
+    // 1. New Accessor for Total Amount
+    public function getTotalAmountAttribute(): float
+    {
+        // Sum from Template Components
+        $templateTotal = $this->template ? $this->template->components()->sum('amount') : 0;
+
+        // Sum from Additional Charges
+        $additionalTotal = $this->additionalCharges()->sum('amount');
+
+        return (float) ($templateTotal + $additionalTotal);
+    }
+
+    // 2. Updated Display Name Accessor
+    // App\Models\FeeModel.php
+
     public function getDisplayNameAttribute(): string
     {
         $name = $this->template ? $this->template->name : 'Unknown Template';
 
+        // Calculate total: Template Components + Additional Charges
+        $templateTotal = $this->template ? $this->template->components->sum('amount') : 0;
+        $additionalTotal = $this->additionalCharges->sum('amount');
+        $grandTotal = $templateTotal + $additionalTotal;
+
+        // Formatting the currency
+        $formattedTotal = 'Ksh '.number_format($grandTotal, 0);
+
+        $context = '';
         switch ($this->scope) {
             case 'global':
-                return $name.' (Global)';
+                $context = ' (Global)';
+                break;
             case 'department':
                 $deptName = $this->department ? $this->department->name : 'Unknown Department';
-
-                return $name.' ('.$deptName.')';
+                $context = " ($deptName)";
+                break;
             case 'curriculum':
                 $curriculumName = $this->curriculum ? $this->curriculum->name : 'Unknown Curriculum';
-
-                return $name.' ('.$curriculumName.')';
-            default:
-                return $name;
+                $courseName = $this->course ? $this->course->name : 'Unknown Course';
+                $context = " ($curriculumName - $courseName)";
+                break;
         }
+
+        // Final result: 2026 Base Fee Structure (Global) - Ksh 26,000
+        return "{$name}{$context} - {$formattedTotal}";
     }
 
     public function getIsValidAttribute(): bool

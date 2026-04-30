@@ -2,56 +2,72 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Curriculum extends Model
 {
-    /** @use HasFactory<\Database\Factories\CurriculumFactory> */
-    use HasFactory,SoftDeletes;
+    use SoftDeletes;
 
-    protected $table = 'curricula';
+    protected $table = 'curriculum';
 
     protected $fillable = [
         'name',
         'description',
-        'course_id',
-        'is_active',
-        'description',
         'start_date',
         'end_date',
+        'is_active',
+        'created_by',
+        'updated_by',
     ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
+        'start_date' => 'date',
+        'end_date' => 'date',
+    ];
+
+    public function createdBy()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function updatedBy()
+    {
+        return $this->belongsTo(User::class, 'updated_by');
+    }
+
+    public function courseCurricula()
+    {
+        return $this->hasMany(CourseCurriculum::class);
+    }
+
+    public function activeCourseCurriculum()
+    {
+        return $this->hasOne(CourseCurriculum::class)->where('is_active', true);
+    }
 
     public function course()
     {
-        return $this->belongsTo(Course::class);
-    }
-
-    // Access department through course
-    public function department()
-    {
         return $this->hasOneThrough(
-            Department::class,
             Course::class,
-            'id',           // Foreign key on courses table
-            'id',           // Foreign key on departments table
-            'course_id',    // Local key on curricula table
-            'department_id' // Local key on courses table
-        );
+            CourseCurriculum::class,
+            'curriculum_id',
+            'id',
+            'id',
+            'course_id'
+        )->where('course_curriculum.is_active', true);
     }
 
-    public function curriculumUnits()
+    public function courses()
     {
-        return $this->hasMany(curriculum_unit::class);
-    }
-
-    public function units()
-    {
-        return $this->belongsToMany(Unit::class, 'curriculum_units', 'curriculum_id', 'unit_id')
-            ->withPivot('module_taught')
+        return $this->belongsToMany(Course::class, 'course_curriculum')
+            ->withPivot(['is_active', 'description', 'created_by', 'updated_by'])
             ->withTimestamps();
     }
 
-    
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
 }

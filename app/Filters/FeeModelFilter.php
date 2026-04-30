@@ -68,7 +68,7 @@ class FeeModelFilter
     // ---------------- CURRICULUM FILTER ----------------
     protected function curriculum(Builder $query, int $curriculumId): void
     {
-        $query->where('curricula_id', $curriculumId);
+        $query->where('course_curriculum_id', $curriculumId);
     }
 
     // ---------------- ACADEMIC SESSION FILTER ----------------
@@ -115,8 +115,9 @@ class FeeModelFilter
                   ->orderBy('departments.name', $direction)
                   ->select('fee_models.*');
         } elseif ($field === 'curriculum_name') {
-            $query->leftJoin('curricula', 'fee_models.curricula_id', '=', 'curricula.id')
-                  ->orderBy('curricula.name', $direction)
+            $query->leftJoin('course_curriculum', 'fee_models.course_curriculum_id', '=', 'course_curriculum.id')
+                  ->leftJoin('curriculum', 'course_curriculum.curriculum_id', '=', 'curriculum.id')
+                  ->orderBy('curriculum.name', $direction)
                   ->select('fee_models.*');
         } else {
             $query->orderBy($field, $direction);

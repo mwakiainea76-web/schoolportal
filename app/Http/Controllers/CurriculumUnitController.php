@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\Storecurriculum_unitRequest;
 use App\Http\Requests\Updatecurriculum_unitRequest;
-use App\Models\Curriculum;
+use App\Models\CourseCurriculum;
 use App\Models\CurriculumUnit;
 use App\Models\Unit;
 use App\Services\CurriculumUnitService;
@@ -19,9 +19,13 @@ class CurriculumUnitController extends Controller
     {
         $curriculum_units = CurriculumUnit::with([
             'unit',
-            'curriculum.course',
+            'courseCurriculum.course',
+            'courseCurriculum.curriculum',
         ])
-            ->whereHas('curriculum.course', function ($query) {
+            ->whereHas('courseCurriculum', function ($query) {
+                $query->where('is_active', true);
+            })
+            ->whereHas('courseCurriculum.course', function ($query) {
                 $query->where('is_active', true);
             })
             ->latest()
@@ -34,17 +38,16 @@ class CurriculumUnitController extends Controller
 
     public function create()
     {
-        $curricula = Curriculum::query()
-            ->whereHas('course', function ($query) {
-                $query->where('is_active', true);
-            })
-            ->with('course')
-            ->orderBy('name')
-            ->get(['id', 'name', 'course_id'])
+        $curricula = CourseCurriculum::query()
+            ->active()
+            ->with(['course:id,name', 'curriculum:id,name'])
+            ->whereHas('course', fn ($query) => $query->where('is_active', true))
+            ->orderByDesc('id')
+            ->get()
             ->map(function ($curriculum) {
                 return [
                     'id' => $curriculum->id,
-                    'name' => $curriculum->name.' - '.$curriculum->course->name.'',
+                    'name' => $curriculum->curriculum->name.' - '.$curriculum->course->name,
                 ];
             });
 
@@ -70,20 +73,22 @@ class CurriculumUnitController extends Controller
     {
         $curriculum_unit->load([
             'unit',
-            'curriculum.course',
+            'courseCurriculum.course',
+            'courseCurriculum.curriculum',
         ]);
 
         return inertia('CurriculumUnits/Edit', [
             'curriculum_unit' => $curriculum_unit,
 
-            'curricula' => Curriculum::query()
+            'curricula' => CourseCurriculum::query()
+                ->active()
+                ->with(['course:id,name', 'curriculum:id,name'])
                 ->whereHas('course', fn ($q) => $q->where('is_active', true))
-                ->with('course')
-                ->orderBy('name')
-                ->get(['id', 'name', 'course_id'])
+                ->orderByDesc('id')
+                ->get()
                 ->map(fn ($c) => [
                     'id' => $c->id,
-                    'name' => $c->name.' ('.$c->course->name.')',
+                    'name' => $c->curriculum->name.' ('.$c->course->name.')',
                 ]),
 
             'units' => Unit::query()

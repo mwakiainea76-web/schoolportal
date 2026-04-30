@@ -33,7 +33,10 @@ export default function AddCertificationLevel({ examBodies }) {
             <Head title="Add Certification Level" />
 
             <div className="mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
-                <div className="bg-white rounded-[32px] border border-zinc-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden">
+                <div className="bg-white rounded-xl border border-zinc-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden">
+                    <div className="bg-slate-400 text-white text-center py-2 text-sm font-medium">
+                        Add certification level
+                    </div>
                     <form className="p-10 space-y-8" onSubmit={submit}>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 xl:grid-cols-3">
                             <div>

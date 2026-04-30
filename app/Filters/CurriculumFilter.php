@@ -9,7 +9,8 @@ class CurriculumFilter
     protected array $allowedSorts = [
         'id' => 'id',
         'name' => 'name',
-        'course' => 'course_id',
+        'start_date' => 'start_date',
+        'end_date' => 'end_date',
         'created' => 'created_at',
     ];
 
@@ -23,7 +24,8 @@ class CurriculumFilter
     protected function search(Builder $query, string $search): void
     {
         $query->where(function ($q) use ($search) {
-            $q->where('name', 'like', "%{$search}%");
+            $q->where('name', 'like', "%{$search}%")
+                ->orWhere('description', 'like', "%{$search}%");
         });
     }
 

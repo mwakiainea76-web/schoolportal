@@ -20,9 +20,19 @@ class Student extends Model
         'student_status',
     ];
 
+    public function courseEnrollments()
+    {
+        return $this->hasMany(CourseEnrollment::class);
+    }
+
     public function enrollments()
     {
-        return $this->hasMany(Enrollment::class);
+        return $this->hasManyThrough(
+            Enrollment::class,
+            CourseEnrollment::class,
+            'student_id',
+            'course_enrollment_id'
+        );
     }
 
     public function user()

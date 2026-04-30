@@ -5,14 +5,14 @@ namespace App\Http\Requests;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreEnrollmentRequest extends FormRequest
+class StoreAcademicSessionEnrollmentRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,8 +22,10 @@ class StoreEnrollmentRequest extends FormRequest
      */
     public function rules(): array
     {
+
         return [
-            //
+            'registration_number' => ['required', 'string', 'exists:students,registration_number'],
         ];
+
     }
 }

@@ -6,19 +6,12 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        Schema::create('enrollments', function (Blueprint $table) {
+        Schema::create('academic_session_enrollments', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('student_id')
-                ->constrained('students', 'id')
-                ->cascadeOnUpdate()
-                ->cascadeOnDelete();
-            $table->foreignId('curriculum_id')
-                ->constrained('curricula', 'id')
+            $table->foreignId('course_enrollment_id')
+                ->constrained('course_enrollments', 'id')
                 ->cascadeOnUpdate()
                 ->cascadeOnDelete();
             $table->foreignId('academic_session_id')
@@ -33,18 +26,15 @@ return new class extends Migration
                 'transferred',
                 'suspended',
             ])->default('active');
-            $table->date('enrollment_date');
-            $table->date('completion_date')->nullable();
-
+            $table->softDeletes();
             $table->timestamps();
+
+            $table->unique(['course_enrollment_id', 'academic_session_id'], 'academic_session_enrollments_unique_session');
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::dropIfExists('enrollments');
+        Schema::dropIfExists('academic_session_enrollments');
     }
 };

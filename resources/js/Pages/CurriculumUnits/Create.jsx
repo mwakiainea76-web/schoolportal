@@ -8,7 +8,7 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 
 export default function Create({ curricula, units }) {
     const { data, setData, post, processing, errors, reset } = useForm({
-        curriculum_id: "",
+        course_curriculum_id: "",
         unit_id: "",
         module_taught: "",
     });
@@ -37,21 +37,21 @@ export default function Create({ curricula, units }) {
                             {/* CURRICULUM SELECT (Filtered by Course) */}
                             <div>
                                 <InputLabel
-                                    htmlFor="curriculum_id"
-                                    value="Curriculum"
+                                    htmlFor="course_curriculum_id"
+                                    value="Course Curriculum"
                                 />
                                 <SearchSelect
-                                    routeName="curriculum.search"
+                                    routeName={null}
                                     defaultOptions={curricula}
-                                    placeholder="Search Curriculum..."
-                                    value={data.curriculum_id}
+                                    placeholder="Search Active Course Curriculum..."
+                                    value={data.course_curriculum_id}
                                     onChange={(curr) =>
-                                        setData("curriculum_id", curr.id)
+                                        setData("course_curriculum_id", curr.id)
                                     }
-                                    error={errors.curriculum_id}
+                                    error={errors.course_curriculum_id}
                                 />
                                 <InputError
-                                    message={errors.curriculum_id}
+                                    message={errors.course_curriculum_id}
                                     className="mt-2"
                                 />
                             </div>

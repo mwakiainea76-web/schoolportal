@@ -3,11 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Payment;
-use App\Models\Refund;
 use App\Models\StudentInvoices;
 use App\Http\Requests\StorePaymentRequest;
-use App\Models\StudentCredit;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class PaymentController extends Controller
@@ -17,7 +14,12 @@ class PaymentController extends Controller
      */
     public function index()
     {
-        $payments = Payment::with(['invoice.enrollment.student.user'])
+        $payments = Payment::with([
+            'invoice.enrollment.student.user',
+            'invoice.enrollment.academicSession',
+            'invoice.enrollment.courseEnrollment.courseCurriculum.course',
+            'invoice.enrollment.courseEnrollment.courseCurriculum.curriculum',
+        ])
             ->latest()
             ->paginate(10)
             ->withQueryString();
@@ -30,13 +32,18 @@ class PaymentController extends Controller
      */
     public function create()
     {
-        $invoices = StudentInvoices::with(['enrollment.student.user'])
+        $invoices = StudentInvoices::with([
+            'enrollment.student.user',
+            'enrollment.academicSession',
+            'enrollment.courseEnrollment.courseCurriculum.course',
+            'enrollment.courseEnrollment.courseCurriculum.curriculum',
+        ])
             ->latest()
             ->limit(20)
             ->get()
             ->map(fn ($i) => [
                 'id' => $i->id,
-                'name' => "Invoice #{$i->id} - " . ($i->enrollment->student->user->first_name ?? '') . ' ' . ($i->enrollment->student->user->last_name ?? '') . " (Bal: " . number_format($i->balance_remaining, 2) . ")",
+                'name' => "Invoice #{$i->id} - ".$i->enrollment?->display_name." (Bal: ".number_format($i->balance_remaining, 2).")",
             ]);
 
         return inertia('Fees/Payments/Create', compact('invoices'));
@@ -50,52 +57,7 @@ class PaymentController extends Controller
         DB::transaction(function () use ($request) {
             $payment = Payment::create($request->validated());
             $invoice = $payment->invoice;
-
-            // Check for overpayment and create credit if needed
-            if ($invoice->status === 'overpaid' && $invoice->overpayment_action === 'credit') {
-                $totalPaid = (float)$invoice->total_paid;
-                $adjusted = (float)$invoice->adjusted_amount;
-                $excess = $totalPaid - $adjusted;
-
-                // Check if we already have a pending credit for this source invoice
-                $existingCredit = StudentCredit::where('source_invoice_id', $invoice->id)
-                    ->where('status', 'pending')
-                    ->first();
-
-                if ($existingCredit) {
-                    $existingCredit->update(['amount' => $excess]);
-                } else {
-                    StudentCredit::create([
-                        'student_id' => $invoice->enrollment->student_id,
-                        'source_invoice_id' => $invoice->id,
-                        'amount' => $excess,
-                        'status' => 'pending',
-                    ]);
-                }
-            } elseif ($invoice->status === 'overpaid' && $invoice->overpayment_action === 'refund') {
-                $totalPaid = (float)$invoice->total_paid;
-                $adjusted = (float)$invoice->adjusted_amount;
-                $excess = $totalPaid - $adjusted;
-
-                // Check if we already have a pending refund for this invoice
-                $existingRefund = Refund::where('student_invoice_id', $invoice->id)
-                    ->where('status', 'pending')
-                    ->first();
-
-                if ($existingRefund) {
-                    $existingRefund->update(['amount' => $excess]);
-                } else {
-                    Refund::create([
-                        'student_invoice_id' => $invoice->id,
-                        'amount' => $excess,
-                        'reason' => "Overpayment on invoice #{$invoice->id}",
-                        'method' => $payment->method,
-                        'status' => 'pending',
-                        'raised_by' => auth()->id(),
-                        'raised_at' => now(),
-                    ]);
-                }
-            }
+            $invoice->syncOverpaymentArtifacts();
         });
 
         return redirect()
@@ -108,7 +70,12 @@ class PaymentController extends Controller
      */
     public function destroy(Payment $payment)
     {
-        $payment->delete();
+        DB::transaction(function () use ($payment) {
+            $invoice = $payment->invoice;
+            $payment->delete();
+            $invoice->refresh();
+            $invoice->syncOverpaymentArtifacts();
+        });
 
         return redirect()
             ->back()

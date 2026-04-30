@@ -14,13 +14,13 @@ class CurriculumUnit extends Model
 
     protected $fillable = [
         'module_taught',
-        'curriculum_id',
+        'course_curriculum_id',
         'unit_id',
     ];
 
-    public function curriculum()
+    public function courseCurriculum()
     {
-        return $this->belongsTo(Curriculum::class);
+        return $this->belongsTo(CourseCurriculum::class);
     }
 
     public function unit()

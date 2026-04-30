@@ -24,4 +24,18 @@ class FeeTemplate extends Model
     {
         return $query->where('is_active', true);
     }
+
+    // App\Models\FeeTemplate.php
+
+    public function getTotalAmountAttribute()
+    {
+        return $this->components()->sum('amount');
+    }
+
+    // App\Models\FeeTemplate.php
+
+    public function components()
+    {
+        return $this->hasMany(FeeComponent::class);
+    }
 }

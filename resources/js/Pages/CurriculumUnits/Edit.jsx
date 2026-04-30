@@ -6,15 +6,13 @@ import TextInput from "@/Components/TextInput";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import SearchSelect from "@/Components/SearchSelect";
 
-export default function EditCurriculumUnit({ curriculum_unit, units }) {
+export default function EditCurriculumUnit({ curriculum_unit, curricula, units }) {
     const hasInitialized = useRef(false);
 
     const { data, setData, put, processing, errors } = useForm({
-        curriculum_id: "",
+        course_curriculum_id: "",
         unit_id: "",
         module_taught: "",
-        start_date: "",
-        end_date: "",
     });
 
     // Populate on load (once only)
@@ -22,11 +20,9 @@ export default function EditCurriculumUnit({ curriculum_unit, units }) {
         if (!curriculum_unit || hasInitialized.current) return;
 
         setData({
-            curriculum_id: curriculum_unit.curriculum_id ?? "",
+            course_curriculum_id: curriculum_unit.course_curriculum_id ?? "",
             unit_id: curriculum_unit.unit_id ?? "",
             module_taught: curriculum_unit.module_taught ?? "",
-            start_date: curriculum_unit.start_date ?? "",
-            end_date: curriculum_unit.end_date ?? "",
         });
 
         hasInitialized.current = true;
@@ -50,11 +46,21 @@ export default function EditCurriculumUnit({ curriculum_unit, units }) {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             {/* CURRICULUM (read-only display like your style) */}
                             <div>
-                                <InputLabel value="Curriculum" />
-                                <TextInput
-                                    value={`${curriculum_unit.curriculum.name} - ${curriculum_unit.curriculum.course.name}`}
-                                    readOnly
-                                    className="cursor-not-allowed"
+                                <InputLabel value="Course Curriculum" />
+                                <SearchSelect
+                                    routeName={null}
+                                    defaultOptions={curricula}
+                                    value={data.course_curriculum_id}
+                                    selectedLabel={`${curriculum_unit.course_curriculum?.curriculum?.name} - ${curriculum_unit.course_curriculum?.course?.name}`}
+                                    placeholder="Search Active Course Curriculum..."
+                                    onChange={(item) =>
+                                        setData("course_curriculum_id", item.id)
+                                    }
+                                    error={errors.course_curriculum_id}
+                                />
+                                <InputError
+                                    message={errors.course_curriculum_id}
+                                    className="mt-2"
                                 />
                             </div>
 

@@ -14,6 +14,21 @@ import {
 
 export const NAV_ITEMS = [
     {
+        key: "departments",
+        label: "Departments",
+        icon: "department",
+        basePath: "/departments",
+        permissions: ["departments.view"],
+        children: [
+            {
+                routeName: "departments.index",
+                fallback: "/departments",
+                label: "Departments",
+                permission: "departments.view",
+            },
+        ],
+    },
+    {
         key: "exam-bodies",
         label: "Exam Bodies",
         icon: "book",
@@ -35,21 +50,6 @@ export const NAV_ITEMS = [
         ],
     },
     {
-        key: "departments",
-        label: "Departments",
-        icon: "department",
-        basePath: "/departments",
-        permissions: ["departments.view"],
-        children: [
-            {
-                routeName: "departments.index",
-                fallback: "/departments",
-                label: "Departments",
-                permission: "departments.view",
-            },
-        ],
-    },
-    {
         key: "courses",
         label: "Courses",
         icon: "courses",
@@ -63,10 +63,22 @@ export const NAV_ITEMS = [
                 permission: "courses.view",
             },
             {
+                routeName: "curriculum.index",
+                fallback: "/curriculum",
+                label: "Curriculum",
+                permission: "courses.curriculum.view",
+            },
+            {
                 routeName: "courses.curriculum.index",
                 fallback: "/courses/curriculum",
                 label: "Course Curriculum",
                 permission: "courses.curriculum.view",
+            },
+            {
+                routeName: "course.enrollments.index",
+                fallback: "/courses/enrollments",
+                label: "Course Enrollments",
+                permission: "students.view",
             },
         ],
     },
@@ -110,29 +122,90 @@ export const NAV_ITEMS = [
                 label: "Academic Sessions",
                 permission: "academic.sessions.view",
             },
+            {
+                routeName: "academic/sessions/enrollments.index",
+                fallback: "/academic/sessions/enrollments",
+                label: "Session Enrollments",
+                permission: "students.view",
+            },
         ],
     },
     {
-        key: "roles",
-        label: "Roles & Permissions",
-        icon: "roles",
-        basePath: "/roles",
-        permissions: ["roles.view"],
+        key: "fee",
+        label: "Finance",
+        icon: "finance",
+        basePath: "/fees",
+        permissions: ["students.view"],
         children: [
             {
-                routeName: "roles.index",
-                fallback: "/roles",
-                label: "Roles",
-                permission: "roles.view",
+                routeName: "fees.templates.index",
+                fallback: "/fees/templates",
+                label: "Fee template",
+                permission: "students.view",
             },
             {
-                routeName: "permissions.index",
-                fallback: "/permissions",
-                label: "Permissions",
-                permission: "permissions.view",
+                routeName: "fees.components.index",
+                fallback: "/fees/components",
+                label: "Fee component",
+                permission: "students.create",
+            },
+            {
+                routeName: "fees.models.index",
+                fallback: "/fees/models",
+                label: "Fee model",
+                permission: "students.create",
+            },
+            {
+                routeName: "fees.additional-charges.index",
+                fallback: "/fees/additional-charges",
+                label: "Additional fee charges",
+                permission: "students.create",
+            },
+            {
+                routeName: "fees.students.invoices.index",
+                fallback: "/fees/student/invoices",
+                label: "Student invoices",
+                permission: "students.view",
+            },
+            {
+                routeName: "fees.adjustments.index",
+                fallback: "/fees/adjustments",
+                label: "Fee adjustments",
+                permission: "students.view",
+            },
+            {
+                routeName: "fees.penalties.index",
+                fallback: "/fees/penalties",
+                label: "Penalties",
+                permission: "students.view",
+            },
+            {
+                routeName: "fees.payments.index",
+                fallback: "/fees/payments",
+                label: "Payments",
+                permission: "students.view",
+            },
+            {
+                routeName: "fees.student-credits.index",
+                fallback: "/fees/student-credits",
+                label: "Student credits",
+                permission: "students.view",
+            },
+            {
+                routeName: "fees.refunds.index",
+                fallback: "/fees/refunds",
+                label: "Refunds",
+                permission: "students.view",
+            },
+            {
+                routeName: "fees.statement",
+                fallback: "/fees/statement",
+                label: "Fee statement",
+                permission: "students.view",
             },
         ],
     },
+
     {
         key: "staffs",
         label: "Staffs",
@@ -175,72 +248,25 @@ export const NAV_ITEMS = [
             },
         ],
     },
+
     {
-        key: "fee",
-        label: "Finance",
-        icon: "finance",
-        basePath: "/fees",
-        permissions: ["students.view"],
+        key: "roles",
+        label: "Roles & Permissions",
+        icon: "roles",
+        basePath: "/roles",
+        permissions: ["roles.view"],
         children: [
             {
-                routeName: "fees.templates.index",
-                fallback: "/fees/templates",
-                label: "Fee template",
-                permission: "students.view",
+                routeName: "roles.index",
+                fallback: "/roles",
+                label: "Roles",
+                permission: "roles.view",
             },
             {
-                routeName: "fees.components.index",
-                fallback: "/fees/components",
-                label: "Fee component",
-                permission: "students.create",
-            },
-            {
-                routeName: "fees.models.index",
-                fallback: "/fees/models",
-                label: "Fee model",
-                permission: "students.create",
-            },
-            {
-                routeName: "fees.additional-charges.index",
-                fallback: "/fees/additional-charges",
-                label: "Additional fee charges",
-                permission: "students.create",
-            },
-            {
-                routeName: "fees.student-invoices.index",
-                fallback: "/fees/student-invoices",
-                label: "Student invoices",
-                permission: "students.view",
-            },
-            {
-                routeName: "fees.adjustments.index",
-                fallback: "/fees/adjustments",
-                label: "Fee adjustments",
-                permission: "students.view",
-            },
-            {
-                routeName: "fees.penalties.index",
-                fallback: "/fees/penalties",
-                label: "Penalties",
-                permission: "students.view",
-            },
-            {
-                routeName: "fees.payments.index",
-                fallback: "/fees/payments",
-                label: "Payments",
-                permission: "students.view",
-            },
-            {
-                routeName: "fees.student-credits.index",
-                fallback: "/fees/student-credits",
-                label: "Student credits",
-                permission: "students.view",
-            },
-            {
-                routeName: "fees.refunds.index",
-                fallback: "/fees/refunds",
-                label: "Refunds",
-                permission: "students.view",
+                routeName: "permissions.index",
+                fallback: "/permissions",
+                label: "Permissions",
+                permission: "permissions.view",
             },
         ],
     },
@@ -248,13 +274,13 @@ export const NAV_ITEMS = [
 
 export const ICONS = {
     dashboard: <LayoutDashboard className="w-5 h-5 shrink-0" />,
-    book: <BookOpen className="w-5 h-5 shrink-0" />,       // Exam Bodies
-    department: <Building2 className="w-5 h-5 shrink-0" />,      // Departments
-    courses: <BookMarked className="w-5 h-5 shrink-0" />,     // Courses (was FileText)
-    grid: <LayoutGrid className="w-5 h-5 shrink-0" />,     // Units (was Grid2X2)
-    academic: <CalendarRange className="w-5 h-5 shrink-0" />,  // Academic Calendar (was CalendarDays)
-    roles: <ShieldCheck className="w-5 h-5 shrink-0" />,    // Roles & Permissions
-    staff: <UserRound className="w-5 h-5 shrink-0" />,      // Staffs (was generic User)
-    students: <GraduationCap className="w-5 h-5 shrink-0" />,  // Students — distinct from staff
-    finance: <Wallet className="w-5 h-5 shrink-0" />,         // Finance (was User — wrong!)
+    book: <BookOpen className="w-5 h-5 shrink-0" />, // Exam Bodies
+    department: <Building2 className="w-5 h-5 shrink-0" />, // Departments
+    courses: <BookMarked className="w-5 h-5 shrink-0" />, // Courses (was FileText)
+    grid: <LayoutGrid className="w-5 h-5 shrink-0" />, // Units (was Grid2X2)
+    academic: <CalendarRange className="w-5 h-5 shrink-0" />, // Academic Calendar (was CalendarDays)
+    roles: <ShieldCheck className="w-5 h-5 shrink-0" />, // Roles & Permissions
+    staff: <UserRound className="w-5 h-5 shrink-0" />, // Staffs (was generic User)
+    students: <GraduationCap className="w-5 h-5 shrink-0" />, // Students — distinct from staff
+    finance: <Wallet className="w-5 h-5 shrink-0" />, // Finance (was User — wrong!)
 };

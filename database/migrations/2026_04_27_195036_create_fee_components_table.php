@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('type');
             $table->decimal('amount', 12, 2);
-            $table->enum('frequency', ['admission', 'always', 'session', 'year'])->default('session');
+            $table->enum('frequency', ['admission', 'recurring'])->default('recurring');
             $table->boolean('is_optional')->default(false);
             $table->integer('sort_order')->default(0);
             $table->softDeletes();

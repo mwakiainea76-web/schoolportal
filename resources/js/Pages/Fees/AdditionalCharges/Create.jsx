@@ -25,7 +25,7 @@ export default function Create({ feeModels }) {
     const submit = (e) => {
         e.preventDefault();
 
-        post(route("fees.additional-charges.store"), {
+        post(route("fees.additional.charges.store"), {
             preserveScroll: true,
         });
     };
@@ -137,7 +137,7 @@ export default function Create({ feeModels }) {
                     {/* ACTIONS */}
                     <div className="flex justify-between pt-6">
                         <Link
-                            href={route("fees.additional-charges.index")}
+                            href={route("fees.additional.charges.index")}
                             className="px-4 py-2 bg-slate-400 text-white rounded hover:bg-slate-700"
                         >
                             Cancel

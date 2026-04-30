@@ -5,7 +5,8 @@ namespace App\Http\Controllers;
 use App\Filters\StudentFilter;
 use App\Http\Requests\StoreStudentRequest;
 use App\Http\Requests\UpdateStudentRequest;
-use App\Models\Course;
+use App\Models\CourseCurriculum;
+use App\Models\CourseEnrollment;
 use App\Models\Student;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -48,7 +49,7 @@ class StudentController extends Controller
             ],
             2 => [
                 'previous_school' => ['required', 'string', 'max:255'],
-                'course_id' => ['required', 'exists:courses,id'],
+                'course_curriculum_id' => ['required', 'exists:course_curriculum,id'],
                 'current_module' => ['required', 'string'],
                 'fee_discount_percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
             ],
@@ -113,17 +114,24 @@ class StudentController extends Controller
 
     public function create()
     {
-        $courses = Course::query()
+        $courseCurricula = CourseCurriculum::query()
             ->active()
-            ->with('certificationLevel:id,name')
-            ->orderBy('name')
-            ->get(['id', 'code', 'name', 'certification_level_id'])
-            ->map(fn ($course) => [
-                'id' => $course->id,
-                'name' => $course->display_name,
+            ->with([
+                'curriculum:id,name',
+                'course:id,name,certification_level_id',
+                'course.certificationLevel:id,name',
+            ])
+            ->whereHas('course', fn ($query) => $query->where('is_active', true))
+            ->orderByDesc('id')
+            ->get()
+            ->map(fn ($c) => [
+                'id' => $c->id,
+                'name' => $c->curriculum->name.' - '.$c->course->display_name,
             ]);
 
-        return inertia('students/Create', compact('courses'));
+        return inertia('students/Create', [
+            'courseCurricula' => $courseCurricula,
+        ]);
     }
 
     // ----------------------------------------------------------------
@@ -170,7 +178,7 @@ class StudentController extends Controller
                 'Failed to generate a unique registration number.'
             );
 
-            Student::create([
+            $student = Student::create([
                 'user_id' => $user->id,
                 'registration_number' => $registrationNumber,
                 'previous_school' => $request->previous_school,
@@ -178,6 +186,11 @@ class StudentController extends Controller
                 'current_module' => $request->current_module ?? 1,
                 'admission_date' => now(),
                 'student_status' => 'active',
+            ]);
+
+            CourseEnrollment::create([
+                'student_id' => $student->id,
+                'course_curriculum_id' => $request->course_curriculum_id,
             ]);
 
             $user->nextOfKin()->create([
@@ -272,14 +285,14 @@ class StudentController extends Controller
             ->where('registration_number', 'like', "%{$q}%")
             ->orWhereHas('user', function ($query) use ($q) {
                 $query->where('first_name', 'like', "%{$q}%")
-                      ->orWhere('last_name', 'like', "%{$q}%")
-                      ->orWhere('email', 'like', "%{$q}%");
+                    ->orWhere('last_name', 'like', "%{$q}%")
+                    ->orWhere('email', 'like', "%{$q}%");
             })
             ->limit(10)
             ->get()
             ->map(fn ($s) => [
                 'id' => $s->id,
-                'name' => ($s->user->first_name ?? '') . ' ' . ($s->user->last_name ?? '') . ' (' . ($s->registration_number ?? 'N/A') . ')',
+                'name' => ($s->user->first_name ?? '').' '.($s->user->last_name ?? '').' ('.($s->registration_number ?? 'N/A').')',
             ]);
     }
 }

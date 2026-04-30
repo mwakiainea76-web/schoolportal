@@ -86,7 +86,7 @@ export default function AdditionalChargesIndex({
     const handleDelete = (id) => {
         if (!confirm("Delete this additional charge?")) return;
 
-        router.delete(route("fees.additional-charges.destroy", id), {
+        router.delete(route("fees.additional.charges.destroy", id), {
             preserveState: true,
             replace: true,
         });
@@ -115,7 +115,7 @@ export default function AdditionalChargesIndex({
             <div className="mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
                 {/* CREATE */}
                 <Link
-                    href={route("fees.additional-charges.create")}
+                    href={route("fees.additional.charges.create")}
                     className="mb-4 px-4 py-1 bg-slate-400 text-white rounded hover:bg-slate-700 inline-block"
                 >
                     Add Additional Charge
@@ -285,7 +285,7 @@ export default function AdditionalChargesIndex({
                                         <div className="flex justify-center gap-x-6">
                                             <Link
                                                 href={route(
-                                                    "fees.additional-charges.edit",
+                                                    "fees.additional.charges.edit",
                                                     encodeURIComponent(
                                                         charge.id,
                                                     ),

@@ -68,6 +68,16 @@ class StudentInvoices extends Model
         return $this->hasMany(Penalty::class, 'student_invoice_id');
     }
 
+    public function refunds()
+    {
+        return $this->hasMany(Refund::class, 'student_invoice_id');
+    }
+
+    public function credits()
+    {
+        return $this->hasMany(StudentCredit::class, 'source_invoice_id');
+    }
+
     // Helper relation to get student through enrollment
     public function student()
     {
@@ -77,7 +87,7 @@ class StudentInvoices extends Model
             'id',
             'id',
             'enrollment_id',
-            'student_id'
+            'course_enrollment_id'
         );
     }
 
@@ -95,7 +105,7 @@ class StudentInvoices extends Model
                 $q->whereRaw('(SELECT COALESCE(SUM(amount), 0) FROM payments WHERE student_invoice_id = student_invoices.id AND deleted_at IS NULL) >= adjusted_amount');
             } elseif ($status === 'partial') {
                 $q->whereRaw('(SELECT COALESCE(SUM(amount), 0) FROM payments WHERE student_invoice_id = student_invoices.id AND deleted_at IS NULL) > 0')
-                  ->whereRaw('(SELECT COALESCE(SUM(amount), 0) FROM payments WHERE student_invoice_id = student_invoices.id AND deleted_at IS NULL) < adjusted_amount');
+                    ->whereRaw('(SELECT COALESCE(SUM(amount), 0) FROM payments WHERE student_invoice_id = student_invoices.id AND deleted_at IS NULL) < adjusted_amount');
             } elseif ($status === 'overpaid') {
                 $q->whereRaw('(SELECT COALESCE(SUM(amount), 0) FROM payments WHERE student_invoice_id = student_invoices.id AND deleted_at IS NULL) > adjusted_amount');
             } elseif ($status === 'unpaid') {
@@ -107,7 +117,7 @@ class StudentInvoices extends Model
     public function scopeOverdue($query)
     {
         return $query->where('due_date', '<', now()->toDateString())
-                     ->whereRaw('(SELECT COALESCE(SUM(amount), 0) FROM payments WHERE student_invoice_id = student_invoices.id AND deleted_at IS NULL) < adjusted_amount');
+            ->whereRaw('(SELECT COALESCE(SUM(amount), 0) FROM payments WHERE student_invoice_id = student_invoices.id AND deleted_at IS NULL) < adjusted_amount');
     }
 
     public function scopeForEnrollment($query, $enrollmentId)
@@ -130,13 +140,13 @@ class StudentInvoices extends Model
 
     public function getBalanceRemainingAttribute()
     {
-        return max(0, (float)$this->adjusted_amount - (float)$this->total_paid);
+        return max(0, (float) $this->adjusted_amount - (float) $this->getSettledAmount());
     }
 
     public function getStatusAttribute()
     {
-        $totalPaid = (float)$this->total_paid;
-        $adjustedAmount = (float)$this->adjusted_amount;
+        $totalPaid = (float) $this->getSettledAmount();
+        $adjustedAmount = (float) $this->adjusted_amount;
 
         if ($totalPaid == 0) {
             return 'unpaid';
@@ -151,7 +161,7 @@ class StudentInvoices extends Model
 
     public function getIsOverdueAttribute()
     {
-        if (!$this->due_date) {
+        if (! $this->due_date) {
             return false;
         }
 
@@ -163,7 +173,7 @@ class StudentInvoices extends Model
      */
     public function calculateAdjustedAmount(): float
     {
-        $gross = (float)$this->gross_amount;
+        $gross = (float) $this->gross_amount;
         $totalPercentageAdjustment = 0;
         $totalFixedAdjustment = 0;
         $totalPenalties = 0;
@@ -171,15 +181,15 @@ class StudentInvoices extends Model
         foreach ($this->adjustments as $adjustment) {
             if ($adjustment->type === 'percentage') {
                 // Percentage adjustments apply to gross_amount first
-                $totalPercentageAdjustment += ($gross * (float)$adjustment->value) / 100;
+                $totalPercentageAdjustment += ($gross * (float) $adjustment->value) / 100;
             } else {
                 // Fixed adjustments are applied after
-                $totalFixedAdjustment += (float)$adjustment->value;
+                $totalFixedAdjustment += (float) $adjustment->value;
             }
         }
 
         foreach ($this->penalties as $penalty) {
-            $totalPenalties += (float)$penalty->amount;
+            $totalPenalties += (float) $penalty->amount;
         }
 
         return $gross + $totalPercentageAdjustment + $totalFixedAdjustment + $totalPenalties;
@@ -191,8 +201,11 @@ class StudentInvoices extends Model
     public function syncAdjustedAmount(): void
     {
         $this->update([
-            'adjusted_amount' => $this->calculateAdjustedAmount()
+            'adjusted_amount' => $this->calculateAdjustedAmount(),
         ]);
+
+        $this->refresh();
+        $this->syncOverpaymentArtifacts();
     }
 
     // ---------------- HELPER METHODS ----------------
@@ -219,7 +232,7 @@ class StudentInvoices extends Model
 
     public function getStatusBadgeClass(): string
     {
-        return match($this->status) {
+        return match ($this->status) {
             'paid' => 'bg-green-100 text-green-800',
             'partial' => 'bg-yellow-100 text-yellow-800',
             'overpaid' => 'bg-blue-100 text-blue-800',
@@ -231,10 +244,103 @@ class StudentInvoices extends Model
     public function addPayment($amount, $paymentMethod, $reference = null, $notes = null)
     {
         return $this->payments()->create([
-            'amount' => $amount,
-            'payment_method' => $paymentMethod,
+            'amount_paid' => $amount,
+            'method' => $paymentMethod,
             'reference' => $reference,
             'notes' => $notes,
         ]);
+    }
+
+    public function getSettledAmount(): float
+    {
+        return (float) $this->total_paid + (float) $this->credit_balance;
+    }
+
+    public function getExcessAmount(): float
+    {
+        return max(0, round($this->getSettledAmount() - (float) $this->adjusted_amount, 2));
+    }
+
+    public function syncOverpaymentArtifacts(): void
+    {
+        $this->loadMissing('enrollment');
+
+        $availableCredit = StudentCredit::where('source_invoice_id', $this->id)
+            ->where('status', 'available')
+            ->first();
+
+        $pendingRefund = Refund::where('student_invoice_id', $this->id)
+            ->where('status', 'pending')
+            ->first();
+
+        $excess = $this->getExcessAmount();
+
+        if ($excess <= 0 || $this->overpayment_action === 'pending') {
+            if ($availableCredit && ! $availableCredit->applied_invoice_id) {
+                $availableCredit->delete();
+            }
+
+            if ($pendingRefund) {
+                $pendingRefund->delete();
+            }
+
+            return;
+        }
+
+        if ($this->overpayment_action === 'credit') {
+            if ($pendingRefund) {
+                $pendingRefund->delete();
+            }
+
+            if ($availableCredit) {
+                $availableCredit->update(['amount' => $excess]);
+            } else {
+                StudentCredit::create([
+                    'student_id' => $this->enrollment?->student_id,
+                    'source_invoice_id' => $this->id,
+                    'amount' => $excess,
+                    'status' => 'available',
+                ]);
+            }
+
+            return;
+        }
+
+        if ($this->overpayment_action === 'refund') {
+            if ($availableCredit && ! $availableCredit->applied_invoice_id) {
+                $availableCredit->delete();
+            }
+
+            $method = $this->payments()->latest('paid_at')->value('method') ?? 'cash';
+
+            if ($pendingRefund) {
+                $pendingRefund->update([
+                    'amount' => $excess,
+                    'method' => $method,
+                ]);
+            } else {
+                Refund::create([
+                    'student_invoice_id' => $this->id,
+                    'amount' => $excess,
+                    'reason' => "Overpayment on invoice #{$this->id}",
+                    'method' => $method,
+                    'status' => 'pending',
+                    'raised_by' => auth()->id(),
+                    'raised_at' => now(),
+                ]);
+            }
+        }
+    }
+
+    // app/Models/StudentInvoices.php
+
+    public function feeAdjustments()
+    {
+        return $this->hasMany(FeeAdjustment::class, 'student_invoice_id');
+    }
+
+    public function refund()
+    {
+        return $this->hasOne(Refund::class, 'student_invoice_id');
     }
 }

@@ -25,7 +25,7 @@ return new class extends Migration
                 ->constrained('student_invoices', 'id')
                 ->nullOnDelete();
             $table->decimal('amount', 12, 2);
-            $table->enum('status', ['pending', 'applied'])->default('pending');
+            $table->enum('status', ['available', 'applied'])->default('available');
             $table->timestamp('applied_at')->nullable();
             $table->softDeletes();
             $table->timestamps();

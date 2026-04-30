@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('student_invoices', function (Blueprint $table) {
             $table->id();
             $table->foreignId('enrollment_id')
-                ->constrained('enrollments', 'id')
+                ->constrained('academic_session_enrollments', 'id')
                 ->cascadeOnDelete();
             $table->foreignId('fee_model_id')
                 ->constrained('fee_models', 'id')
@@ -23,6 +23,7 @@ return new class extends Migration
             $table->decimal('adjusted_amount', 12, 2);
             $table->decimal('credit_balance', 12, 2)->default(0);
             $table->enum('overpayment_action', ['credit', 'refund', 'pending'])->default('credit');
+            $table->enum('status', ['draft', 'issued', 'cancelled'])->default('draft');
             $table->date('due_date')->nullable();
             $table->softDeletes();
 

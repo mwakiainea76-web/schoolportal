@@ -12,15 +12,14 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 export default function Create({
     templates,
     departments,
-    curricula,
+    courseCurricula,
     academicSessions,
 }) {
     const { data, setData, post, processing, errors } = useForm({
         fee_template_id: "",
-        scope: "global",
-        priority: "60",
+        scope: "",
         department_id: "",
-        curricula_id: "",
+        course_curriculum_id: "",
         academic_session_id: "",
         valid_from: "",
         valid_until: "",
@@ -40,21 +39,15 @@ export default function Create({
     };
 
     const scopeOptions = [
-        { value: "global", label: "Global - Applies to all students" },
+        { id: "global", name: "Global - Applies to all students" },
         {
-            value: "department",
-            label: "Department - Applies to specific department",
+            id: "department",
+            name: "Department - Applies to specific department",
         },
         {
-            value: "curriculum",
-            label: "Curriculum - Applies to specific curriculum",
+            id: "curriculum",
+            name: "Curriculum - Applies to specific curriculum",
         },
-    ];
-
-    const priorityOptions = [
-        { value: "60", label: "Low Priority (60)" },
-        { value: "70", label: "Medium Priority (70)" },
-        { value: "80", label: "High Priority (80)" },
     ];
 
     return (
@@ -66,158 +59,116 @@ export default function Create({
                     onSubmit={submit}
                     className="bg-white p-10 space-y-6 border rounded-lg"
                 >
-                    {/* FORM GRID */}
-                    <div className="space-y-6">
-                        {/* BASIC INFO */}
-                        <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
-                            <div>
-                                <InputLabel value="Fee Template" required />
-                                <SearchSelect
-                                    routeName="fee-templates.search"
-                                    defaultOptions={templates}
-                                    placeholder="Search fee templates..."
-                                    value={data.fee_template_id}
-                                    onChange={(template) =>
-                                        setData("fee_template_id", template.id)
-                                    }
-                                    error={errors.fee_template_id}
-                                />
-                                <InputError message={errors.fee_template_id} />
-                            </div>
-
-                            <div>
-                                <InputLabel value="Academic Session" required />
-                                <SearchSelect
-                                    routeName="academic.sessions.search"
-                                    defaultOptions={academicSessions}
-                                    placeholder="Search academic sessions..."
-                                    value={data.academic_session_id}
-                                    onChange={(session) =>
-                                        setData(
-                                            "academic_session_id",
-                                            session.id,
-                                        )
-                                    }
-                                    error={errors.academic_session_id}
-                                />
-                                <InputError
-                                    message={errors.academic_session_id}
-                                />
-                            </div>
+                    <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
+                        <div>
+                            <InputLabel value="Fee Template" required />
+                            <SearchSelect
+                                routeName="fees.templates.search"
+                                defaultOptions={templates}
+                                placeholder="Search fee templates..."
+                                value={data.fee_template_id}
+                                onChange={(template) =>
+                                    setData("fee_template_id", template.id)
+                                }
+                                error={errors.fee_template_id}
+                            />
+                            <InputError message={errors.fee_template_id} />
                         </div>
 
-                        {/* SCOPE & PRIORITY */}
-                        <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
-                            <div>
-                                <InputLabel value="Scope" required />
-                                <select
-                                    name="scope"
-                                    value={data.scope}
-                                    onChange={handleChange}
-                                    className="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-                                >
-                                    {scopeOptions.map((option) => (
-                                        <option
-                                            key={option.value}
-                                            value={option.value}
-                                        >
-                                            {option.label}
-                                        </option>
-                                    ))}
-                                </select>
-                                <InputError message={errors.scope} />
-                            </div>
+                        <div>
+                            <InputLabel value="Academic Session" required />
+                            <SearchSelect
+                                routeName="academic.sessions.search"
+                                defaultOptions={academicSessions}
+                                placeholder="Search academic sessions..."
+                                value={data.academic_session_id}
+                                onChange={(session) =>
+                                    setData("academic_session_id", session.id)
+                                }
+                                error={errors.academic_session_id}
+                            />
+                            <InputError message={errors.academic_session_id} />
+                        </div>
 
-                            <div>
-                                <InputLabel value="Priority" required />
-                                <select
-                                    name="priority"
-                                    value={data.priority}
-                                    onChange={handleChange}
-                                    className="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-                                >
-                                    {priorityOptions.map((option) => (
-                                        <option
-                                            key={option.value}
-                                            value={option.value}
-                                        >
-                                            {option.label}
-                                        </option>
-                                    ))}
-                                </select>
-                                <InputError message={errors.priority} />
-                            </div>
+                        <div>
+                            <InputLabel value="Scope" required />
+                            <SearchSelect
+                                defaultOptions={scopeOptions}
+                                placeholder="Search scope..."
+                                value={data.scope}
+                                onChange={(opt) => setData("scope", opt.id)}
+                                error={errors.scope_id}
+                            />
+                            <InputError message={errors.scope_id} />
                         </div>
 
                         {/* CONDITIONAL FIELDS BASED ON SCOPE */}
                         {data.scope === "department" && (
-                            <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
-                                <div>
-                                    <InputLabel value="Department" required />
-                                    <SearchSelect
-                                        routeName="departments.search"
-                                        defaultOptions={departments}
-                                        placeholder="Search departments..."
-                                        value={data.department_id}
-                                        onChange={(dept) =>
-                                            setData("department_id", dept.id)
-                                        }
-                                        error={errors.department_id}
-                                    />
-                                    <InputError
-                                        message={errors.department_id}
-                                    />
-                                </div>
+                            <div>
+                                <InputLabel value="Department" required />
+                                <SearchSelect
+                                    routeName="departments.search"
+                                    defaultOptions={departments}
+                                    placeholder="Search departments..."
+                                    value={data.department_id}
+                                    onChange={(dept) =>
+                                        setData("department_id", dept.id)
+                                    }
+                                    error={errors.department_id}
+                                />
+                                <InputError message={errors.department_id} />
                             </div>
                         )}
 
                         {data.scope === "curriculum" && (
-                            <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
-                                <div>
-                                    <InputLabel value="Curriculum" required />
-                                    <SearchSelect
-                                        routeName="courses.curriculum.search"
-                                        defaultOptions={curricula}
-                                        placeholder="Search curricula..."
-                                        value={data.curricula_id}
-                                        onChange={(curr) =>
-                                            setData("curricula_id", curr.id)
-                                        }
-                                        error={errors.curricula_id}
-                                    />
-                                    <InputError message={errors.curricula_id} />
-                                </div>
+                            <div>
+                                <InputLabel
+                                    value="Course Curriculum"
+                                    required
+                                />
+                                <SearchSelect
+                                    routeName={null}
+                                    defaultOptions={courseCurricula}
+                                    placeholder="Search active course curricula..."
+                                    value={data.course_curriculum_id}
+                                    onChange={(curr) =>
+                                        setData("course_curriculum_id", curr.id)
+                                    }
+                                    error={errors.course_curriculum_id}
+                                />
+                                <InputError
+                                    message={errors.course_curriculum_id}
+                                />
                             </div>
                         )}
 
                         {/* VALIDITY DATES */}
-                        <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
-                            <div>
-                                <InputLabel value="Valid From" required />
-                                <TextInput
-                                    type="date"
-                                    name="valid_from"
-                                    value={data.valid_from}
-                                    onChange={handleChange}
-                                    error={errors.valid_from}
-                                />
-                                <InputError message={errors.valid_from} />
-                            </div>
 
-                            <div>
-                                <InputLabel value="Valid Until (Optional)" />
-                                <TextInput
-                                    type="date"
-                                    name="valid_until"
-                                    value={data.valid_until}
-                                    onChange={handleChange}
-                                    error={errors.valid_until}
-                                />
-                                <InputError message={errors.valid_until} />
-                                <p className="text-sm text-gray-500 mt-1">
-                                    Leave empty for no expiration date
-                                </p>
-                            </div>
+                        <div>
+                            <InputLabel value="Valid From" required />
+                            <TextInput
+                                type="date"
+                                name="valid_from"
+                                value={data.valid_from}
+                                onChange={handleChange}
+                                error={errors.valid_from}
+                            />
+                            <InputError message={errors.valid_from} />
+                        </div>
+
+                        <div>
+                            <InputLabel value="Valid Until (Optional)" />
+                            <TextInput
+                                type="date"
+                                name="valid_until"
+                                value={data.valid_until}
+                                onChange={handleChange}
+                                error={errors.valid_until}
+                            />
+                            <InputError message={errors.valid_until} />
+                            <p className="text-sm text-gray-500 mt-1">
+                                Leave empty for no expiration date
+                            </p>
                         </div>
 
                         {/* STATUS */}

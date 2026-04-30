@@ -16,7 +16,7 @@ export default function AddExamBody() {
 
     const submit = (e) => {
         e.preventDefault();
-        post(route("exam-bodies.store"), {
+        post(route("exam.bodies.store"), {
             preserveScroll: true,
             onSuccess: () => reset(),
         });
@@ -83,7 +83,7 @@ export default function AddExamBody() {
 
                         <div className="flex justify-between pt-2">
                             <Link
-                                href={route("exam-bodies.index")}
+                                href={route("exam.bodies.index")}
                                 className="px-5 py-2 bg-zinc-400 text-white rounded-lg text-sm hover:bg-zinc-500 transition"
                             >
                                 Cancel

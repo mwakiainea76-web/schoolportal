@@ -12,7 +12,14 @@ class RefundController extends Controller
      */
     public function index()
     {
-        $refunds = Refund::with(['invoice.enrollment.student.user', 'raisedByUser', 'processedByUser'])
+        $refunds = Refund::with([
+            'invoice.enrollment.student.user',
+            'invoice.enrollment.academicSession',
+            'invoice.enrollment.courseEnrollment.courseCurriculum.course',
+            'invoice.enrollment.courseEnrollment.courseCurriculum.curriculum',
+            'raisedByUser',
+            'processedByUser',
+        ])
             ->latest()
             ->paginate(10)
             ->withQueryString();

@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('curriculum_units', function (Blueprint $table) {
             $table->id();
             $table->unsignedSmallInteger('module_taught');
-            $table->foreignId('curriculum_id')
-                ->constrained('curricula', 'id')
+            $table->foreignId('course_curriculum_id')
+                ->constrained('course_curriculum', 'id')
                 ->cascadeOnDelete()
                 ->cascadeOnUpdate();
             $table->foreignId('unit_id')

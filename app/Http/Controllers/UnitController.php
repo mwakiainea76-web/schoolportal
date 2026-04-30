@@ -70,7 +70,7 @@ class UnitController extends Controller
         $this->service->update($unit, $request->validated());
 
         return redirect()
-            ->route('units.edit', $unit->code)
+            ->route('units.edit', $unit->id)
             ->with('success', 'Unit updated successfully.');
     }
 

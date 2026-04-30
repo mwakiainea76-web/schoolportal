@@ -8,7 +8,7 @@ import TextArea from "@/Components/TextArea";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 
 const Create = () => {
-    const { data, setData, post, processing, errors } = useForm({
+    const { data, setData, post, processing, errors, reset } = useForm({
         code: "",
         name: "",
         description: "",
@@ -23,7 +23,7 @@ const Create = () => {
         post(route("units.store"), {
             preserveState: true,
             preserveScroll: true,
-            onSuccess: () => router.visit(route("units.index")),
+            onSuccess: () => reset(),
         });
     };
 
@@ -31,8 +31,10 @@ const Create = () => {
         <AuthenticatedLayout>
             <Head title="Create Unit" />
 
-            <div className="mx-auto w-full">
-                {/* FORM */}
+            <div className="mx-auto w-full rounded-lg">
+                <legend className=" text-white   border-b border-white/50  text-center py-2 bg-slate-400 rounded-t-lg w-full">
+                    Add unit
+                </legend>
                 <form
                     onSubmit={submit}
                     className="bg-white p-10 space-y-6 border rounded-lg"

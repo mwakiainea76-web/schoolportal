@@ -13,7 +13,7 @@ export default function Edit({
     feeModel,
     templates,
     departments,
-    curricula,
+    courseCurricula,
     academicSessions,
 }) {
     const { data, setData, put, processing, errors } = useForm({
@@ -21,7 +21,7 @@ export default function Edit({
         scope: feeModel.scope || "global",
         priority: feeModel.priority || "60",
         department_id: feeModel.department_id || "",
-        curricula_id: feeModel.curricula_id || "",
+        course_curriculum_id: feeModel.course_curriculum_id || "",
         academic_session_id: feeModel.academic_session_id || "",
         valid_from: feeModel.valid_from || "",
         valid_until: feeModel.valid_until || "",
@@ -41,21 +41,15 @@ export default function Edit({
     };
 
     const scopeOptions = [
-        { value: "global", label: "Global - Applies to all students" },
+        { id: "global", name: "Global - Applies to all students" },
         {
-            value: "department",
-            label: "Department - Applies to specific department",
+            id: "department",
+            name: "Department - Applies to specific department",
         },
         {
-            value: "curriculum",
-            label: "Curriculum - Applies to specific curriculum",
+            id: "curriculum",
+            name: "Curriculum - Applies to specific curriculum",
         },
-    ];
-
-    const priorityOptions = [
-        { value: "60", label: "Low Priority (60)" },
-        { value: "70", label: "Medium Priority (70)" },
-        { value: "80", label: "High Priority (80)" },
     ];
 
     return (
@@ -74,7 +68,7 @@ export default function Edit({
                             <div>
                                 <InputLabel value="Fee Template" required />
                                 <SearchSelect
-                                    routeName="fee-templates.search"
+                                    routeName="fees.templates.search"
                                     defaultOptions={templates}
                                     placeholder="Search fee templates..."
                                     value={data.fee_template_id}
@@ -105,54 +99,23 @@ export default function Edit({
                                     message={errors.academic_session_id}
                                 />
                             </div>
-                        </div>
 
-                        {/* SCOPE & PRIORITY */}
-                        <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
                             <div>
-                                <InputLabel value="Scope" required />
-                                <select
-                                    name="scope"
+                                <InputLabel value="Academic Session" required />
+                                <SearchSelect
+                                    defaultOptions={scopeOptions}
+                                    placeholder="Search scope..."
                                     value={data.scope}
-                                    onChange={handleChange}
-                                    className="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-                                >
-                                    {scopeOptions.map((option) => (
-                                        <option
-                                            key={option.value}
-                                            value={option.value}
-                                        >
-                                            {option.label}
-                                        </option>
-                                    ))}
-                                </select>
+                                    onChange={(scope) =>
+                                        setData("scope", scope.id)
+                                    }
+                                    error={errors.scope}
+                                />
                                 <InputError message={errors.scope} />
                             </div>
 
-                            <div>
-                                <InputLabel value="Priority" required />
-                                <select
-                                    name="priority"
-                                    value={data.priority}
-                                    onChange={handleChange}
-                                    className="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-                                >
-                                    {priorityOptions.map((option) => (
-                                        <option
-                                            key={option.value}
-                                            value={option.value}
-                                        >
-                                            {option.label}
-                                        </option>
-                                    ))}
-                                </select>
-                                <InputError message={errors.priority} />
-                            </div>
-                        </div>
-
-                        {/* CONDITIONAL FIELDS BASED ON SCOPE */}
-                        {data.scope === "department" && (
-                            <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
+                            {/* CONDITIONAL FIELDS BASED ON SCOPE */}
+                            {data.scope === "department" && (
                                 <div>
                                     <InputLabel value="Department" required />
                                     <SearchSelect
@@ -169,30 +132,35 @@ export default function Edit({
                                         message={errors.department_id}
                                     />
                                 </div>
-                            </div>
-                        )}
+                            )}
 
-                        {data.scope === "curriculum" && (
-                            <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
+                            {data.scope === "curriculum" && (
                                 <div>
-                                    <InputLabel value="Curriculum" required />
-                                    <SearchSelect
-                                        routeName="courses.curriculum.search"
-                                        defaultOptions={curricula}
-                                        placeholder="Search curricula..."
-                                        value={data.curricula_id}
-                                        onChange={(curr) =>
-                                            setData("curricula_id", curr.id)
-                                        }
-                                        error={errors.curricula_id}
+                                    <InputLabel
+                                        value="Course Curriculum"
+                                        required
                                     />
-                                    <InputError message={errors.curricula_id} />
+                                    <SearchSelect
+                                        routeName={null}
+                                        defaultOptions={courseCurricula}
+                                        placeholder="Search active course curricula..."
+                                        value={data.course_curriculum_id}
+                                        onChange={(curr) =>
+                                            setData(
+                                                "course_curriculum_id",
+                                                curr.id,
+                                            )
+                                        }
+                                        error={errors.course_curriculum_id}
+                                    />
+                                    <InputError
+                                        message={errors.course_curriculum_id}
+                                    />
                                 </div>
-                            </div>
-                        )}
+                            )}
 
-                        {/* VALIDITY DATES */}
-                        <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
+                            {/* VALIDITY DATES */}
+
                             <div>
                                 <InputLabel value="Valid From" required />
                                 <TextInput

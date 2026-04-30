@@ -23,15 +23,16 @@ class UpdateUnitRequest extends FormRequest
      */
     public function rules(): array
     {
-          $unit = $this->route('unit');
+        $unit = $this->route('unit');
+
         return [
-            'code' => ['required', 'string', 'max:255', 
-              Rule::unique('units', 'code')->ignore($unit)],
+            'code' => ['required', 'string', 'max:255',
+                Rule::unique('units', 'code')->ignore($unit)],
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'credit_factor' => ['required', 'integer', 'min:1'],
             'training_hours' => ['required', 'integer', 'min:1'],
-            
+
         ];
     }
 }

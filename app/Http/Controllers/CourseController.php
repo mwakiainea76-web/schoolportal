@@ -27,7 +27,7 @@ class CourseController extends Controller
             ->with([
                 'certificationLevel:id,name',
                 'department:id,name',
-                'curriculum:id,name',
+                'curriculum',
             ])
             ->tap(fn ($query) => $filter->apply(
                 $query,

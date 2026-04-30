@@ -18,6 +18,7 @@ return new class extends Migration
                 ->cascadeOnDelete();
             $table->enum('penalty_type', ['lost_library_card', 'lost_id', 'lost_book', 'late_payment', 'other']);
             $table->decimal('amount', 12, 2);
+            $table->text('notes')->nullable();
             $table->enum('trigger', ['event', 'manual'])->default('manual');
             $table->foreignId('raised_by')
                 ->nullable()

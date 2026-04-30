@@ -18,14 +18,13 @@ class FeeResolutionService
      */
     public function resolveFeeModel(Enrollment $enrollment, AcademicSession $academicSession): ?FeeModel
     {
-        // Get curriculum and department from enrollment
-        $curriculum = $enrollment->curriculum;
-        $department = $curriculum?->department;
+        $courseCurriculum = $enrollment->courseCurriculum;
+        $department = $courseCurriculum?->course?->department;
 
-        // 1. Try curriculum-specific model (highest priority)
-        if ($curriculum) {
+        // 1. Try course-curriculum-specific model (highest priority)
+        if ($courseCurriculum) {
             $feeModel = FeeModel::where('scope', 'curriculum')
-                ->where('curricula_id', $curriculum->id)
+                ->where('course_curriculum_id', $courseCurriculum->id)
                 ->where('academic_session_id', $academicSession->id)
                 ->active()
                 ->validForDate()
@@ -95,21 +94,21 @@ class FeeResolutionService
      */
     public function resolveFeeModelWithPath(Enrollment $enrollment, AcademicSession $academicSession): array
     {
-        $curriculum = $enrollment->curriculum;
-        $department = $curriculum?->department;
+        $courseCurriculum = $enrollment->courseCurriculum;
+        $department = $courseCurriculum?->course?->department;
         $path = [];
 
-        // 1. Check curriculum-specific
-        if ($curriculum) {
+        // 1. Check course-curriculum-specific
+        if ($courseCurriculum) {
             $feeModel = FeeModel::where('scope', 'curriculum')
-                ->where('curricula_id', $curriculum->id)
+                ->where('course_curriculum_id', $courseCurriculum->id)
                 ->where('academic_session_id', $academicSession->id)
                 ->active()
                 ->validForDate()
                 ->orderBy('priority', 'desc')
                 ->first();
 
-            $path[] = "curriculum:{$curriculum->id}";
+            $path[] = "course_curriculum:{$courseCurriculum->id}";
 
             if ($feeModel) {
                 return [

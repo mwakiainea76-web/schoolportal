@@ -114,10 +114,10 @@ export default function Index({ curriculum_units }) {
                         </THdata>
                         <THdata className="text-center">Course</THdata>
                         <THdata
-                            onClick={() => handleSort("curriculum_id")}
+                            onClick={() => handleSort("course_curriculum_id")}
                             className="cursor-pointer"
                         >
-                            Curriculum {renderArrow("curriculum_id")}
+                            Curriculum {renderArrow("course_curriculum_id")}
                         </THdata>
 
                         <THdata className="text-center">Module Taught</THdata>
@@ -137,9 +137,11 @@ export default function Index({ curriculum_units }) {
 
                                     {/* Curriculum & Course Name */}
                                     <Tdata>
-                                        {item.curriculum?.course?.name}
+                                        {item.course_curriculum?.course?.name}
                                     </Tdata>
-                                    <Tdata>{item.curriculum?.name}</Tdata>
+                                    <Tdata>
+                                        {item.course_curriculum?.curriculum?.name}
+                                    </Tdata>
 
                                     <Tdata className="text-center">
                                         Module {item.module_taught}

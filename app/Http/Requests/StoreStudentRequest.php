@@ -28,6 +28,7 @@ class StoreStudentRequest extends FormRequest
 
             // Academic
             'previous_school' => ['required', 'string', 'max:255'],
+            'course_curriculum_id' => ['required', 'exists:course_curriculum,id'],
             'current_module' => ['required', 'string'],
             'fee_discount_percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
 

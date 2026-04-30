@@ -12,7 +12,7 @@ class UpdateFeeModelRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -23,11 +23,10 @@ class UpdateFeeModelRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'curricula_id' => 'nullable|exists:curricula,id',
-            'academic_session_id' => 'nullable|exists:academic_sessions,id',
-            'department_id' => 'nullable|exists:departments,id',
+            'course_curriculum_id' => 'nullable|required_if:scope,curriculum|exists:course_curriculum,id',
+            'academic_session_id' => 'required|exists:academic_sessions,id',
+            'department_id' => 'nullable|required_if:scope,department|exists:departments,id',
             'scope' => 'required|in:global,department,curriculum',
-            'priority' => 'required|in:60,70,80',
             'valid_from' => 'required|date',
             'valid_until' => 'nullable|date|after:valid_from',
             'is_active' => 'required|boolean',

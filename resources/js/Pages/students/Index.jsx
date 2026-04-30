@@ -44,7 +44,7 @@ export default function StudentIndex({ students }) {
             <div className="mx-auto w-full">
                 {/* Action bar */}
                 <div className="flex items-center justify-between mb-4">
-                    <form className="flex gap-2" onSubmit={submit}>
+                    <form className="flex gap-2 w-full" onSubmit={submit}>
                         <TextInput
                             className="w-full"
                             placeholder="Search by email or reg. number..."
@@ -58,13 +58,6 @@ export default function StudentIndex({ students }) {
                             Search
                         </button>
                     </form>
-
-                    <Link
-                        href={route("students.create")}
-                        className="px-4 py-2 bg-emerald-600 text-white text-sm rounded-lg hover:bg-emerald-700 transition"
-                    >
-                        + Add Student
-                    </Link>
                 </div>
 
                 {/* Table */}

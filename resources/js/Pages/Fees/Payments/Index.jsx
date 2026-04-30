@@ -59,6 +59,9 @@ export default function PaymentsIndex({ payments }) {
                                             <div className="font-medium text-gray-900">
                                                 {payment.invoice.enrollment?.student?.user?.first_name} {payment.invoice.enrollment?.student?.user?.last_name}
                                             </div>
+                                            <div className="text-xs text-gray-500">
+                                                {payment.invoice.enrollment?.academic_session?.session_No || payment.invoice.enrollment?.academic_session?.name}
+                                            </div>
                                         </Tdata>
                                         <Tdata className="font-mono font-medium text-slate-700">
                                             {payment.reference}

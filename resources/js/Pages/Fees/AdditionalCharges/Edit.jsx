@@ -25,7 +25,7 @@ export default function Edit({ additionalCharge, feeModels }) {
     const submit = (e) => {
         e.preventDefault();
 
-        put(route("fees.additional-charges.update", additionalCharge.id), {
+        put(route("fees.additional.charges.update", additionalCharge.id), {
             preserveScroll: true,
         });
     };
@@ -137,7 +137,7 @@ export default function Edit({ additionalCharge, feeModels }) {
                     {/* ACTIONS */}
                     <div className="flex justify-between pt-6">
                         <Link
-                            href={route("fees.additional-charges.index")}
+                            href={route("fees.additional.charges.index")}
                             className="px-4 py-2 bg-slate-400 text-white rounded hover:bg-slate-700"
                         >
                             Cancel

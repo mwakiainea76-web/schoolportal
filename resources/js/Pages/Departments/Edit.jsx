@@ -61,6 +61,9 @@ const Edit = ({ department }) => {
             <div className=" mx-auto w-full">
                 {/* ---------------- FORM ---------------- */}
                 <div className="bg-white rounded-lg border shadow overflow-hidden">
+                    <div className="bg-slate-400 text-white text-center py-2 text-sm font-medium">
+                        Edit department details
+                    </div>
                     <form className="w-full p-10 space-y-8" onSubmit={submit}>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             {/* CODE */}

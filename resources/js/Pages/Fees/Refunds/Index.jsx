@@ -54,6 +54,9 @@ export default function RefundsIndex({ refunds }) {
                                             <div className="font-medium text-gray-900">
                                                 {refund.invoice.enrollment?.student?.user?.first_name} {refund.invoice.enrollment?.student?.user?.last_name}
                                             </div>
+                                            <div className="text-xs text-gray-500">
+                                                {refund.invoice.enrollment?.academic_session?.session_No || refund.invoice.enrollment?.academic_session?.name}
+                                            </div>
                                         </Tdata>
                                         <Tdata className="text-right font-mono font-bold text-rose-600">
                                             {Number(refund.amount).toLocaleString(undefined, {minimumFractionDigits: 2})}

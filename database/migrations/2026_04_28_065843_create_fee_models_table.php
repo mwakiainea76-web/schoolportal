@@ -16,9 +16,9 @@ return new class extends Migration
             $table->foreignId('fee_template_id')
                 ->constrained('fee_templates', 'id')
                 ->cascadeOnDelete();
-            $table->foreignId('curricula_id')
+            $table->foreignId('course_curriculum_id')
                 ->nullable()
-                ->constrained('curricula', 'id')
+                ->constrained('course_curriculum', 'id')
                 ->cascadeOnDelete();
             $table->foreignId('academic_session_id')
                 ->nullable()
@@ -29,7 +29,7 @@ return new class extends Migration
                 ->constrained('departments', 'id')
                 ->cascadeOnDelete();
             $table->enum('scope', ['global', 'department', 'curriculum'])->default('global');
-            $table->enum('priority', ['60', '70', '80'])->default('60');
+            $table->enum('priority', [60, 70, 80])->default(60);
             $table->date('valid_from');
             $table->date('valid_until');
             $table->boolean('is_active')->default(true);

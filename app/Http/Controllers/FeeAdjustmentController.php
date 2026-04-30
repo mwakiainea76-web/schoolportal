@@ -16,7 +16,13 @@ class FeeAdjustmentController extends Controller
      */
     public function index(Request $request)
     {
-        $adjustments = FeeAdjustment::with(['invoice.enrollment.student.user', 'approver'])
+        $adjustments = FeeAdjustment::with([
+            'invoice.enrollment.student.user',
+            'invoice.enrollment.academicSession',
+            'invoice.enrollment.courseEnrollment.courseCurriculum.course',
+            'invoice.enrollment.courseEnrollment.courseCurriculum.curriculum',
+            'approver',
+        ])
             ->latest()
             ->paginate(10)
             ->withQueryString();
@@ -29,13 +35,18 @@ class FeeAdjustmentController extends Controller
      */
     public function create()
     {
-        $invoices = StudentInvoices::with(['enrollment.student.user'])
+        $invoices = StudentInvoices::with([
+            'enrollment.student.user',
+            'enrollment.academicSession',
+            'enrollment.courseEnrollment.courseCurriculum.course',
+            'enrollment.courseEnrollment.courseCurriculum.curriculum',
+        ])
             ->latest()
             ->limit(20)
             ->get()
             ->map(fn ($i) => [
                 'id' => $i->id,
-                'name' => "Invoice #{$i->id} - " . ($i->enrollment->student->user->first_name ?? '') . ' ' . ($i->enrollment->student->user->last_name ?? ''),
+                'name' => "Invoice #{$i->id} - ".$i->enrollment?->display_name,
             ]);
 
         $users = User::all()->map(fn ($u) => [
@@ -68,15 +79,25 @@ class FeeAdjustmentController extends Controller
      */
     public function edit(FeeAdjustment $feeAdjustment)
     {
-        $feeAdjustment->load('invoice.enrollment.student.user');
+        $feeAdjustment->load([
+            'invoice.enrollment.student.user',
+            'invoice.enrollment.academicSession',
+            'invoice.enrollment.courseEnrollment.courseCurriculum.course',
+            'invoice.enrollment.courseEnrollment.courseCurriculum.curriculum',
+        ]);
         
-        $invoices = StudentInvoices::with(['enrollment.student.user'])
+        $invoices = StudentInvoices::with([
+            'enrollment.student.user',
+            'enrollment.academicSession',
+            'enrollment.courseEnrollment.courseCurriculum.course',
+            'enrollment.courseEnrollment.courseCurriculum.curriculum',
+        ])
             ->latest()
             ->limit(20)
             ->get()
             ->map(fn ($i) => [
                 'id' => $i->id,
-                'name' => "Invoice #{$i->id} - " . ($i->enrollment->student->user->first_name ?? '') . ' ' . ($i->enrollment->student->user->last_name ?? ''),
+                'name' => "Invoice #{$i->id} - ".$i->enrollment?->display_name,
             ]);
 
         $users = User::all()->map(fn ($u) => [

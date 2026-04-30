@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreStudentInvoicesRequest extends FormRequest
@@ -20,13 +19,9 @@ class StoreStudentInvoicesRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'enrollment_id' => ['required', 'exists:enrollments,id'],
+            'registration_number' => ['required', 'exists:students,registration_number'],
             'fee_model_id' => ['required', 'exists:fee_models,id'],
-            'gross_amount' => ['required', 'numeric', 'min:0'],
-            'adjusted_amount' => ['required', 'numeric', 'min:0'],
-            'credit_balance' => ['nullable', 'numeric', 'min:0'],
-            'overpayment_action' => ['nullable', 'string', 'in:credit,refund,pending'],
-            'due_date' => ['nullable', 'date'],
+
         ];
     }
 }

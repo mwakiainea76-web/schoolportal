@@ -30,7 +30,7 @@ class AcademicYearController extends Controller
         $this->service->store($request->validated());
 
         return redirect()
-            ->route('academic.years.index')
+            ->route('academic.years.create')
             ->with('success', 'Academic year created successfully.');
     }
 
@@ -47,12 +47,12 @@ class AcademicYearController extends Controller
 
         if ($error) {
             return redirect()
-                ->route('academic.years.index')
+                ->route('academic.years.edit')
                 ->with('error', $error);
         }
 
         return redirect()
-            ->route('academic.years.index')
+            ->route('academic.years.edit', $academicYear->id)
             ->with('success', 'Academic year updated successfully.');
     }
 

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Enrollment;
+use App\Filters\EnrollmentFilter;
 use App\Http\Requests\StoreEnrollmentRequest;
 use App\Http\Requests\UpdateEnrollmentRequest;
 use Illuminate\Http\Request;
@@ -12,9 +13,23 @@ class EnrollmentController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request, EnrollmentFilter $filter)
     {
-        //
+        $enrollments = $filter
+            ->apply(
+                Enrollment::with([
+                    'student.user',
+                    'courseEnrollment.courseCurriculum.course',
+                    'courseEnrollment.courseCurriculum.curriculum',
+                    'academicSession',
+                ]),
+                $request->all()
+            )
+            ->latest()
+            ->paginate(20)
+            ->withQueryString();
+
+        return inertia('AcademicSessionEnrollments/Index', compact('enrollments'));
     }
 
     /**
@@ -72,7 +87,7 @@ class EnrollmentController extends Controller
     {
         $q = $request->get('q');
 
-        return Enrollment::with(['student.user'])
+        return Enrollment::with(['student.user', 'academicSession'])
             ->whereHas('student.user', function ($query) use ($q) {
                 $query->where('first_name', 'like', "%{$q}%")
                       ->orWhere('last_name', 'like', "%{$q}%");
@@ -84,7 +99,7 @@ class EnrollmentController extends Controller
             ->get()
             ->map(fn ($e) => [
                 'id' => $e->id,
-                'name' => ($e->student->user->first_name ?? '') . ' ' . ($e->student->user->last_name ?? '') . ' (' . ($e->student->registration_number ?? 'N/A') . ')',
+                'name' => ($e->student->user->first_name ?? '') . ' ' . ($e->student->user->last_name ?? '') . ' (' . ($e->student->registration_number ?? 'N/A') . ')' . ($e->academicSession ? ' - '.$e->academicSession->name : ''),
             ]);
     }
 }

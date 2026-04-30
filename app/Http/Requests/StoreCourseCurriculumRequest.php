@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreCourseCurriculumRequest extends FormRequest
@@ -12,7 +11,7 @@ class StoreCourseCurriculumRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -23,7 +22,11 @@ class StoreCourseCurriculumRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'is_active' => ['required', 'boolean'],
+            'course_id' => ['required', 'exists:courses,id'],
+            'curriculum_id' => ['required', 'exists:curriculum,id'],
+            'description' => ['nullable', 'string'],
         ];
+
     }
 }

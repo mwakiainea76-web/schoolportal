@@ -16,7 +16,7 @@ export default function FeeModelsIndex({
     feeModels,
     templates,
     departments,
-    curricula,
+    courseCurricula,
     academicSessions,
 }) {
     const [sortField, setSortField] = useState(feeModels.sort || "created_at");
@@ -165,7 +165,7 @@ export default function FeeModelsIndex({
                 {/* SEARCH */}
                 <form className="w-full flex gap-x-6 mb-4" onSubmit={submit}>
                     <SearchSelect
-                        routeName="fee-templates.search"
+                        routeName="fees.templates.search"
                         defaultOptions={templates}
                         placeholder="Search templates..."
                         onChange={(t) => setSearchTerm(t.name)}
@@ -270,7 +270,7 @@ export default function FeeModelsIndex({
                         className="px-3 py-2 border border-gray-300 rounded text-sm"
                     >
                         <option value="">All Curricula</option>
-                        {curricula.map((curr) => (
+                        {courseCurricula.map((curr) => (
                             <option key={curr.id} value={curr.id}>
                                 {curr.name}
                             </option>
@@ -290,7 +290,7 @@ export default function FeeModelsIndex({
                         <option value="">All Sessions</option>
                         {academicSessions.map((session) => (
                             <option key={session.id} value={session.id}>
-                                {session.session_No}
+                                {session.name}
                             </option>
                         ))}
                     </select>
@@ -381,7 +381,8 @@ export default function FeeModelsIndex({
                                     </Tdata>
 
                                     <Tdata>
-                                        {feeModel.curriculum?.name || "—"}
+                                        {feeModel.course_curriculum?.curriculum
+                                            ?.name || "—"}
                                     </Tdata>
 
                                     <Tdata>

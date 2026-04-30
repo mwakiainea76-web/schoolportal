@@ -68,7 +68,7 @@ class AdditionalCharge extends Model
 
     public function getDisplayNameAttribute(): string
     {
-        return $this->name . ' (' . ucfirst($this->frequency) . ' - ₦' . number_format($this->amount, 2) . ')';
+        return $this->name.' ('.ucfirst($this->frequency).' - ₦'.number_format($this->amount, 2).')';
     }
 
     // ---------------- HELPER METHODS ----------------

@@ -23,7 +23,7 @@ class Storecurriculum_unitRequest extends FormRequest
     {
 
         return [
-            'curriculum_id' => 'required|exists:curricula,id',
+            'course_curriculum_id' => 'required|exists:course_curriculum,id',
             'unit_id' => [
                 'required',
                 'exists:units,id',

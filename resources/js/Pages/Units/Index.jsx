@@ -48,18 +48,14 @@ export default function UnitsIndex({ units }) {
         setSearchTerm("");
     };
 
-    const handleDelete = (code) => {
+    const handleDelete = (id) => {
         if (!confirm("Are you sure you want to delete this unit?")) return;
-        router.delete(route("units.destroy", { unit: code }), {
+        router.delete(route("units.destroy", encodeURIComponent(id)), {
             preserveState: true,
             replace: true,
         });
     };
-    useEffect(() => {
-        console.log("TEST:", props.auth.permissions_test);
-        console.log("TYPE:", typeof props.auth.permissions_test);
-        console.log("ARRAY?", Array.isArray(props.auth.permissions_test));
-    });
+
     return (
         <AuthenticatedLayout>
             <Head title="Units" />

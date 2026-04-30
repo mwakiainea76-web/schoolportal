@@ -41,6 +41,8 @@ class EnrollmentFilter
 
     protected function course($query, $value)
     {
-        $query->where('course_id', $value);
+        $query->whereHas('courseEnrollment.courseCurriculum', function ($courseCurriculumQuery) use ($value) {
+            $courseCurriculumQuery->where('course_id', $value);
+        });
     }
 }
