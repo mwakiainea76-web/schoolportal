@@ -11,6 +11,7 @@ export default function Modal({
     maxWidth = "2xl",
     closeable = true,
     onClose = () => {},
+    align = "center", // "center" | "top"
 }) {
     const close = () => {
         if (closeable) {
@@ -26,12 +27,15 @@ export default function Modal({
         "2xl": "sm:max-w-2xl",
     }[maxWidth];
 
+    // Alignment classes
+    const alignClass = align === "top" ? "items-start py-6" : "items-center py-6";
+
     return (
         <Transition show={show} leave="duration-200">
             <Dialog
                 as="div"
                 id="modal"
-                className="fixed inset-0 z-50 flex transform items-center overflow-y-auto px-4 py-6 transition-all sm:px-0"
+                className={`fixed inset-0 z-50 flex transform overflow-y-auto px-4 ${alignClass}`}
                 onClose={close}
             >
                 <TransitionChild

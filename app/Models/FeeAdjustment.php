@@ -4,64 +4,39 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class FeeAdjustment extends Model
 {
-    /** @use HasFactory<\Database\Factories\FeeAdjustmentFactory> */
-    use HasFactory, SoftDeletes;
+    use HasFactory;
 
     protected $table = 'fee_adjustments';
 
     protected $fillable = [
         'student_invoice_id',
-        'scope',
-        'scope_ref',
         'type',
-        'value',
-        'reason',
-        'approved_by',
+        'amount',
+        'description',
+        'applied_at',
+        'created_by',
     ];
 
     protected $casts = [
-        'value' => 'decimal:2',
-        'scope_ref' => 'integer',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
+        'amount' => 'decimal:2',
+        'applied_at' => 'date',
     ];
-
-    // ---------------- RELATIONSHIPS ----------------
 
     public function invoice()
     {
-        return $this->belongsTo(StudentInvoices::class, 'student_invoice_id');
+        return $this->belongsTo(StudentInvoice::class, 'student_invoice_id');
     }
 
-    public function approver()
+    public function createdBy()
     {
-        return $this->belongsTo(User::class, 'approved_by');
+        return $this->belongsTo(Staff::class, 'created_by');
     }
 
-    // ---------------- SCOPES ----------------
-
-    public function scopePercentage($query)
+    public function signedAmount(): float
     {
-        return $query->where('type', 'percentage');
-    }
-
-    public function scopeFixed($query)
-    {
-        return $query->where('type', 'fixed');
-    }
-
-    // ---------------- HELPER METHODS ----------------
-
-    public function calculateAdjustment($grossAmount): float
-    {
-        if ($this->type === 'percentage') {
-            return ($grossAmount * (float)$this->value) / 100;
-        }
-
-        return (float)$this->value;
+        return in_array($this->type, ['discount', 'waiver']) ? -1 * (float) $this->amount : (float) $this->amount;
     }
 }

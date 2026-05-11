@@ -19,6 +19,8 @@ return new class extends Migration
                 ->cascadeOnUpdate()
                 ->cascadeOnDelete();
             $table->unsignedInteger('module')->default(1);
+            $table->unsignedSmallInteger('year_of_study')->default(1);
+            $table->unsignedSmallInteger('session_number')->default(1);
             $table->enum('status', [
                 'active',
                 'completed',

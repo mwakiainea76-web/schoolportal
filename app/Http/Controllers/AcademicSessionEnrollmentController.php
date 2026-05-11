@@ -47,6 +47,7 @@ class AcademicSessionEnrollmentController extends Controller
             'course' => $e->courseEnrollment?->courseCurriculum?->course?->name ?? 'N/A',
             'curriculum' => $e->courseEnrollment?->courseCurriculum?->curriculum?->name ?? 'N/A',
             'module' => $e->module,
+            'year_of_study' => $e->year_of_study,
             'status' => $e->status,
             'created_at' => $e->created_at->format('d M Y'),
         ]);
@@ -123,13 +124,16 @@ class AcademicSessionEnrollmentController extends Controller
 
         $nextModule = $completedSessions + 1;
 
-        // 6. Create enrollment
+        // 6. Create enrollment (year_of_study will be auto-calculated from session_No)
         DB::transaction(function () use ($courseEnrollment, $activeSession, $nextModule) {
             AcademicSessionEnrollment::create([
                 'course_enrollment_id' => $courseEnrollment->id,
                 'academic_session_id' => $activeSession->id,
                 'module' => $nextModule,
                 'status' => 'active',
+                // year_of_study is automatically calculated in the model's boot method
+                // Formula: year_of_study = ceil(session_No / 3)
+                // Sessions 1-3 = Year 1, Sessions 4-6 = Year 2, etc.
             ]);
         });
 
@@ -161,6 +165,7 @@ class AcademicSessionEnrollmentController extends Controller
                 'course' => $e->courseEnrollment?->courseCurriculum?->course?->name ?? 'N/A',
                 'curriculum' => $e->courseEnrollment?->courseCurriculum?->curriculum?->name ?? 'N/A',
                 'module' => $e->module,
+                'year_of_study' => $e->year_of_study,
                 'status' => $e->status,
             ],
             'statuses' => ['active', 'completed', 'dropped', 'transferred', 'suspended'],

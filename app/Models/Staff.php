@@ -11,7 +11,7 @@ class Staff extends Model
     use HasFactory,SoftDeletes;
 
     /** @use HasFactory<\Database\Factories\StaffFactory> */
-    protected $table = 'staff';
+    protected $table = 'staffs';
 
     protected $fillable = [
         'salary',

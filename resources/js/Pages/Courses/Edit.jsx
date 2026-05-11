@@ -5,9 +5,9 @@ import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import TextInput from "@/Components/TextInput";
 import TextArea from "@/Components/TextArea";
-import ToggleSwitch from "@/Components/ToggleSwitch";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import SearchSelect from "@/Components/SearchSelect";
+
 const Edit = ({ course, certification_levels, departments }) => {
     const crs = course || null;
     let certs = certification_levels.map((cert) => ({
@@ -21,7 +21,6 @@ const Edit = ({ course, certification_levels, departments }) => {
         name: "",
         description: "",
         duration_in_months: "",
-        is_active: "",
         certification_level_id: "",
         department_id: "",
         initials: "",
@@ -36,7 +35,6 @@ const Edit = ({ course, certification_levels, departments }) => {
                 name: "",
                 description: "",
                 duration_in_months: "",
-                is_active: "",
                 certification_level_id: "",
                 department_id: "",
                 initials: "",
@@ -49,7 +47,6 @@ const Edit = ({ course, certification_levels, departments }) => {
             name: course.name ?? "",
             description: course.description ?? "",
             duration_in_months: course.duration_in_months ?? "",
-            is_active: course.is_active ?? "",
             certification_level_id: course.certification_level_id ?? "",
             department_id: course.department_id ?? "",
             initials: course.initials ?? "",
@@ -58,9 +55,6 @@ const Edit = ({ course, certification_levels, departments }) => {
         hasInitialized.current = true;
     }, [course]);
 
-    // ---------------------------
-    // UPDATE
-    // ---------------------------
     const submit = (e) => {
         e.preventDefault();
 
@@ -76,7 +70,6 @@ const Edit = ({ course, certification_levels, departments }) => {
             <Head title="Edit Course" />
 
             <div className="max-w-4xl mx-auto w-full">
-                {/* ---------------- FORM ---------------- */}
                 <div className="bg-white rounded-lg border shadow overflow-hidden">
                     <form className="w-full p-10 space-y-8" onSubmit={submit}>
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
@@ -89,8 +82,8 @@ const Edit = ({ course, certification_levels, departments }) => {
                                     routeName="departments.search"
                                     defaultOptions={departments}
                                     value={data.department_id}
-                                    onChange={(e) =>
-                                        setData("department_id", e.target.value)
+                                    onChange={(dept) =>
+                                        setData("department_id", dept.id)
                                     }
                                 />
                                 <InputError
@@ -108,14 +101,13 @@ const Edit = ({ course, certification_levels, departments }) => {
                                     routeName="certification-levels.search"
                                     defaultOptions={certs}
                                     value={data.certification_level_id}
-                                    onChange={(e) =>
+                                    onChange={(level) =>
                                         setData(
                                             "certification_level_id",
-                                            e.target.value,
+                                            level.id,
                                         )
                                     }
                                 />
-
                                 <InputError
                                     message={errors.certification_level_id}
                                     className="mt-2"
@@ -128,13 +120,21 @@ const Edit = ({ course, certification_levels, departments }) => {
                                     value="Course Code"
                                 />
                                 <TextInput
+                                    id="code"
+                                    type="text"
+                                    name="code"
+                                    className="mt-1 block w-full"
+                                    placeholder="e.g. CS101"
+                                    isFocused={true}
                                     value={data.code}
-                                    error={errors.code}
                                     onChange={(e) =>
                                         setData("code", e.target.value)
                                     }
                                 />
-                                <InputError message={errors.code} />
+                                <InputError
+                                    message={errors.code}
+                                    className="mt-2"
+                                />
                             </div>
 
                             {/* NAME */}
@@ -144,13 +144,20 @@ const Edit = ({ course, certification_levels, departments }) => {
                                     value="Course Name"
                                 />
                                 <TextInput
+                                    id="name"
+                                    type="text"
+                                    name="name"
+                                    className="mt-1 block w-full"
+                                    placeholder="e.g. Certificate in ICT"
                                     value={data.name}
-                                    error={errors.name}
                                     onChange={(e) =>
                                         setData("name", e.target.value)
                                     }
                                 />
-                                <InputError message={errors.name} />
+                                <InputError
+                                    message={errors.name}
+                                    className="mt-2"
+                                />
                             </div>
 
                             <div>
@@ -182,10 +189,13 @@ const Edit = ({ course, certification_levels, departments }) => {
                                     value="Duration (months)"
                                 />
                                 <TextInput
+                                    id="duration_in_months"
                                     type="number"
+                                    name="duration_in_months"
+                                    className="mt-1 block w-full"
+                                    placeholder="e.g. 6"
                                     min="1"
                                     value={data.duration_in_months}
-                                    error={errors.duration_in_months}
                                     onChange={(e) =>
                                         setData(
                                             "duration_in_months",
@@ -195,20 +205,6 @@ const Edit = ({ course, certification_levels, departments }) => {
                                 />
                                 <InputError
                                     message={errors.duration_in_months}
-                                />
-                            </div>
-                            <div className="flex flex-col justify-center">
-                                <ToggleSwitch
-                                    label="Set course active"
-                                    checked={data.is_active}
-                                    onChange={(checked) =>
-                                        setData("is_active", checked)
-                                    }
-                                    error={errors.is_active}
-                                />
-                                <InputError
-                                    message={errors.is_active}
-                                    className="mt-2"
                                 />
                             </div>
                         </div>

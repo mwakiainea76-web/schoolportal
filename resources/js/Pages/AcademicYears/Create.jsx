@@ -1,15 +1,13 @@
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
-import { Head, useForm } from "@inertiajs/react";
+import { Head, useForm, Link } from "@inertiajs/react";
 import TextInput from "@/Components/TextInput";
 import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
-import PrimaryButton from "@/Components/PrimaryButton";
-
+import ToggleSwitch from "@/Components/ToggleSwitch";
 export default function Create() {
     const { data, setData, post, processing, errors } = useForm({
         academic_year: "",
-        start_date: "",
-        end_date: "",
+        is_active: false,
     });
 
     const submit = (e) => {
@@ -42,40 +40,43 @@ export default function Create() {
                                 <InputError message={errors.academic_year} />
                             </div>
 
-                            {/* Start Date */}
-                            <div>
-                                <InputLabel>Start Date</InputLabel>
-                                <TextInput
-                                    type="date"
-                                    value={data.start_date}
-                                    onChange={(e) =>
-                                        setData("start_date", e.target.value)
+                            <div className="flex flex-col justify-center">
+                                <ToggleSwitch
+                                    label="Set as Current Academic Year"
+                                    checked={data.is_active}
+                                    onChange={(checked) =>
+                                        setData("is_active", checked)
                                     }
-                                    error={errors.start_date}
+                                    error={errors.is_active}
                                 />
-                                <InputError message={errors.start_date} />
-                            </div>
-
-                            {/* End Date */}
-                            <div>
-                                <InputLabel>End Date</InputLabel>
-                                <TextInput
-                                    type="date"
-                                    value={data.end_date}
-                                    onChange={(e) =>
-                                        setData("end_date", e.target.value)
-                                    }
-                                    error={errors.end_date}
+                                <InputError
+                                    message={errors.is_active}
+                                    className="mt-2"
                                 />
-                                <InputError message={errors.end_date} />
                             </div>
                         </div>
+                        <div className="flex justify-between pt-4">
+                            <Link
+                                href={route("academic.years.index")}
+                                className="px-4 py-2 bg-slate-400 text-white rounded hover:bg-slate-700"
+                            >
+                                Cancel
+                            </Link>
 
-                        {/* Submit */}
-                        <div className="pt-4">
-                            <PrimaryButton disabled={processing}>
-                                Create Academic Year
-                            </PrimaryButton>
+                            <button
+                                disabled={processing}
+                                type="submit"
+                                className="px-4 py-2 bg-emerald-600 text-white rounded hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {processing ? (
+                                    <span className="flex items-center gap-2">
+                                        Saving
+                                        <span className="animate-spin inline-block w-4 h-4 border-[3px] border-current border-t-transparent rounded-full" />
+                                    </span>
+                                ) : (
+                                    "Save"
+                                )}
+                            </button>
                         </div>
                     </form>
                 </div>

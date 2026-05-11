@@ -6,14 +6,22 @@ use App\Models\AcademicYear;
 
 class AcademicYearService
 {
-    public function store(array $data): AcademicYear
+    public function store(array $data)
     {
+
+        $exists = AcademicYear::where('is_active', true)
+            ->exists();
+
+        if ($exists) {
+            return 'Disable any  active academic year to continue  ';
+        }
+
         return AcademicYear::create([
             'academic_year' => $data['academic_year'],
-            'start_date' => $data['start_date'],
-            'end_date' => $data['end_date'],
-            'is_active' => false,
+            'start_date' => now(),
+            'is_active' => true,
         ]);
+
     }
 
     /**
@@ -21,21 +29,18 @@ class AcademicYearService
      */
     public function update(AcademicYear $academicYear, array $data): ?string
     {
-        if (!empty($data['is_active'])) {
-            $activeExists = AcademicYear::where('is_active', true)
-                ->where('id', '!=', $academicYear->id)
-                ->first();
+        if ($data['is_active']) {
+            $exists = AcademicYear::where('is_active', true)
+                ->exists();
 
-            if ($activeExists) {
-                return $activeExists->academic_year . ' academic year is still active, disable it first to continue.';
+            if ($exists) {
+                return 'Disable any  active academic year to continue  ';
             }
         }
-
         $academicYear->update([
             'academic_year' => $data['academic_year'],
-            'start_date' => $data['start_date'],
-            'end_date' => $data['end_date'],
-            'is_active' => !empty($data['is_active']),
+            'end_date' => $data['is_active'] ? null : now(),
+            'is_active' => $data['is_active'],
         ]);
 
         return null;

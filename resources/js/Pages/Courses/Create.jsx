@@ -15,7 +15,6 @@ export default function CreateCourse({ certification_levels, departments }) {
         description: "",
         duration_in_months: "",
         initials: "",
-        is_active: false,
         certification_level_id: "",
         department_id: "",
     });
@@ -34,7 +33,6 @@ export default function CreateCourse({ certification_levels, departments }) {
                 setData("description", "");
                 setData("duration_in_months", "");
                 setData("initials", "");
-                setData("is_active", false);
             },
         });
     };
@@ -185,23 +183,9 @@ export default function CreateCourse({ certification_levels, departments }) {
                                     className="mt-2"
                                 />
                             </div>
-                            <div className="flex flex-col justify-center">
-                                <ToggleSwitch
-                                    label="Set course active"
-                                    checked={data.is_active}
-                                    onChange={(checked) =>
-                                        setData("is_active", checked)
-                                    }
-                                    error={errors.is_active}
-                                />
-                                <InputError
-                                    message={errors.is_active}
-                                    className="mt-2"
-                                />
-                            </div>
                         </div>
 
-                        {/* DESCRIPTION */}
+                         {/* DESCRIPTION */}
                         <div className="space-y-2">
                             <label className="text-sm font-bold text-zinc-700 ml-1">
                                 Description

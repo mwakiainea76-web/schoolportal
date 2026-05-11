@@ -4,14 +4,10 @@ import TextInput from "@/Components/TextInput";
 import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import PrimaryButton from "@/Components/PrimaryButton";
-import ToggleSwitch from "@/Components/ToggleSwitch";
-import SearchSelect from "@/Components/SearchSelect";
-export default function Create({ academic_years }) {
-    const { data, setData, post, processing, errors } = useForm({
-        session_No: "",
-        academic_year_id: "",
-        start_date: "",
-        end_date: "",
+export default function Create({ academic_year, session_no }) {
+    const { post, processing, errors } = useForm({
+        session_No: session_no,
+        academic_year_id: academic_year?.id,
     });
 
     const submit = (e) => {
@@ -32,58 +28,23 @@ export default function Create({ academic_years }) {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div>
                                 <InputLabel value="Academic year" />
-
-                                <SearchSelect
-                                    value={data.academic_year_id}
-                                    routeName="academic-years.search"
-                                    defaultOptions={academic_years}
-                                    placeholder="Search Academic Year..."
-                                    onChange={(c) =>
-                                        setData("academic_year_id", c.id)
-                                    }
+                                <TextInput
+                                    className="cursor-not-allowed bg-slate-100"
+                                    value={academic_year.academic_year}
+                                    disabled
                                 />
+
                                 <InputError message={errors.academic_year_id} />
                             </div>
                             <div>
-                                <InputLabel>Session Number</InputLabel>
+                                <InputLabel value="Session no." />
                                 <TextInput
-                                    type="number"
-                                    value={data.session_No}
-                                    onChange={(e) =>
-                                        setData("session_No", e.target.value)
-                                    }
-                                    placeholder="e.g. 1"
-                                    error={errors.session_No}
+                                    className="cursor-not-allowed bg-slate-100"
+                                    value={session_no}
+                                    disabled
                                 />
+
                                 <InputError message={errors.session_No} />
-                            </div>
-
-                            {/* Start Date */}
-                            <div>
-                                <InputLabel>Start Date</InputLabel>
-                                <TextInput
-                                    type="date"
-                                    value={data.start_date}
-                                    onChange={(e) =>
-                                        setData("start_date", e.target.value)
-                                    }
-                                    error={errors.start_date}
-                                />
-                                <InputError message={errors.start_date} />
-                            </div>
-
-                            {/* End Date */}
-                            <div>
-                                <InputLabel>End Date</InputLabel>
-                                <TextInput
-                                    type="date"
-                                    value={data.end_date}
-                                    onChange={(e) =>
-                                        setData("end_date", e.target.value)
-                                    }
-                                    error={errors.end_date}
-                                />
-                                <InputError message={errors.end_date} />
                             </div>
                         </div>
 

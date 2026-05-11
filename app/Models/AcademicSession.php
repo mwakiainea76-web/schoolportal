@@ -13,6 +13,8 @@ class AcademicSession extends Model
 
     protected $table = 'academic_sessions';
 
+    protected $appends = ['display_name'];
+
     protected $fillable = [
         'academic_year_id',
         'session_No',
@@ -21,18 +23,21 @@ class AcademicSession extends Model
         'is_active',
     ];
 
-    public function academicYear()
-    {
-        return $this->belongsTo(AcademicYear::class);
-    }
 
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
     }
 
-    public function getRouteKeyName()
+    public function academicYear()
     {
-        return 'id';
+        return $this->belongsTo(AcademicYear::class);
+    }
+
+    public function getDisplayNameAttribute()
+    {
+        return $this->academicYear
+            ? $this->academicYear->academic_year.' - Session '.$this->session_No
+            : 'Session '.$this->session_No;
     }
 }

@@ -10,6 +10,7 @@ export default function SearchSelect({
     onChange,
     error = false,
     defaultOptions = [],
+    disabled = false,
 }) {
     const [query, setQuery] = useState("");
     const [options, setOptions] = useState(defaultOptions);
@@ -115,11 +116,16 @@ export default function SearchSelect({
                         ? handleSearch(e.target.value)
                         : setQuery(e.target.value)
                 }
-                onFocus={() => setOpen(true)}
+                onFocus={() => {
+                    if (!disabled) {
+                        setOpen(true);
+                    }
+                }}
                 placeholder={placeholder}
+                disabled={disabled}
                 className={`w-full bg-zinc-50 border rounded-xl px-5 py-2.5 text-sm outline-none transition ${
                     error ? "border-red-400" : "border-zinc-200"
-                }`}
+                } ${disabled ? "bg-zinc-200 cursor-not-allowed" : ""}`}
             />
 
             {open && (

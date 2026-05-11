@@ -133,8 +133,8 @@ export default function UnitsIndex({ academic_years }) {
                                             className={`px-2 py-0.5 rounded text-xs ${year.is_active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"}`}
                                         >
                                             {year.is_active
-                                                ? "Active"
-                                                : "Inactive"}
+                                                ? "Ongoing"
+                                                : "Completed"}
                                         </span>
                                     </Tdata>
                                     <Tdata>{formatDate(year.updated_at)}</Tdata>

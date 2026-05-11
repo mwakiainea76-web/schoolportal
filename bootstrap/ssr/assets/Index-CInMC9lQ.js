@@ -1,0 +1,199 @@
+import { jsxs, jsx } from "react/jsx-runtime";
+import { Head, Link, router } from "@inertiajs/react";
+import { useState } from "react";
+import { u as useRbac, A as AuthenticatedLayout } from "./AuthenticatedLayout-pMoyBgPO.js";
+import { D as DirectoryTable, T as Thead, a as THdata, b as TBody, c as Trow, d as Tdata } from "./Tdata-C86zXZO_.js";
+import { S as SearchSelect } from "./SearchSelect-Bxy39qA_.js";
+import { f as formatDate } from "./date-CQXYOX-2.js";
+import "lucide-react";
+import "react-toastify";
+import "ziggy-js";
+function CurriculumIndex({ curricula }) {
+  const [sortField, setSortField] = useState(curricula.sort || "created_at");
+  const [sortDirection, setSortDirection] = useState(
+    curricula.direction || "desc"
+  );
+  const [searchTerm, setSearchTerm] = useState("");
+  const { can } = useRbac();
+  const handleSort = (field) => {
+    const direction = sortField === field && sortDirection === "asc" ? "desc" : "asc";
+    setSortField(field);
+    setSortDirection(direction);
+    router.get(
+      route("curriculum.index"),
+      { sort: field, direction, page: 1 },
+      { preserveState: true, replace: true }
+    );
+  };
+  const renderArrow = (field) => {
+    if (sortField !== field) return null;
+    return sortDirection === "asc" ? "^" : "v";
+  };
+  const submit = (e) => {
+    e.preventDefault();
+    router.get(
+      route("curriculum.index"),
+      { search: searchTerm, sort: sortField, direction: sortDirection },
+      { preserveState: true, replace: true }
+    );
+  };
+  const handleDelete = (id) => {
+    if (!confirm("Are you sure you want to delete this curriculum?")) {
+      return;
+    }
+    router.delete(route("curriculum.destroy", { curriculum: id }), {
+      preserveState: true,
+      replace: true
+    });
+  };
+  return /* @__PURE__ */ jsxs(AuthenticatedLayout, { children: [
+    /* @__PURE__ */ jsx(Head, { title: "Curriculum" }),
+    /* @__PURE__ */ jsxs("div", { className: "mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700", children: [
+      /* @__PURE__ */ jsx(
+        Link,
+        {
+          className: "mb-4 px-4 py-1 bg-slate-400 text-white rounded hover:bg-slate-700 inline-block",
+          href: route("curriculum.create"),
+          children: "Add Curriculum"
+        }
+      ),
+      can("curriculum.view") ? /* @__PURE__ */ jsxs(
+        "form",
+        {
+          className: "w-full relative flex gap-x-7",
+          onSubmit: submit,
+          children: [
+            /* @__PURE__ */ jsx(
+              SearchSelect,
+              {
+                routeName: "curriculum.search",
+                defaultOptions: curricula.data,
+                placeholder: "Type in curriculum name ...",
+                onChange: (body) => setSearchTerm(body.name)
+              }
+            ),
+            /* @__PURE__ */ jsx(
+              "button",
+              {
+                className: "px-4 py-1 bg-emerald-600 text-white rounded hover:bg-slate-700",
+                type: "submit",
+                children: "Search"
+              }
+            )
+          ]
+        }
+      ) : null,
+      /* @__PURE__ */ jsxs(
+        DirectoryTable,
+        {
+          pagination: curricula,
+          sortField,
+          sortDirection,
+          children: [
+            /* @__PURE__ */ jsxs(Thead, { children: [
+              /* @__PURE__ */ jsxs(
+                THdata,
+                {
+                  onClick: () => handleSort("id"),
+                  className: "cursor-pointer",
+                  children: [
+                    "Id ",
+                    renderArrow("id")
+                  ]
+                }
+              ),
+              /* @__PURE__ */ jsxs(
+                THdata,
+                {
+                  onClick: () => handleSort("name"),
+                  className: "cursor-pointer",
+                  children: [
+                    "Name ",
+                    renderArrow("name")
+                  ]
+                }
+              ),
+              /* @__PURE__ */ jsxs(
+                THdata,
+                {
+                  onClick: () => handleSort("start_date"),
+                  className: "cursor-pointer",
+                  children: [
+                    "Start Date ",
+                    renderArrow("start_date")
+                  ]
+                }
+              ),
+              /* @__PURE__ */ jsxs(
+                THdata,
+                {
+                  onClick: () => handleSort("end_date"),
+                  className: "cursor-pointer",
+                  children: [
+                    "End Date ",
+                    renderArrow("end_date")
+                  ]
+                }
+              ),
+              /* @__PURE__ */ jsx(THdata, { children: "Status" }),
+              /* @__PURE__ */ jsxs(
+                THdata,
+                {
+                  onClick: () => handleSort("created_at"),
+                  className: "cursor-pointer",
+                  children: [
+                    "Created ",
+                    renderArrow("created_at")
+                  ]
+                }
+              ),
+              can("curriculums.edit") || can("curriculums.delete") ? /* @__PURE__ */ jsx(THdata, { children: /* @__PURE__ */ jsx("p", { className: "text-center", children: "Actions" }) }) : null
+            ] }),
+            /* @__PURE__ */ jsx(TBody, { children: curricula?.data?.length ? curricula.data.map((curriculum) => /* @__PURE__ */ jsxs(Trow, { children: [
+              /* @__PURE__ */ jsx(Tdata, { children: curriculum.id }),
+              /* @__PURE__ */ jsx(Tdata, { children: curriculum.name }),
+              /* @__PURE__ */ jsx(Tdata, { children: formatDate(curriculum.start_date) }),
+              /* @__PURE__ */ jsx(Tdata, { children: curriculum.end_date ? formatDate(curriculum.end_date) : "Ongoing" }),
+              /* @__PURE__ */ jsx(Tdata, { children: /* @__PURE__ */ jsx(
+                "span",
+                {
+                  className: `px-2 py-1 rounded text-xs ${curriculum.is_active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`,
+                  children: curriculum.is_active ? "Active" : "Inactive"
+                }
+              ) }),
+              /* @__PURE__ */ jsx(Tdata, { children: formatDate(curriculum.created_at) }),
+              can("curriculums.edit") || can("curriculums.delete") ? /* @__PURE__ */ jsx(Tdata, { children: /* @__PURE__ */ jsxs("div", { className: "flex items-center justify-center gap-x-10", children: [
+                can("curriculums.edit") ? /* @__PURE__ */ jsx(
+                  Link,
+                  {
+                    href: route(
+                      "curriculum.edit",
+                      {
+                        curriculum: curriculum.id
+                      }
+                    ),
+                    className: "text-emerald-600 hover:underline",
+                    children: "Edit"
+                  }
+                ) : null,
+                can("curriculum.delete") ? /* @__PURE__ */ jsx(
+                  "button",
+                  {
+                    onClick: () => handleDelete(
+                      curriculum.id
+                    ),
+                    className: "text-red-600 hover:underline",
+                    children: "Delete"
+                  }
+                ) : null
+              ] }) }) : null
+            ] }, curriculum.id)) : /* @__PURE__ */ jsx(Trow, { children: /* @__PURE__ */ jsx(Tdata, { colSpan: "7", className: "text-center py-4", children: "No curriculum found." }) }) })
+          ]
+        }
+      )
+    ] })
+  ] });
+}
+export {
+  CurriculumIndex as default
+};

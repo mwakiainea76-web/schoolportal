@@ -122,6 +122,7 @@ export default function Index({ enrollments }) {
                         <THdata>Session</THdata>
                         <THdata>Curriculum</THdata>
                         <THdata>Course</THdata>
+                        <THdata>Year Of Study</THdata>
                         <THdata>Module</THdata>
                         <THdata>Status</THdata>
                         <THdata
@@ -146,6 +147,9 @@ export default function Index({ enrollments }) {
                                     <Tdata>{enrollment.session}</Tdata>
                                     <Tdata>{enrollment.curriculum}</Tdata>
                                     <Tdata>{enrollment.course}</Tdata>
+                                    <Tdata className="text-center">
+                                        {enrollment.year_of_study}
+                                    </Tdata>
                                     <Tdata className="text-center">
                                         {enrollment.module}
                                     </Tdata>
@@ -186,7 +190,7 @@ export default function Index({ enrollments }) {
                         ) : (
                             <Trow>
                                 <Tdata
-                                    colSpan="10"
+                                    colSpan="11"
                                     className="text-center py-4"
                                 >
                                     No enrollments found.

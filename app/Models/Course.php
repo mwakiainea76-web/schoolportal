@@ -20,7 +20,6 @@ class Course extends Model
         'description',
         'duration_in_months',
         'initials',
-        'is_active',
         'certification_level_id',
         'department_id',
     ];
@@ -40,11 +39,6 @@ class Course extends Model
         return $this->hasMany(CourseCurriculum::class);
     }
 
-    public function activeCourseCurriculum()
-    {
-        return $this->hasOne(CourseCurriculum::class)->where('is_active', true);
-    }
-
     public function curriculum()
     {
         return $this->hasOneThrough(
@@ -62,16 +56,4 @@ class Course extends Model
         return $this->name.' - '.
             optional($this->certificationLevel)->name;
     }
-
-    public function scopeActive($query)
-    {
-        return $query->where('is_active', true);
-    }
-
-    //     protected static function booted()
-    // {
-    //     static::addGlobalScope('active', function ($query) {
-    //         $query->where('is_active', true);
-    //     });
-    // }
 }

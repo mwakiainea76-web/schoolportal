@@ -42,7 +42,6 @@ class CourseCurriculumController extends Controller
             ->limit(20)
             ->get(['id', 'name']);
         $courses = Course::query()
-            ->active()
             ->with('certificationLevel:id,name')
             ->orderBy('name')
             ->limit(20)

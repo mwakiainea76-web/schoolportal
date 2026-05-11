@@ -16,6 +16,8 @@ class AcademicSessionEnrollment extends Model
         'course_enrollment_id',
         'academic_session_id',
         'module',
+        'year_of_study',
+        'session_number',
         'status',
     ];
 
@@ -25,6 +27,50 @@ class AcademicSessionEnrollment extends Model
         'curriculum',
         'course',
     ];
+
+    protected $casts = [
+        'module' => 'integer',
+        'year_of_study' => 'integer',
+    ];
+
+    /**
+     * Boot method to set year_of_study automatically based on session_No
+     * Every 3 sessions = 1 year of study
+     * Sessions 1-3 = Year 1, Sessions 4-6 = Year 2, etc.
+     */
+    protected static function booted()
+    {
+        static::creating(function ($enrollment) {
+            if ($enrollment->academic_session_id && ! $enrollment->year_of_study) {
+                $enrollment->year_of_study = $enrollment->calculateYearOfStudy();
+            }
+        });
+
+        static::updating(function ($enrollment) {
+            if ($enrollment->isDirty('academic_session_id') && ! $enrollment->isDirty('year_of_study')) {
+                $enrollment->year_of_study = $enrollment->calculateYearOfStudy();
+            }
+        });
+    }
+
+    /**
+     * Calculate year of study from academic session's session number.
+     * Formula: year = ceil(session_No / 3)
+     */
+    public function calculateYearOfStudy(): int
+    {
+        if (! $this->academicSession) {
+            $session = AcademicSession::find($this->academic_session_id);
+        } else {
+            $session = $this->academicSession;
+        }
+
+        if (! $session || ! $session->session_No) {
+            return 1; // Default to year 1 if no session found
+        }
+
+        return (int) ceil($session->session_No / 3);
+    }
 
     public function courseEnrollment()
     {
@@ -85,7 +131,7 @@ class AcademicSessionEnrollment extends Model
         $curriculum = $this->curriculum?->name ?? 'No Curriculum';
         $course = $this->course?->name ?? 'No Course';
 
-        return "{$studentName} ({$registration}) - {$session} - {$curriculum} - {$course} - Module {$this->module}";
+        return "{$studentName} ({$registration}) - {$session} - {$curriculum} - {$course} - Year {$this->year_of_study} - Module {$this->module}";
     }
 
     // In AcademicSessionEnrollment model
@@ -105,6 +151,6 @@ class AcademicSessionEnrollment extends Model
 
     public function invoices()
     {
-        return $this->hasMany(StudentInvoices::class, 'enrollment_id');
+        return $this->hasMany(StudentInvoice::class, 'enrollment_id');
     }
 }

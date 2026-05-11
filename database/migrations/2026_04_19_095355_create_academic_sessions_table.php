@@ -19,8 +19,8 @@ return new class extends Migration
                 ->cascadeOnDelete()
                 ->cascadeOnUpdate();
             $table->unsignedSmallInteger('session_No');
-            $table->date('start_date');
-            $table->date('end_date');
+            $table->date('start_date')->nullable();
+            $table->date('end_date')->nullable();
             $table->boolean('is_active')->default(false);
             $table->timestamps();
             $table->softDeletes();

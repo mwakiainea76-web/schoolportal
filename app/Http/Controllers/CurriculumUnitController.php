@@ -25,9 +25,6 @@ class CurriculumUnitController extends Controller
             ->whereHas('courseCurriculum', function ($query) {
                 $query->where('is_active', true);
             })
-            ->whereHas('courseCurriculum.course', function ($query) {
-                $query->where('is_active', true);
-            })
             ->latest()
             ->paginate(40);
 
@@ -41,7 +38,6 @@ class CurriculumUnitController extends Controller
         $curricula = CourseCurriculum::query()
             ->active()
             ->with(['course:id,name', 'curriculum:id,name'])
-            ->whereHas('course', fn ($query) => $query->where('is_active', true))
             ->orderByDesc('id')
             ->get()
             ->map(function ($curriculum) {
@@ -80,16 +76,15 @@ class CurriculumUnitController extends Controller
         return inertia('CurriculumUnits/Edit', [
             'curriculum_unit' => $curriculum_unit,
 
-            'curricula' => CourseCurriculum::query()
-                ->active()
-                ->with(['course:id,name', 'curriculum:id,name'])
-                ->whereHas('course', fn ($q) => $q->where('is_active', true))
-                ->orderByDesc('id')
-                ->get()
-                ->map(fn ($c) => [
-                    'id' => $c->id,
-                    'name' => $c->curriculum->name.' ('.$c->course->name.')',
-                ]),
+        'curricula' => CourseCurriculum::query()
+            ->active()
+            ->with(['course:id,name', 'curriculum:id,name'])
+            ->orderByDesc('id')
+            ->get()
+            ->map(fn ($c) => [
+                'id' => $c->id,
+                'name' => $c->curriculum->name.' ('.$c->course->name.')',
+            ]),
 
             'units' => Unit::query()
                 ->orderBy('name')

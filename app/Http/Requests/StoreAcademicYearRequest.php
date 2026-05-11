@@ -24,8 +24,7 @@ class StoreAcademicYearRequest extends FormRequest
     {
         return [
             'academic_year' => 'required|string|max:255|unique:academic_years,academic_year',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after:start_date',
+            'is_active' => 'boolean',
         ];
     }
 }

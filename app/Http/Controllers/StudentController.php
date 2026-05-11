@@ -121,7 +121,6 @@ class StudentController extends Controller
                 'course:id,name,certification_level_id',
                 'course.certificationLevel:id,name',
             ])
-            ->whereHas('course', fn ($query) => $query->where('is_active', true))
             ->orderByDesc('id')
             ->get()
             ->map(fn ($c) => [
@@ -214,7 +213,7 @@ class StudentController extends Controller
     {
         $student->load(['user.nextofkin']);
 
-        return inertia('Students/Edit', compact('student'));
+        return inertia('students/Edit', compact('student'));
     }
 
     // ----------------------------------------------------------------
@@ -271,7 +270,9 @@ class StudentController extends Controller
 
     public function destroy(Student $student)
     {
-        //
+        $student->delete();
+
+        return redirect()->route('students.index')->with('success', 'Student deleted successfully.');
     }
 
     /**

@@ -18,6 +18,7 @@ class Student extends Model
         'current_module',
         'admission_date',
         'student_status',
+        'fee_discount_percentage',
     ];
 
     public function courseEnrollments()

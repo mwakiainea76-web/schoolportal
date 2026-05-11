@@ -123,9 +123,9 @@ export default function UnitsIndex({ academic_sessions }) {
                     </Thead>
                     <Tbody>
                         {academic_sessions?.data?.length ? (
-                            academic_sessions.data.map((session) => (
+                            academic_sessions.data.map((session, idx) => (
                                 <Trow key={session.id}>
-                                    <Tdata>{session.id}</Tdata>
+                                    <Tdata>{idx + 1}</Tdata>
                                     <Tdata className="font-medium text-slate-700">
                                         {session.session_No}
                                     </Tdata>
@@ -140,13 +140,30 @@ export default function UnitsIndex({ academic_sessions }) {
                                         {formatDate(session.end_date)}
                                     </Tdata>
                                     <Tdata>
-                                        <span
-                                            className={`px-2 py-0.5 rounded text-xs ${session.is_active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"}`}
-                                        >
-                                            {session.is_active
-                                                ? "Active"
-                                                : "Inactive"}
-                                        </span>
+                                        {session.end_date &&
+                                            session.start_date && (
+                                                <span
+                                                    className={`px-2 py-0.5 rounded text-xs  bg-red-100 text-red-400`}
+                                                >
+                                                    Completed
+                                                </span>
+                                            )}
+                                        {session.start_date &&
+                                            session.is_active == true && (
+                                                <span
+                                                    className={`px-2 py-0.5 rounded text-xs  bg-green-100 text-green-700`}
+                                                >
+                                                    Ongoing
+                                                </span>
+                                            )}
+                                        {!session.start_date &&
+                                            session.is_active == false && (
+                                                <span
+                                                    className={`px-2 py-0.5 rounded text-xs  bg-green-100 text-green-400`}
+                                                >
+                                                    Upcoming
+                                                </span>
+                                            )}
                                     </Tdata>
                                     <Tdata>
                                         {formatDate(session.created_at)}

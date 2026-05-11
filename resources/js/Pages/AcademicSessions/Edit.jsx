@@ -11,9 +11,8 @@ export default function Edit({ academic_session }) {
     const { data, setData, put, processing, errors } = useForm({
         session_No: academic_session.session_No || "",
         academic_year_id: academic_session.academic_year_id || "",
-        start_date: academic_session.start_date || "",
-        end_date: academic_session.end_date || "",
         is_active: academic_session.is_active || false,
+        close_session: academic_session.end_date ? false : true,
     });
 
     const submit = (e) => {
@@ -35,6 +34,18 @@ export default function Edit({ academic_session }) {
                     <legend className=" text-white   border-b border-white/50  text-center py-2 bg-slate-400 rounded-t-lg w-full">
                         Edit academic year details
                     </legend>
+                    <p className="text-center text-xs">
+                        {" "}
+                        Current status
+                        <span
+                            className={`px-2 py-0.5 rounded text-xs ${academic_session.end_date ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"}`}
+                        >
+                            {academic_session.end_date
+                                ? "Ongoing"
+                                : "Completed"}
+                        </span>
+                    </p>
+
                     <form className="p-10 space-y-8" onSubmit={submit}>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             {/* Academic Year Selection */}
@@ -60,7 +71,8 @@ export default function Edit({ academic_session }) {
                             <div>
                                 <InputLabel>Session Number</InputLabel>
                                 <TextInput
-                                    type="number"
+                                    className="cursor-not-allowed bg-slate-100"
+                                    disabled
                                     value={data.session_No}
                                     onChange={(e) =>
                                         setData("session_No", e.target.value)
@@ -71,38 +83,14 @@ export default function Edit({ academic_session }) {
                                 <InputError message={errors.session_No} />
                             </div>
 
-                            {/* Start Date */}
-                            <div>
-                                <InputLabel>Start Date</InputLabel>
-                                <TextInput
-                                    type="date"
-                                    value={data.start_date}
-                                    onChange={(e) =>
-                                        setData("start_date", e.target.value)
-                                    }
-                                    error={errors.start_date}
-                                />
-                                <InputError message={errors.start_date} />
-                            </div>
-
-                            {/* End Date */}
-                            <div>
-                                <InputLabel>End Date</InputLabel>
-                                <TextInput
-                                    type="date"
-                                    value={data.end_date}
-                                    onChange={(e) =>
-                                        setData("end_date", e.target.value)
-                                    }
-                                    error={errors.end_date}
-                                />
-                                <InputError message={errors.end_date} />
-                            </div>
-
                             {/* Active Toggle */}
                             <div>
                                 <ToggleSwitch
-                                    label="Set as Current Academic session"
+                                    label={
+                                        academic_session.is_active
+                                            ? "De activate this session now"
+                                            : `Activate to current session now`
+                                    }
                                     checked={data.is_active}
                                     onChange={(checked) =>
                                         setData("is_active", checked)
@@ -111,6 +99,25 @@ export default function Edit({ academic_session }) {
                                 />
                                 <InputError message={errors.is_active} />
                             </div>
+                            {academic_session.start_date && (
+                                <div>
+                                    <ToggleSwitch
+                                        label={
+                                            academic_session.end_date
+                                                ? "Re open this session now"
+                                                : `Close this Academic session`
+                                        }
+                                        checked={data.close_session}
+                                        onChange={(checked) =>
+                                            setData("close_session", checked)
+                                        }
+                                        error={errors.close_session}
+                                    />
+                                    <InputError
+                                        message={errors.close_session}
+                                    />
+                                </div>
+                            )}
                         </div>
 
                         {/* Submit */}

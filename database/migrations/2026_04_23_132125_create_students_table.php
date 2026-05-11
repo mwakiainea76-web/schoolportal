@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('previous_school');
             $table->string('current_module')->default(1);
             $table->date('admission_date');
+            $table->unsignedInteger('fee_discount_percentage')->default(0);
             $table->enum('student_status', [
                 'active',
                 'suspended',

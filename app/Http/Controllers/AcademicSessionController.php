@@ -26,10 +26,14 @@ class AcademicSessionController extends Controller
 
     public function create()
     {
+
+        $academic_year = AcademicYear::where('is_active', true)->first();
+
+        $session_no = AcademicSession::where('academic_year_id', $academic_year->id)->count();
+
         return inertia('AcademicSessions/Create', [
-            'academic_years' => AcademicYear::latest()
-                ->where('is_active', true)
-                ->get(),
+            'academic_year' => $academic_year,
+            'session_no' => ($session_no + 1),
         ]);
     }
 

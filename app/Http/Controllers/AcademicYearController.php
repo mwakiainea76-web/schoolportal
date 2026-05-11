@@ -27,7 +27,13 @@ class AcademicYearController extends Controller
 
     public function store(StoreAcademicYearRequest $request)
     {
-        $this->service->store($request->validated());
+
+        $error = $this->service->store($request->validated());
+        if ($error) {
+            return redirect()
+                ->route('academic.years.create')
+                ->with('error', $error);
+        }
 
         return redirect()
             ->route('academic.years.create')
@@ -43,11 +49,12 @@ class AcademicYearController extends Controller
 
     public function update(UpdateAcademicYearRequest $request, AcademicYear $academicYear)
     {
+
         $error = $this->service->update($academicYear, $request->validated());
 
         if ($error) {
             return redirect()
-                ->route('academic.years.edit')
+                ->route('academic.years.edit', $academicYear->id)
                 ->with('error', $error);
         }
 

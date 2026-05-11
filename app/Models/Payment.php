@@ -4,33 +4,36 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Payment extends Model
 {
-    /** @use HasFactory<\Database\Factories\PaymentFactory> */
-    use HasFactory, SoftDeletes;
+    use HasFactory;
+
+    protected $table = 'payments';
 
     protected $fillable = [
         'student_invoice_id',
-        'amount_paid',
-        'reference',
+        'amount',
+        'payment_date',
         'method',
-        'paid_at',
+        'reference',
+        'status',
+        'created_by',
         'notes',
     ];
 
     protected $casts = [
-        'amount_paid' => 'decimal:2',
-        'paid_at' => 'datetime',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
+        'payment_date' => 'date',
+        'amount' => 'decimal:2',
     ];
-
-    // ---------------- RELATIONSHIPS ----------------
 
     public function invoice()
     {
-        return $this->belongsTo(StudentInvoices::class, 'student_invoice_id');
+        return $this->belongsTo(StudentInvoice::class, 'student_invoice_id');
+    }
+
+    public function createdBy()
+    {
+        return $this->belongsTo(Staff::class, 'created_by');
     }
 }

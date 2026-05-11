@@ -15,7 +15,6 @@ return new class extends Migration
             $table->string('name')->index();
             $table->text('description')->nullable();
             $table->string('initials');
-            $table->boolean('is_active');
             $table->unsignedSmallInteger('duration_in_months');
             $table->foreignId('certification_level_id')
                 ->constrained('certification_levels', 'id')

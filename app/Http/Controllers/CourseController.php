@@ -38,11 +38,10 @@ class CourseController extends Controller
             ->withQueryString()
             ->through(fn ($course) => [
                 'id' => $course->id,
-                'name' => $course->display_name, // ✅ unified formatting
+                'name' => $course->display_name,
                 'code' => $course->code,
                 'department' => $course->department?->name,
                 'curriculum' => $course->curriculum?->name,
-                'is_active' => $course->is_active,
             ]);
 
         return inertia('Courses/Index', [
@@ -55,7 +54,7 @@ class CourseController extends Controller
         return inertia('Courses/Create', [
             'certification_levels' => CertificationLevel::with('examBody')->get(),
             'departments' => Department::all(),
-            'curriculums' => Curriculum::where('is_active', 1)->get(),
+            'curriculums' => Curriculum::all(),
         ]);
     }
 
@@ -73,8 +72,7 @@ class CourseController extends Controller
         return inertia('Courses/Edit', [
             'certification_levels' => CertificationLevel::with('examBody')->get(),
             'departments' => Department::select('id', 'name')->limit(20)->get(),
-            'curriculums' => Curriculum::where('is_active', 1)
-                ->select('id', 'name')
+            'curriculums' => Curriculum::select('id', 'name')
                 ->limit(20)
                 ->get(),
             'course' => $course,

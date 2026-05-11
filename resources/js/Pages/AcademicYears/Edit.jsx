@@ -11,9 +11,7 @@ export default function Edit({ academic_year }) {
     // Initialize form with existing academic_year data
     const { data, setData, put, processing, errors } = useForm({
         academic_year: academic_year?.academic_year || "",
-        start_date: academic_year?.start_date || "",
-        end_date: academic_year?.end_date || "",
-        is_active: !!academic_year?.is_active,
+        is_active: !academic_year?.is_active,
     });
 
     const submit = (e) => {
@@ -33,7 +31,7 @@ export default function Edit({ academic_year }) {
     return (
         <AuthenticatedLayout>
             <Head
-                title={`Edit Academic Year - ${academic_year.academic_year}`}
+                title={`Edit Academic Year - ${academic_year?.academic_year}`}
             />
 
             <div className="max-w-4xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -41,6 +39,16 @@ export default function Edit({ academic_year }) {
                     <legend className=" text-white   border-b border-white/50  text-center py-2 bg-slate-400 rounded-t-lg w-full">
                         Edit academic year
                     </legend>
+                    <p className="text-center text-xs">
+                        {" "}
+                        Current status
+                        <span
+                            className={`px-2 py-0.5 rounded text-xs ${academic_year.is_active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"}`}
+                        >
+                            {academic_year.is_active ? "Ongoing" : "Completed"}
+                        </span>
+                    </p>
+
                     <form className="p-10 space-y-8" onSubmit={submit}>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             {/* Name */}
@@ -56,39 +64,13 @@ export default function Edit({ academic_year }) {
                                 />
                                 <InputError message={errors.academic_year} />
                             </div>
-
-                            {/* Start Date */}
-                            <div>
-                                <InputLabel>Start Date</InputLabel>
-                                <TextInput
-                                    type="date"
-                                    value={data.start_date}
-                                    onChange={(e) =>
-                                        setData("start_date", e.target.value)
-                                    }
-                                    error={errors.start_date}
-                                />
-                                <InputError message={errors.start_date} />
-                            </div>
-
-                            {/* End Date */}
-                            <div>
-                                <InputLabel>End Date</InputLabel>
-                                <TextInput
-                                    type="date"
-                                    value={data.end_date}
-                                    onChange={(e) =>
-                                        setData("end_date", e.target.value)
-                                    }
-                                    error={errors.end_date}
-                                />
-                                <InputError message={errors.end_date} />
-                            </div>
-
-                            {/* Active Toggle */}
                             <div className="flex flex-col justify-center">
                                 <ToggleSwitch
-                                    label="Set as Current Academic Year"
+                                    label={
+                                        academic_year.is_active
+                                            ? "End academic year now "
+                                            : "Re activate academic year  now"
+                                    }
                                     checked={data.is_active}
                                     onChange={(checked) =>
                                         setData("is_active", checked)
