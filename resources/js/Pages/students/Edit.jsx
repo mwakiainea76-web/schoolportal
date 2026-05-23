@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Head, Link, useForm } from "@inertiajs/react";
 import axios from "axios";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
@@ -26,6 +26,7 @@ const STEP_FIELDS = {
     ],
     2: [
         "previous_school",
+        "course_curriculum_id",
         "admission_date",
         "current_module",
         "fee_discount_percentage",
@@ -46,6 +47,12 @@ export default function EditStudent({ student, courseCurricula = [] }) {
     const [stepErrors, setStepErrors] = useState({});
     const [validating, setValidating] = useState(false);
     const hasProgramVersionMappings = courseCurricula.length > 0;
+    const existingProgramVersionMappingId =
+        student.program_enrollment?.program_version_mapping_id ||
+        student.programEnrollment?.program_version_mapping_id ||
+        student.program_enrollment?.id ||
+        student.programEnrollment?.id ||
+        "";
 
     const { data, setData, put, processing, errors } = useForm({
         // Personal
@@ -65,8 +72,7 @@ export default function EditStudent({ student, courseCurricula = [] }) {
 
         // Academic
         previous_school: student.previous_school || "",
-        course_curriculum_id:
-            student.program_enrollment?.program_version_mapping_id || "",
+        course_curriculum_id: existingProgramVersionMappingId,
         admission_date: student.admission_date || "",
         current_module: student.current_module || "",
         fee_discount_percentage: student.fee_discount_percentage || "",
@@ -82,6 +88,16 @@ export default function EditStudent({ student, courseCurricula = [] }) {
     });
 
     const allErrors = { ...errors, ...stepErrors };
+
+    useEffect(() => {
+        if (!data.course_curriculum_id && existingProgramVersionMappingId) {
+            setData("course_curriculum_id", existingProgramVersionMappingId);
+        }
+    }, [
+        data.course_curriculum_id,
+        existingProgramVersionMappingId,
+        setData,
+    ]);
 
     const nextStep = async () => {
         setStepErrors({});

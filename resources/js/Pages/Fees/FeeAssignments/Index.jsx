@@ -68,17 +68,23 @@ export default function FeeAssignmentsIndex({ assignments, filters }) {
         });
     };
 
-    const courseCertificationLabel = (assignment) => {
-        const courseName = assignment.course_curriculum?.course?.name;
+    const programCertificationLabel = (assignment) => {
+        const programName =
+            assignment.program_version_mapping?.program?.name ||
+            assignment.course_curriculum?.course?.name;
         const certificationName =
+            assignment.program_version_mapping?.program?.certificationLevel
+                ?.name ||
+            assignment.program_version_mapping?.program?.certification_level
+                ?.name ||
             assignment.course_curriculum?.course?.certificationLevel?.name ||
             assignment.course_curriculum?.course?.certification_level?.name;
 
-        if (!courseName && !certificationName) {
+        if (!programName && !certificationName) {
             return "-";
         }
 
-        return [courseName, certificationName].filter(Boolean).join(" - ");
+        return [programName, certificationName].filter(Boolean).join(" - ");
     };
     const [showModal, setShowModal] = useState(false);
     return (
@@ -92,7 +98,7 @@ export default function FeeAssignmentsIndex({ assignments, filters }) {
                             className="inline-block rounded bg-slate-400 px-4 py-1 text-white hover:bg-slate-700"
                             href={route("fees.assignments.create")}
                         >
-                            + Add Program Fee Assignment
+                            + Add Program Version Fee Assignment
                         </Link>
 
                         <button
@@ -196,7 +202,7 @@ export default function FeeAssignmentsIndex({ assignments, filters }) {
                             assignments.data.map((item) => (
                                 <Trow key={item.id}>
                                     <Tdata>
-                                        {courseCertificationLabel(item)}
+                                        {programCertificationLabel(item)}
                                     </Tdata>
 
                                     <Tdata>{item.fee_plan?.name ?? "-"}</Tdata>

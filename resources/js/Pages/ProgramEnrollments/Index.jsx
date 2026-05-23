@@ -28,11 +28,26 @@ export default function Index({ courseEnrollments }) {
                             courseEnrollments.data.map((item) => (
                                 <Trow key={item.id}>
                                     <Tdata>
-                                        {item.student?.user?.first_name} {item.student?.user?.last_name}
+                                        {item.student?.user?.first_name}{" "}
+                                        {item.student?.user?.last_name}
                                     </Tdata>
-                                    <Tdata>{item.student?.registration_number}</Tdata>
-                                    <Tdata>{item.course_curriculum?.course?.name}</Tdata>
-                                    <Tdata>{item.course_curriculum?.curriculum?.name}</Tdata>
+                                    <Tdata>
+                                        {item.student?.registration_number}
+                                    </Tdata>
+                                    <Tdata>
+                                        {item.program_version_mapping?.program
+                                            ?.name ??
+                                            item.course_curriculum?.course
+                                                ?.name ??
+                                            "-"}
+                                    </Tdata>
+                                    <Tdata>
+                                        {item.program_version_mapping
+                                            ?.program_version?.name ??
+                                            item.course_curriculum?.curriculum
+                                                ?.name ??
+                                            "-"}
+                                    </Tdata>
                                     <Tdata>{formatDate(item.created_at)}</Tdata>
                                 </Trow>
                             ))
