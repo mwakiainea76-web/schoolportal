@@ -3,7 +3,6 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -24,7 +23,7 @@ return new class extends Migration
             $table->string('gender');
             $table->string('profile_photo')->nullable();
             $table->string('religion');
-            $table->string('email');
+            $table->string('email')->unique();
             $table->boolean('is_pwd')->default(false);
             $table->string('disability_type')->nullable();
             $table->string('medical_condition')->nullable();
@@ -35,17 +34,6 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
         });
-
-        // Ensure unique index on users.email (safe and idempotent)
-        if (config('database.default') === 'pgsql') {
-            DB::statement('CREATE UNIQUE INDEX IF NOT EXISTS users_email_unique ON users (email)');
-        } elseif (config('database.default') === 'mysql') {
-            try {
-                DB::statement('ALTER TABLE users ADD UNIQUE users_email_unique (email)');
-            } catch (\Exception $e) {
-                // ignore if already exists
-            }
-        }
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
             $table->string('email')->primary();
