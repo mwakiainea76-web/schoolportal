@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AcademicSessionController;
+use App\Http\Controllers\AcademicSessionEnrollmentController;
 use App\Http\Controllers\AcademicYearController;
 use App\Http\Controllers\CertificationLevelController;
 use App\Http\Controllers\ProgramController;
@@ -231,6 +232,15 @@ Route::middleware('auth')->group(function () {
         Route::get('/{academic_session}/edit', [AcademicSessionController::class, 'edit'])->name('edit');
         Route::put('/{academic_session}', [AcademicSessionController::class, 'update'])->name('update');
         Route::delete('/{academic_session}', [AcademicSessionController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('academic/sessions/enrollments')->name('academic.sessions.enrollments.')->group(function () {
+        Route::get('/', [AcademicSessionEnrollmentController::class, 'index'])->name('index');
+        Route::get('/create', [AcademicSessionEnrollmentController::class, 'create'])->name('create');
+        Route::post('/', [AcademicSessionEnrollmentController::class, 'store'])->name('store');
+        Route::get('/{academicSessionEnrollment}/edit', [AcademicSessionEnrollmentController::class, 'edit'])->name('edit');
+        Route::patch('/{academicSessionEnrollment}', [AcademicSessionEnrollmentController::class, 'update'])->name('update');
+        Route::delete('/{academicSessionEnrollment}', [AcademicSessionEnrollmentController::class, 'destroy'])->name('destroy');
     });
 
     /*

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AcademicSessionEnrollment;
+use App\Models\AcademicSession;
 use App\Models\AcademicYear;
 use App\Models\Department;
 use App\Models\Program;
@@ -81,6 +82,9 @@ class DashboardController extends Controller
                     'module' => $latestSessionEnrollment->module,
                     'status' => $latestSessionEnrollment->status,
                 ] : null,
+                'active_session' => AcademicSession::with('academicYear')
+                    ->where('is_active', true)
+                    ->first()?->display_name,
                 'finance' => [
                     'total_due' => round($totalDue, 2),
                     'total_paid' => round($totalPaid, 2),

@@ -1,5 +1,7 @@
-import { Head, Link, usePage } from "@inertiajs/react";
+import { useState } from "react";
+import { Head, Link, useForm, usePage } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
+import Modal from "@/Components/Modal";
 import {
     BookMarked,
     CalendarDays,
@@ -63,6 +65,19 @@ function StudentDashboard({ dashboard, fullName }) {
             tone: "from-amber-500 to-orange-500",
         },
     ];
+    const [showSessionRegistrationModal, setShowSessionRegistrationModal] =
+        useState(false);
+    const { data, post, processing, errors } = useForm({
+        registration_number: dashboard.student?.registration_number ?? "",
+    });
+
+    const submitSessionRegistration = (e) => {
+        e.preventDefault();
+        post(route("academic.sessions.enrollments.store"), {
+            preserveScroll: true,
+            onSuccess: () => setShowSessionRegistrationModal(false),
+        });
+    };
 
     return (
         <div className="animate-in fade-in slide-in-from-bottom-2 duration-700">
@@ -240,6 +255,19 @@ function StudentDashboard({ dashboard, fullName }) {
                                     {dashboard.latest_session?.session ??
                                         "No session enrollment yet"}
                                 </p>
+                                {!dashboard.latest_session ? (
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setShowSessionRegistrationModal(
+                                                true,
+                                            )
+                                        }
+                                        className="mt-3 inline-flex rounded-xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700"
+                                    >
+                                        Register current active session
+                                    </button>
+                                ) : null}
                             </div>
                             <div className="rounded-2xl bg-zinc-50 px-4 py-3">
                                 <p className="text-zinc-500">
@@ -279,6 +307,76 @@ function StudentDashboard({ dashboard, fullName }) {
                     </div>
                 </div>
             </div>
+
+            <Modal
+                show={showSessionRegistrationModal}
+                onClose={() => setShowSessionRegistrationModal(false)}
+                maxWidth="lg"
+            >
+                <div className="p-6">
+                    <div className="border-b border-zinc-100 pb-4">
+                        <h3 className="text-lg font-semibold text-zinc-900">
+                            Register Current Session
+                        </h3>
+                        <p className="mt-1 text-sm text-zinc-500">
+                            Register yourself for the active academic session.
+                        </p>
+                    </div>
+
+                    <form
+                        onSubmit={submitSessionRegistration}
+                        className="space-y-5 pt-5"
+                    >
+                        <div className="rounded-2xl bg-zinc-50 px-4 py-3">
+                            <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                                Registration Number
+                            </p>
+                            <p className="mt-1 text-sm font-semibold text-zinc-900">
+                                {dashboard.student?.registration_number ?? "-"}
+                            </p>
+                        </div>
+
+                        <div className="rounded-2xl bg-zinc-50 px-4 py-3">
+                            <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                                Active Session
+                            </p>
+                            <p className="mt-1 text-sm font-semibold text-zinc-900">
+                                {dashboard.active_session ??
+                                    "No active session available"}
+                            </p>
+                        </div>
+
+                        {errors.registration_number ? (
+                            <p className="text-sm text-red-600">
+                                {errors.registration_number}
+                            </p>
+                        ) : null}
+
+                        <div className="flex justify-end gap-3 pt-2">
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    setShowSessionRegistrationModal(false)
+                                }
+                                className="rounded-xl bg-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-300"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={
+                                    processing || !dashboard.active_session
+                                }
+                                className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:opacity-50"
+                            >
+                                {processing
+                                    ? "Registering..."
+                                    : "Register Session"}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </Modal>
         </div>
     );
 }

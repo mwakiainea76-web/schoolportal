@@ -16,13 +16,13 @@ class AcademicSessionEnrollmentController extends Controller
     public function index(Request $request)
     {
         $enrollments = AcademicSessionEnrollment::with([
-            'courseEnrollment.student.user',
-            'courseEnrollment.courseProgramVersion.curriculum',
-            'courseEnrollment.courseProgramVersion.course',
+            'programEnrollment.student.user',
+            'programEnrollment.programVersionMapping.programVersion',
+            'programEnrollment.programVersionMapping.program',
             'academicSession.academicYear',
         ])
             ->when($request->search, function ($q) use ($request) {
-                $q->whereHas('courseEnrollment.student', function ($q) use ($request) {
+                $q->whereHas('programEnrollment.student', function ($q) use ($request) {
                     $q->where('registration_number', 'like', "%{$request->search}%")
                         ->orWhereHas('user', function ($q) use ($request) {
                             $q->where('first_name', 'like', "%{$request->search}%")
@@ -37,15 +37,15 @@ class AcademicSessionEnrollmentController extends Controller
         $mapped = $enrollments->through(fn ($e) => [
             'id' => $e->id,
             'student_name' => trim(
-                ($e->courseEnrollment?->student?->user?->first_name ?? '').' '.
-                ($e->courseEnrollment?->student?->user?->last_name ?? '')
+                ($e->programEnrollment?->student?->user?->first_name ?? '').' '.
+                ($e->programEnrollment?->student?->user?->last_name ?? '')
             ),
-            'registration_number' => $e->courseEnrollment?->student?->registration_number ?? 'N/A',
+            'registration_number' => $e->programEnrollment?->student?->registration_number ?? 'N/A',
             'session' => $e->academicSession
                 ? "{$e->academicSession->academicYear->academic_year} - Session {$e->academicSession->session_No}"
                 : 'N/A',
-            'course' => $e->courseEnrollment?->courseProgramVersion?->course?->name ?? 'N/A',
-            'curriculum' => $e->courseEnrollment?->courseProgramVersion?->curriculum?->name ?? 'N/A',
+            'course' => $e->programEnrollment?->programVersionMapping?->program?->name ?? 'N/A',
+            'curriculum' => $e->programEnrollment?->programVersionMapping?->programVersion?->name ?? 'N/A',
             'module' => $e->module,
             'year_of_study' => $e->year_of_study,
             'status' => $e->status,
@@ -85,13 +85,13 @@ class AcademicSessionEnrollmentController extends Controller
         }
 
         // 2. Find the student's course enrollment
-        $courseEnrollment = ProgramEnrollment::where('student_id', $student->id)
+        $programEnrollment = ProgramEnrollment::where('student_id', $student->id)
             ->latest()
             ->first();
 
-        if (! $courseEnrollment) {
+        if (! $programEnrollment) {
             return back()->withInput()->withErrors([
-                'registration_number' => "Student '{$request->registration_number}' is not enrolled in any course.",
+                'registration_number' => "Student '{$request->registration_number}' is not enrolled in any program.",
             ]);
         }
 
@@ -107,7 +107,7 @@ class AcademicSessionEnrollmentController extends Controller
         }
 
         // 4. Check if already enrolled in this session
-        $alreadyEnrolled = AcademicSessionEnrollment::where('course_enrollment_id', $courseEnrollment->id)
+        $alreadyEnrolled = AcademicSessionEnrollment::where('program_enrollment_id', $programEnrollment->id)
             ->where('academic_session_id', $activeSession->id)
             ->exists();
 
@@ -118,16 +118,16 @@ class AcademicSessionEnrollmentController extends Controller
         }
 
         // 5. Auto-calculate module
-        $completedSessions = AcademicSessionEnrollment::where('course_enrollment_id', $courseEnrollment->id)
+        $completedSessions = AcademicSessionEnrollment::where('program_enrollment_id', $programEnrollment->id)
             ->where('status', 'completed')
             ->count();
 
         $nextModule = $completedSessions + 1;
 
         // 6. Create enrollment (year_of_study will be auto-calculated from session_No)
-        DB::transaction(function () use ($courseEnrollment, $activeSession, $nextModule) {
+        DB::transaction(function () use ($programEnrollment, $activeSession, $nextModule) {
             AcademicSessionEnrollment::create([
-                'course_enrollment_id' => $courseEnrollment->id,
+                'program_enrollment_id' => $programEnrollment->id,
                 'academic_session_id' => $activeSession->id,
                 'module' => $nextModule,
                 'status' => 'active',
@@ -145,9 +145,9 @@ class AcademicSessionEnrollmentController extends Controller
     public function edit(AcademicSessionEnrollment $academicSessionEnrollment)
     {
         $e = $academicSessionEnrollment->load([
-            'courseEnrollment.student.user',
-            'courseEnrollment.courseProgramVersion.curriculum',
-            'courseEnrollment.courseProgramVersion.course',
+            'programEnrollment.student.user',
+            'programEnrollment.programVersionMapping.programVersion',
+            'programEnrollment.programVersionMapping.program',
             'academicSession.academicYear',
         ]);
 
@@ -155,15 +155,15 @@ class AcademicSessionEnrollmentController extends Controller
             'enrollment' => [
                 'id' => $e->id,
                 'student_name' => trim(
-                    ($e->courseEnrollment?->student?->user?->first_name ?? '').' '.
-                    ($e->courseEnrollment?->student?->user?->last_name ?? '')
+                    ($e->programEnrollment?->student?->user?->first_name ?? '').' '.
+                    ($e->programEnrollment?->student?->user?->last_name ?? '')
                 ),
-                'registration_number' => $e->courseEnrollment?->student?->registration_number ?? 'N/A',
+                'registration_number' => $e->programEnrollment?->student?->registration_number ?? 'N/A',
                 'session' => $e->academicSession
                     ? "{$e->academicSession->academicYear->academic_year} - Session {$e->academicSession->session_No}"
                     : 'N/A',
-                'course' => $e->courseEnrollment?->courseProgramVersion?->course?->name ?? 'N/A',
-                'curriculum' => $e->courseEnrollment?->courseProgramVersion?->curriculum?->name ?? 'N/A',
+                'course' => $e->programEnrollment?->programVersionMapping?->program?->name ?? 'N/A',
+                'curriculum' => $e->programEnrollment?->programVersionMapping?->programVersion?->name ?? 'N/A',
                 'module' => $e->module,
                 'year_of_study' => $e->year_of_study,
                 'status' => $e->status,
