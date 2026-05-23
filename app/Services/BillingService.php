@@ -31,8 +31,12 @@ class BillingService
         );
 
         if (! $assignment) {
+            $programName = $enrollment->programEnrollment?->programVersionMapping?->program?->name ?? 'your program';
+            $programVersionName = $enrollment->programEnrollment?->programVersionMapping?->programVersion?->name ?? 'your program version';
+            $sessionLabel = $enrollment->academicSession?->display_name ?? 'this session';
+
             throw ValidationException::withMessages([
-                'assignment' => 'No active fee assignment exists for this student and session.',
+                'assignment' => "No active fee assignment exists for {$programName} - {$programVersionName} in {$sessionLabel}. Assign a fee plan to this program version before session registration.",
             ]);
         }
 

@@ -10,6 +10,7 @@ use App\Models\Program;
 use App\Models\ProgramEnrollment;
 use App\Models\ProgramVersion;
 use App\Models\StudentInvoice;
+use App\Services\FeeAssignmentService;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
@@ -17,6 +18,10 @@ use Inertia\Response;
 
 class DashboardController extends Controller
 {
+    public function __construct(protected FeeAssignmentService $feeAssignmentService)
+    {
+    }
+
     public function redirect(Request $request): RedirectResponse
     {
         $user = $request->user();
@@ -45,6 +50,19 @@ class DashboardController extends Controller
             : null;
 
         $programVersionMapping = $programEnrollment?->programVersionMapping;
+        $activeSession = AcademicSession::with('academicYear')
+            ->where('is_active', true)
+            ->first();
+        $activeSessionNumber = $activeSession?->session_number ?? $activeSession?->session_No;
+        $activeYearOfStudy = $activeSessionNumber ? (int) ceil($activeSessionNumber / 3) : null;
+        $activeFeeAssignment = ($activeSession && $programEnrollment)
+            ? $this->feeAssignmentService->resolveActiveAssignment(
+                $activeSession->academic_year_id,
+                $programEnrollment->program_version_mapping_id,
+                $activeYearOfStudy,
+                $activeSessionNumber
+            )
+            : null;
         $latestSessionEnrollment = $programEnrollment
             ? AcademicSessionEnrollment::query()
                 ->with('academicSession.academicYear')
@@ -90,9 +108,17 @@ class DashboardController extends Controller
                     'module' => $latestSessionEnrollment->module,
                     'status' => $latestSessionEnrollment->status,
                 ] : null,
-                'active_session' => AcademicSession::with('academicYear')
-                    ->where('is_active', true)
-                    ->first()?->display_name,
+                'active_session' => $activeSession?->display_name,
+                'session_registration' => [
+                    'can_register' => (bool) ($activeSession && $programEnrollment && $activeFeeAssignment),
+                    'blocker' => ! $programEnrollment
+                        ? 'You are not yet enrolled in a program version.'
+                        : (! $activeSession
+                            ? 'No active academic session is currently available.'
+                            : (! $activeFeeAssignment
+                                ? 'No fee plan has been assigned to your program version for the current session yet.'
+                                : null)),
+                ],
                 'finance' => [
                     'total_due' => round($totalDue, 2),
                     'total_paid' => round($totalPaid, 2),

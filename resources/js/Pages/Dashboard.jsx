@@ -265,17 +265,33 @@ function StudentDashboard({ dashboard, fullName }) {
                                         "No session enrollment yet"}
                                 </p>
                                 {!dashboard.latest_session ? (
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            setShowSessionRegistrationModal(
-                                                true,
-                                            )
-                                        }
-                                        className="mt-3 inline-flex rounded-xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700"
-                                    >
-                                        Register current active session
-                                    </button>
+                                    <>
+                                        {dashboard.session_registration
+                                            ?.blocker ? (
+                                            <p className="mt-3 text-xs text-amber-700">
+                                                {
+                                                    dashboard
+                                                        .session_registration
+                                                        .blocker
+                                                }
+                                            </p>
+                                        ) : null}
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setShowSessionRegistrationModal(
+                                                    true,
+                                                )
+                                            }
+                                            disabled={
+                                                !dashboard.session_registration
+                                                    ?.can_register
+                                            }
+                                            className="mt-3 inline-flex rounded-xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                        >
+                                            Register current active session
+                                        </button>
+                                    </>
                                 ) : null}
                             </div>
                             <div className="rounded-2xl bg-zinc-50 px-4 py-3">
@@ -374,7 +390,10 @@ function StudentDashboard({ dashboard, fullName }) {
                             <button
                                 type="submit"
                                 disabled={
-                                    processing || !dashboard.active_session
+                                    processing ||
+                                    !dashboard.active_session ||
+                                    !dashboard.session_registration
+                                        ?.can_register
                                 }
                                 className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:opacity-50"
                             >
