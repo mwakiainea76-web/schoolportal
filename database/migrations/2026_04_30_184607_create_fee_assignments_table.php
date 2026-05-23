@@ -27,10 +27,7 @@ return new class extends Migration
                 ->constrained('program_version_mappings')
                 ->cascadeOnDelete()
                 ->cascadeOnUpdate();
-            $table->foreignId('created_by')
-                ->constrained('staffs', 'id')
-                ->cascadeOnDelete()
-                ->cascadeOnUpdate();
+            $table->foreignId('created_by')->nullable();
             $table->unsignedSmallInteger('year_of_study')
                 ->nullable()
                 ->after('program_version_mapping_id');
@@ -47,6 +44,17 @@ return new class extends Migration
             $table->softDeletes();
             $table->timestamps();
         });
+
+        // Add foreign key to `created_by` only if `staffs` table exists (avoid deploy-time race)
+        if (Schema::hasTable('staffs')) {
+            Schema::table('fee_assignments', function (Blueprint $table) {
+                $table->foreign('created_by')
+                    ->references('id')
+                    ->on('staffs')
+                    ->cascadeOnDelete()
+                    ->cascadeOnUpdate();
+            });
+        }
 
         // Add partial unique index to enforce only ONE active assignment per combination
         if (config('database.default') === 'mysql') {
