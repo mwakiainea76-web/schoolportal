@@ -42,6 +42,9 @@ Route::get('/dashboard', [DashboardController::class, 'redirect'])
 Route::get('/student/dashboard', [DashboardController::class, 'studentDashboard'])
     ->middleware(['auth', 'verified'])
     ->name('student.dashboard');
+Route::post('/student/dashboard/register-session', [AcademicSessionEnrollmentController::class, 'registerCurrentStudent'])
+    ->middleware(['auth', 'verified'])
+    ->name('student.dashboard.register-session');
 
 Route::get('/staff/dashboard', [DashboardController::class, 'staffDashboard'])
     ->middleware(['auth', 'verified'])

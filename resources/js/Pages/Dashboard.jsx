@@ -13,11 +13,11 @@ import {
 } from "lucide-react";
 
 const currency = (amount) =>
-    new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
+    `Ksh ${new Intl.NumberFormat("en-KE", {
+        style: "decimal",
         minimumFractionDigits: 2,
-    }).format(Number(amount || 0));
+        maximumFractionDigits: 2,
+    }).format(Number(amount || 0))}`;
 
 const statusClasses = {
     active: "bg-emerald-100 text-emerald-700",
@@ -67,15 +67,16 @@ function StudentDashboard({ dashboard, fullName }) {
     ];
     const [showSessionRegistrationModal, setShowSessionRegistrationModal] =
         useState(false);
-    const { data, post, processing, errors } = useForm({
-        registration_number: dashboard.student?.registration_number ?? "",
-    });
+    const { post, processing, errors, clearErrors } = useForm({});
 
     const submitSessionRegistration = (e) => {
         e.preventDefault();
-        post(route("academic.sessions.enrollments.store"), {
+        post(route("student.dashboard.register-session"), {
             preserveScroll: true,
-            onSuccess: () => setShowSessionRegistrationModal(false),
+            onSuccess: () => {
+                clearErrors();
+                setShowSessionRegistrationModal(false);
+            },
         });
     };
 
@@ -346,9 +347,9 @@ function StudentDashboard({ dashboard, fullName }) {
                             </p>
                         </div>
 
-                        {errors.registration_number ? (
+                        {errors.session_registration ? (
                             <p className="text-sm text-red-600">
-                                {errors.registration_number}
+                                {errors.session_registration}
                             </p>
                         ) : null}
 

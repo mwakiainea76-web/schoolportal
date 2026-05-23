@@ -9,6 +9,7 @@ use App\Models\ProgramEnrollment;
 use App\Models\Student;
 use App\Services\BillingService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
@@ -79,7 +80,6 @@ class AcademicSessionEnrollmentController extends Controller
 
     public function store(StoreAcademicSessionEnrollmentRequest $request)
     {
-        // 1. Find student
         $student = Student::where('registration_number', $request->registration_number)
             ->first();
 
@@ -89,73 +89,42 @@ class AcademicSessionEnrollmentController extends Controller
             ]);
         }
 
-        // 2. Find the student's course enrollment
-        $programEnrollment = ProgramEnrollment::where('student_id', $student->id)
-            ->latest()
-            ->first();
-
-        if (! $programEnrollment) {
-            return back()->withInput()->withErrors([
-                'registration_number' => "Student '{$request->registration_number}' is not enrolled in any program.",
-            ]);
-        }
-
-        // 3. Find active academic session
-        $activeSession = AcademicSession::with('academicYear')
-            ->where('is_active', true)
-            ->first();
-
-        if (! $activeSession) {
-            return back()->withInput()->withErrors([
-                'registration_number' => 'No active academic session found. Please activate a session first.',
-            ]);
-        }
-
-        // 4. Check if already enrolled in this session
-        $alreadyEnrolled = AcademicSessionEnrollment::where('program_enrollment_id', $programEnrollment->id)
-            ->where('academic_session_id', $activeSession->id)
-            ->exists();
-
-        if ($alreadyEnrolled) {
-            return back()->withInput()->withErrors([
-                'registration_number' => "Student '{$request->registration_number}' is already enrolled in {$activeSession->academicYear->academic_year} - Session {$activeSession->session_No}.",
-            ]);
-        }
-
-        $sessionNumber = $activeSession->session_number ?? $activeSession->session_No ?? 1;
-
-        if ($sessionNumber > 3) {
-            return back()->withInput()->withErrors([
-                'registration_number' => 'An academic year can only have 3 modules/sessions.',
-            ]);
-        }
-
-        // 5. Create enrollment and invoice together
         try {
-            $enrollment = DB::transaction(function () use ($programEnrollment, $activeSession, $sessionNumber) {
-                $enrollment = AcademicSessionEnrollment::create([
-                'program_enrollment_id' => $programEnrollment->id,
-                'academic_session_id' => $activeSession->id,
-                'module' => $sessionNumber,
-                'session_number' => $sessionNumber,
-                'status' => 'active',
-            ]);
-
-                $creatorStaffId = auth()->user()?->staff?->id;
-                $this->billingService->createInvoiceForEnrollment(
-                    $enrollment->load(['academicSession', 'programEnrollment']),
-                    $creatorStaffId
-                );
-
-                return $enrollment;
-            });
-        } catch (\Illuminate\Validation\ValidationException $e) {
+            $enrollment = $this->enrollStudentIntoActiveSession($student, auth()->user()?->staff?->id);
+        } catch (ValidationException $e) {
             return back()->withInput()->withErrors($e->errors());
         }
+
+        $activeSession = $enrollment->academicSession;
+        $sessionNumber = $enrollment->session_number;
 
         return redirect()
             ->route('academic.sessions.enrollments.index')
             ->with('success', "Student successfully enrolled in {$activeSession->academicYear->academic_year} - Session {$sessionNumber}. The session invoice has been generated.");
+    }
+
+    public function registerCurrentStudent(Request $request)
+    {
+        $student = $request->user()?->student;
+
+        if (! $student) {
+            return back()->withErrors([
+                'session_registration' => 'Your account is not linked to a student profile.',
+            ]);
+        }
+
+        try {
+            $enrollment = $this->enrollStudentIntoActiveSession($student, auth()->user()?->staff?->id);
+        } catch (ValidationException $e) {
+            return back()->withErrors($e->errors());
+        }
+
+        $activeSession = $enrollment->academicSession;
+        $sessionNumber = $enrollment->session_number;
+
+        return redirect()
+            ->route('student.dashboard')
+            ->with('success', "You have been registered for {$activeSession->academicYear->academic_year} - Session {$sessionNumber}. Your session invoice has been generated.");
     }
 
     public function edit(AcademicSessionEnrollment $academicSessionEnrollment)
@@ -204,6 +173,64 @@ class AcademicSessionEnrollmentController extends Controller
         $academicSessionEnrollment->delete();
 
         return back()->with('success', 'Enrollment removed successfully.');
+    }
+
+    protected function enrollStudentIntoActiveSession(Student $student, ?int $creatorStaffId = null): AcademicSessionEnrollment
+    {
+        $programEnrollment = ProgramEnrollment::where('student_id', $student->id)
+            ->latest()
+            ->first();
+
+        if (! $programEnrollment) {
+            throw ValidationException::withMessages([
+                'session_registration' => "Student '{$student->registration_number}' is not enrolled in any program.",
+            ]);
+        }
+
+        $activeSession = AcademicSession::with('academicYear')
+            ->where('is_active', true)
+            ->first();
+
+        if (! $activeSession) {
+            throw ValidationException::withMessages([
+                'session_registration' => 'No active academic session found. Please contact the school office.',
+            ]);
+        }
+
+        $alreadyEnrolled = AcademicSessionEnrollment::where('program_enrollment_id', $programEnrollment->id)
+            ->where('academic_session_id', $activeSession->id)
+            ->exists();
+
+        if ($alreadyEnrolled) {
+            throw ValidationException::withMessages([
+                'session_registration' => "You are already registered for {$activeSession->academicYear->academic_year} - Session {$activeSession->session_No}.",
+            ]);
+        }
+
+        $sessionNumber = $activeSession->session_number ?? $activeSession->session_No ?? 1;
+
+        if ($sessionNumber > 3) {
+            throw ValidationException::withMessages([
+                'session_registration' => 'An academic year can only have 3 modules/sessions.',
+            ]);
+        }
+
+        return DB::transaction(function () use ($programEnrollment, $activeSession, $sessionNumber, $creatorStaffId) {
+            $enrollment = AcademicSessionEnrollment::create([
+                'program_enrollment_id' => $programEnrollment->id,
+                'academic_session_id' => $activeSession->id,
+                'module' => $sessionNumber,
+                'session_number' => $sessionNumber,
+                'status' => 'active',
+            ]);
+
+            $this->billingService->createInvoiceForEnrollment(
+                $enrollment->load(['academicSession.academicYear', 'programEnrollment']),
+                $creatorStaffId
+            );
+
+            return $enrollment;
+        });
     }
 }
 
