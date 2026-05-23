@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Head, Link, router, useForm } from "@inertiajs/react";
+import React from "react";
+import { Head, Link, useForm } from "@inertiajs/react";
 import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import TextInput from "@/Components/TextInput";
@@ -9,8 +9,8 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 
 const Edit = ({ certification_level, exam_bodies }) => {
     const cert = certification_level || null;
+    const hasExamBodies = exam_bodies.length > 0;
 
-    // ✅ initialize ONCE only (no useEffect syncing)
     const { data, setData, put, processing, errors } = useForm({
         code: certification_level?.code ?? "",
         exam_body_id: certification_level?.exam_body_id ?? "",
@@ -19,9 +19,6 @@ const Edit = ({ certification_level, exam_bodies }) => {
         entry_grade: certification_level?.entry_grade ?? "",
     });
 
-    // ---------------------------
-    // UPDATE
-    // ---------------------------
     const submit = (e) => {
         e.preventDefault();
 
@@ -29,7 +26,7 @@ const Edit = ({ certification_level, exam_bodies }) => {
 
         put(route("certification-levels.update", encodeURIComponent(cert.id)), {
             preserveScroll: true,
-            preserveState: true, // ✅ important: keeps form state
+            preserveState: true,
         });
     };
 
@@ -38,14 +35,18 @@ const Edit = ({ certification_level, exam_bodies }) => {
             <Head title="Edit Certification Level" />
 
             <div className="mx-auto w-full">
-                {/* ---------------- FORM ---------------- */}
                 <div className="bg-white rounded-lg border shadow overflow-hidden">
                     <div className="bg-slate-400 text-white text-center py-2 text-sm font-medium">
                         Edit certification level
                     </div>
                     <form className="w-full p-10 space-y-8" onSubmit={submit}>
+                        {!hasExamBodies ? (
+                            <div className="rounded border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+                                You cannot update this certification level until an exam body exists.
+                            </div>
+                        ) : null}
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 xl:grid-cols-3">
-                            {/* EXAM BODY */}
                             <div>
                                 <InputLabel
                                     htmlFor="exam_body_id"
@@ -54,18 +55,22 @@ const Edit = ({ certification_level, exam_bodies }) => {
                                 <SearchSelect
                                     routeName="exam-bodies.search"
                                     defaultOptions={exam_bodies}
-                                    value={data.exam_body_id} // ✅ ONLY THIS
+                                    value={data.exam_body_id}
                                     placeholder="Search Exam Body..."
+                                    disabled={!hasExamBodies}
                                     onChange={(body) =>
                                         setData("exam_body_id", body.id)
                                     }
                                     error={errors.exam_body_id}
                                 />
-
+                                {!hasExamBodies ? (
+                                    <p className="mt-1 text-xs text-amber-600">
+                                        Create an exam body first to continue.
+                                    </p>
+                                ) : null}
                                 <InputError message={errors.exam_body_id} />
                             </div>
 
-                            {/* CODE */}
                             <div>
                                 <InputLabel value="Certification Code" />
                                 <TextInput
@@ -78,7 +83,6 @@ const Edit = ({ certification_level, exam_bodies }) => {
                                 <InputError message={errors.code} />
                             </div>
 
-                            {/* NAME */}
                             <div>
                                 <InputLabel value="Certification Name" />
                                 <TextInput
@@ -91,7 +95,6 @@ const Edit = ({ certification_level, exam_bodies }) => {
                                 <InputError message={errors.name} />
                             </div>
 
-                            {/* ENTRY GRADE */}
                             <div>
                                 <InputLabel value="Entry Grade" />
                                 <TextInput
@@ -105,7 +108,6 @@ const Edit = ({ certification_level, exam_bodies }) => {
                             </div>
                         </div>
 
-                        {/* DESCRIPTION */}
                         <div>
                             <InputLabel value="Description" />
                             <TextArea
@@ -118,8 +120,6 @@ const Edit = ({ certification_level, exam_bodies }) => {
                             <InputError message={errors.description} />
                         </div>
 
-                        {/* ACTIONS */}
-
                         <div className="flex justify-between pt-4">
                             <Link
                                 href={route("certification-levels.index")}
@@ -129,7 +129,7 @@ const Edit = ({ certification_level, exam_bodies }) => {
                             </Link>
 
                             <button
-                                disabled={processing || !cert}
+                                disabled={processing || !cert || !hasExamBodies}
                                 type="submit"
                                 className="px-4 py-2 bg-emerald-600 text-white rounded hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
                             >

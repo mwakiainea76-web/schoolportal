@@ -5,8 +5,8 @@ namespace App\Http\Controllers;
 use App\Filters\StudentFilter;
 use App\Http\Requests\StoreStudentRequest;
 use App\Http\Requests\UpdateStudentRequest;
-use App\Models\CourseCurriculum;
-use App\Models\CourseEnrollment;
+use App\Models\ProgramVersionMapping;
+use App\Models\ProgramEnrollment;
 use App\Models\Student;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -114,7 +114,7 @@ class StudentController extends Controller
 
     public function create()
     {
-        $courseCurricula = CourseCurriculum::query()
+        $courseCurricula = ProgramVersionMapping::query()
             ->active()
             ->with([
                 'curriculum:id,name',
@@ -187,7 +187,7 @@ class StudentController extends Controller
                 'student_status' => 'active',
             ]);
 
-            CourseEnrollment::create([
+            ProgramEnrollment::create([
                 'student_id' => $student->id,
                 'course_curriculum_id' => $request->course_curriculum_id,
             ]);
@@ -211,9 +211,23 @@ class StudentController extends Controller
 
     public function edit(Student $student)
     {
-        $student->load(['user.nextofkin']);
+        $student->load(['user.nextofkin', 'programEnrollment.programVersionMapping.program', 'programEnrollment.programVersionMapping.programVersion']);
 
-        return inertia('students/Edit', compact('student'));
+        $courseCurricula = ProgramVersionMapping::query()
+            ->active()
+            ->with([
+                'programVersion:id,name',
+                'program:id,name,certification_level_id',
+                'program.certificationLevel:id,name',
+            ])
+            ->orderByDesc('id')
+            ->get()
+            ->map(fn (ProgramVersionMapping $mapping) => [
+                'id' => $mapping->id,
+                'name' => ($mapping->programVersion?->name ?? 'Program Version').' - '.($mapping->program?->display_name ?? $mapping->program?->name ?? 'Program'),
+            ]);
+
+        return inertia('students/Edit', compact('student', 'courseCurricula'));
     }
 
     // ----------------------------------------------------------------
@@ -297,3 +311,4 @@ class StudentController extends Controller
             ]);
     }
 }
+

@@ -11,10 +11,16 @@ export default function AcademicStep({
     courseCurricula,
     isEdit = false,
 }) {
+    const hasProgramVersionMappings = courseCurricula.length > 0;
     const handleChange = (e) => setData(e.target.name, e.target.value);
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {!hasProgramVersionMappings ? (
+                <div className="md:col-span-2 xl:col-span-3 rounded border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+                    You cannot continue with academic details until a program version mapping exists.
+                </div>
+            ) : null}
             <div>
                 <InputLabel value="Previous School" required />
                 <TextInput
@@ -28,13 +34,19 @@ export default function AcademicStep({
             </div>
 
             <div>
-                <InputLabel value="Course" required />
+                <InputLabel value="Program" required />
                 <SearchSelect
                     defaultOptions={courseCurricula}
                     value={data.course_curriculum_id}
+                    disabled={!hasProgramVersionMappings}
                     onChange={(m) => setData("course_curriculum_id", m.id)}
                     error={errors.course_curriculum_id}
                 />
+                {!hasProgramVersionMappings ? (
+                    <p className="mt-1 text-xs text-amber-600">
+                        Create a program version mapping first to continue.
+                    </p>
+                ) : null}
                 <InputError message={errors.course_curriculum_id} />
             </div>
             <div>
@@ -79,3 +91,4 @@ export default function AcademicStep({
         </div>
     );
 }
+

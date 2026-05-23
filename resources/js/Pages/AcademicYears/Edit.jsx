@@ -5,13 +5,23 @@ import TextInput from "@/Components/TextInput";
 import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import PrimaryButton from "@/Components/PrimaryButton";
-import ToggleSwitch from "@/Components/ToggleSwitch";
+import SearchSelect from "@/Components/SearchSelect";
 
 export default function Edit({ academic_year }) {
-    // Initialize form with existing academic_year data
+    const lifecycleText = academic_year?.end_date
+        ? "Academic year is done"
+        : academic_year?.start_date
+          ? "Academic year is ongoing"
+          : "Upcoming";
+    const isYearStateLocked = Boolean(academic_year?.end_date);
+    const yearStateOptions = [
+        { id: "start", name: "Start Year" },
+        { id: "end", name: "End Year" },
+    ];
+
     const { data, setData, put, processing, errors } = useForm({
         academic_year: academic_year?.academic_year || "",
-        is_active: !academic_year?.is_active,
+        year_state: academic_year?.is_active ? "start" : "end",
     });
 
     const submit = (e) => {
@@ -55,6 +65,8 @@ export default function Edit({ academic_year }) {
                             <div>
                                 <InputLabel>Academic Year Name</InputLabel>
                                 <TextInput
+                                    className="cursor-not-allowed bg-gray-100"
+                                    disabled
                                     value={data.academic_year}
                                     onChange={(e) =>
                                         setData("academic_year", e.target.value)
@@ -65,22 +77,38 @@ export default function Edit({ academic_year }) {
                                 <InputError message={errors.academic_year} />
                             </div>
                             <div className="flex flex-col justify-center">
-                                <ToggleSwitch
-                                    label={
-                                        academic_year.is_active
-                                            ? "End academic year now "
-                                            : "Re activate academic year  now"
+                                <InputLabel value="Year State" required />
+                                <SearchSelect
+                                    routeName={null}
+                                    defaultOptions={yearStateOptions}
+                                    value={data.year_state}
+                                    selectedLabel={
+                                        data.year_state === "start"
+                                            ? "Start Year"
+                                            : "End Year"
                                     }
-                                    checked={data.is_active}
-                                    onChange={(checked) =>
-                                        setData("is_active", checked)
+                                    placeholder="Select year state"
+                                    onChange={(item) =>
+                                        setData("year_state", item.id)
                                     }
-                                    error={errors.is_active}
+                                    error={errors.year_state}
+                                    disabled={isYearStateLocked}
                                 />
                                 <InputError
-                                    message={errors.is_active}
+                                    message={errors.year_state}
                                     className="mt-2"
                                 />
+                                <p
+                                    className={`mt-1 text-xs ${
+                                        isYearStateLocked
+                                            ? "text-amber-600"
+                                            : "text-slate-500"
+                                    }`}
+                                >
+                                    {isYearStateLocked
+                                        ? "This academic year is closed and cannot be reactivated."
+                                        : lifecycleText}
+                                </p>
                             </div>
                         </div>
 

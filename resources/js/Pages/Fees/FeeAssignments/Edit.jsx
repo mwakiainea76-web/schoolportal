@@ -13,6 +13,12 @@ export default function Edit({
     academicYear,
     curriculums,
 }) {
+    const hasAcademicYears = academicYear.length > 0;
+    const hasFeePlans = feePlans.length > 0;
+    const hasProgramVersions = curriculums.length > 0;
+    const canUpdateAssignment =
+        !!assignment && hasAcademicYears && hasFeePlans && hasProgramVersions;
+
     const { data, setData, put, processing, errors } = useForm({
         fee_plan_id: assignment.fee_plan_id || "",
         academic_year_id: assignment.academic_year_id || "",
@@ -36,10 +42,15 @@ export default function Edit({
             <div className="mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
                 <div className="overflow-hidden rounded-lg border border-zinc-100 bg-white shadow-sm">
                     <div className="bg-slate-400 py-2 text-center text-sm font-medium text-white">
-                        Edit Curriculum Fee Assignment
+                        Edit Program Version Fee Assignment
                     </div>
 
                     <form className="space-y-8 p-10" onSubmit={submit}>
+                        {!canUpdateAssignment ? (
+                            <div className="rounded border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+                                You cannot update this fee assignment until an academic year, a fee plan, and a program version mapping are available.
+                            </div>
+                        ) : null}
                         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
                             <div>
                                 <InputLabel value="Academic year" />
@@ -47,10 +58,16 @@ export default function Edit({
                                     defaultOptions={academicYear}
                                     value={data.academic_year_id}
                                     placeholder="Select year..."
+                                    disabled={!hasAcademicYears}
                                     onChange={(item) =>
                                         setData("academic_year_id", item.id)
                                     }
                                 />
+                                {!hasAcademicYears ? (
+                                    <p className="mt-1 text-xs text-amber-600">
+                                        Create an academic year first to continue.
+                                    </p>
+                                ) : null}
                                 <InputError message={errors.academic_year_id} />
                             </div>
 
@@ -61,24 +78,36 @@ export default function Edit({
                                     defaultOptions={feePlans}
                                     value={data.fee_plan_id}
                                     placeholder="Select fee plan..."
+                                    disabled={!hasFeePlans}
                                     onChange={(item) =>
                                         setData("fee_plan_id", item.id)
                                     }
                                 />
+                                {!hasFeePlans ? (
+                                    <p className="mt-1 text-xs text-amber-600">
+                                        Create a fee plan first to continue.
+                                    </p>
+                                ) : null}
                                 <InputError message={errors.fee_plan_id} />
                             </div>
 
                             <div>
-                                <InputLabel value="Curriculum" />
+                                <InputLabel value="Program Version" />
                                 <SearchSelect
-                                    routeName="curriculums.search"
+                                    routeName="program-versions.search"
                                     defaultOptions={curriculums}
                                     value={data.course_curriculum_id}
-                                    placeholder="Select curriculum..."
+                                    placeholder="Select program version..."
+                                    disabled={!hasProgramVersions}
                                     onChange={(item) =>
                                         setData("course_curriculum_id", item.id)
                                     }
                                 />
+                                {!hasProgramVersions ? (
+                                    <p className="mt-1 text-xs text-amber-600">
+                                        Create a program version mapping first to continue.
+                                    </p>
+                                ) : null}
                                 <InputError
                                     message={errors.course_curriculum_id}
                                 />
@@ -125,7 +154,7 @@ export default function Edit({
                             </Link>
 
                             <button
-                                disabled={processing}
+                                disabled={processing || !canUpdateAssignment}
                                 type="submit"
                                 className="rounded bg-emerald-600 px-4 py-2 text-white hover:bg-slate-700 disabled:opacity-50"
                             >

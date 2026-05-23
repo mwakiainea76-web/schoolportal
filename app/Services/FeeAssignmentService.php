@@ -18,7 +18,7 @@ class FeeAssignmentService
      * - academic_session_id
      *
      * @param int $academicSessionId The academic session
-     * @param int|null $courseCurriculumId The course curriculum
+     * @param int|null $courseProgramVersionId The course curriculum
      * @param int|null $yearOfStudy The year of study
      * @param int|null $sessionNumber The session number within the year
      * @param string|null $effectiveDate The date to check validity (defaults to today)
@@ -26,19 +26,19 @@ class FeeAssignmentService
      */
     public function resolveActiveAssignment(
         int $academicSessionId,
-        ?int $courseCurriculumId = null,
+        ?int $courseProgramVersionId = null,
         ?int $yearOfStudy = null,
         ?int $sessionNumber = null,
         ?string $effectiveDate = null
     ): ?FeeAssignment {
-        if (! $courseCurriculumId || ! $yearOfStudy || ! $sessionNumber) {
+        if (! $courseProgramVersionId || ! $yearOfStudy || ! $sessionNumber) {
             return null;
         }
 
         $effectiveDate = $effectiveDate ? Carbon::parse($effectiveDate)->toDateString() : now()->toDateString();
 
         return FeeAssignment::query()
-            ->where('course_curriculum_id', $courseCurriculumId)
+            ->where('course_curriculum_id', $courseProgramVersionId)
             ->where('year_of_study', $yearOfStudy)
             ->where('session_number', $sessionNumber)
             ->where('academic_session_id', $academicSessionId)
@@ -66,3 +66,4 @@ class FeeAssignmentService
             ->first();
     }
 }
+

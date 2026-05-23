@@ -47,9 +47,9 @@ class FeeAssignment extends Model
         return $this->belongsTo(AcademicSession::class);
     }
 
-    public function courseCurriculum()
+    public function courseProgramVersion()
     {
-        return $this->belongsTo(CourseCurriculum::class);
+        return $this->belongsTo(ProgramVersionMapping::class);
     }
 
     public function createdBy()
@@ -62,3 +62,4 @@ class FeeAssignment extends Model
         return $query->where('is_active', true);
     }
 }
+

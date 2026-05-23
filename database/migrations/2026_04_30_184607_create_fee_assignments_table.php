@@ -22,9 +22,9 @@ return new class extends Migration
                 ->constrained('academic_years', 'id')
                 ->cascadeOnDelete()
                 ->cascadeOnUpdate();
-            $table->foreignId('course_curriculum_id')
+            $table->foreignId('program_version_mapping_id')
                 ->nullable()
-                ->constrained('course_curriculum')
+                ->constrained('program_version_mappings')
                 ->cascadeOnDelete()
                 ->cascadeOnUpdate();
             $table->foreignId('created_by')
@@ -33,7 +33,7 @@ return new class extends Migration
                 ->cascadeOnUpdate();
             $table->unsignedSmallInteger('year_of_study')
                 ->nullable()
-                ->after('course_curriculum_id');
+                ->after('program_version_mapping_id');
             $table->unsignedSmallInteger('session_number')
                 ->nullable()
                 ->after('year_of_study');
@@ -42,17 +42,17 @@ return new class extends Migration
             $table->date('valid_to')->nullable();
             $table->index('valid_from');
             $table->index('valid_to');
-            $table->index(['academic_year_id', 'course_curriculum_id']);
-            $table->index(['course_curriculum_id', 'year_of_study', 'session_number', 'academic_year_id', 'is_active']);
+            $table->index(['academic_year_id', 'program_version_mapping_id']);
+            $table->index(['program_version_mapping_id', 'year_of_study', 'session_number', 'academic_year_id', 'is_active']);
             $table->softDeletes();
             $table->timestamps();
         });
 
         // Add partial unique index to enforce only ONE active assignment per combination
         if (config('database.default') === 'mysql') {
-            DB::statement('CREATE UNIQUE INDEX fee_assignments_active_unique ON fee_assignments (academic_year_id, course_curriculum_id, year_of_study, session_number) WHERE is_active = 1');
+            DB::statement('CREATE UNIQUE INDEX fee_assignments_active_unique ON fee_assignments (academic_year_id, program_version_mapping_id, year_of_study, session_number) WHERE is_active = 1');
         } elseif (config('database.default') === 'pgsql') {
-            DB::statement('CREATE UNIQUE INDEX fee_assignments_active_unique ON fee_assignments (academic_year_id, course_curriculum_id, year_of_study, session_number) WHERE is_active = true');
+            DB::statement('CREATE UNIQUE INDEX fee_assignments_active_unique ON fee_assignments (academic_year_id, program_version_mapping_id, year_of_study, session_number) WHERE is_active = true');
         }
     }
 

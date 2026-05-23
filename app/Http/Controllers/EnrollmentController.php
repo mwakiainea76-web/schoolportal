@@ -19,8 +19,8 @@ class EnrollmentController extends Controller
             ->apply(
                 Enrollment::with([
                     'student.user',
-                    'courseEnrollment.courseCurriculum.course',
-                    'courseEnrollment.courseCurriculum.curriculum',
+                    'courseEnrollment.courseProgramVersion.course',
+                    'courseEnrollment.courseProgramVersion.curriculum',
                     'academicSession',
                 ]),
                 $request->all()
@@ -103,3 +103,4 @@ class EnrollmentController extends Controller
             ]);
     }
 }
+

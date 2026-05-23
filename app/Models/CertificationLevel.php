@@ -25,8 +25,9 @@ class CertificationLevel extends Model
 
     public function courses()
     {
-        return $this->hasMany(Course::class, 'certification_level_id');
+        return $this->hasMany(Program::class, 'certification_level_id');
     }
 
     //
 }
+

@@ -8,6 +8,10 @@ import InputError from "@/Components/InputError";
 import TextInput from "@/Components/TextInput";
 
 export default function InvoiceCreate({ students, enrollments }) {
+    const hasStudents = students.length > 0;
+    const hasEnrollments = enrollments.length > 0;
+    const canCreateInvoice = hasStudents && hasEnrollments;
+
     const { data, setData, post, processing, errors } = useForm({
         student_id: "",
         enrollment_id: "",
@@ -34,16 +38,27 @@ export default function InvoiceCreate({ students, enrollments }) {
                     </h2>
 
                     <form onSubmit={submit} className="space-y-6">
+                        {!canCreateInvoice ? (
+                            <div className="rounded border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+                                You cannot create an invoice until both a student and an enrollment exist.
+                            </div>
+                        ) : null}
                         {/* STUDENT */}
                         <div>
                             <InputLabel value="Student" />
                             <SearchSelect
                                 routeName="students.search"
                                 defaultOptions={students}
+                                disabled={!hasStudents}
                                 onChange={(item) =>
                                     setData("student_id", item.id)
                                 }
                             />
+                            {!hasStudents ? (
+                                <p className="mt-1 text-xs text-amber-600">
+                                    Create a student first to continue.
+                                </p>
+                            ) : null}
                             <InputError message={errors.student_id} />
                         </div>
 
@@ -53,10 +68,16 @@ export default function InvoiceCreate({ students, enrollments }) {
                             <SearchSelect
                                 routeName="enrollments.search"
                                 defaultOptions={enrollments}
+                                disabled={!hasEnrollments}
                                 onChange={(item) =>
                                     setData("enrollment_id", item.id)
                                 }
                             />
+                            {!hasEnrollments ? (
+                                <p className="mt-1 text-xs text-amber-600">
+                                    Create an enrollment first to continue.
+                                </p>
+                            ) : null}
                             <InputError message={errors.enrollment_id} />
                         </div>
 
@@ -96,7 +117,7 @@ export default function InvoiceCreate({ students, enrollments }) {
                             </Link>
 
                             <button
-                                disabled={processing}
+                                disabled={processing || !canCreateInvoice}
                                 className="px-4 py-2 bg-emerald-600 text-white rounded"
                             >
                                 {processing ? "Saving..." : "Create Invoice"}

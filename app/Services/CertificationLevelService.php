@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Models\CertificationLevel;
-use App\Models\Course;
+use App\Models\Program;
 
 class CertificationLevelService
 {
@@ -20,9 +20,9 @@ class CertificationLevelService
 
     public function delete(CertificationLevel $level): array
     {
-        $hasCourses = Course::where('certification_level_id', $level->id)->exists();
+        $hasPrograms = Program::where('certification_level_id', $level->id)->exists();
 
-        if ($hasCourses) {
+        if ($hasPrograms) {
             return [
                 'status' => false,
                 'message' => 'To continue delete all courses linked to this certification level first',

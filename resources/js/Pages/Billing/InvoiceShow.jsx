@@ -62,7 +62,7 @@ export default function Show({ invoice }) {
                     </div>
 
                     <div>
-                        <h3 className="text-sm text-zinc-500">Course</h3>
+                        <h3 className="text-sm text-zinc-500">Program</h3>
                         <p>
                             {enrollment?.course_curriculum?.course?.name ?? "—"}
                         </p>
@@ -240,3 +240,4 @@ export default function Show({ invoice }) {
         </AuthenticatedLayout>
     );
 }
+

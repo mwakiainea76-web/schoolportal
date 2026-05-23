@@ -13,7 +13,7 @@ class AcademicSessionEnrollment extends Model
     protected $table = 'academic_session_enrollments';
 
     protected $fillable = [
-        'course_enrollment_id',
+        'program_enrollment_id',
         'academic_session_id',
         'module',
         'year_of_study',
@@ -25,7 +25,7 @@ class AcademicSessionEnrollment extends Model
         'student_id',
         'display_name',
         'curriculum',
-        'course',
+        'program',
     ];
 
     protected $casts = [
@@ -72,9 +72,9 @@ class AcademicSessionEnrollment extends Model
         return (int) ceil($session->session_No / 3);
     }
 
-    public function courseEnrollment()
+    public function programEnrollment()
     {
-        return $this->belongsTo(CourseEnrollment::class);
+        return $this->belongsTo(ProgramEnrollment::class);
     }
 
     public function academicSession()
@@ -86,39 +86,39 @@ class AcademicSessionEnrollment extends Model
     {
         return $this->hasOneThrough(
             Student::class,
-            CourseEnrollment::class,
+            ProgramEnrollment::class,
             'id',
             'id',
-            'course_enrollment_id',
+            'program_enrollment_id',
             'student_id'
         );
     }
 
-    public function courseCurriculum()
+    public function programVersionMapping()
     {
         return $this->hasOneThrough(
-            CourseCurriculum::class,
-            CourseEnrollment::class,
+            ProgramVersionMapping::class,
+            ProgramEnrollment::class,
             'id',
             'id',
-            'course_enrollment_id',
-            'course_curriculum_id'
+            'program_enrollment_id',
+            'program_version_mapping_id'
         );
     }
 
-    public function getCurriculumAttribute()
+    public function getProgramVersionAttribute()
     {
-        return $this->courseCurriculum?->curriculum;
+        return $this->programVersionMapping?->programVersion;
     }
 
-    public function getCourseAttribute()
+    public function getProgramAttribute()
     {
-        return $this->courseCurriculum?->course;
+        return $this->programVersionMapping?->program;
     }
 
     public function getStudentIdAttribute()
     {
-        return $this->courseEnrollment?->student_id;
+        return $this->programEnrollment?->student_id;
     }
 
     public function getDisplayNameAttribute(): string
@@ -128,10 +128,10 @@ class AcademicSessionEnrollment extends Model
         );
         $registration = $this->student?->registration_number ?? 'N/A';
         $session = $this->academicSession?->session_No ?? $this->academicSession?->name ?? 'No Session';
-        $curriculum = $this->curriculum?->name ?? 'No Curriculum';
-        $course = $this->course?->name ?? 'No Course';
+        $curriculum = $this->curriculum?->name ?? 'No ProgramVersion';
+        $program = $this->program?->name ?? 'No Program';
 
-        return "{$studentName} ({$registration}) - {$session} - {$curriculum} - {$course} - Year {$this->year_of_study} - Module {$this->module}";
+        return "{$studentName} ({$registration}) - {$session} - {$curriculum} - {$program} - Year {$this->year_of_study} - Module {$this->module}";
     }
 
     // In AcademicSessionEnrollment model
@@ -154,3 +154,4 @@ class AcademicSessionEnrollment extends Model
         return $this->hasMany(StudentInvoice::class, 'enrollment_id');
     }
 }
+

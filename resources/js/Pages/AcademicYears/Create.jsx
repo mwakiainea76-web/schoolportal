@@ -3,11 +3,9 @@ import { Head, useForm, Link } from "@inertiajs/react";
 import TextInput from "@/Components/TextInput";
 import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
-import ToggleSwitch from "@/Components/ToggleSwitch";
 export default function Create() {
     const { data, setData, post, processing, errors } = useForm({
         academic_year: "",
-        is_active: false,
     });
 
     const submit = (e) => {
@@ -38,21 +36,6 @@ export default function Create() {
                                     error={errors.academic_year}
                                 />
                                 <InputError message={errors.academic_year} />
-                            </div>
-
-                            <div className="flex flex-col justify-center">
-                                <ToggleSwitch
-                                    label="Set as Current Academic Year"
-                                    checked={data.is_active}
-                                    onChange={(checked) =>
-                                        setData("is_active", checked)
-                                    }
-                                    error={errors.is_active}
-                                />
-                                <InputError
-                                    message={errors.is_active}
-                                    className="mt-2"
-                                />
                             </div>
                         </div>
                         <div className="flex justify-between pt-4">

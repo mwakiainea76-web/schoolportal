@@ -7,7 +7,7 @@ use App\Http\Requests\StoreFeeAssignmentRequest;
 use App\Http\Requests\UpdateFeeAssignmentRequest;
 use App\Models\AcademicYear;
 use App\Models\CertificationLevel;
-use App\Models\CourseCurriculum;
+use App\Models\ProgramVersionMapping;
 use App\Models\Department;
 use App\Models\FeeAssignment;
 use App\Models\FeePlan;
@@ -35,8 +35,8 @@ class FeeAssignmentController extends Controller
         $query = FeeAssignment::with([
             'feePlan',
             'academicSession',
-            'courseCurriculum',
-            'courseCurriculum.course.certificationLevel',
+            'courseProgramVersion',
+            'courseProgramVersion.course.certificationLevel',
             'createdBy',
         ]);
 
@@ -65,12 +65,12 @@ class FeeAssignmentController extends Controller
             ->orderBy('academic_year')
             ->get();
 
-        $curriculums = CourseCurriculum::query()
+        $curriculums = ProgramVersionMapping::query()
             ->with(['curriculum:id,name', 'course:id,name'])
             ->get()
-            ->map(fn (CourseCurriculum $curriculum) => [
+            ->map(fn (ProgramVersionMapping $curriculum) => [
                 'id' => $curriculum->id,
-                'name' => trim(($curriculum->curriculum?->name ?? 'Curriculum').' - '.($curriculum->course?->name ?? 'Course')),
+                'name' => trim(($curriculum->curriculum?->name ?? 'ProgramVersion').' - '.($curriculum->course?->name ?? 'Program')),
             ]);
 
         return inertia('Fees/FeeAssignments/Create', [
@@ -109,19 +109,19 @@ class FeeAssignmentController extends Controller
             ->orderBy('academic_year')
             ->get();
 
-        $curriculums = CourseCurriculum::query()
+        $curriculums = ProgramVersionMapping::query()
             ->with(['curriculum:id,name', 'course:id,name'])
             ->get()
-            ->map(fn (CourseCurriculum $curriculum) => [
+            ->map(fn (ProgramVersionMapping $curriculum) => [
                 'id' => $curriculum->id,
-                'name' => trim(($curriculum->curriculum?->name ?? 'Curriculum').' - '.($curriculum->course?->name ?? 'Course')),
+                'name' => trim(($curriculum->curriculum?->name ?? 'ProgramVersion').' - '.($curriculum->course?->name ?? 'Program')),
             ]);
 
         return inertia('Fees/FeeAssignments/Edit', [
             'assignment' => $feeAssignment->load([
                 'feePlan',
                 'academicSession',
-                'courseCurriculum',
+                'courseProgramVersion',
             ]),
             'feePlans' => FeePlan::select('id', 'name')->get(),
             'academicYear' => $year,
@@ -241,7 +241,7 @@ class FeeAssignmentController extends Controller
             'assignment' => $feeAssignment->load([
                 'feePlan',
                 'academicSession',
-                'courseCurriculum',
+                'courseProgramVersion',
                 'createdBy',
             ]),
         ]);
@@ -341,7 +341,7 @@ class FeeAssignmentController extends Controller
         return response()->json($levels->values());
     }
 
-    public function bulkCurriculums(Request $request)
+    public function bulkProgramVersions(Request $request)
     {
         $validated = $request->validate([
             'fee_plan_id' => 'required|exists:fee_plans,id',
@@ -352,7 +352,7 @@ class FeeAssignmentController extends Controller
             'session_number' => 'required|integer|min:1|max:20',
         ]);
 
-        $curriculums = CourseCurriculum::query()
+        $curriculums = ProgramVersionMapping::query()
             ->active()
             ->with([
                 'curriculum:id,name',
@@ -380,7 +380,7 @@ class FeeAssignmentController extends Controller
             ->keyBy('course_curriculum_id');
 
         return response()->json([
-            'rows' => $curriculums->map(function (CourseCurriculum $curriculum) use ($existingAssignments, $validated) {
+            'rows' => $curriculums->map(function (ProgramVersionMapping $curriculum) use ($existingAssignments, $validated) {
                 $assignment = $existingAssignments->get($curriculum->id);
 
                 return [
@@ -442,11 +442,11 @@ class FeeAssignmentController extends Controller
                 ]);
 
             // Create new active assignments for selected curricula
-            foreach ($selectedIds as $courseCurriculumId) {
+            foreach ($selectedIds as $courseProgramVersionId) {
                 FeeAssignment::create([
                     'fee_plan_id' => $validated['fee_plan_id'],
                     'academic_year_id' => $validated['academic_year_id'],
-                    'course_curriculum_id' => $courseCurriculumId,
+                    'course_curriculum_id' => $courseProgramVersionId,
                     'year_of_study' => $validated['year_of_study'],
                     'session_number' => $validated['session_number'],
                     'created_by' => Auth::user()->staff->id,
@@ -459,7 +459,7 @@ class FeeAssignmentController extends Controller
 
         return redirect()
             ->route('fees.assignments.bulk')
-            ->with('success', 'Curriculum fee assignments updated successfully.');
+            ->with('success', 'ProgramVersion fee assignments updated successfully.');
     }
 
     /* =========================================================
@@ -549,7 +549,7 @@ class FeeAssignmentController extends Controller
         ]);
 
         $affected = FeeAssignment::query()
-            ->with(['feePlan:id,name', 'courseCurriculum:id,name', 'academicSession'])
+            ->with(['feePlan:id,name', 'courseProgramVersion:id,name', 'academicSession'])
             ->where('fee_plan_id', $validated['from_fee_plan_id'])
             ->where('academic_year_id', $validated['academic_year_id'])
             ->where('year_of_study', $validated['year_of_study'])
@@ -586,3 +586,4 @@ class FeeAssignmentController extends Controller
         ];
     }
 }
+

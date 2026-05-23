@@ -321,7 +321,7 @@ export default function ReportsIndex({ academicSessions = [] }) {
                                         Assignment Count
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
-                                        Curriculum Count
+                                        ProgramVersion Count
                                     </th>
                                 </tr>
                             </thead>
@@ -363,3 +363,4 @@ export default function ReportsIndex({ academicSessions = [] }) {
         </AuthenticatedLayout>
     );
 }
+

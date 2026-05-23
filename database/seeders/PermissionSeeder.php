@@ -15,8 +15,11 @@ class PermissionSeeder extends Seeder
 
         $modules = [
             'departments',
-            'courses',
+            'programs',
+            'program-versions',
+            'programs.program-version-mappings',
             'units',
+            'units.program-version-units',
             'permissions',
             'roles',
             'users',
@@ -31,14 +34,10 @@ class PermissionSeeder extends Seeder
             'certifications',
             'enrollments',
             'grades',
-            'curriculums',
-            'courses.curriculum',
-            'units.curriculum',
             'academic.years',
             'academic.sessions',
         ];
 
-        // ✅ USE CONSISTENT NAMING WITH FRONTEND
         $actions = ['view', 'create', 'edit', 'delete'];
 
         $permissions = [];

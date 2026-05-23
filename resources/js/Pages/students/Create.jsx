@@ -46,6 +46,7 @@ export default function CreateStudent({ courseCurricula }) {
     const [step, setStep] = useState(1);
     const [stepErrors, setStepErrors] = useState({});
     const [validating, setValidating] = useState(false);
+    const hasProgramVersionMappings = courseCurricula.length > 0;
 
     const { data, setData, post, processing, errors, reset } = useForm({
         // Personal
@@ -223,7 +224,11 @@ export default function CreateStudent({ courseCurricula }) {
                                     <button
                                         type="button"
                                         onClick={nextStep}
-                                        disabled={validating}
+                                        disabled={
+                                            validating ||
+                                            (step === 2 &&
+                                                !hasProgramVersionMappings)
+                                        }
                                         className="px-5 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 transition text-sm flex items-center gap-2"
                                     >
                                         {validating ? (

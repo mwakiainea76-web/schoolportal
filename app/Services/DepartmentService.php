@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\Course;
+use App\Models\Program;
 use App\Models\Department;
 
 class DepartmentService
@@ -25,9 +25,9 @@ class DepartmentService
 
     public function delete(Department $department): array
     {
-        $hasCourses = Course::where('department_id', $department->id)->exists();
+        $hasPrograms = Program::where('department_id', $department->id)->exists();
 
-        if ($hasCourses) {
+        if ($hasPrograms) {
             return [
                 'status' => false,
                 'message' => 'To continue delete all courses linked to this department first',
@@ -58,3 +58,4 @@ class DepartmentService
             ]);
     }
 }
+

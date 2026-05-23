@@ -118,3 +118,4 @@ class ReportingService
         return $query->get()->toArray();
     }
 }
+

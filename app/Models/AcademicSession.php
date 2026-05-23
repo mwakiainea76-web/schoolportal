@@ -8,8 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class AcademicSession extends Model
 {
-    /** @use HasFactory<\Database\Factories\AcademicSessionFactory> */
-    use HasFactory,SoftDeletes;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'academic_sessions';
 
@@ -18,6 +17,8 @@ class AcademicSession extends Model
     protected $fillable = [
         'academic_year_id',
         'session_No',
+        'session_number',
+        'label',
         'start_date',
         'end_date',
         'is_active',
@@ -37,7 +38,12 @@ class AcademicSession extends Model
     public function getDisplayNameAttribute()
     {
         return $this->academicYear
-            ? $this->academicYear->academic_year.' - Session '.$this->session_No
-            : 'Session '.$this->session_No;
+            ? ($this->academicYear->label ?? $this->academicYear->academic_year).' - Session '.($this->session_number ?? $this->session_No)
+            : 'Session '.($this->session_number ?? $this->session_No);
+    }
+
+    public function feePlanAssignments()
+    {
+        return $this->hasMany(FeePlanAssignment::class, 'session_id');
     }
 }

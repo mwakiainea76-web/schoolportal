@@ -26,14 +26,17 @@ class AcademicSessionController extends Controller
 
     public function create()
     {
-
         $academic_year = AcademicYear::where('is_active', true)->first();
-
-        $session_no = AcademicSession::where('academic_year_id', $academic_year->id)->count();
+        $session_no = $academic_year
+            ? AcademicSession::where('academic_year_id', $academic_year->id)->count() + 1
+            : 1;
 
         return inertia('AcademicSessions/Create', [
             'academic_year' => $academic_year,
-            'session_no' => ($session_no + 1),
+            'session_no' => $session_no,
+            'prerequisite_error' => $academic_year
+                ? null
+                : 'Create and activate an academic year before creating an academic session.',
         ]);
     }
 

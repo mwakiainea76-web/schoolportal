@@ -11,7 +11,7 @@ export default function Dashboard() {
                     Academic Overview
                 </h1>
                 <p className="text-zinc-500 mt-1">
-                    Manage courses and institutional scheduling from one place.
+                    Manage programs, program versions, and institutional scheduling from one place.
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-10">

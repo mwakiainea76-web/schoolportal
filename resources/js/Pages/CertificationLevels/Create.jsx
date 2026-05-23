@@ -7,6 +7,8 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import SearchSelect from "@/Components/SearchSelect";
 
 export default function AddCertificationLevel({ examBodies }) {
+    const hasExamBodies = examBodies.length > 0;
+
     const { data, setData, post, processing, errors, reset } = useForm({
         code: "",
         exam_body_id: "",
@@ -38,6 +40,11 @@ export default function AddCertificationLevel({ examBodies }) {
                         Add certification level
                     </div>
                     <form className="p-10 space-y-8" onSubmit={submit}>
+                        {!hasExamBodies ? (
+                            <div className="rounded border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+                                You cannot create a certification level until an exam body exists.
+                            </div>
+                        ) : null}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 xl:grid-cols-3">
                             <div>
                                 <InputLabel
@@ -49,10 +56,16 @@ export default function AddCertificationLevel({ examBodies }) {
                                     routeName="exam-bodies.search"
                                     defaultOptions={examBodies}
                                     placeholder="Search Exam Body..."
+                                    disabled={!hasExamBodies}
                                     onChange={(body) =>
                                         setData("exam_body_id", body.id)
                                     }
                                 />
+                                {!hasExamBodies ? (
+                                    <p className="mt-1 text-xs text-amber-600">
+                                        Create an exam body first to continue.
+                                    </p>
+                                ) : null}
 
                                 <InputError
                                     message={errors.exam_body_id}
@@ -175,7 +188,7 @@ export default function AddCertificationLevel({ examBodies }) {
                             </Link>
 
                             <button
-                                disabled={processing}
+                                disabled={processing || !hasExamBodies}
                                 type="submit"
                                 className="px-4 py-2 bg-emerald-600 text-white rounded hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
                             >

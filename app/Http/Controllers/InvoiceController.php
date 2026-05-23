@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AcademicSessionEnrollment;
+use App\Models\Student;
 use App\Models\StudentInvoice;
 use App\Services\BillingService;
 use Illuminate\Http\Request;
@@ -18,7 +19,7 @@ class InvoiceController extends Controller
     {
         $query = StudentInvoice::with([
             'student',
-            'enrollment.courseCurriculum.course',
+            'enrollment.courseProgramVersion.course',
             'enrollment.academicSession',
         ])
             ->when($request->search, function ($q) use ($request) {
@@ -49,11 +50,19 @@ class InvoiceController extends Controller
     {
         $enrollments = AcademicSessionEnrollment::with([
             'student',
-            'courseCurriculum.course',
+            'courseProgramVersion.course',
             'academicSession',
         ])->get();
 
         return Inertia::render('Billing/InvoiceCreate', [
+            'students' => Student::with('user')
+                ->orderByDesc('id')
+                ->limit(20)
+                ->get()
+                ->map(fn (Student $student) => [
+                    'id' => $student->id,
+                    'name' => trim(($student->user?->first_name ?? '').' '.($student->user?->last_name ?? '')).' ('.($student->registration_number ?? 'N/A').')',
+                ]),
             'enrollments' => $enrollments,
         ]);
     }
@@ -85,7 +94,7 @@ class InvoiceController extends Controller
                         })
                         ->with([
                             'student',
-                            'courseCurriculum.course',
+                            'courseProgramVersion.course',
                             'academicSession',
                         ])
                         ->get();
@@ -122,7 +131,7 @@ class InvoiceController extends Controller
     {
         $invoice->load([
             'student',
-            'enrollment.courseCurriculum.course',
+            'enrollment.courseProgramVersion.course',
             'enrollment.academicSession',
             'invoiceItems',
             'payments',
@@ -169,7 +178,7 @@ class InvoiceController extends Controller
     {
         $enrollments = AcademicSessionEnrollment::with([
             'student',
-            'courseCurriculum.course',
+            'courseProgramVersion.course',
             'academicSession',
         ])->get();
 
@@ -270,3 +279,4 @@ class InvoiceController extends Controller
         ]);
     }
 }
+

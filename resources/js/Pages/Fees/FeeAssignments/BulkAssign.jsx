@@ -8,6 +8,10 @@ import SearchSelect from "@/Components/SearchSelect";
 import TextInput from "@/Components/TextInput";
 
 export default function BulkAssign({ feePlans, academicYear, departments }) {
+    const hasFeePlans = feePlans.length > 0;
+    const hasAcademicYears = academicYear.length > 0;
+    const hasDepartments = departments.length > 0;
+
     const { data, setData, post, processing, errors } = useForm({
         fee_plan_id: "",
         academic_year_id: "",
@@ -23,6 +27,9 @@ export default function BulkAssign({ feePlans, academicYear, departments }) {
     const [rows, setRows] = useState([]);
     const [loadingLevels, setLoadingLevels] = useState(false);
     const [loadingRows, setLoadingRows] = useState(false);
+    const hasCertificationLevels = certificationLevels.length > 0;
+    const canStartBulkAssignment =
+        hasFeePlans && hasAcademicYears && hasDepartments;
 
     useEffect(() => {
         if (!data.department_id) {
@@ -71,7 +78,7 @@ export default function BulkAssign({ feePlans, academicYear, departments }) {
             return;
         }
 
-        const loadCurriculums = async () => {
+        const loadProgramVersions = async () => {
             setLoadingRows(true);
 
             try {
@@ -109,7 +116,7 @@ export default function BulkAssign({ feePlans, academicYear, departments }) {
             }
         };
 
-        loadCurriculums();
+        loadProgramVersions();
     }, [
         data.fee_plan_id,
         data.academic_year_id,
@@ -124,7 +131,7 @@ export default function BulkAssign({ feePlans, academicYear, departments }) {
         rows.length > 0 &&
         rows.every((row) => selectedIds.includes(String(row.id)));
 
-    const toggleCurriculum = (id) => {
+    const toggleProgramVersion = (id) => {
         const normalizedId = String(id);
         const updated = selectedIds.includes(normalizedId)
             ? data.selected_course_curriculum_ids.filter(
@@ -158,10 +165,15 @@ export default function BulkAssign({ feePlans, academicYear, departments }) {
             <div className="mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
                 <div className="overflow-hidden rounded-lg border bg-white shadow-sm">
                     <div className="bg-slate-600 py-2 text-center text-sm font-medium text-white">
-                        Curriculum Fee Assignment
+                        Program Version Fee Assignment
                     </div>
 
                     <form className="space-y-8 p-8" onSubmit={submit}>
+                        {!canStartBulkAssignment ? (
+                            <div className="rounded border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+                                You cannot bulk assign fees until a fee plan, an academic year, and a department exist.
+                            </div>
+                        ) : null}
                         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
                             <div>
                                 <InputLabel value="Fee Plan" />
@@ -169,10 +181,16 @@ export default function BulkAssign({ feePlans, academicYear, departments }) {
                                     routeName="fee-plans.search"
                                     defaultOptions={feePlans}
                                     placeholder="Select fee plan..."
+                                    disabled={!hasFeePlans}
                                     onChange={(item) =>
                                         setData("fee_plan_id", item.id)
                                     }
                                 />
+                                {!hasFeePlans ? (
+                                    <p className="mt-1 text-xs text-amber-600">
+                                        Create a fee plan first to continue.
+                                    </p>
+                                ) : null}
                                 <InputError message={errors.fee_plan_id} />
                             </div>
 
@@ -181,10 +199,16 @@ export default function BulkAssign({ feePlans, academicYear, departments }) {
                                 <SearchSelect
                                     defaultOptions={academicYear}
                                     placeholder="Select academic year..."
+                                    disabled={!hasAcademicYears}
                                     onChange={(item) =>
                                         setData("academic_year_id", item.id)
                                     }
                                 />
+                                {!hasAcademicYears ? (
+                                    <p className="mt-1 text-xs text-amber-600">
+                                        Create an academic year first to continue.
+                                    </p>
+                                ) : null}
                                 <InputError message={errors.academic_year_id} />
                             </div>
 
@@ -194,11 +218,17 @@ export default function BulkAssign({ feePlans, academicYear, departments }) {
                                     routeName="departments.search"
                                     defaultOptions={departments}
                                     placeholder="Select department..."
+                                    disabled={!hasDepartments}
                                     onChange={(item) => {
                                         setData("department_id", item.id);
                                         setData("certification_level_id", "");
                                     }}
                                 />
+                                {!hasDepartments ? (
+                                    <p className="mt-1 text-xs text-amber-600">
+                                        Create a department first to continue.
+                                    </p>
+                                ) : null}
                                 <InputError message={errors.department_id} />
                             </div>
 
@@ -220,6 +250,7 @@ export default function BulkAssign({ feePlans, academicYear, departments }) {
                                             ? "Select certification level..."
                                             : "Choose department first..."
                                     }
+                                    disabled={!data.department_id || !hasCertificationLevels}
                                     onChange={(item) =>
                                         setData(
                                             "certification_level_id",
@@ -235,6 +266,13 @@ export default function BulkAssign({ feePlans, academicYear, departments }) {
                                         Loading certification levels...
                                     </p>
                                 )}
+                                {!loadingLevels &&
+                                data.department_id &&
+                                !hasCertificationLevels ? (
+                                    <p className="mt-1 text-xs text-amber-600">
+                                        No certification levels were found for the selected department.
+                                    </p>
+                                ) : null}
                             </div>
 
                             <div>
@@ -273,7 +311,7 @@ export default function BulkAssign({ feePlans, academicYear, departments }) {
                             <div className="flex items-center justify-between border-b bg-slate-50 px-4 py-3">
                                 <div>
                                     <h2 className="text-sm font-semibold text-slate-800">
-                                        Curriculums
+                                        Program Versions
                                     </h2>
                                     <p className="text-xs text-slate-500">
                                         Existing assignments for the selected
@@ -296,7 +334,7 @@ export default function BulkAssign({ feePlans, academicYear, departments }) {
 
                             {loadingRows ? (
                                 <div className="px-4 py-6 text-sm text-slate-500">
-                                    Loading curriculums...
+                                    Loading program versions...
                                 </div>
                             ) : rows.length === 0 ? (
                                 <div className="px-4 py-6 text-sm text-slate-500">
@@ -306,8 +344,8 @@ export default function BulkAssign({ feePlans, academicYear, departments }) {
                                     data.certification_level_id &&
                                     data.year_of_study &&
                                     data.session_number
-                                        ? "No curriculums found for the selected department and certification level."
-                                        : "Select fee plan, academic year, department, certification level, year of study, and session number to load curriculums."}
+                                        ? "No program versions found for the selected department and certification level."
+                                        : "Select fee plan, academic year, department, certification level, year of study, and session number to load program versions."}
                                 </div>
                             ) : (
                                 <div className="overflow-x-auto">
@@ -324,10 +362,10 @@ export default function BulkAssign({ feePlans, academicYear, departments }) {
                                                     />
                                                 </th>
                                                 <th className="px-4 py-3 text-left font-semibold text-slate-700">
-                                                    Course
+                                                    Program
                                                 </th>
                                                 <th className="px-4 py-3 text-left font-semibold text-slate-700">
-                                                    Curriculum
+                                                    Program Version
                                                 </th>
                                                 <th className="px-4 py-3 text-left font-semibold text-slate-700">
                                                     Certification Level
@@ -360,7 +398,7 @@ export default function BulkAssign({ feePlans, academicYear, departments }) {
                                                                     checked
                                                                 }
                                                                 onChange={() =>
-                                                                    toggleCurriculum(
+                                                                    toggleProgramVersion(
                                                                         row.id,
                                                                     )
                                                                 }
@@ -434,6 +472,7 @@ export default function BulkAssign({ feePlans, academicYear, departments }) {
                             <button
                                 disabled={
                                     processing ||
+                                    !canStartBulkAssignment ||
                                     !data.visible_course_curriculum_ids.length
                                 }
                                 type="submit"
@@ -441,7 +480,7 @@ export default function BulkAssign({ feePlans, academicYear, departments }) {
                             >
                                 {processing
                                     ? "Saving..."
-                                    : "Save Curriculum Assignments"}
+                                    : "Save Program Version Assignments"}
                             </button>
                         </div>
                     </form>
@@ -450,3 +489,4 @@ export default function BulkAssign({ feePlans, academicYear, departments }) {
         </AuthenticatedLayout>
     );
 }
+

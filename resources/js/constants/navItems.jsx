@@ -50,34 +50,34 @@ export const NAV_ITEMS = [
         ],
     },
     {
-        key: "courses",
-        label: "Courses",
-        icon: "courses",
-        basePath: "/courses",
-        permissions: ["courses.view"],
+        key: "programs",
+        label: "Programs",
+        icon: "programs",
+        basePath: "/programs",
+        permissions: ["programs.view"],
         children: [
             {
-                routeName: "courses.index",
-                fallback: "/courses",
-                label: "Courses",
-                permission: "courses.view",
+                routeName: "programs.index",
+                fallback: "/programs",
+                label: "Programs",
+                permission: "programs.view",
             },
             {
-                routeName: "curriculum.index",
-                fallback: "/curriculum",
-                label: "Curriculum",
-                permission: "courses.curriculum.view",
+                routeName: "program-versions.index",
+                fallback: "/program-versions",
+                label: "Program Versions",
+                permission: "program-versions.view",
             },
             {
-                routeName: "courses.curriculum.index",
-                fallback: "/courses/curriculum",
-                label: "Course Curriculum",
-                permission: "courses.curriculum.view",
+                routeName: "programs.program-version-mappings.index",
+                fallback: "/programs/program-versions",
+                label: "Program Version Mapping",
+                permission: "programs.program-version-mappings.view",
             },
             {
-                routeName: "course.enrollments.index",
-                fallback: "/courses/enrollments",
-                label: "Course Enrollments",
+                routeName: "programs.enrollments.index",
+                fallback: "/programs/enrollments",
+                label: "Program Enrollments",
                 permission: "students.view",
             },
         ],
@@ -96,10 +96,10 @@ export const NAV_ITEMS = [
                 permission: "units.view",
             },
             {
-                routeName: "units.curriculum.index",
-                fallback: "/units/curriculum",
-                label: "Curriculum Units",
-                permission: "units.curriculum.view",
+                routeName: "units.program-version-units.index",
+                fallback: "/units/program-version-units",
+                label: "Program Version Units",
+                permission: "units.program-version-units.view",
             },
         ],
     },
@@ -255,7 +255,7 @@ export const ICONS = {
     dashboard: <LayoutDashboard className="w-5 h-5 shrink-0" />,
     book: <BookOpen className="w-5 h-5 shrink-0" />, // Exam Bodies
     department: <Building2 className="w-5 h-5 shrink-0" />, // Departments
-    courses: <BookMarked className="w-5 h-5 shrink-0" />, // Courses (was FileText)
+    programs: <BookMarked className="w-5 h-5 shrink-0" />, // Programs (was FileText)
     grid: <LayoutGrid className="w-5 h-5 shrink-0" />, // Units (was Grid2X2)
     academic: <CalendarRange className="w-5 h-5 shrink-0" />, // Academic Calendar (was CalendarDays)
     roles: <ShieldCheck className="w-5 h-5 shrink-0" />, // Roles & Permissions

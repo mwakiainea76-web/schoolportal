@@ -4,7 +4,7 @@ import TextInput from "@/Components/TextInput";
 import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import PrimaryButton from "@/Components/PrimaryButton";
-export default function Create({ academic_year, session_no }) {
+export default function Create({ academic_year, session_no, prerequisite_error }) {
     const { post, processing, errors } = useForm({
         session_No: session_no,
         academic_year_id: academic_year?.id,
@@ -25,12 +25,17 @@ export default function Create({ academic_year, session_no }) {
                         Create new academic session
                     </legend>
                     <form className="p-10 space-y-8" onSubmit={submit}>
+                        {prerequisite_error ? (
+                            <div className="rounded border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+                                {prerequisite_error}
+                            </div>
+                        ) : null}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div>
                                 <InputLabel value="Academic year" />
                                 <TextInput
                                     className="cursor-not-allowed bg-slate-100"
-                                    value={academic_year.academic_year}
+                                    value={academic_year?.academic_year ?? "No active academic year"}
                                     disabled
                                 />
 
@@ -50,7 +55,7 @@ export default function Create({ academic_year, session_no }) {
 
                         {/* Submit */}
                         <div className="pt-4">
-                            <PrimaryButton disabled={processing}>
+                            <PrimaryButton disabled={processing || !academic_year}>
                                 Create academic session
                             </PrimaryButton>
                         </div>

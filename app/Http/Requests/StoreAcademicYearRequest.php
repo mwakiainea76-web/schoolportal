@@ -23,8 +23,7 @@ class StoreAcademicYearRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'academic_year' => 'required|string|max:255|unique:academic_years,academic_year',
-            'is_active' => 'boolean',
+            'academic_year' => 'required|string|max:255|unique:academic_years,label',
         ];
     }
 }

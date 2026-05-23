@@ -26,6 +26,7 @@ class ExamBody extends Model
 
     public function courses()
     {
-        return $this->hasMany(Course::class, 'exam_body_id');
+        return $this->hasMany(Program::class, 'exam_body_id');
     }
 }
+

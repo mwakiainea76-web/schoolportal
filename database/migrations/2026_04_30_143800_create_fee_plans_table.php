@@ -14,15 +14,17 @@ return new class extends Migration
         Schema::create('fee_plans', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->enum('plan_type', ['original', 'revised'])->default('original');
+            $table->enum('status', ['draft', 'published', 'archived'])->default('draft');
             $table->string('version');
-            $table->boolean('is_active');
+            $table->boolean('is_active')->default(false);
             $table->foreignId('created_by')
-                ->constrained('staffs', 'id')
-                ->cascadeOnDelete()
+                ->constrained('users', 'id')
+                ->restrictOnDelete()
                 ->cascadeOnUpdate();
             $table->softDeletes();
             $table->timestamps();
-            $table->unique(['name', 'version']);
+            $table->unique('name');
         });
     }
 

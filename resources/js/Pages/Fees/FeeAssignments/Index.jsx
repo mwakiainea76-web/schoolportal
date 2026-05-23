@@ -92,7 +92,7 @@ export default function FeeAssignmentsIndex({ assignments, filters }) {
                             className="inline-block rounded bg-slate-400 px-4 py-1 text-white hover:bg-slate-700"
                             href={route("fees.assignments.create")}
                         >
-                            + Add Fee Assignment
+                            + Add Program Fee Assignment
                         </Link>
 
                         <button
@@ -160,7 +160,7 @@ export default function FeeAssignmentsIndex({ assignments, filters }) {
                         <THdata
                             onClick={() => handleSort("course_curriculum_id")}
                         >
-                            Course / Certification{" "}
+                            Program / Certification{" "}
                             {renderArrow("course_curriculum_id")}
                         </THdata>
 

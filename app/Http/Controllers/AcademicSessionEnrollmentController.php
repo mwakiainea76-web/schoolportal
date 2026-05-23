@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreAcademicSessionEnrollmentRequest;
 use App\Models\AcademicSession;
 use App\Models\AcademicSessionEnrollment;
-use App\Models\CourseEnrollment;
+use App\Models\ProgramEnrollment;
 use App\Models\Student;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -17,8 +17,8 @@ class AcademicSessionEnrollmentController extends Controller
     {
         $enrollments = AcademicSessionEnrollment::with([
             'courseEnrollment.student.user',
-            'courseEnrollment.courseCurriculum.curriculum',
-            'courseEnrollment.courseCurriculum.course',
+            'courseEnrollment.courseProgramVersion.curriculum',
+            'courseEnrollment.courseProgramVersion.course',
             'academicSession.academicYear',
         ])
             ->when($request->search, function ($q) use ($request) {
@@ -44,8 +44,8 @@ class AcademicSessionEnrollmentController extends Controller
             'session' => $e->academicSession
                 ? "{$e->academicSession->academicYear->academic_year} - Session {$e->academicSession->session_No}"
                 : 'N/A',
-            'course' => $e->courseEnrollment?->courseCurriculum?->course?->name ?? 'N/A',
-            'curriculum' => $e->courseEnrollment?->courseCurriculum?->curriculum?->name ?? 'N/A',
+            'course' => $e->courseEnrollment?->courseProgramVersion?->course?->name ?? 'N/A',
+            'curriculum' => $e->courseEnrollment?->courseProgramVersion?->curriculum?->name ?? 'N/A',
             'module' => $e->module,
             'year_of_study' => $e->year_of_study,
             'status' => $e->status,
@@ -85,7 +85,7 @@ class AcademicSessionEnrollmentController extends Controller
         }
 
         // 2. Find the student's course enrollment
-        $courseEnrollment = CourseEnrollment::where('student_id', $student->id)
+        $courseEnrollment = ProgramEnrollment::where('student_id', $student->id)
             ->latest()
             ->first();
 
@@ -146,8 +146,8 @@ class AcademicSessionEnrollmentController extends Controller
     {
         $e = $academicSessionEnrollment->load([
             'courseEnrollment.student.user',
-            'courseEnrollment.courseCurriculum.curriculum',
-            'courseEnrollment.courseCurriculum.course',
+            'courseEnrollment.courseProgramVersion.curriculum',
+            'courseEnrollment.courseProgramVersion.course',
             'academicSession.academicYear',
         ]);
 
@@ -162,8 +162,8 @@ class AcademicSessionEnrollmentController extends Controller
                 'session' => $e->academicSession
                     ? "{$e->academicSession->academicYear->academic_year} - Session {$e->academicSession->session_No}"
                     : 'N/A',
-                'course' => $e->courseEnrollment?->courseCurriculum?->course?->name ?? 'N/A',
-                'curriculum' => $e->courseEnrollment?->courseCurriculum?->curriculum?->name ?? 'N/A',
+                'course' => $e->courseEnrollment?->courseProgramVersion?->course?->name ?? 'N/A',
+                'curriculum' => $e->courseEnrollment?->courseProgramVersion?->curriculum?->name ?? 'N/A',
                 'module' => $e->module,
                 'year_of_study' => $e->year_of_study,
                 'status' => $e->status,
@@ -190,3 +190,4 @@ class AcademicSessionEnrollmentController extends Controller
         return back()->with('success', 'Enrollment removed successfully.');
     }
 }
+

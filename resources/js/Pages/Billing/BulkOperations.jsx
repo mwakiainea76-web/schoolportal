@@ -265,7 +265,7 @@ export default function BulkOperations({ enrollments, students }) {
                                                 Student
                                             </th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">
-                                                Course
+                                                Program
                                             </th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">
                                                 Session
@@ -295,7 +295,7 @@ export default function BulkOperations({ enrollments, students }) {
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900">
                                                     {
                                                         enrollment
-                                                            .courseCurriculum
+                                                            .courseProgramVersion
                                                             ?.course?.name
                                                     }
                                                 </td>
@@ -487,3 +487,4 @@ export default function BulkOperations({ enrollments, students }) {
         </AuthenticatedLayout>
     );
 }
+

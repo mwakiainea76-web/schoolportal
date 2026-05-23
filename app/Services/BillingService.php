@@ -23,7 +23,7 @@ class BillingService
     {
         $assignment = $this->feeAssignmentService->resolveActiveAssignment(
             $enrollment->academic_session_id,
-            $enrollment->courseCurriculum?->id ?? null,
+            $enrollment->courseProgramVersion?->id ?? null,
             $enrollment->year_of_study,
             $enrollment->academicSession?->session_No ?? null,
             $issueDate
@@ -163,3 +163,4 @@ class BillingService
         ];
     }
 }
+

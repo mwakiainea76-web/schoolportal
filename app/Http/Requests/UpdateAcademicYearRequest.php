@@ -26,10 +26,10 @@ class UpdateAcademicYearRequest extends FormRequest
             'academic_year' => [
                 'required',
                 'string',
-                Rule::unique('academic_years', 'academic_year')
+                Rule::unique('academic_years', 'label')
                     ->ignore($this->route('academic_year')),
             ],
-            'is_active' => 'required|boolean',
+            'year_state' => ['required', Rule::in(['start', 'end'])],
         ];
     }
 }

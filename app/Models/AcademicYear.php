@@ -8,20 +8,20 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class AcademicYear extends Model
 {
-    /** @use HasFactory<\Database\Factories\AcademicYearFactory> */
     use HasFactory, SoftDeletes;
 
     protected $table = 'academic_years';
 
-    protected $appends = ['name']; // This ensures 'name' is included in the JSON
+    protected $appends = ['name'];
 
     public function getNameAttribute()
     {
-        return $this->academic_year;
+        return $this->label ?? $this->academic_year;
     }
 
     protected $fillable = [
         'academic_year',
+        'label',
         'start_date',
         'end_date',
         'is_active',
@@ -29,6 +29,11 @@ class AcademicYear extends Model
 
     public function academicSessions()
     {
-        return $this->hasMany(AcademicSession::class, 'academic_year');
+        return $this->hasMany(AcademicSession::class, 'academic_year_id');
+    }
+
+    public function feePlanAssignments()
+    {
+        return $this->hasMany(FeePlanAssignment::class);
     }
 }
