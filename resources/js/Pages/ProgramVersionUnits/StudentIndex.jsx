@@ -1,6 +1,6 @@
 import { Head, Link } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
-import { BookOpen, ChevronRight } from "lucide-react";
+import { BookOpen } from "lucide-react";
 
 export default function StudentIndex({ program, units_by_module }) {
     return (
@@ -50,36 +50,30 @@ export default function StudentIndex({ program, units_by_module }) {
                                     </div>
                                 </div>
 
-                                <div className="mt-5 grid gap-4 md:grid-cols-2">
+                                <div className="mt-5 overflow-hidden rounded-2xl border border-zinc-100">
+                                    <div className="grid grid-cols-[0.85fr,1.8fr,0.8fr,0.8fr] gap-4 bg-zinc-50 px-5 py-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                                        <p>Code</p>
+                                        <p>Unit Name</p>
+                                        <p className="text-right">Credits</p>
+                                        <p className="text-right">Hours</p>
+                                    </div>
                                     {group.units.map((unit) => (
                                         <div
                                             key={unit.id}
-                                            className="rounded-2xl border border-zinc-100 bg-zinc-50/80 px-5 py-4"
+                                            className="grid grid-cols-[0.85fr,1.8fr,0.8fr,0.8fr] gap-4 border-t border-zinc-100 bg-white px-5 py-4 text-sm text-zinc-700"
                                         >
-                                            <div className="flex items-start justify-between gap-4">
-                                                <div>
-                                                    <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
-                                                        {unit.code ?? "Unit"}
-                                                    </p>
-                                                    <p className="mt-2 text-base font-semibold text-zinc-900">
-                                                        {unit.name}
-                                                    </p>
-                                                </div>
-                                                <ChevronRight className="mt-1 h-4 w-4 text-zinc-300" />
-                                            </div>
-
-                                            <div className="mt-4 flex flex-wrap gap-2 text-xs text-zinc-500">
-                                                {unit.credit_factor ? (
-                                                    <span className="rounded-full bg-white px-3 py-1">
-                                                        Credit Factor: {unit.credit_factor}
-                                                    </span>
-                                                ) : null}
-                                                {unit.training_hours ? (
-                                                    <span className="rounded-full bg-white px-3 py-1">
-                                                        Hours: {unit.training_hours}
-                                                    </span>
-                                                ) : null}
-                                            </div>
+                                            <p className="font-semibold text-emerald-700">
+                                                {unit.code ?? "-"}
+                                            </p>
+                                            <p className="font-semibold text-zinc-900">
+                                                {unit.name}
+                                            </p>
+                                            <p className="text-right">
+                                                {unit.credit_factor ?? "-"}
+                                            </p>
+                                            <p className="text-right">
+                                                {unit.training_hours ?? "-"}
+                                            </p>
                                         </div>
                                     ))}
                                 </div>

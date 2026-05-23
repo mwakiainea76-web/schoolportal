@@ -330,45 +330,44 @@ function StudentDashboard({ dashboard, fullName }) {
                             </Link>
                         </div>
 
-                        <div className="mt-6 space-y-3">
+                        <div className="mt-6">
                             {dashboard.module_units?.length ? (
-                                dashboard.module_units.map((unit) => (
-                                    <div
-                                        key={unit.id}
-                                        className="rounded-2xl border border-zinc-100 bg-zinc-50/80 px-4 py-4"
-                                    >
-                                        <div className="flex items-start justify-between gap-4">
+                                <div className="overflow-hidden rounded-2xl border border-zinc-100">
+                                    <div className="grid grid-cols-[0.9fr,1.6fr,0.8fr] gap-4 bg-zinc-50 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                                        <p>Code</p>
+                                        <p>Unit</p>
+                                        <p className="text-right">Hours</p>
+                                    </div>
+                                    {dashboard.module_units.map((unit) => (
+                                        <div
+                                            key={unit.id}
+                                            className="grid grid-cols-[0.9fr,1.6fr,0.8fr] gap-4 border-t border-zinc-100 bg-white px-4 py-3 text-sm text-zinc-700"
+                                        >
+                                            <p className="font-semibold text-emerald-700">
+                                                {unit.code ?? "-"}
+                                            </p>
                                             <div>
-                                                <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
-                                                    {unit.code ?? "Unit"}
-                                                </p>
-                                                <p className="mt-2 text-sm font-semibold text-zinc-900">
+                                                <p className="font-semibold text-zinc-900">
                                                     {unit.name}
                                                 </p>
+                                                <p className="mt-1 text-xs text-zinc-500">
+                                                    Credit Factor:{" "}
+                                                    {unit.credit_factor ?? "-"}
+                                                </p>
                                             </div>
+                                            <p className="text-right font-medium text-zinc-600">
+                                                {unit.training_hours ?? "-"}
+                                            </p>
                                         </div>
-
-                                        <div className="mt-3 flex flex-wrap gap-2 text-xs text-zinc-500">
-                                            {unit.credit_factor ? (
-                                                <span className="rounded-full bg-white px-3 py-1">
-                                                    Credit Factor: {unit.credit_factor}
-                                                </span>
-                                            ) : null}
-                                            {unit.training_hours ? (
-                                                <span className="rounded-full bg-white px-3 py-1">
-                                                    Hours: {unit.training_hours}
-                                                </span>
-                                            ) : null}
-                                        </div>
-                                    </div>
-                                ))
+                                    ))}
+                                </div>
                             ) : (
                                 <div className="rounded-2xl bg-[#F8F9FA] px-4 py-4 text-sm text-zinc-500">
                                     No units have been assigned to this module yet.
                                 </div>
                             )}
 
-                            <div className="rounded-2xl bg-[#F8F9FA] px-4 py-3 text-xs text-zinc-500">
+                            <div className="mt-3 rounded-2xl bg-[#F8F9FA] px-4 py-3 text-xs text-zinc-500">
                                 {dashboard.all_units_count
                                     ? `${dashboard.all_units_count} total unit(s) are mapped to your program version.`
                                     : "Your full unit list will appear once units are mapped to your program version."}
