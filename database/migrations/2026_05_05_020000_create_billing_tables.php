@@ -132,11 +132,7 @@ return new class extends Migration
                 $table->string('reference')->nullable();
                 $table->text('description')->nullable();
                 $table->date('transaction_date');
-                $table->foreignId('created_by')
-                    ->nullable()
-                    ->constrained('staffs')
-                    ->nullOnDelete()
-                    ->cascadeOnUpdate();
+                $table->foreignId('created_by')->nullable();
                 $table->softDeletes();
                 $table->timestamps();
 
