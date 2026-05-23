@@ -49,7 +49,9 @@ class StudentController extends Controller
             ],
             2 => [
                 'previous_school' => ['required', 'string', 'max:255'],
-                'course_curriculum_id' => ['required', 'exists:program_version_mappings,id'],
+                'course_curriculum_id' => $request->filled('_student_id')
+                    ? ['nullable', 'exists:program_version_mappings,id']
+                    : ['required', 'exists:program_version_mappings,id'],
                 'current_module' => ['required', 'string'],
                 'fee_discount_percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
             ],
@@ -187,10 +189,10 @@ class StudentController extends Controller
                 'student_status' => 'active',
             ]);
 
-            ProgramEnrollment::create([
-                'student_id' => $student->id,
-                'program_version_mapping_id' => $request->course_curriculum_id,
-            ]);
+            $programEnrollment = new ProgramEnrollment();
+            $programEnrollment->student_id = $student->id;
+            $programEnrollment->program_version_mapping_id = $request->course_curriculum_id;
+            $programEnrollment->save();
 
             $user->nextOfKin()->create([
                 'first_name' => $request->kin_first_name,
@@ -237,6 +239,9 @@ class StudentController extends Controller
     public function update(UpdateStudentRequest $request, Student $student)
     {
         DB::transaction(function () use ($request, $student) {
+            $programVersionMappingId =
+                $request->course_curriculum_id
+                ?? $student->programEnrollment?->program_version_mapping_id;
 
             $student->user->update([
                 'first_name' => $request->first_name,
@@ -262,10 +267,14 @@ class StudentController extends Controller
                 'student_status' => $request->student_status,
             ]);
 
-            $student->programEnrollment()->updateOrCreate(
-                ['student_id' => $student->id],
-                ['program_version_mapping_id' => $request->course_curriculum_id]
-            );
+            $programEnrollment = $student->programEnrollment()->firstOrNew([
+                'student_id' => $student->id,
+            ]);
+            if ($programVersionMappingId) {
+                $programEnrollment->program_version_mapping_id =
+                    $programVersionMappingId;
+                $programEnrollment->save();
+            }
 
             $student->user->nextOfKin()->updateOrCreate(
                 ['user_id' => $student->user_id],

@@ -35,7 +35,7 @@ class UpdateStudentRequest extends FormRequest
             'current_module' => ['required', 'string'],
             'fee_discount_percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'student_status' => ['nullable', Rule::in(['active', 'suspended', 'graduated', 'dropped'])],
-            'course_curriculum_id' => ['required', 'exists:program_version_mappings,id'],
+            'course_curriculum_id' => ['nullable', 'exists:program_version_mappings,id'],
 
             // Medical
             'is_pwd' => ['boolean'],
