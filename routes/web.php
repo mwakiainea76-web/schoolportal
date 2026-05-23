@@ -4,6 +4,7 @@ use App\Http\Controllers\AcademicSessionController;
 use App\Http\Controllers\AcademicYearController;
 use App\Http\Controllers\CertificationLevelController;
 use App\Http\Controllers\ProgramController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProgramEnrollmentController;
 use App\Http\Controllers\ProgramVersionMappingController;
 use App\Http\Controllers\ProgramVersionController;
@@ -33,9 +34,17 @@ Route::get('/', fn () => redirect()->route('login'));
 
 Route::get('/login', fn () => Inertia::render('Auth/Login'))->name('login');
 
-Route::get('/dashboard', fn () => Inertia::render('Dashboard'))
+Route::get('/dashboard', [DashboardController::class, 'redirect'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
+
+Route::get('/student/dashboard', [DashboardController::class, 'studentDashboard'])
+    ->middleware(['auth', 'verified'])
+    ->name('student.dashboard');
+
+Route::get('/staff/dashboard', [DashboardController::class, 'staffDashboard'])
+    ->middleware(['auth', 'verified'])
+    ->name('staff.dashboard');
 
 /*
 |--------------------------------------------------------------------------

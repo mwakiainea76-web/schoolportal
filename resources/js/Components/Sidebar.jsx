@@ -13,7 +13,13 @@ export default function Sidebar({
     setMobileOpen,
 }) {
     const { url } = usePage();
-    const { can } = useRbac();
+    const { can, hasRole } = useRbac();
+    const dashboardRouteName = hasRole("student")
+        ? "student.dashboard"
+        : "staff.dashboard";
+    const dashboardFallback = hasRole("student")
+        ? "/student/dashboard"
+        : "/staff/dashboard";
 
     const visibleNav = filterNav(NAV_ITEMS, can);
 
@@ -31,7 +37,9 @@ export default function Sidebar({
     const closeMobile = () => mobileOpen && setMobileOpen(false);
     const toggleMenu = (key) =>
         setOpenMenu((prev) => (prev === key ? null : key));
-    const isDashboardActive = isRouteCurrent("dashboard", "/dashboard", url);
+    const isDashboardActive =
+        isRouteCurrent("dashboard", "/dashboard", url) ||
+        isRouteCurrent(dashboardRouteName, dashboardFallback, url);
 
     return (
         <>
@@ -74,7 +82,10 @@ export default function Sidebar({
                     {/* Dashboard */}
                     <div className="border-b border-white/5">
                         <Link
-                            href={safeRoute("dashboard", "/dashboard")}
+                            href={safeRoute(
+                                dashboardRouteName,
+                                dashboardFallback,
+                            )}
                             onClick={closeMobile}
                             className={`flex items-center px-4 py-3 transition ${isDashboardActive
                                 ? "bg-emerald-500 text-white"
