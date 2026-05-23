@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AcademicSessionEnrollment;
+use App\Models\ProgramEnrollment;
 use App\Models\Student;
 use App\Models\StudentInvoice;
 use App\Services\BillingService;
@@ -132,15 +133,120 @@ class InvoiceController extends Controller
     {
         $invoice->load([
             'student',
-            'enrollment.courseProgramVersion.course',
+            'enrollment.programEnrollment.programVersionMapping.program',
+            'enrollment.programEnrollment.programVersionMapping.programVersion',
             'enrollment.academicSession',
-            'invoiceItems',
+            'items',
             'payments',
             'adjustments',
         ]);
 
         return Inertia::render('Billing/InvoiceShow', [
             'invoice' => $invoice,
+        ]);
+    }
+
+    public function studentStatementsIndex(Request $request)
+    {
+        $student = $request->user()?->student;
+
+        abort_unless($student, 403);
+
+        $statements = StudentInvoice::query()
+            ->with(['academicSession.academicYear'])
+            ->where('student_id', $student->id)
+            ->latest('issue_date')
+            ->latest('created_at')
+            ->paginate(12)
+            ->through(fn (StudentInvoice $invoice) => [
+                'id' => $invoice->id,
+                'invoice_number' => $invoice->invoice_number,
+                'session' => $invoice->academicSession?->display_name,
+                'issue_date' => optional($invoice->issue_date)->toDateString(),
+                'due_date' => optional($invoice->due_date)->toDateString(),
+                'amount_due' => (float) $invoice->amount_due,
+                'paid_amount' => (float) $invoice->paid_amount,
+                'balance_due' => (float) $invoice->balance_due,
+                'status' => $invoice->status,
+            ]);
+
+        return Inertia::render('Billing/StudentStatements/Index', [
+            'statements' => $statements,
+        ]);
+    }
+
+    public function studentStatementShow(Request $request, StudentInvoice $invoice)
+    {
+        $student = $request->user()?->student;
+
+        abort_unless($student && $invoice->student_id === $student->id, 403);
+
+        $invoice->load([
+            'student.user',
+            'academicSession.academicYear',
+            'enrollment.programEnrollment.programVersionMapping.program',
+            'enrollment.programEnrollment.programVersionMapping.programVersion',
+            'items',
+            'payments',
+            'adjustments',
+            'ledgerTransactions' => fn ($query) => $query->orderBy('transaction_date')->orderBy('id'),
+        ]);
+
+        $programEnrollment = ProgramEnrollment::query()
+            ->with(['programVersionMapping.program', 'programVersionMapping.programVersion'])
+            ->where('student_id', $student->id)
+            ->latest()
+            ->first();
+
+        $runningBalance = 0;
+        $entries = $invoice->ledgerTransactions->map(function ($entry) use (&$runningBalance) {
+            $runningBalance += ((float) $entry->debit - (float) $entry->credit);
+
+            return [
+                'id' => $entry->id,
+                'date' => optional($entry->transaction_date)->toDateString(),
+                'reference' => $entry->reference,
+                'description' => $entry->description,
+                'debit' => (float) $entry->debit,
+                'credit' => (float) $entry->credit,
+                'running_balance' => $runningBalance,
+                'type' => $entry->type,
+            ];
+        })->values();
+
+        return Inertia::render('Billing/StudentStatements/Show', [
+            'statement' => [
+                'school_name' => config('app.name'),
+                'generated_on' => now()->toDateString(),
+                'invoice_number' => $invoice->invoice_number,
+                'issue_date' => optional($invoice->issue_date)->toDateString(),
+                'due_date' => optional($invoice->due_date)->toDateString(),
+                'status' => $invoice->status,
+                'student' => [
+                    'name' => trim(($student->user?->first_name ?? '').' '.($student->user?->last_name ?? '')),
+                    'registration_number' => $student->registration_number,
+                    'admission_date' => optional($student->admission_date)->toDateString(),
+                ],
+                'program' => [
+                    'name' => $invoice->enrollment?->programEnrollment?->programVersionMapping?->program?->name
+                        ?? $programEnrollment?->programVersionMapping?->program?->name,
+                    'version' => $invoice->enrollment?->programEnrollment?->programVersionMapping?->programVersion?->name
+                        ?? $programEnrollment?->programVersionMapping?->programVersion?->name,
+                ],
+                'session' => $invoice->academicSession?->display_name,
+                'totals' => [
+                    'amount_due' => (float) $invoice->amount_due,
+                    'paid_amount' => (float) $invoice->paid_amount,
+                    'balance_due' => (float) $invoice->balance_due,
+                ],
+                'entries' => $entries,
+                'items' => $invoice->items->map(fn ($item) => [
+                    'description' => $item->description,
+                    'quantity' => (int) $item->quantity,
+                    'unit_amount' => (float) $item->unit_amount,
+                    'total_amount' => (float) $item->total_amount,
+                ])->values(),
+            ],
         ]);
     }
 

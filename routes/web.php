@@ -49,6 +49,12 @@ Route::post('/student/dashboard/register-session', [AcademicSessionEnrollmentCon
 Route::get('/student/program-units', [ProgramVersionUnitController::class, 'studentIndex'])
     ->middleware(['auth', 'verified'])
     ->name('student.program-units.index');
+Route::get('/student/fee-statements', [InvoiceController::class, 'studentStatementsIndex'])
+    ->middleware(['auth', 'verified'])
+    ->name('student.fee-statements.index');
+Route::get('/student/fee-statements/{invoice}', [InvoiceController::class, 'studentStatementShow'])
+    ->middleware(['auth', 'verified'])
+    ->name('student.fee-statements.show');
 
 Route::get('/staff/dashboard', [DashboardController::class, 'staffDashboard'])
     ->middleware(['auth', 'verified'])
