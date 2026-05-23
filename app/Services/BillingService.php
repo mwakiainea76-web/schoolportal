@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\AcademicSessionEnrollment;
 use App\Models\FeeAdjustment;
 use App\Models\InvoiceItem;
+use App\Models\LedgerTransaction;
 use App\Models\Payment;
 use App\Models\StudentInvoice;
 use App\Services\FeeAssignmentService;
@@ -76,6 +77,19 @@ class BillingService
 
         $this->createInvoiceItemsFromAssignment($invoice, $assignment);
         $invoice->recalculateTotals();
+        $invoice->refresh();
+        $this->recordLedgerTransaction([
+            'student_id' => $enrollment->student_id,
+            'student_invoice_id' => $invoice->id,
+            'academic_session_id' => $invoice->academic_session_id,
+            'type' => 'invoice',
+            'debit' => (float) $invoice->amount_due,
+            'credit' => 0,
+            'reference' => $invoice->invoice_number,
+            'description' => 'Invoice generated for session enrollment.',
+            'transaction_date' => $invoice->issue_date?->toDateString() ?? now()->toDateString(),
+            'created_by' => $invoiceCreatorId,
+        ]);
 
         return $invoice;
     }
@@ -109,6 +123,19 @@ class BillingService
         ]);
 
         $invoice->recalculateTotals();
+        $invoice->refresh();
+        $this->recordLedgerTransaction([
+            'student_id' => $invoice->student_id,
+            'student_invoice_id' => $invoice->id,
+            'academic_session_id' => $invoice->academic_session_id,
+            'type' => 'payment',
+            'debit' => 0,
+            'credit' => $amount,
+            'reference' => $reference,
+            'description' => $payment->notes ?: 'Payment recorded against invoice.',
+            'transaction_date' => $payment->payment_date?->toDateString() ?? ($paymentDate ?? now()->toDateString()),
+            'created_by' => $createdBy,
+        ]);
 
         return $payment;
     }
@@ -125,8 +152,52 @@ class BillingService
         ]);
 
         $invoice->recalculateTotals();
+        $invoice->refresh();
+
+        [$ledgerType, $debit, $credit] = $this->mapAdjustmentToLedger((string) $type, (float) $amount);
+
+        $this->recordLedgerTransaction([
+            'student_id' => $invoice->student_id,
+            'student_invoice_id' => $invoice->id,
+            'academic_session_id' => $invoice->academic_session_id,
+            'type' => $ledgerType,
+            'debit' => $debit,
+            'credit' => $credit,
+            'reference' => null,
+            'description' => $description ?: ucfirst($type).' adjustment applied.',
+            'transaction_date' => $adjustment->applied_at?->toDateString() ?? ($appliedAt ?? now()->toDateString()),
+            'created_by' => $createdBy,
+        ]);
 
         return $adjustment;
+    }
+
+    protected function recordLedgerTransaction(array $data): LedgerTransaction
+    {
+        return LedgerTransaction::create([
+            'student_id' => $data['student_id'],
+            'student_invoice_id' => $data['student_invoice_id'] ?? null,
+            'academic_session_id' => $data['academic_session_id'],
+            'type' => $data['type'],
+            'debit' => $data['debit'] ?? 0,
+            'credit' => $data['credit'] ?? 0,
+            'reference' => $data['reference'] ?? null,
+            'description' => $data['description'] ?? null,
+            'transaction_date' => $data['transaction_date'] ?? now()->toDateString(),
+            'created_by' => $data['created_by'] ?? null,
+        ]);
+    }
+
+    protected function mapAdjustmentToLedger(string $type, float $amount): array
+    {
+        return match ($type) {
+            'discount', 'waiver' => ['discount', 0, $amount],
+            'penalty' => ['penalty', $amount, 0],
+            'bursary' => ['bursary', 0, $amount],
+            'helb' => ['helb', 0, $amount],
+            'refund' => ['refund', $amount, 0],
+            default => ['adjustment', $amount, 0],
+        };
     }
 
     public function bulkGenerateInvoices(array $enrollmentIds, int $createdBy, ?string $issueDate = null, ?string $dueDate = null): array

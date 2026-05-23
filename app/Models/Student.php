@@ -45,5 +45,10 @@ class Student extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function ledgerTransactions()
+    {
+        return $this->hasMany(LedgerTransaction::class);
+    }
 }
 

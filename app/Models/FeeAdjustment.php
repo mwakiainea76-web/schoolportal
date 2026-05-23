@@ -37,6 +37,6 @@ class FeeAdjustment extends Model
 
     public function signedAmount(): float
     {
-        return in_array($this->type, ['discount', 'waiver']) ? -1 * (float) $this->amount : (float) $this->amount;
+        return in_array($this->type, ['discount', 'waiver', 'bursary', 'helb']) ? -1 * (float) $this->amount : (float) $this->amount;
     }
 }

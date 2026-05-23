@@ -16,6 +16,7 @@ use App\Http\Controllers\FeeAssignmentController;
 use App\Http\Controllers\FeePlanController;
 use App\Http\Controllers\FeePlanItemController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\LedgerTransactionController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportingController;
@@ -326,6 +327,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');
         Route::get('/invoices/create', [InvoiceController::class, 'create'])->name('invoices.create');
         Route::post('/invoices', [InvoiceController::class, 'store'])->name('invoices.store');
+        Route::get('/ledger', [LedgerTransactionController::class, 'index'])->name('ledger.index');
 
         Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
         Route::delete('/invoices/{invoice}', [InvoiceController::class, 'destroy'])->name('invoices.destroy');

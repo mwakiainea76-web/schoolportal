@@ -97,7 +97,7 @@ return new class extends Migration
                     ->constrained('student_invoices')
                     ->cascadeOnDelete()
                     ->cascadeOnUpdate();
-                $table->enum('type', ['discount', 'waiver', 'penalty', 'other'])->default('other');
+                $table->enum('type', ['discount', 'waiver', 'penalty', 'bursary', 'helb', 'refund', 'other'])->default('other');
                 $table->decimal('amount', 10, 2);
                 $table->text('description')->nullable();
                 $table->date('applied_at')->nullable();
@@ -109,6 +109,53 @@ return new class extends Migration
                 $table->index('type');
             });
         }
+
+        if (! Schema::hasTable('ledger_transactions')) {
+            Schema::create('ledger_transactions', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('student_id')
+                    ->constrained('students')
+                    ->cascadeOnDelete()
+                    ->cascadeOnUpdate();
+                $table->foreignId('student_invoice_id')
+                    ->nullable()
+                    ->constrained('student_invoices')
+                    ->nullOnDelete()
+                    ->cascadeOnUpdate();
+                $table->foreignId('academic_session_id')
+                    ->constrained('academic_sessions')
+                    ->cascadeOnDelete()
+                    ->cascadeOnUpdate();
+                $table->enum('type', [
+                    'invoice',
+                    'payment',
+                    'bursary',
+                    'helb',
+                    'discount',
+                    'penalty',
+                    'adjustment',
+                    'refund',
+                    'reversal',
+                ]);
+                $table->decimal('debit', 12, 2)->default(0);
+                $table->decimal('credit', 12, 2)->default(0);
+                $table->string('reference')->nullable();
+                $table->text('description')->nullable();
+                $table->date('transaction_date');
+                $table->foreignId('created_by')
+                    ->nullable()
+                    ->constrained('staffs')
+                    ->nullOnDelete()
+                    ->cascadeOnUpdate();
+                $table->softDeletes();
+                $table->timestamps();
+
+                $table->index(['student_id', 'academic_session_id']);
+                $table->index('type');
+                $table->index('transaction_date');
+                $table->index('reference');
+            });
+        }
     }
 
     /**
@@ -116,6 +163,7 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::dropIfExists('ledger_transactions');
         Schema::dropIfExists('fee_adjustments');
         Schema::dropIfExists('payments');
         Schema::dropIfExists('invoice_items');

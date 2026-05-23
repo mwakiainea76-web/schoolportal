@@ -80,9 +80,10 @@ class InvoiceController extends Controller
         ]);
 
         $billingService = app(BillingService::class);
+        $creatorStaffId = auth()->user()?->staff?->id;
 
         try {
-            DB::transaction(function () use ($validated, $billingService) {
+            DB::transaction(function () use ($validated, $billingService, $creatorStaffId) {
                 $created = 0;
 
                 foreach ($validated['fee_plan_ids'] as $feePlanId) {
@@ -102,7 +103,7 @@ class InvoiceController extends Controller
                     foreach ($enrollments as $enrollment) {
                         $billingService->createInvoiceForEnrollment(
                             $enrollment,
-                            auth()->id(),
+                            $creatorStaffId,
                             $validated['issue_date'],
                             $validated['due_date']
                         );
@@ -203,18 +204,19 @@ class InvoiceController extends Controller
         ]);
 
         $billingService = app(\App\Services\BillingService::class);
+        $creatorStaffId = auth()->user()?->staff?->id;
 
         $created = 0;
         $errors = [];
 
-        DB::transaction(function () use ($request, $billingService, &$created, &$errors) {
+        DB::transaction(function () use ($request, $billingService, $creatorStaffId, &$created, &$errors) {
             foreach ($request->enrollment_ids as $id) {
                 try {
                     $enrollment = AcademicSessionEnrollment::findOrFail($id);
 
                     $billingService->createInvoiceForEnrollment(
                         $enrollment,
-                        auth()->id(),
+                        $creatorStaffId,
                         $request->issue_date,
                         $request->due_date
                     );
@@ -241,16 +243,17 @@ class InvoiceController extends Controller
             'student_ids' => 'required|array',
             'student_ids.*' => 'exists:students,id',
             'amount' => 'required|numeric|min:0',
-            'type' => 'required|in:discount,waiver,scholarship',
+            'type' => 'required|in:discount,waiver,bursary,helb,penalty,refund,other',
             'description' => 'nullable|string',
         ]);
 
         $billingService = app(\App\Services\BillingService::class);
+        $creatorStaffId = auth()->user()?->staff?->id;
 
         $count = 0;
         $errors = [];
 
-        DB::transaction(function () use ($request, $billingService, &$count, &$errors) {
+        DB::transaction(function () use ($request, $billingService, $creatorStaffId, &$count, &$errors) {
             foreach ($request->student_ids as $studentId) {
                 try {
                     $invoices = StudentInvoice::where('student_id', $studentId)
@@ -262,7 +265,7 @@ class InvoiceController extends Controller
                             $invoice,
                             $request->type,
                             $request->amount,
-                            auth()->id(),
+                            $creatorStaffId,
                             $request->description
                         );
                         $count++;

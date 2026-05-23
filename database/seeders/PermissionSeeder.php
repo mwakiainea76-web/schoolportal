@@ -29,6 +29,7 @@ class PermissionSeeder extends Seeder
             'nextofkins',
             'fees',
             'payments',
+            'billing.ledger',
             'exams',
             'certification.levels',
             'certifications',

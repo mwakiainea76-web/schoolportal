@@ -46,4 +46,9 @@ class AcademicSession extends Model
     {
         return $this->hasMany(FeePlanAssignment::class, 'session_id');
     }
+
+    public function ledgerTransactions()
+    {
+        return $this->hasMany(LedgerTransaction::class, 'academic_session_id');
+    }
 }

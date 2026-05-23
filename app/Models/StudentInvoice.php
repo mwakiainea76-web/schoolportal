@@ -72,6 +72,11 @@ class StudentInvoice extends Model
         return $this->belongsTo(AcademicSession::class, 'academic_session_id');
     }
 
+    public function ledgerTransactions()
+    {
+        return $this->hasMany(LedgerTransaction::class, 'student_invoice_id');
+    }
+
     public function recalculateTotals(): self
     {
         $itemsTotal = $this->items()->sum('total_amount');

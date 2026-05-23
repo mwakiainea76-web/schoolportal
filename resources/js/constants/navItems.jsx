@@ -182,6 +182,12 @@ export const NAV_ITEMS = [
                 label: "Create invoice",
                 permission: "students.view",
             },
+            {
+                routeName: "billing.ledger.index",
+                fallback: "/billing/ledger",
+                label: "Financial Ledger",
+                permission: "billing.ledger.view",
+            },
         ],
     },
 
