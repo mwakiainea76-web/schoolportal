@@ -98,7 +98,6 @@ return [
             'sslmode' => env('DB_SSLMODE', 'require'),
             'options' => array_filter([
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_EMULATE_PREPARES => true,
                 defined('PDO::PGSQL_ATTR_DISABLE_PREPARES') ? PDO::PGSQL_ATTR_DISABLE_PREPARES : null => defined('PDO::PGSQL_ATTR_DISABLE_PREPARES') ? true : null,
             ]),
             // Pass Neon endpoint hint through pg connect options

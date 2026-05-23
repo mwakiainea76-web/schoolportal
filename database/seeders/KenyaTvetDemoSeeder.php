@@ -970,10 +970,10 @@ class KenyaTvetDemoSeeder extends Seeder
             'gender' => $gender,
             'profile_photo' => null,
             'religion' => $religion,
-            'is_pwd' => false,
+            'is_pwd' => 'false',
             'disability_type' => null,
             'medical_condition' => null,
-            'is_active' => true,
+            'is_active' => 'true',
             'email_verified_at' => now(),
             'password' => $password,
         ];
