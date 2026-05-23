@@ -26,6 +26,11 @@ class Student extends Model
         return $this->hasMany(ProgramEnrollment::class);
     }
 
+    public function programEnrollment()
+    {
+        return $this->hasOne(ProgramEnrollment::class);
+    }
+
     public function enrollments()
     {
         return $this->hasManyThrough(

@@ -117,15 +117,15 @@ class StudentController extends Controller
         $courseCurricula = ProgramVersionMapping::query()
             ->active()
             ->with([
-                'curriculum:id,name',
-                'course:id,name,certification_level_id',
-                'course.certificationLevel:id,name',
+                'programVersion:id,name',
+                'program:id,name,certification_level_id',
+                'program.certificationLevel:id,name',
             ])
             ->orderByDesc('id')
             ->get()
             ->map(fn ($c) => [
                 'id' => $c->id,
-                'name' => $c->curriculum->name.' - '.$c->course->display_name,
+                'name' => ($c->programVersion?->name ?? 'Program Version').' - '.($c->program?->display_name ?? $c->program?->name ?? 'Program'),
             ]);
 
         return inertia('students/Create', [
@@ -189,7 +189,7 @@ class StudentController extends Controller
 
             ProgramEnrollment::create([
                 'student_id' => $student->id,
-                'course_curriculum_id' => $request->course_curriculum_id,
+                'program_version_mapping_id' => $request->course_curriculum_id,
             ]);
 
             $user->nextOfKin()->create([
@@ -261,6 +261,11 @@ class StudentController extends Controller
                 'admission_date' => $request->admission_date,
                 'student_status' => $request->student_status,
             ]);
+
+            $student->programEnrollment()->updateOrCreate(
+                ['student_id' => $student->id],
+                ['program_version_mapping_id' => $request->course_curriculum_id]
+            );
 
             $student->user->nextOfKin()->updateOrCreate(
                 ['user_id' => $student->user_id],

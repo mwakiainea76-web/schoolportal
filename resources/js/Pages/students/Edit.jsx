@@ -65,6 +65,8 @@ export default function EditStudent({ student, courseCurricula = [] }) {
 
         // Academic
         previous_school: student.previous_school || "",
+        course_curriculum_id:
+            student.program_enrollment?.program_version_mapping_id || "",
         admission_date: student.admission_date || "",
         current_module: student.current_module || "",
         fee_discount_percentage: student.fee_discount_percentage || "",
