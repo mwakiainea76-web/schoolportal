@@ -49,7 +49,7 @@ class StudentController extends Controller
             ],
             2 => [
                 'previous_school' => ['required', 'string', 'max:255'],
-                'course_curriculum_id' => ['required', 'exists:course_curriculum,id'],
+                'course_curriculum_id' => ['required', 'exists:program_version_mappings,id'],
                 'current_module' => ['required', 'string'],
                 'fee_discount_percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
             ],

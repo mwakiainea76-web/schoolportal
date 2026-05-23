@@ -412,9 +412,9 @@ class FeeAssignmentController extends Controller
             'year_of_study' => 'required|integer|min:1|max:20',
             'session_number' => 'required|integer|min:1|max:20',
             'visible_course_curriculum_ids' => 'required|array|min:1',
-            'visible_course_curriculum_ids.*' => 'integer|exists:course_curriculum,id',
+            'visible_course_curriculum_ids.*' => 'integer|exists:program_version_mappings,id',
             'selected_course_curriculum_ids' => 'nullable|array',
-            'selected_course_curriculum_ids.*' => 'integer|exists:course_curriculum,id',
+            'selected_course_curriculum_ids.*' => 'integer|exists:program_version_mappings,id',
         ]);
 
         $visibleIds = collect($validated['visible_course_curriculum_ids'])
@@ -580,7 +580,7 @@ class FeeAssignmentController extends Controller
         return [
             'fee_plan_id' => 'required|exists:fee_plans,id',
             'academic_year_id' => 'required|exists:academic_sessions,id',
-            'course_curriculum_id' => 'required|exists:course_curriculum,id',
+            'course_curriculum_id' => 'required|exists:program_version_mappings,id',
             'year_of_study' => 'required|integer|min:1|max:20',
             'session_number' => 'required|integer|min:1|max:20',
         ];
