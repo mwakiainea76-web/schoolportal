@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Head, Link, useForm, usePage } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import Modal from "@/Components/Modal";
@@ -69,14 +69,22 @@ function StudentDashboard({ dashboard, fullName }) {
         useState(false);
     const { post, processing, errors, clearErrors } = useForm({});
 
+    useEffect(() => {
+        if (errors.session_registration) {
+            setShowSessionRegistrationModal(true);
+        }
+    }, [errors.session_registration]);
+
     const submitSessionRegistration = (e) => {
         e.preventDefault();
         post(route("student.dashboard.register-session"), {
             preserveScroll: true,
+            onBefore: () => clearErrors(),
             onSuccess: () => {
                 clearErrors();
                 setShowSessionRegistrationModal(false);
             },
+            onError: () => setShowSessionRegistrationModal(true),
         });
     };
 

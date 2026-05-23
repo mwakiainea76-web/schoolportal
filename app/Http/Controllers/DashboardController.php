@@ -7,6 +7,7 @@ use App\Models\AcademicSession;
 use App\Models\AcademicYear;
 use App\Models\Department;
 use App\Models\Program;
+use App\Models\ProgramEnrollment;
 use App\Models\ProgramVersion;
 use App\Models\StudentInvoice;
 use Illuminate\Http\Request;
@@ -30,12 +31,19 @@ class DashboardController extends Controller
     public function studentDashboard(Request $request): Response
     {
         $user = $request->user();
-        $student = $user?->student?->load([
-            'programEnrollment.programVersionMapping.program',
-            'programEnrollment.programVersionMapping.programVersion',
-        ]);
+        $student = $user?->student;
 
-        $programEnrollment = $student?->programEnrollment;
+        $programEnrollment = $student
+            ? ProgramEnrollment::query()
+                ->with([
+                    'programVersionMapping.program',
+                    'programVersionMapping.programVersion',
+                ])
+                ->where('student_id', $student->id)
+                ->latest()
+                ->first()
+            : null;
+
         $programVersionMapping = $programEnrollment?->programVersionMapping;
         $latestSessionEnrollment = $programEnrollment
             ? AcademicSessionEnrollment::query()

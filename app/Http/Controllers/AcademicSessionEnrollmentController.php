@@ -92,7 +92,7 @@ class AcademicSessionEnrollmentController extends Controller
         try {
             $enrollment = $this->enrollStudentIntoActiveSession($student, auth()->user()?->staff?->id);
         } catch (ValidationException $e) {
-            return back()->withInput()->withErrors($e->errors());
+            return back()->withInput()->withErrors($this->normalizeSessionRegistrationErrors($e));
         }
 
         $activeSession = $enrollment->academicSession;
@@ -116,7 +116,7 @@ class AcademicSessionEnrollmentController extends Controller
         try {
             $enrollment = $this->enrollStudentIntoActiveSession($student, auth()->user()?->staff?->id);
         } catch (ValidationException $e) {
-            return back()->withErrors($e->errors());
+            return back()->withErrors($this->normalizeSessionRegistrationErrors($e));
         }
 
         $activeSession = $enrollment->academicSession;
@@ -231,6 +231,26 @@ class AcademicSessionEnrollmentController extends Controller
 
             return $enrollment;
         });
+    }
+
+    protected function normalizeSessionRegistrationErrors(ValidationException $exception): array
+    {
+        $errors = $exception->errors();
+
+        if (isset($errors['session_registration'])) {
+            return $errors;
+        }
+
+        $firstMessage = collect($errors)
+            ->flatten()
+            ->filter()
+            ->first();
+
+        return [
+            'session_registration' => [
+                $firstMessage ?: 'Session registration failed. Please try again.',
+            ],
+        ];
     }
 }
 

@@ -22,7 +22,6 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Web middleware stack
         $middleware->web(append: [
-            \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
             HandleInertiaRequests::class,
         ]);
 
