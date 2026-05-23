@@ -11,6 +11,7 @@ class AcademicSessionService
 
         AcademicSession::create([
             'session_No' => $data['session_No'],
+            'session_number' => $data['session_No'],
             'is_active' => false,
             'academic_year_id' => $data['academic_year_id'],
         ]);
@@ -32,6 +33,7 @@ class AcademicSessionService
         }
         $session->update([
             'session_No' => $data['session_No'],
+            'session_number' => $data['session_No'],
             'start_date' => $data['is_active'] ? now() : null,
             'end_date' => $data['close_session'] ? now() : null,
             'is_active' => $data['close_session'] ? false : $data['is_active'],
