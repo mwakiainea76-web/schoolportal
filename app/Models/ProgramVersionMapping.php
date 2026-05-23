@@ -38,9 +38,19 @@ class ProgramVersionMapping extends Model
         return $this->belongsTo(Program::class);
     }
 
+    public function course()
+    {
+        return $this->program();
+    }
+
     public function programVersion()
     {
         return $this->belongsTo(ProgramVersion::class);
+    }
+
+    public function curriculum()
+    {
+        return $this->programVersion();
     }
 
     public function getNameAttribute(): string
