@@ -1,18 +1,39 @@
+import React from "react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
-import { Head, useForm } from "@inertiajs/react";
+import { Head, useForm, Link } from "@inertiajs/react";
 import TextInput from "@/Components/TextInput";
 import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import PrimaryButton from "@/Components/PrimaryButton";
-import ToggleSwitch from "@/Components/ToggleSwitch";
 import SearchSelect from "@/Components/SearchSelect";
 
 export default function Edit({ academic_session }) {
+    const lifecycleText = academic_session?.end_date
+        ? "Academic session is closed"
+        : academic_session?.start_date
+          ? "Academic session is ongoing"
+          : "Upcoming";
+    const isSessionStateLocked = Boolean(academic_session?.end_date);
+
+    const sessionStatusOptions = [
+        { id: "active", name: "Active" },
+        { id: "inactive", name: "Inactive" },
+    ];
+
+    const sessionLifecycleOptions = [
+        { id: "open", name: "Keep Session Open" },
+        { id: "close", name: "Close Session" },
+    ];
+
     const { data, setData, put, processing, errors } = useForm({
         session_No: academic_session.session_No || "",
         academic_year_id: academic_session.academic_year_id || "",
-        is_active: academic_session.is_active || false,
-        close_session: academic_session.end_date ? false : true,
+        session_status: academic_session.is_active ? "active" : "inactive",
+        session_lifecycle: academic_session.end_date
+            ? "reopen"
+            : academic_session.start_date
+              ? "open"
+              : "upcoming",
     });
 
     const submit = (e) => {
@@ -22,27 +43,38 @@ export default function Edit({ academic_session }) {
                 "academic.sessions.update",
                 encodeURIComponent(academic_session.id),
             ),
+            {
+                preserveScroll: true,
+                onBefore: (visit) => {
+                    visit.data = {
+                        session_No: data.session_No,
+                        academic_year_id: data.academic_year_id,
+                        is_active: data.session_status === "active",
+                        close_session: data.session_lifecycle === "close",
+                    };
+                },
+            },
         );
     };
 
     return (
         <AuthenticatedLayout>
-            <Head title="Edit Academic Session" />
+            <Head
+                title={`Edit Academic Session - ${academic_session?.session_No}`}
+            />
 
             <div className="max-w-4xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
                 <div className="bg-white rounded-lg border border-zinc-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden">
                     <legend className=" text-white   border-b border-white/50  text-center py-2 bg-slate-400 rounded-t-lg w-full">
-                        Edit academic year details
+                        Edit academic session
                     </legend>
                     <p className="text-center text-xs">
                         {" "}
                         Current status
                         <span
-                            className={`px-2 py-0.5 rounded text-xs ${academic_session.end_date ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"}`}
+                            className={`px-2 py-0.5 rounded text-xs ${academic_session.is_active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"}`}
                         >
-                            {academic_session.end_date
-                                ? "Ongoing"
-                                : "Completed"}
+                            {academic_session.is_active ? "Active" : "Inactive"}
                         </span>
                     </p>
 
@@ -52,7 +84,7 @@ export default function Edit({ academic_session }) {
                             <div>
                                 <InputLabel value="Academic year" />
                                 <TextInput
-                                    className="cursor-not-allowed bg-slate-100"
+                                    className="cursor-not-allowed bg-gray-100"
                                     value={
                                         academic_session.academic_year
                                             .academic_year
@@ -71,7 +103,7 @@ export default function Edit({ academic_session }) {
                             <div>
                                 <InputLabel>Session Number</InputLabel>
                                 <TextInput
-                                    className="cursor-not-allowed bg-slate-100"
+                                    className="cursor-not-allowed bg-gray-100"
                                     disabled
                                     value={data.session_No}
                                     onChange={(e) =>
@@ -83,47 +115,87 @@ export default function Edit({ academic_session }) {
                                 <InputError message={errors.session_No} />
                             </div>
 
-                            {/* Active Toggle */}
-                            <div>
-                                <ToggleSwitch
-                                    label={
-                                        academic_session.is_active
-                                            ? "De activate this session now"
-                                            : `Activate to current session now`
+                            {/* Active Status */}
+                            <div className="flex flex-col justify-center">
+                                <InputLabel value="Session Status" required />
+                                <SearchSelect
+                                    routeName={null}
+                                    defaultOptions={sessionStatusOptions}
+                                    value={data.session_status}
+                                    selectedLabel={
+                                        data.session_status === "active"
+                                            ? "Active"
+                                            : "Inactive"
                                     }
-                                    checked={data.is_active}
-                                    onChange={(checked) =>
-                                        setData("is_active", checked)
+                                    placeholder="Select session status"
+                                    onChange={(item) =>
+                                        setData("session_status", item.id)
                                     }
-                                    error={errors.is_active}
+                                    error={errors.session_status}
+                                    disabled={isSessionStateLocked}
                                 />
-                                <InputError message={errors.is_active} />
+                                <InputError
+                                    message={errors.session_status}
+                                    className="mt-2"
+                                />
+                                <p
+                                    className={`mt-1 text-xs ${isSessionStateLocked ? "text-amber-600" : "text-slate-500"}`}
+                                >
+                                    {isSessionStateLocked
+                                        ? "This academic session is closed and cannot be reactivated."
+                                        : lifecycleText}
+                                </p>
                             </div>
+
                             {academic_session.start_date && (
-                                <div>
-                                    <ToggleSwitch
-                                        label={
-                                            academic_session.end_date
-                                                ? "Re open this session now"
-                                                : `Close this Academic session`
+                                <div className="flex flex-col justify-center">
+                                    <InputLabel
+                                        value="Session Lifecycle"
+                                        required
+                                    />
+                                    <SearchSelect
+                                        routeName={null}
+                                        defaultOptions={sessionLifecycleOptions}
+                                        value={data.session_lifecycle}
+                                        selectedLabel={
+                                            data.session_lifecycle === "close"
+                                                ? "Close Session"
+                                                : "Keep Session Open"
                                         }
-                                        checked={data.close_session}
-                                        onChange={(checked) =>
-                                            setData("close_session", checked)
+                                        placeholder="Select session lifecycle"
+                                        onChange={(item) =>
+                                            setData(
+                                                "session_lifecycle",
+                                                item.id,
+                                            )
                                         }
-                                        error={errors.close_session}
+                                        error={errors.session_lifecycle}
+                                        disabled={
+                                            isSessionStateLocked &&
+                                            !academic_session.end_date
+                                        }
                                     />
                                     <InputError
-                                        message={errors.close_session}
+                                        message={errors.session_lifecycle}
+                                        className="mt-2"
                                     />
                                 </div>
                             )}
                         </div>
 
-                        {/* Submit */}
-                        <div className="pt-4 flex items-center gap-4">
+                        {/* Actions */}
+                        <div className="pt-6 flex items-center justify-end gap-4 border-t border-zinc-50">
+                            <Link
+                                href={route("academic.sessions.index")}
+                                className="px-6 py-3 rounded-xl text-sm font-bold text-zinc-500 hover:bg-zinc-100 transition-colors"
+                            >
+                                Cancel
+                            </Link>
+
                             <PrimaryButton disabled={processing}>
-                                Update academic session
+                                {processing
+                                    ? "Updating..."
+                                    : "Update Academic Session"}
                             </PrimaryButton>
                         </div>
                     </form>
