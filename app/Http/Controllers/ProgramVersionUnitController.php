@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreProgramVersionUnitRequest;
 use App\Http\Requests\UpdateProgramVersionUnitRequest;
+use App\Models\ProgramEnrollment;
 use App\Models\ProgramVersionMapping;
 use App\Models\ProgramVersionUnit;
 use App\Models\Unit;
 use App\Services\ProgramVersionUnitService;
+use Illuminate\Http\Request;
 
 class ProgramVersionUnitController extends Controller
 {
@@ -30,6 +32,51 @@ class ProgramVersionUnitController extends Controller
 
         return inertia('ProgramVersionUnits/Index', [
             'curriculum_units' => $curriculum_units,
+        ]);
+    }
+
+    public function studentIndex(Request $request)
+    {
+        $student = $request->user()?->student;
+        $programEnrollment = $student
+            ? ProgramEnrollment::query()
+                ->with([
+                    'programVersionMapping.program:id,name',
+                    'programVersionMapping.programVersion:id,name',
+                ])
+                ->where('student_id', $student->id)
+                ->latest()
+                ->first()
+            : null;
+
+        $units = $programEnrollment
+            ? ProgramVersionUnit::query()
+                ->with('unit:id,code,name,credit_factor,training_hours')
+                ->where('program_version_mapping_id', $programEnrollment->program_version_mapping_id)
+                ->orderBy('module_taught')
+                ->orderBy('id')
+                ->get()
+            : collect();
+
+        return inertia('ProgramVersionUnits/StudentIndex', [
+            'program' => $programEnrollment ? [
+                'name' => $programEnrollment->programVersionMapping?->program?->name,
+                'version' => $programEnrollment->programVersionMapping?->programVersion?->name,
+            ] : null,
+            'units_by_module' => $units
+                ->groupBy('module_taught')
+                ->map(fn ($moduleUnits, $module) => [
+                    'module' => (int) $module,
+                    'units' => $moduleUnits->map(fn (ProgramVersionUnit $programVersionUnit) => [
+                        'id' => $programVersionUnit->id,
+                        'code' => $programVersionUnit->unit?->code,
+                        'name' => $programVersionUnit->unit?->name,
+                        'credit_factor' => $programVersionUnit->unit?->credit_factor,
+                        'training_hours' => $programVersionUnit->unit?->training_hours,
+                    ])->values(),
+                ])
+                ->sortBy('module')
+                ->values(),
         ]);
     }
 

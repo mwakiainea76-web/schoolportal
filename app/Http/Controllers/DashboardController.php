@@ -9,6 +9,7 @@ use App\Models\Department;
 use App\Models\Program;
 use App\Models\ProgramEnrollment;
 use App\Models\ProgramVersion;
+use App\Models\ProgramVersionUnit;
 use App\Models\StudentInvoice;
 use App\Services\FeeAssignmentService;
 use Illuminate\Http\Request;
@@ -70,6 +71,22 @@ class DashboardController extends Controller
                 ->latest()
                 ->first()
             : null;
+        $currentModule = $latestSessionEnrollment?->module
+            ?? $activeSessionNumber
+            ?? $student?->current_module;
+        $moduleUnits = $programEnrollment && $currentModule
+            ? ProgramVersionUnit::query()
+                ->with('unit:id,code,name,credit_factor,training_hours')
+                ->where('program_version_mapping_id', $programEnrollment->program_version_mapping_id)
+                ->where('module_taught', $currentModule)
+                ->orderBy('id')
+                ->get()
+            : collect();
+        $allUnitsCount = $programEnrollment
+            ? ProgramVersionUnit::query()
+                ->where('program_version_mapping_id', $programEnrollment->program_version_mapping_id)
+                ->count()
+            : 0;
 
         $invoices = $student
             ? StudentInvoice::query()
@@ -102,6 +119,14 @@ class DashboardController extends Controller
                     'name' => $programVersionMapping?->program?->name,
                     'version' => $programVersionMapping?->programVersion?->name,
                 ],
+                'module_units' => $moduleUnits->map(fn (ProgramVersionUnit $programVersionUnit) => [
+                    'id' => $programVersionUnit->id,
+                    'code' => $programVersionUnit->unit?->code,
+                    'name' => $programVersionUnit->unit?->name,
+                    'credit_factor' => $programVersionUnit->unit?->credit_factor,
+                    'training_hours' => $programVersionUnit->unit?->training_hours,
+                ])->values(),
+                'all_units_count' => $allUnitsCount,
                 'latest_session' => $latestSessionEnrollment ? [
                     'session' => $latestSessionEnrollment->academicSession?->display_name,
                     'year_of_study' => $latestSessionEnrollment->year_of_study,

@@ -4,6 +4,7 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import Modal from "@/Components/Modal";
 import {
     BookMarked,
+    BookOpen,
     CalendarDays,
     CreditCard,
     GraduationCap,
@@ -310,23 +311,67 @@ function StudentDashboard({ dashboard, fullName }) {
                     <div className="rounded-[1.75rem] border border-zinc-100 bg-white p-7 shadow-sm">
                         <div className="flex items-center justify-between">
                             <h2 className="text-xl font-semibold text-zinc-900">
-                                Quick Actions
+                                This Module's Units
                             </h2>
                             <div className="rounded-2xl bg-amber-50 p-3 text-amber-600">
-                                <CalendarDays className="h-5 w-5" />
+                                <BookOpen className="h-5 w-5" />
                             </div>
                         </div>
 
-                        <div className="mt-6 grid gap-3">
+                        <div className="mt-2 flex items-center justify-between">
+                            <p className="text-sm text-zinc-500">
+                                Units assigned to your current module.
+                            </p>
                             <Link
-                                href={route("profile.edit")}
-                                className="rounded-2xl border border-zinc-200 px-4 py-3 text-sm font-medium text-zinc-700 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
+                                href={route("student.program-units.index")}
+                                className="text-xs font-semibold text-emerald-700 transition hover:text-emerald-800"
                             >
-                                Update profile details
+                                View all units
                             </Link>
-                            <div className="rounded-2xl bg-[#F8F9FA] px-4 py-3 text-sm text-zinc-500">
-                                Track invoices, sessions, and study status
-                                from this dashboard as new records are added.
+                        </div>
+
+                        <div className="mt-6 space-y-3">
+                            {dashboard.module_units?.length ? (
+                                dashboard.module_units.map((unit) => (
+                                    <div
+                                        key={unit.id}
+                                        className="rounded-2xl border border-zinc-100 bg-zinc-50/80 px-4 py-4"
+                                    >
+                                        <div className="flex items-start justify-between gap-4">
+                                            <div>
+                                                <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                                                    {unit.code ?? "Unit"}
+                                                </p>
+                                                <p className="mt-2 text-sm font-semibold text-zinc-900">
+                                                    {unit.name}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <div className="mt-3 flex flex-wrap gap-2 text-xs text-zinc-500">
+                                            {unit.credit_factor ? (
+                                                <span className="rounded-full bg-white px-3 py-1">
+                                                    Credit Factor: {unit.credit_factor}
+                                                </span>
+                                            ) : null}
+                                            {unit.training_hours ? (
+                                                <span className="rounded-full bg-white px-3 py-1">
+                                                    Hours: {unit.training_hours}
+                                                </span>
+                                            ) : null}
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="rounded-2xl bg-[#F8F9FA] px-4 py-4 text-sm text-zinc-500">
+                                    No units have been assigned to this module yet.
+                                </div>
+                            )}
+
+                            <div className="rounded-2xl bg-[#F8F9FA] px-4 py-3 text-xs text-zinc-500">
+                                {dashboard.all_units_count
+                                    ? `${dashboard.all_units_count} total unit(s) are mapped to your program version.`
+                                    : "Your full unit list will appear once units are mapped to your program version."}
                             </div>
                         </div>
                     </div>
