@@ -113,19 +113,9 @@ return new class extends Migration
         if (! Schema::hasTable('ledger_transactions')) {
             Schema::create('ledger_transactions', function (Blueprint $table) {
                 $table->id();
-                $table->foreignId('student_id')
-                    ->constrained('students')
-                    ->cascadeOnDelete()
-                    ->cascadeOnUpdate();
-                $table->foreignId('student_invoice_id')
-                    ->nullable()
-                    ->constrained('student_invoices')
-                    ->nullOnDelete()
-                    ->cascadeOnUpdate();
-                $table->foreignId('academic_session_id')
-                    ->constrained('academic_sessions')
-                    ->cascadeOnDelete()
-                    ->cascadeOnUpdate();
+                $table->foreignId('student_id');
+                $table->foreignId('student_invoice_id')->nullable();
+                $table->foreignId('academic_session_id');
                 $table->enum('type', [
                     'invoice',
                     'payment',
@@ -154,6 +144,32 @@ return new class extends Migration
                 $table->index('type');
                 $table->index('transaction_date');
                 $table->index('reference');
+            });
+
+            Schema::table('ledger_transactions', function (Blueprint $table) {
+                $table->foreign('student_id', 'ledger_transactions_student_id_foreign')
+                    ->references('id')
+                    ->on('students')
+                    ->cascadeOnDelete()
+                    ->cascadeOnUpdate();
+
+                $table->foreign('student_invoice_id', 'ledger_transactions_student_invoice_id_foreign')
+                    ->references('id')
+                    ->on('student_invoices')
+                    ->nullOnDelete()
+                    ->cascadeOnUpdate();
+
+                $table->foreign('academic_session_id', 'ledger_transactions_academic_session_id_foreign')
+                    ->references('id')
+                    ->on('academic_sessions')
+                    ->cascadeOnDelete()
+                    ->cascadeOnUpdate();
+
+                $table->foreign('created_by', 'ledger_transactions_created_by_foreign')
+                    ->references('id')
+                    ->on('staffs')
+                    ->nullOnDelete()
+                    ->cascadeOnUpdate();
             });
         }
     }

@@ -1,0 +1,981 @@
+<?php
+
+namespace Database\Seeders;
+
+use App\Models\AcademicSession;
+use App\Models\AcademicSessionEnrollment;
+use App\Models\AcademicYear;
+use App\Models\Approval;
+use App\Models\CertificationLevel;
+use App\Models\Department;
+use App\Models\ExamBody;
+use App\Models\FeeAssignment;
+use App\Models\FeeComponent;
+use App\Models\FeePlan;
+use App\Models\FeePlanItem;
+use App\Models\LedgerTransaction;
+use App\Models\NextOfKin;
+use App\Models\Program;
+use App\Models\ProgramEnrollment;
+use App\Models\ProgramVersion;
+use App\Models\ProgramVersionMapping;
+use App\Models\ProgramVersionUnit;
+use App\Models\Staff;
+use App\Models\Student;
+use App\Models\Unit;
+use App\Models\User;
+use App\Services\BillingService;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Spatie\Permission\Models\Role;
+
+class KenyaTvetDemoSeeder extends Seeder
+{
+    public function run(): void
+    {
+        DB::transaction(function () {
+            $roles = $this->seedRoles();
+            $examBodies = $this->seedExamBodies();
+            $levels = $this->seedCertificationLevels($examBodies);
+            $departments = $this->seedDepartments();
+            $users = $this->seedUsersAndStaff($roles);
+            $calendar = $this->seedAcademicCalendar();
+            $versions = $this->seedProgramVersions($users['admin']);
+            $programs = $this->seedPrograms($departments, $levels);
+            $mappings = $this->seedProgramMappings($programs, $versions, $users['admin']);
+            $this->seedUnitsAndMappings($mappings);
+            $students = $this->seedStudents($roles['student'], $mappings);
+            $feePlans = $this->seedFeePlans($users['bursar_user'], $users['bursar_staff']);
+            $this->seedLegacyFeeAssignments($feePlans, $mappings, $calendar['active_year'], $users['bursar_staff']);
+            $this->seedModernFeePlanAssignments($feePlans, $versions['active'], $calendar['active_year'], $calendar['active_session'], $users['bursar_user']);
+            $sessionEnrollments = $this->seedAcademicSessionEnrollments($students, $calendar['active_session']);
+            $this->seedBillingData($sessionEnrollments, $users['bursar_staff'], $feePlans['level4'], $feePlans['level5'], $feePlans['level6']);
+            $this->seedApprovalsSample($users['bursar_staff']);
+        });
+    }
+
+    protected function seedRoles(): array
+    {
+        return [
+            'admin' => Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']),
+            'student' => Role::firstOrCreate(['name' => 'student', 'guard_name' => 'web']),
+            'bursar' => Role::firstOrCreate(['name' => 'bursar', 'guard_name' => 'web']),
+            'registrar' => Role::firstOrCreate(['name' => 'registrar', 'guard_name' => 'web']),
+        ];
+    }
+
+    protected function seedUsersAndStaff(array $roles): array
+    {
+        $admin = User::firstOrCreate(
+            ['email' => 'admin@tvetdemo.ke'],
+            $this->userData('Martin', 'Njoroge', '0701001001', '1988-06-14', 'Nairobi', 'Westlands, Nairobi', 'male', 'Catholic', 'Password@123')
+        );
+        $admin->syncRoles([$roles['admin']->name]);
+
+        $registrarUser = User::firstOrCreate(
+            ['email' => 'registrar@tvetdemo.ke'],
+            $this->userData('Linet', 'Wambui', '0701001002', '1991-02-11', 'Kiambu', 'Ruiru, Kiambu', 'female', 'Christian', 'Password@123')
+        );
+        $registrarUser->syncRoles([$roles['registrar']->name]);
+
+        $bursarUser = User::firstOrCreate(
+            ['email' => 'bursar@tvetdemo.ke'],
+            $this->userData('Peter', 'Mutiso', '0701001003', '1986-09-03', 'Machakos', 'Machakos Town', 'male', 'Christian', 'Password@123')
+        );
+        $bursarUser->syncRoles([$roles['bursar']->name]);
+
+        $hodUser = User::firstOrCreate(
+            ['email' => 'hod.ict@tvetdemo.ke'],
+            $this->userData('Mercy', 'Achieng', '0701001004', '1989-12-21', 'Kisumu', 'Milimani, Kisumu', 'female', 'Christian', 'Password@123')
+        );
+
+        foreach ([$admin, $registrarUser, $bursarUser, $hodUser] as $user) {
+            NextOfKin::firstOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'first_name' => 'Grace',
+                    'last_name' => $user->last_name,
+                    'relationship' => 'Sibling',
+                    'phone_number' => '0712000000',
+                    'alternate_phone_number' => '0722000000',
+                    'email' => strtolower($user->last_name).'.kin@tvetdemo.ke',
+                ]
+            );
+        }
+
+        $departments = Department::pluck('id', 'code');
+
+        $adminStaff = Staff::firstOrCreate(
+            ['user_id' => $admin->id],
+            [
+                'department_id' => $departments['BUS'] ?? $departments->first(),
+                'staff_number' => 'TVET/STAFF/001',
+                'salary' => 145000,
+                'hired_date' => '2023-01-10',
+                'employment_type' => 'Permanent',
+                'staff_status' => 'active',
+            ]
+        );
+
+        $registrarStaff = Staff::firstOrCreate(
+            ['user_id' => $registrarUser->id],
+            [
+                'department_id' => $departments['BUS'] ?? $departments->first(),
+                'staff_number' => 'TVET/STAFF/002',
+                'salary' => 98000,
+                'hired_date' => '2024-03-04',
+                'employment_type' => 'Permanent',
+                'staff_status' => 'active',
+            ]
+        );
+
+        $bursarStaff = Staff::firstOrCreate(
+            ['user_id' => $bursarUser->id],
+            [
+                'department_id' => $departments['BUS'] ?? $departments->first(),
+                'staff_number' => 'TVET/STAFF/003',
+                'salary' => 110000,
+                'hired_date' => '2022-07-11',
+                'employment_type' => 'Permanent',
+                'staff_status' => 'active',
+            ]
+        );
+
+        Staff::firstOrCreate(
+            ['user_id' => $hodUser->id],
+            [
+                'department_id' => $departments['ICT'] ?? $departments->first(),
+                'staff_number' => 'TVET/STAFF/004',
+                'salary' => 120000,
+                'hired_date' => '2023-09-18',
+                'employment_type' => 'Contract',
+                'staff_status' => 'active',
+            ]
+        );
+
+        return [
+            'admin' => $admin,
+            'bursar_user' => $bursarUser,
+            'bursar_staff' => $bursarStaff,
+            'registrar_user' => $registrarUser,
+            'registrar_staff' => $registrarStaff,
+            'admin_staff' => $adminStaff,
+        ];
+    }
+
+    protected function seedExamBodies(): array
+    {
+        return [
+            'cdacc' => ExamBody::firstOrCreate(
+                ['code' => 'CDACC'],
+                [
+                    'name' => 'Curriculum Development, Assessment and Certification Council',
+                    'description' => 'Kenyan TVET assessment body for competency based curricula.',
+                ]
+            ),
+            'knec' => ExamBody::firstOrCreate(
+                ['code' => 'KNEC'],
+                [
+                    'name' => 'Kenya National Examinations Council',
+                    'description' => 'National examinations and certification body in Kenya.',
+                ]
+            ),
+        ];
+    }
+
+    protected function seedCertificationLevels(array $examBodies): array
+    {
+        return [
+            'artisan4' => CertificationLevel::firstOrCreate(
+                ['code' => 'ART-L4'],
+                [
+                    'exam_body_id' => $examBodies['cdacc']->id,
+                    'entry_grade' => 'D',
+                    'name' => 'Artisan Certificate Level 4',
+                    'description' => 'Level 4 artisan training aligned to Kenyan TVET CBC pathways.',
+                ]
+            ),
+            'craft5' => CertificationLevel::firstOrCreate(
+                ['code' => 'CRT-L5'],
+                [
+                    'exam_body_id' => $examBodies['cdacc']->id,
+                    'entry_grade' => 'D+',
+                    'name' => 'Craft Certificate Level 5',
+                    'description' => 'Level 5 craft certificate for technical and vocational training.',
+                ]
+            ),
+            'diploma6' => CertificationLevel::firstOrCreate(
+                ['code' => 'DIP-L6'],
+                [
+                    'exam_body_id' => $examBodies['knec']->id,
+                    'entry_grade' => 'C-',
+                    'name' => 'Diploma Level 6',
+                    'description' => 'Diploma level occupational training for Kenyan TVET institutions.',
+                ]
+            ),
+        ];
+    }
+
+    protected function seedDepartments(): array
+    {
+        return [
+            'ict' => Department::firstOrCreate(
+                ['code' => 'ICT'],
+                [
+                    'name' => 'ICT and Informatics',
+                    'description' => 'Information communication technology and informatics programmes.',
+                ]
+            ),
+            'electrical' => Department::firstOrCreate(
+                ['code' => 'EEE'],
+                [
+                    'name' => 'Electrical and Electronics Engineering',
+                    'description' => 'Electrical installation, electronics, and renewable energy training.',
+                ]
+            ),
+            'building' => Department::firstOrCreate(
+                ['code' => 'BCE'],
+                [
+                    'name' => 'Building and Civil Engineering',
+                    'description' => 'Construction, plumbing, and civil works skills development.',
+                ]
+            ),
+            'hospitality' => Department::firstOrCreate(
+                ['code' => 'HIM'],
+                [
+                    'name' => 'Hospitality and Institutional Management',
+                    'description' => 'Hospitality, food production, accommodation, and service operations.',
+                ]
+            ),
+            'business' => Department::firstOrCreate(
+                ['code' => 'BUS'],
+                [
+                    'name' => 'Business and Entrepreneurship',
+                    'description' => 'Business management, supply chain, and entrepreneurship programmes.',
+                ]
+            ),
+        ];
+    }
+
+    protected function seedAcademicCalendar(): array
+    {
+        $previousYear = AcademicYear::firstOrCreate(
+            ['label' => '2025/2026'],
+            [
+                'academic_year' => '2025/2026',
+                'start_date' => '2025-01-06',
+                'end_date' => '2025-12-05',
+                'is_active' => false,
+            ]
+        );
+
+        $activeYear = AcademicYear::firstOrCreate(
+            ['label' => '2026/2027'],
+            [
+                'academic_year' => '2026/2027',
+                'start_date' => '2026-01-05',
+                'end_date' => null,
+                'is_active' => true,
+            ]
+        );
+
+        foreach ([
+            ['year' => $previousYear, 'no' => 1, 'label' => 'January-April 2025', 'start' => '2025-01-06', 'end' => '2025-04-18', 'active' => false],
+            ['year' => $previousYear, 'no' => 2, 'label' => 'May-August 2025', 'start' => '2025-05-05', 'end' => '2025-08-22', 'active' => false],
+            ['year' => $previousYear, 'no' => 3, 'label' => 'September-December 2025', 'start' => '2025-09-01', 'end' => '2025-12-05', 'active' => false],
+        ] as $row) {
+            AcademicSession::firstOrCreate(
+                ['academic_year_id' => $row['year']->id, 'session_number' => $row['no']],
+                [
+                    'session_No' => $row['no'],
+                    'label' => $row['label'],
+                    'start_date' => $row['start'],
+                    'end_date' => $row['end'],
+                    'is_active' => $row['active'],
+                ]
+            );
+        }
+
+        $activeSession = null;
+        foreach ([
+            ['no' => 1, 'label' => 'January-April 2026', 'start' => '2026-01-05', 'end' => null, 'active' => true],
+            ['no' => 2, 'label' => 'May-August 2026', 'start' => null, 'end' => null, 'active' => false],
+            ['no' => 3, 'label' => 'September-December 2026', 'start' => null, 'end' => null, 'active' => false],
+        ] as $row) {
+            $session = AcademicSession::firstOrCreate(
+                ['academic_year_id' => $activeYear->id, 'session_number' => $row['no']],
+                [
+                    'session_No' => $row['no'],
+                    'label' => $row['label'],
+                    'start_date' => $row['start'],
+                    'end_date' => $row['end'],
+                    'is_active' => $row['active'],
+                ]
+            );
+
+            if ($row['active']) {
+                $activeSession = $session;
+            }
+        }
+
+        return [
+            'previous_year' => $previousYear,
+            'active_year' => $activeYear,
+            'active_session' => $activeSession,
+        ];
+    }
+
+    protected function seedProgramVersions(User $admin): array
+    {
+        $cycle2 = ProgramVersion::firstOrCreate(
+            ['name' => 'Cycle 2'],
+            [
+                'description' => 'Archived TVET cycle for historical cohorts.',
+                'start_date' => '2025-01-01',
+                'end_date' => '2025-08-31',
+                'is_active' => false,
+                'created_by' => $admin->id,
+                'updated_by' => $admin->id,
+            ]
+        );
+
+        $cycle3 = ProgramVersion::firstOrCreate(
+            ['name' => 'Cycle 3'],
+            [
+                'description' => 'Recently completed intake cycle.',
+                'start_date' => '2025-09-01',
+                'end_date' => '2025-12-20',
+                'is_active' => false,
+                'created_by' => $admin->id,
+                'updated_by' => $admin->id,
+            ]
+        );
+
+        $cycle4 = ProgramVersion::firstOrCreate(
+            ['name' => 'Cycle 4'],
+            [
+                'description' => 'Current active TVET programme version.',
+                'start_date' => '2026-01-05',
+                'end_date' => null,
+                'is_active' => true,
+                'created_by' => $admin->id,
+                'updated_by' => $admin->id,
+            ]
+        );
+
+        return [
+            'old_1' => $cycle2,
+            'old_2' => $cycle3,
+            'active' => $cycle4,
+        ];
+    }
+
+    protected function seedPrograms(array $departments, array $levels): array
+    {
+        return [
+            'ict_l4' => Program::firstOrCreate(
+                ['code' => 'TVET-ICT-L4'],
+                [
+                    'name' => 'ICT Technician Level 4',
+                    'description' => 'Foundational ICT support, networking, and computer maintenance.',
+                    'initials' => 'ICT4',
+                    'duration_in_months' => 12,
+                    'certification_level_id' => $levels['artisan4']->id,
+                    'department_id' => $departments['ict']->id,
+                ]
+            ),
+            'electrical_l4' => Program::firstOrCreate(
+                ['code' => 'TVET-ELECT-L4'],
+                [
+                    'name' => 'Electrical Installation Technician Level 4',
+                    'description' => 'Domestic and industrial electrical installation training.',
+                    'initials' => 'EIT4',
+                    'duration_in_months' => 12,
+                    'certification_level_id' => $levels['artisan4']->id,
+                    'department_id' => $departments['electrical']->id,
+                ]
+            ),
+            'plumbing_l4' => Program::firstOrCreate(
+                ['code' => 'TVET-PLUMB-L4'],
+                [
+                    'name' => 'Plumbing Technician Level 4',
+                    'description' => 'Water systems, drainage, and sanitation plumbing skills.',
+                    'initials' => 'PLB4',
+                    'duration_in_months' => 12,
+                    'certification_level_id' => $levels['artisan4']->id,
+                    'department_id' => $departments['building']->id,
+                ]
+            ),
+            'hospitality_l5' => Program::firstOrCreate(
+                ['code' => 'TVET-HOSP-L5'],
+                [
+                    'name' => 'Food and Beverage Production Level 5',
+                    'description' => 'Kitchen operations, bakery, service, and hospitality production.',
+                    'initials' => 'FBP5',
+                    'duration_in_months' => 18,
+                    'certification_level_id' => $levels['craft5']->id,
+                    'department_id' => $departments['hospitality']->id,
+                ]
+            ),
+            'supply_chain_l6' => Program::firstOrCreate(
+                ['code' => 'TVET-SCM-L6'],
+                [
+                    'name' => 'Supply Chain Management Level 6',
+                    'description' => 'Procurement, stores, inventory, and logistics operations.',
+                    'initials' => 'SCM6',
+                    'duration_in_months' => 24,
+                    'certification_level_id' => $levels['diploma6']->id,
+                    'department_id' => $departments['business']->id,
+                ]
+            ),
+        ];
+    }
+
+    protected function seedProgramMappings(array $programs, array $versions, User $admin): array
+    {
+        $mappings = [];
+
+        foreach ($programs as $key => $program) {
+            $mapping = ProgramVersionMapping::firstOrCreate(
+                [
+                    'program_id' => $program->id,
+                    'program_version_id' => $versions['active']->id,
+                ],
+                [
+                    'is_active' => true,
+                    'description' => 'Current active mapping for '.$program->name,
+                    'created_by' => $admin->id,
+                    'updated_by' => $admin->id,
+                ]
+            );
+
+            $mappings[$key] = $mapping;
+        }
+
+        foreach (['ict_l4', 'electrical_l4'] as $legacyKey) {
+            ProgramVersionMapping::firstOrCreate(
+                [
+                    'program_id' => $programs[$legacyKey]->id,
+                    'program_version_id' => $versions['old_2']->id,
+                ],
+                [
+                    'is_active' => false,
+                    'description' => 'Historical archived mapping for reporting.',
+                    'created_by' => $admin->id,
+                    'updated_by' => $admin->id,
+                ]
+            );
+        }
+
+        return $mappings;
+    }
+
+    protected function seedUnitsAndMappings(array $mappings): void
+    {
+        $unitDefinitions = [
+            'COM101' => ['Communication Skills', 3, 45, 'Communication for TVET learners'],
+            'ENT101' => ['Entrepreneurship Education', 2, 30, 'Enterprise and self-employment skills'],
+            'LFS101' => ['Life Skills Education', 2, 30, 'Personal development and life skills'],
+            'ICT101' => ['Computer Essentials', 3, 60, 'Computer operations and office productivity'],
+            'ICT102' => ['Computer Repair and Maintenance', 4, 75, 'Troubleshooting and maintenance of computer systems'],
+            'ICT103' => ['Web Development Fundamentals', 4, 75, 'HTML, CSS and website development basics'],
+            'ICT104' => ['Database Systems', 4, 60, 'Introduction to data handling and relational databases'],
+            'ICT105' => ['Networking Essentials', 4, 75, 'LAN setup, routing and basic network support'],
+            'ICT106' => ['Industrial Attachment Preparation', 2, 30, 'Work readiness and attachment skills'],
+            'ELE101' => ['Engineering Mathematics', 3, 45, 'Math for electrical and technical trades'],
+            'ELE102' => ['Workshop Technology', 3, 45, 'Tools, instruments and workshop practice'],
+            'ELE103' => ['Electrical Installation Principles', 4, 75, 'Electrical wiring and installation techniques'],
+            'ELE104' => ['Solar PV Basics', 4, 60, 'Foundations of solar photovoltaic systems'],
+            'ELE105' => ['Electrical Drawing', 3, 45, 'Electrical schematics and interpretation'],
+            'ELE106' => ['Motor Control and Protection', 4, 75, 'Motors, starters and electrical protection'],
+            'ELE107' => ['Testing and Inspection', 3, 45, 'Testing electrical installations for compliance'],
+            'PLB101' => ['Plumbing Tools and Safety', 3, 45, 'Safe use of plumbing tools and workshop safety'],
+            'PLB102' => ['Engineering Science for Plumbing', 3, 45, 'Applied science for plumbing practice'],
+            'PLB103' => ['Water Supply Systems', 4, 75, 'Design and installation of water systems'],
+            'PLB104' => ['Drainage Systems', 4, 75, 'Drainage, waste and vent systems'],
+            'PLB105' => ['Welding Basics', 3, 45, 'Joining and fabrication basics'],
+            'PLB106' => ['Sanitation Technology', 4, 60, 'Sanitation installations and hygiene systems'],
+            'PLB107' => ['Estimating and Costing', 2, 30, 'Material estimation and job costing'],
+            'HOS101' => ['Occupational Safety and Hygiene', 2, 30, 'Food safety and workplace hygiene'],
+            'HOS102' => ['Food Production Basics', 4, 75, 'Kitchen production skills and practicals'],
+            'HOS103' => ['Customer Care', 2, 30, 'Service etiquette and customer handling'],
+            'HOS104' => ['Pastry and Bakery', 4, 75, 'Pastry production and bakery operations'],
+            'HOS105' => ['Food Service Operations', 4, 60, 'Restaurant and service area operations'],
+            'HOS106' => ['Menu Planning and Costing', 3, 45, 'Menu design, costing and kitchen planning'],
+            'HOS107' => ['Housekeeping Basics', 3, 45, 'Housekeeping and accommodation support'],
+            'BUS101' => ['Business Mathematics', 3, 45, 'Math applications in commerce and logistics'],
+            'BUS102' => ['ICT Applications in Business', 3, 45, 'Business software and digital records'],
+            'BUS103' => ['Procurement Principles', 4, 60, 'Procurement cycle and sourcing basics'],
+            'BUS104' => ['Warehousing Operations', 4, 60, 'Warehouse organization and inventory control'],
+            'BUS105' => ['Logistics Management', 4, 60, 'Transport and distribution fundamentals'],
+            'BUS106' => ['Storekeeping Practice', 3, 45, 'Store records and stock handling'],
+            'BUS107' => ['Customer Relations', 2, 30, 'Professional communication with clients and suppliers'],
+        ];
+
+        $units = [];
+        foreach ($unitDefinitions as $code => [$name, $credit, $hours, $description]) {
+            $units[$code] = Unit::firstOrCreate(
+                ['code' => $code],
+                [
+                    'name' => $name,
+                    'credit_factor' => $credit,
+                    'training_hours' => $hours,
+                    'description' => $description,
+                ]
+            );
+        }
+
+        $moduleMap = [
+            'ict_l4' => [
+                1 => ['ICT101', 'COM101', 'ENT101'],
+                2 => ['ICT103', 'ICT104', 'ICT102'],
+                3 => ['ICT105', 'ICT106', 'LFS101'],
+            ],
+            'electrical_l4' => [
+                1 => ['ELE101', 'ELE102', 'COM101'],
+                2 => ['ELE103', 'ELE104', 'ELE105'],
+                3 => ['ELE106', 'ELE107', 'ENT101'],
+            ],
+            'plumbing_l4' => [
+                1 => ['PLB101', 'PLB102', 'COM101'],
+                2 => ['PLB103', 'PLB104', 'PLB105'],
+                3 => ['PLB106', 'PLB107', 'ENT101'],
+            ],
+            'hospitality_l5' => [
+                1 => ['HOS102', 'COM101', 'HOS101'],
+                2 => ['HOS104', 'HOS105', 'HOS103'],
+                3 => ['HOS106', 'HOS107', 'ENT101'],
+            ],
+            'supply_chain_l6' => [
+                1 => ['COM101', 'BUS101', 'BUS102'],
+                2 => ['BUS103', 'BUS104', 'ENT101'],
+                3 => ['BUS105', 'BUS106', 'BUS107'],
+            ],
+        ];
+
+        foreach ($moduleMap as $mappingKey => $modules) {
+            foreach ($modules as $module => $unitCodes) {
+                foreach ($unitCodes as $unitCode) {
+                    ProgramVersionUnit::firstOrCreate([
+                        'program_version_mapping_id' => $mappings[$mappingKey]->id,
+                        'unit_id' => $units[$unitCode]->id,
+                        'module_taught' => $module,
+                    ]);
+                }
+            }
+        }
+    }
+
+    protected function seedStudents(Role $studentRole, array $mappings): array
+    {
+        $students = [];
+
+        $studentRows = [
+            [
+                'email' => 'mwakiainea98@gmail.com',
+                'first_name' => 'Kevin',
+                'last_name' => 'Mwangi',
+                'phone' => '0710002001',
+                'dob' => '2005-04-18',
+                'county' => 'Nyeri',
+                'address' => 'Kamakwa, Nyeri',
+                'gender' => 'male',
+                'religion' => 'Christian',
+                'registration' => 'TVET/2026/ICT/001',
+                'previous_school' => 'Kagumo High School',
+                'program_key' => 'ict_l4',
+            ],
+            [
+                'email' => 'faith.chebet@student.tvetdemo.ke',
+                'first_name' => 'Faith',
+                'last_name' => 'Chebet',
+                'phone' => '0710002002',
+                'dob' => '2004-11-02',
+                'county' => 'Uasin Gishu',
+                'address' => 'Eldoret, Uasin Gishu',
+                'gender' => 'female',
+                'religion' => 'Christian',
+                'registration' => 'TVET/2026/ELE/002',
+                'previous_school' => 'Hill School Eldoret',
+                'program_key' => 'electrical_l4',
+            ],
+            [
+                'email' => 'brian.otieno@student.tvetdemo.ke',
+                'first_name' => 'Brian',
+                'last_name' => 'Otieno',
+                'phone' => '0710002003',
+                'dob' => '2003-08-27',
+                'county' => 'Kisumu',
+                'address' => 'Manyatta, Kisumu',
+                'gender' => 'male',
+                'religion' => 'Christian',
+                'registration' => 'TVET/2026/PLB/003',
+                'previous_school' => 'Onjiko Boys High School',
+                'program_key' => 'plumbing_l4',
+            ],
+            [
+                'email' => 'sharon.njeri@student.tvetdemo.ke',
+                'first_name' => 'Sharon',
+                'last_name' => 'Njeri',
+                'phone' => '0710002004',
+                'dob' => '2004-05-14',
+                'county' => 'Kiambu',
+                'address' => 'Thika, Kiambu',
+                'gender' => 'female',
+                'religion' => 'Christian',
+                'registration' => 'TVET/2026/HOS/004',
+                'previous_school' => 'Mary Leakey Girls School',
+                'program_key' => 'hospitality_l5',
+            ],
+            [
+                'email' => 'derrick.mutua@student.tvetdemo.ke',
+                'first_name' => 'Derrick',
+                'last_name' => 'Mutua',
+                'phone' => '0710002005',
+                'dob' => '2002-12-01',
+                'county' => 'Makueni',
+                'address' => 'Wote, Makueni',
+                'gender' => 'male',
+                'religion' => 'Christian',
+                'registration' => 'TVET/2026/SCM/005',
+                'previous_school' => 'Kitondo Secondary School',
+                'program_key' => 'supply_chain_l6',
+            ],
+        ];
+
+        foreach ($studentRows as $row) {
+            $user = User::firstOrCreate(
+                ['email' => $row['email']],
+                $this->userData(
+                    $row['first_name'],
+                    $row['last_name'],
+                    $row['phone'],
+                    $row['dob'],
+                    $row['county'],
+                    $row['address'],
+                    $row['gender'],
+                    $row['religion'],
+                    'Password@123'
+                )
+            );
+            $user->syncRoles([$studentRole->name]);
+
+            $student = Student::firstOrCreate(
+                ['registration_number' => $row['registration']],
+                [
+                    'user_id' => $user->id,
+                    'previous_school' => $row['previous_school'],
+                    'current_module' => '1',
+                    'admission_date' => '2026-01-06',
+                    'fee_discount_percentage' => 0,
+                    'student_status' => 'active',
+                ]
+            );
+
+            NextOfKin::firstOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'first_name' => 'Mary',
+                    'last_name' => $row['last_name'],
+                    'relationship' => 'Parent',
+                    'phone_number' => '0723000000',
+                    'alternate_phone_number' => '0733000000',
+                    'email' => strtolower($row['last_name']).'.guardian@tvetdemo.ke',
+                ]
+            );
+
+            $programEnrollment = ProgramEnrollment::firstOrCreate([
+                'student_id' => $student->id,
+                'program_version_mapping_id' => $mappings[$row['program_key']]->id,
+            ]);
+
+            $students[$row['registration']] = [
+                'user' => $user,
+                'student' => $student,
+                'program_enrollment' => $programEnrollment,
+                'mapping' => $mappings[$row['program_key']],
+            ];
+        }
+
+        return $students;
+    }
+
+    protected function seedFeePlans(User $bursarUser, Staff $bursarStaff): array
+    {
+        $plans = [
+            'level4' => [
+                'name' => 'TVET Level 4 Day Scholar Plan',
+                'version' => '2026.1',
+                'items' => [
+                    ['name' => 'Tuition Fee', 'amount' => 18000],
+                    ['name' => 'Practical Materials', 'amount' => 3500],
+                    ['name' => 'Student ID and Administration', 'amount' => 500],
+                    ['name' => 'Activity Fee', 'amount' => 2000],
+                ],
+            ],
+            'level5' => [
+                'name' => 'TVET Level 5 Hospitality Plan',
+                'version' => '2026.1',
+                'items' => [
+                    ['name' => 'Tuition Fee', 'amount' => 22000],
+                    ['name' => 'Kitchen Practical Materials', 'amount' => 6000],
+                    ['name' => 'Student ID and Administration', 'amount' => 500],
+                    ['name' => 'Activity Fee', 'amount' => 2500],
+                ],
+            ],
+            'level6' => [
+                'name' => 'TVET Diploma Day Scholar Plan',
+                'version' => '2026.1',
+                'items' => [
+                    ['name' => 'Tuition Fee', 'amount' => 26000],
+                    ['name' => 'Logistics Lab and Fieldwork', 'amount' => 4500],
+                    ['name' => 'Student ID and Administration', 'amount' => 500],
+                    ['name' => 'Activity Fee', 'amount' => 2500],
+                ],
+            ],
+        ];
+
+        $created = [];
+
+        foreach ($plans as $key => $planData) {
+            $plan = FeePlan::firstOrCreate(
+                ['name' => $planData['name']],
+                [
+                    'plan_type' => 'original',
+                    'status' => 'published',
+                    'version' => $planData['version'],
+                    'is_active' => true,
+                    'approval_status' => 'approved',
+                    'created_by' => $bursarUser->id,
+                    'approved_by' => $bursarStaff->id,
+                    'approved_at' => now(),
+                ]
+            );
+
+            foreach ($planData['items'] as $index => $item) {
+                FeePlanItem::firstOrCreate(
+                    ['fee_plan_id' => $plan->id, 'name' => $item['name']],
+                    ['amount' => $item['amount']]
+                );
+
+                FeeComponent::firstOrCreate(
+                    ['fee_plan_id' => $plan->id, 'name' => $item['name']],
+                    [
+                        'amount' => $item['amount'],
+                        'is_optional' => false,
+                        'display_order' => $index + 1,
+                    ]
+                );
+            }
+
+            $created[$key] = $plan;
+        }
+
+        return $created;
+    }
+
+    protected function seedLegacyFeeAssignments(array $feePlans, array $mappings, AcademicYear $activeYear, Staff $bursarStaff): void
+    {
+        $mappingToPlan = [
+            'ict_l4' => $feePlans['level4'],
+            'electrical_l4' => $feePlans['level4'],
+            'plumbing_l4' => $feePlans['level4'],
+            'hospitality_l5' => $feePlans['level5'],
+            'supply_chain_l6' => $feePlans['level6'],
+        ];
+
+        foreach ($mappingToPlan as $mappingKey => $plan) {
+            FeeAssignment::updateOrCreate(
+                [
+                    'academic_year_id' => $activeYear->id,
+                    'program_version_mapping_id' => $mappings[$mappingKey]->id,
+                    'year_of_study' => 1,
+                    'session_number' => 1,
+                ],
+                [
+                    'fee_plan_id' => $plan->id,
+                    'created_by' => $bursarStaff->id,
+                    'valid_from' => '2026-01-05',
+                    'valid_to' => null,
+                    'is_active' => true,
+                    'approval_status' => 'approved',
+                    'approved_by' => $bursarStaff->id,
+                    'approved_at' => now(),
+                ]
+            );
+        }
+    }
+
+    protected function seedModernFeePlanAssignments(array $feePlans, ProgramVersion $activeVersion, AcademicYear $activeYear, AcademicSession $activeSession, User $bursarUser): void
+    {
+        $plan = $feePlans['level4'];
+        $components = $plan->feeComponents()->orderBy('display_order')->get();
+
+        DB::table('fee_plan_assignments')->insertOrIgnore([
+            'id' => (string) Str::uuid(),
+            'fee_plan_id' => $plan->id,
+            'program_version_id' => $activeVersion->id,
+            'academic_year_id' => $activeYear->id,
+            'session_id' => $activeSession->id,
+            'plan_type_context' => 'original',
+            'revises_assignment_id' => null,
+            'amount_snapshot' => json_encode([
+                'total' => (float) $components->sum('amount'),
+                'components' => $components->map(fn (FeeComponent $component) => [
+                    'name' => $component->name,
+                    'amount' => (float) $component->amount,
+                ])->values()->all(),
+            ]),
+            'assigned_by' => $bursarUser->id,
+            'assigned_at' => now(),
+            'status' => 'active',
+            'cancellation_reason' => null,
+            'cancelled_by' => null,
+            'cancelled_at' => null,
+            'created_at' => now(),
+            'updated_at' => now(),
+            'deleted_at' => null,
+        ]);
+    }
+
+    protected function seedAcademicSessionEnrollments(array $students, AcademicSession $activeSession): array
+    {
+        $enrollments = [];
+
+        foreach ($students as $registration => $record) {
+            $enrollment = AcademicSessionEnrollment::firstOrCreate(
+                [
+                    'program_enrollment_id' => $record['program_enrollment']->id,
+                    'academic_session_id' => $activeSession->id,
+                ],
+                [
+                    'module' => 1,
+                    'year_of_study' => 1,
+                    'session_number' => 1,
+                    'status' => 'active',
+                ]
+            );
+
+            $enrollments[$registration] = $enrollment->fresh(['academicSession', 'programEnrollment.programVersionMapping.program', 'programEnrollment.programVersionMapping.programVersion']);
+        }
+
+        return $enrollments;
+    }
+
+    protected function seedBillingData(array $sessionEnrollments, Staff $bursarStaff, FeePlan $level4, FeePlan $level5, FeePlan $level6): void
+    {
+        /** @var BillingService $billing */
+        $billing = app(BillingService::class);
+
+        foreach ($sessionEnrollments as $registration => $enrollment) {
+            $billing->createInvoiceForEnrollment(
+                $enrollment,
+                $bursarStaff->id,
+                '2026-01-10',
+                '2026-02-10'
+            );
+        }
+
+        $kevinInvoice = $this->invoiceFor($sessionEnrollments['TVET/2026/ICT/001']->id);
+        $faithInvoice = $this->invoiceFor($sessionEnrollments['TVET/2026/ELE/002']->id);
+        $brianInvoice = $this->invoiceFor($sessionEnrollments['TVET/2026/PLB/003']->id);
+        $sharonInvoice = $this->invoiceFor($sessionEnrollments['TVET/2026/HOS/004']->id);
+        $derrickInvoice = $this->invoiceFor($sessionEnrollments['TVET/2026/SCM/005']->id);
+
+        $billing->recordPayment($kevinInvoice, 12000, 'M-Pesa', $bursarStaff->id, 'QK34M8P1', '2026-01-15');
+        $billing->recordPayment($faithInvoice, 8000, 'Bank', $bursarStaff->id, 'KCB/TVET/0091', '2026-01-18');
+        $billing->recordPayment($derrickInvoice, (float) $derrickInvoice->amount_due, 'M-Pesa', $bursarStaff->id, 'QK89N1D7', '2026-01-20');
+
+        $billing->applyAdjustment($faithInvoice, 'bursary', 5000, $bursarStaff->id, 'County bursary support posted.', '2026-01-19');
+        $billing->applyAdjustment($sharonInvoice, 'helb', 7000, $bursarStaff->id, 'HELB TVET support received.', '2026-01-22');
+        $billing->applyAdjustment($brianInvoice, 'penalty', 1500, $bursarStaff->id, 'Late registration penalty.', '2026-01-25');
+
+        LedgerTransaction::firstOrCreate(
+            ['reference' => 'RFND-2026-001'],
+            [
+                'student_id' => $kevinInvoice->student_id,
+                'student_invoice_id' => $kevinInvoice->id,
+                'academic_session_id' => $kevinInvoice->academic_session_id,
+                'type' => 'refund',
+                'debit' => 1500,
+                'credit' => 0,
+                'description' => 'Refund for overcharged workshop consumables.',
+                'transaction_date' => '2026-02-01',
+                'created_by' => $bursarStaff->id,
+            ]
+        );
+
+        LedgerTransaction::firstOrCreate(
+            ['reference' => 'REV-2026-001'],
+            [
+                'student_id' => $faithInvoice->student_id,
+                'student_invoice_id' => $faithInvoice->id,
+                'academic_session_id' => $faithInvoice->academic_session_id,
+                'type' => 'reversal',
+                'debit' => 0,
+                'credit' => 1500,
+                'description' => 'Reversal of duplicated manual charge.',
+                'transaction_date' => '2026-02-03',
+                'created_by' => $bursarStaff->id,
+            ]
+        );
+    }
+
+    protected function seedApprovalsSample(Staff $bursarStaff): void
+    {
+        Approval::firstOrCreate(
+            [
+                'approvable_type' => 'App\\Models\\StudentInvoice',
+                'approvable_id' => 1,
+                'type' => 'invoice_write_off',
+            ],
+            [
+                'status' => 'pending',
+                'notes' => 'Sample write-off request awaiting admin review.',
+                'requested_by' => $bursarStaff->id,
+                'approved_by' => null,
+                'approved_at' => null,
+            ]
+        );
+    }
+
+    protected function invoiceFor(int $enrollmentId)
+    {
+        return \App\Models\StudentInvoice::query()
+            ->where('enrollment_id', $enrollmentId)
+            ->latest()
+            ->firstOrFail();
+    }
+
+    protected function userData(
+        string $firstName,
+        string $lastName,
+        string $phone,
+        string $dob,
+        string $county,
+        string $address,
+        string $gender,
+        string $religion,
+        string $password
+    ): array {
+        return [
+            'first_name' => $firstName,
+            'last_name' => $lastName,
+            'other_name' => null,
+            'phone_number' => $phone,
+            'date_of_birth' => $dob,
+            'county' => $county,
+            'address' => $address,
+            'gender' => $gender,
+            'profile_photo' => null,
+            'religion' => $religion,
+            'is_pwd' => false,
+            'disability_type' => null,
+            'medical_condition' => null,
+            'is_active' => true,
+            'email_verified_at' => now(),
+            'password' => $password,
+        ];
+    }
+}
