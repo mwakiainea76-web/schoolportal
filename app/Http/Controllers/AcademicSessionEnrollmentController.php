@@ -7,12 +7,17 @@ use App\Models\AcademicSession;
 use App\Models\AcademicSessionEnrollment;
 use App\Models\ProgramEnrollment;
 use App\Models\Student;
+use App\Services\BillingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class AcademicSessionEnrollmentController extends Controller
 {
+    public function __construct(protected BillingService $billingService)
+    {
+    }
+
     public function index(Request $request)
     {
         $enrollments = AcademicSessionEnrollment::with([
@@ -117,29 +122,40 @@ class AcademicSessionEnrollmentController extends Controller
             ]);
         }
 
-        // 5. Auto-calculate module
-        $completedSessions = AcademicSessionEnrollment::where('program_enrollment_id', $programEnrollment->id)
-            ->where('status', 'completed')
-            ->count();
+        $sessionNumber = $activeSession->session_number ?? $activeSession->session_No ?? 1;
 
-        $nextModule = $completedSessions + 1;
+        if ($sessionNumber > 3) {
+            return back()->withInput()->withErrors([
+                'registration_number' => 'An academic year can only have 3 modules/sessions.',
+            ]);
+        }
 
-        // 6. Create enrollment (year_of_study will be auto-calculated from session_No)
-        DB::transaction(function () use ($programEnrollment, $activeSession, $nextModule) {
-            AcademicSessionEnrollment::create([
+        // 5. Create enrollment and invoice together
+        try {
+            $enrollment = DB::transaction(function () use ($programEnrollment, $activeSession, $sessionNumber) {
+                $enrollment = AcademicSessionEnrollment::create([
                 'program_enrollment_id' => $programEnrollment->id,
                 'academic_session_id' => $activeSession->id,
-                'module' => $nextModule,
+                'module' => $sessionNumber,
+                'session_number' => $sessionNumber,
                 'status' => 'active',
-                // year_of_study is automatically calculated in the model's boot method
-                // Formula: year_of_study = ceil(session_No / 3)
-                // Sessions 1-3 = Year 1, Sessions 4-6 = Year 2, etc.
             ]);
-        });
+
+                $creatorStaffId = auth()->user()?->staff?->id;
+                $this->billingService->createInvoiceForEnrollment(
+                    $enrollment->load(['academicSession', 'programEnrollment']),
+                    $creatorStaffId
+                );
+
+                return $enrollment;
+            });
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return back()->withInput()->withErrors($e->errors());
+        }
 
         return redirect()
             ->route('academic.sessions.enrollments.index')
-            ->with('success', "Student successfully enrolled in {$activeSession->academicYear->academic_year} - Session {$activeSession->session_No} as Module {$nextModule}.");
+            ->with('success', "Student successfully enrolled in {$activeSession->academicYear->academic_year} - Session {$sessionNumber}. The session invoice has been generated.");
     }
 
     public function edit(AcademicSessionEnrollment $academicSessionEnrollment)

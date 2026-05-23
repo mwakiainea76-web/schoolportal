@@ -8,6 +8,7 @@ use App\Models\InvoiceItem;
 use App\Models\Payment;
 use App\Models\StudentInvoice;
 use App\Services\FeeAssignmentService;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class BillingService
@@ -19,13 +20,13 @@ class BillingService
         $this->feeAssignmentService = $feeAssignmentService;
     }
 
-    public function createInvoiceForEnrollment(AcademicSessionEnrollment $enrollment, int $createdBy, ?string $issueDate = null, ?string $dueDate = null): StudentInvoice
+    public function createInvoiceForEnrollment(AcademicSessionEnrollment $enrollment, ?int $createdBy = null, ?string $issueDate = null, ?string $dueDate = null): StudentInvoice
     {
         $assignment = $this->feeAssignmentService->resolveActiveAssignment(
-            $enrollment->academic_session_id,
-            $enrollment->courseProgramVersion?->id ?? null,
+            $enrollment->academicSession?->academic_year_id ?? 0,
+            $enrollment->programEnrollment?->program_version_mapping_id ?? null,
             $enrollment->year_of_study,
-            $enrollment->academicSession?->session_No ?? null,
+            $enrollment->session_number ?: ($enrollment->academicSession?->session_number ?? $enrollment->academicSession?->session_No ?? null),
             $issueDate
         );
 
@@ -33,6 +34,24 @@ class BillingService
             throw ValidationException::withMessages([
                 'assignment' => 'No active fee assignment exists for this student and session.',
             ]);
+        }
+
+        $invoiceCreatorId = $createdBy ?? $assignment->created_by;
+
+        if (! $invoiceCreatorId) {
+            throw ValidationException::withMessages([
+                'assignment' => 'No staff user is available to create the invoice for this enrollment.',
+            ]);
+        }
+
+        $existingInvoice = StudentInvoice::query()
+            ->where('enrollment_id', $enrollment->id)
+            ->where('invoice_type', 'fees')
+            ->latest()
+            ->first();
+
+        if ($existingInvoice) {
+            return $existingInvoice;
         }
 
         $invoice = StudentInvoice::create([
@@ -48,7 +67,7 @@ class BillingService
             'amount_due' => 0,
             'paid_amount' => 0,
             'balance_due' => 0,
-            'created_by' => $createdBy,
+            'created_by' => $invoiceCreatorId,
         ]);
 
         $this->createInvoiceItemsFromAssignment($invoice, $assignment);
