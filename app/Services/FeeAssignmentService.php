@@ -15,9 +15,9 @@ class FeeAssignmentService
      * - program_version_mapping_id
      * - year_of_study
      * - session_number
-     * - academic_session_id
+     * - academic_year_id
      *
-     * @param int $academicSessionId The academic session
+     * @param int $academicYearId The academic year
      * @param int|null $courseProgramVersionId The program version mapping
      * @param int|null $yearOfStudy The year of study
      * @param int|null $sessionNumber The session number within the year
@@ -25,7 +25,7 @@ class FeeAssignmentService
      * @return FeeAssignment|null The matching fee assignment or null
      */
     public function resolveActiveAssignment(
-        int $academicSessionId,
+        int $academicYearId,
         ?int $courseProgramVersionId = null,
         ?int $yearOfStudy = null,
         ?int $sessionNumber = null,
@@ -41,7 +41,7 @@ class FeeAssignmentService
             ->where('program_version_mapping_id', $courseProgramVersionId)
             ->where('year_of_study', $yearOfStudy)
             ->where('session_number', $sessionNumber)
-            ->where('academic_session_id', $academicSessionId)
+            ->where('academic_year_id', $academicYearId)
             ->where('valid_from', '<=', $effectiveDate)
             ->where(function (Builder $query) use ($effectiveDate) {
                 $query->whereNull('valid_to')
