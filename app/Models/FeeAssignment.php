@@ -15,7 +15,7 @@ class FeeAssignment extends Model
     protected $fillable = [
         'fee_plan_id',
         'academic_year_id',
-        'course_curriculum_id',
+        'program_version_mapping_id',
         'year_of_study',
         'session_number',
         'created_by',
@@ -49,7 +49,12 @@ class FeeAssignment extends Model
 
     public function courseProgramVersion()
     {
-        return $this->belongsTo(ProgramVersionMapping::class);
+        return $this->belongsTo(ProgramVersionMapping::class, 'program_version_mapping_id');
+    }
+
+    public function programVersionMapping()
+    {
+        return $this->belongsTo(ProgramVersionMapping::class, 'program_version_mapping_id');
     }
 
     public function createdBy()

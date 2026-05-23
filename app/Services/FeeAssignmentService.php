@@ -11,14 +11,14 @@ class FeeAssignmentService
     /**
      * Resolve the active fee assignment for a student enrollment.
      * 
-     * Uses curriculum-based model:
-     * - course_curriculum_id
+     * Uses program version mapping-based model:
+     * - program_version_mapping_id
      * - year_of_study
      * - session_number
      * - academic_session_id
      *
      * @param int $academicSessionId The academic session
-     * @param int|null $courseProgramVersionId The course curriculum
+     * @param int|null $courseProgramVersionId The program version mapping
      * @param int|null $yearOfStudy The year of study
      * @param int|null $sessionNumber The session number within the year
      * @param string|null $effectiveDate The date to check validity (defaults to today)
@@ -38,7 +38,7 @@ class FeeAssignmentService
         $effectiveDate = $effectiveDate ? Carbon::parse($effectiveDate)->toDateString() : now()->toDateString();
 
         return FeeAssignment::query()
-            ->where('course_curriculum_id', $courseProgramVersionId)
+            ->where('program_version_mapping_id', $courseProgramVersionId)
             ->where('year_of_study', $yearOfStudy)
             ->where('session_number', $sessionNumber)
             ->where('academic_session_id', $academicSessionId)
@@ -52,7 +52,7 @@ class FeeAssignmentService
     }
 
     /**
-     * Resolve a query to get the most recent active curriculum-based assignment.
+     * Resolve a query to get the most recent active program version mapping assignment.
      * Used by the model for backward compatibility.
      *
      * @param Builder $query The query builder
@@ -61,7 +61,7 @@ class FeeAssignmentService
     public function resolveQuery(Builder $query): ?FeeAssignment
     {
         return $query
-            ->whereNotNull('course_curriculum_id')
+            ->whereNotNull('program_version_mapping_id')
             ->orderBy('created_at', 'desc')
             ->first();
     }
