@@ -69,7 +69,6 @@ function StudentDashboard({ dashboard, fullName }) {
     const [showSessionRegistrationModal, setShowSessionRegistrationModal] =
         useState(false);
     const { post, processing, errors, clearErrors } = useForm({});
-
     useEffect(() => {
         if (errors.session_registration) {
             setShowSessionRegistrationModal(true);

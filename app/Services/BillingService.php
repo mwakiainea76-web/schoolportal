@@ -26,83 +26,85 @@ class BillingService
 
     public function createInvoiceForEnrollment(AcademicSessionEnrollment $enrollment, ?int $createdBy = null, ?string $issueDate = null, ?string $dueDate = null): StudentInvoice
     {
-        $assignment = $this->feeAssignmentService->resolveActiveAssignment(
-            $enrollment->academicSession?->academic_year_id ?? 0,
-            $enrollment->programEnrollment?->program_version_mapping_id ?? null,
-            $enrollment->year_of_study,
-            $enrollment->session_number ?: ($enrollment->academicSession?->session_number ?? $enrollment->academicSession?->session_No ?? null),
-            $issueDate
-        );
+        return DB::transaction(function () use ($enrollment, $createdBy, $issueDate, $dueDate) {
+            $assignment = $this->feeAssignmentService->resolveActiveAssignment(
+                $enrollment->academicSession?->academic_year_id ?? 0,
+                $enrollment->programEnrollment?->program_version_mapping_id ?? null,
+                $enrollment->year_of_study,
+                $enrollment->session_number ?: ($enrollment->academicSession?->session_number ?? $enrollment->academicSession?->session_No ?? null),
+                $issueDate
+            );
 
-        if (! $assignment) {
-            $programName = $enrollment->programEnrollment?->programVersionMapping?->program?->name ?? 'your program';
-            $programVersionName = $enrollment->programEnrollment?->programVersionMapping?->programVersion?->name ?? 'your program version';
-            $sessionLabel = $enrollment->academicSession?->display_name ?? 'this session';
+            if (! $assignment) {
+                $programName = $enrollment->programEnrollment?->programVersionMapping?->program?->name ?? 'your program';
+                $programVersionName = $enrollment->programEnrollment?->programVersionMapping?->programVersion?->name ?? 'your program version';
+                $sessionLabel = $enrollment->academicSession?->display_name ?? 'this session';
 
-            throw ValidationException::withMessages([
-                'assignment' => "No active fee assignment exists for {$programName} - {$programVersionName} in {$sessionLabel}. Assign a fee plan to this program version before session registration.",
+                throw ValidationException::withMessages([
+                    'assignment' => "No active fee assignment exists for {$programName} - {$programVersionName} in {$sessionLabel}. Assign a fee plan to this program version before session registration.",
+                ]);
+            }
+
+            $invoiceCreatorId = $createdBy ?? $assignment->created_by;
+
+            if (! $invoiceCreatorId) {
+                throw ValidationException::withMessages([
+                    'assignment' => 'No staff user is available to create the invoice for this enrollment.',
+                ]);
+            }
+
+            $this->transferClosedSessionBalancesToCurrentSession(
+                $enrollment,
+                $invoiceCreatorId,
+                $issueDate,
+                $dueDate
+            );
+
+            $existingInvoice = StudentInvoice::query()
+                ->where('enrollment_id', $enrollment->id)
+                ->where('invoice_type', 'default_fees')
+                ->latest()
+                ->first();
+
+            if ($existingInvoice) {
+                return $existingInvoice;
+            }
+
+            $invoice = StudentInvoice::create([
+                'invoice_number' => StudentInvoice::generateInvoiceNumber(),
+                'student_id' => $enrollment->student_id,
+                'enrollment_id' => $enrollment->id,
+                'fee_assignment_id' => $assignment->id,
+                'invoice_type' => 'default_fees',
+                'academic_session_id' => $enrollment->academic_session_id,
+                'status' => 'issued',
+                'issue_date' => $issueDate ?? now()->toDateString(),
+                'due_date' => $dueDate ?? now()->addDays(30)->toDateString(),
+                'amount_due' => 0,
+                'paid_amount' => 0,
+                'balance_due' => 0,
+                'created_by' => $invoiceCreatorId,
             ]);
-        }
 
-        $invoiceCreatorId = $createdBy ?? $assignment->created_by;
-
-        if (! $invoiceCreatorId) {
-            throw ValidationException::withMessages([
-                'assignment' => 'No staff user is available to create the invoice for this enrollment.',
+            $this->createInvoiceItemsFromAssignment($invoice, $assignment);
+            $invoice->recalculateTotals();
+            $this->recordLedgerTransaction([
+                'student_id' => $enrollment->student_id,
+                'student_invoice_id' => $invoice->id,
+                'academic_session_id' => $invoice->academic_session_id,
+                'type' => 'invoice',
+                'debit' => (float) $invoice->amount_due,
+                'credit' => 0,
+                'reference' => $invoice->invoice_number,
+                'description' => 'Invoice generated for session enrollment.',
+                'transaction_date' => $invoice->issue_date?->toDateString() ?? now()->toDateString(),
+                'created_by' => $invoiceCreatorId,
             ]);
-        }
+            $this->applyAvailableCredits($invoice, $invoiceCreatorId, $invoice->issue_date?->toDateString());
+            $invoice->refresh();
 
-        $this->transferClosedSessionBalancesToCurrentSession(
-            $enrollment,
-            $invoiceCreatorId,
-            $issueDate,
-            $dueDate
-        );
-
-        $existingInvoice = StudentInvoice::query()
-            ->where('enrollment_id', $enrollment->id)
-            ->where('invoice_type', 'default_fees')
-            ->latest()
-            ->first();
-
-        if ($existingInvoice) {
-            return $existingInvoice;
-        }
-
-        $invoice = StudentInvoice::create([
-            'invoice_number' => StudentInvoice::generateInvoiceNumber(),
-            'student_id' => $enrollment->student_id,
-            'enrollment_id' => $enrollment->id,
-            'fee_assignment_id' => $assignment->id,
-            'invoice_type' => 'default_fees',
-            'academic_session_id' => $enrollment->academic_session_id,
-            'status' => 'issued',
-            'issue_date' => $issueDate ?? now()->toDateString(),
-            'due_date' => $dueDate ?? now()->addDays(30)->toDateString(),
-            'amount_due' => 0,
-            'paid_amount' => 0,
-            'balance_due' => 0,
-            'created_by' => $invoiceCreatorId,
-        ]);
-
-        $this->createInvoiceItemsFromAssignment($invoice, $assignment);
-        $invoice->recalculateTotals();
-        $this->recordLedgerTransaction([
-            'student_id' => $enrollment->student_id,
-            'student_invoice_id' => $invoice->id,
-            'academic_session_id' => $invoice->academic_session_id,
-            'type' => 'invoice',
-            'debit' => (float) $invoice->amount_due,
-            'credit' => 0,
-            'reference' => $invoice->invoice_number,
-            'description' => 'Invoice generated for session enrollment.',
-            'transaction_date' => $invoice->issue_date?->toDateString() ?? now()->toDateString(),
-            'created_by' => $invoiceCreatorId,
-        ]);
-        $this->applyAvailableCredits($invoice, $invoiceCreatorId, $invoice->issue_date?->toDateString());
-        $invoice->refresh();
-
-        return $invoice;
+            return $invoice;
+        });
     }
 
     public function createManualInvoice(
@@ -292,22 +294,24 @@ class BillingService
             }
         }
 
-        $payment = Payment::create([
-            'student_invoice_id' => $invoice->id,
-            'student_id' => $invoice->student_id,
-            'amount' => $amount,
-            'payment_date' => $paymentDate ?? now()->toDateString(),
-            'method' => $method,
-            'reference' => $reference,
-            'status' => 'completed',
-            'idempotency_key' => $idempotencyKey,
-            'created_by' => $createdBy,
-            'notes' => $notes,
-        ]);
+        return DB::transaction(function () use ($invoice, $amount, $method, $createdBy, $reference, $paymentDate, $notes, $idempotencyKey) {
+            $payment = Payment::create([
+                'student_invoice_id' => $invoice->id,
+                'student_id' => $invoice->student_id,
+                'amount' => $amount,
+                'payment_date' => $paymentDate ?? now()->toDateString(),
+                'method' => $method,
+                'reference' => $reference,
+                'status' => 'completed',
+                'idempotency_key' => $idempotencyKey,
+                'created_by' => $createdBy,
+                'notes' => $notes,
+            ]);
 
-        $this->allocatePaymentAcrossInvoices($payment, $invoice->student, $createdBy);
+            $this->allocatePaymentAcrossInvoices($payment, $invoice->student, $createdBy);
 
-        return $payment;
+            return $payment;
+        });
     }
 
     public function recordStudentPayment(
@@ -330,22 +334,24 @@ class BillingService
             }
         }
 
-        $payment = Payment::create([
-            'student_invoice_id' => null,
-            'student_id' => $student->id,
-            'amount' => $amount,
-            'payment_date' => $paymentDate ?? now()->toDateString(),
-            'method' => $method,
-            'reference' => $reference,
-            'status' => 'completed',
-            'idempotency_key' => $idempotencyKey,
-            'created_by' => $createdBy,
-            'notes' => $notes,
-        ]);
+        return DB::transaction(function () use ($student, $amount, $method, $createdBy, $reference, $paymentDate, $notes, $idempotencyKey) {
+            $payment = Payment::create([
+                'student_invoice_id' => null,
+                'student_id' => $student->id,
+                'amount' => $amount,
+                'payment_date' => $paymentDate ?? now()->toDateString(),
+                'method' => $method,
+                'reference' => $reference,
+                'status' => 'completed',
+                'idempotency_key' => $idempotencyKey,
+                'created_by' => $createdBy,
+                'notes' => $notes,
+            ]);
 
-        $this->allocatePaymentAcrossInvoices($payment, $student, $createdBy);
+            $this->allocatePaymentAcrossInvoices($payment, $student, $createdBy);
 
-        return $payment;
+            return $payment;
+        });
     }
 
     public function applyAdjustment(StudentInvoice $invoice, string $type, float $amount, int $createdBy, ?string $description = null, ?string $appliedAt = null, ?string $idempotencyKey = null): FeeAdjustment
@@ -364,35 +370,37 @@ class BillingService
             $this->assertRefundCanBeProcessed($invoice, $amount);
         }
 
-        $adjustment = FeeAdjustment::create([
-            'student_invoice_id' => $invoice->id,
-            'type' => $type,
-            'amount' => $amount,
-            'idempotency_key' => $idempotencyKey,
-            'description' => $description,
-            'applied_at' => $appliedAt ?? now()->toDateString(),
-            'created_by' => $createdBy,
-        ]);
+        return DB::transaction(function () use ($invoice, $type, $amount, $createdBy, $description, $appliedAt, $idempotencyKey) {
+            $adjustment = FeeAdjustment::create([
+                'student_invoice_id' => $invoice->id,
+                'type' => $type,
+                'amount' => $amount,
+                'idempotency_key' => $idempotencyKey,
+                'description' => $description,
+                'applied_at' => $appliedAt ?? now()->toDateString(),
+                'created_by' => $createdBy,
+            ]);
 
-        $invoice->recalculateTotals();
-        $invoice->refresh();
+            $invoice->recalculateTotals();
+            $invoice->refresh();
 
-        [$ledgerType, $debit, $credit] = $this->mapAdjustmentToLedger((string) $type, (float) $amount);
+            [$ledgerType, $debit, $credit] = $this->mapAdjustmentToLedger((string) $type, (float) $amount);
 
-        $this->recordLedgerTransaction([
-            'student_id' => $invoice->student_id,
-            'student_invoice_id' => $invoice->id,
-            'academic_session_id' => $invoice->academic_session_id,
-            'type' => $ledgerType,
-            'debit' => $debit,
-            'credit' => $credit,
-            'reference' => null,
-            'description' => $description ?: ucfirst($type).' adjustment applied.',
-            'transaction_date' => $adjustment->applied_at?->toDateString() ?? ($appliedAt ?? now()->toDateString()),
-            'created_by' => $createdBy,
-        ]);
+            $this->recordLedgerTransaction([
+                'student_id' => $invoice->student_id,
+                'student_invoice_id' => $invoice->id,
+                'academic_session_id' => $invoice->academic_session_id,
+                'type' => $ledgerType,
+                'debit' => $debit,
+                'credit' => $credit,
+                'reference' => null,
+                'description' => $description ?: ucfirst($type).' adjustment applied.',
+                'transaction_date' => $adjustment->applied_at?->toDateString() ?? ($appliedAt ?? now()->toDateString()),
+                'created_by' => $createdBy,
+            ]);
 
-        return $adjustment;
+            return $adjustment;
+        });
     }
 
     public function reverseInvoiceAndOptionallyReissue(

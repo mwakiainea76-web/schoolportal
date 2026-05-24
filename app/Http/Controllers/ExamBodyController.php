@@ -29,8 +29,14 @@ class ExamBodyController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return inertia('ExamBodies/Index', [
+        return inertia('ExamBodies/Workspace', [
+            'activeTab' => 'exam-bodies',
             'examBodies' => $examBodies,
+            'filters' => [
+                'search' => $request->search,
+                'sort' => $request->sort,
+                'direction' => $request->direction,
+            ],
         ]);
     }
 

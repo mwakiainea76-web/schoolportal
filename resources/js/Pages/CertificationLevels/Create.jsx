@@ -6,12 +6,16 @@ import TextArea from "@/Components/TextArea";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import SearchSelect from "@/Components/SearchSelect";
 
-export default function AddCertificationLevel({ examBodies }) {
+export default function AddCertificationLevel({
+    examBodies,
+    selectedExamBodyId,
+    selectedExamBody,
+}) {
     const hasExamBodies = examBodies.length > 0;
 
     const { data, setData, post, processing, errors, reset } = useForm({
         code: "",
-        exam_body_id: "",
+        exam_body_id: selectedExamBodyId ?? "",
         name: "",
         description: "",
         entry_grade: "",
@@ -43,6 +47,18 @@ export default function AddCertificationLevel({ examBodies }) {
                         {!hasExamBodies ? (
                             <div className="rounded border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
                                 You cannot create a certification level until an exam body exists.
+                            </div>
+                        ) : null}
+                        {selectedExamBody ? (
+                            <div className="rounded border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                                Creating a certification level for{" "}
+                                <span className="font-semibold">
+                                    {selectedExamBody.name}
+                                </span>
+                                {selectedExamBody.code
+                                    ? ` (${selectedExamBody.code})`
+                                    : ""}
+                                .
                             </div>
                         ) : null}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 xl:grid-cols-3">
@@ -181,7 +197,9 @@ export default function AddCertificationLevel({ examBodies }) {
 
                         <div className="flex justify-between pt-4">
                             <Link
-                                href={route("certification-levels.index")}
+                                href={route("certification-levels.index", selectedExamBodyId ? {
+                                    exam_body_id: selectedExamBodyId,
+                                } : {})}
                                 className="px-4 py-2 bg-slate-400 text-white rounded hover:bg-slate-700"
                             >
                                 Cancel

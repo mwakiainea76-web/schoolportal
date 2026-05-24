@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class InvoiceController extends Controller
 {
@@ -390,13 +391,19 @@ class InvoiceController extends Controller
             ->with('info', 'Bulk billing shortcuts were retired. Use the focused manual billing pages instead.');
     }
 
-    public function manualOperations()
+    public function manualOperations(Request $request)
     {
-        return Inertia::render('Billing/ManualOperations/Index');
+        $this->ensureBillingStaff($request);
+
+        return Inertia::render('Billing/ManualOperations/Index', [
+            'selectedRegistrationNumber' => $this->resolveSelectedRegistrationNumber($request),
+        ]);
     }
 
     public function manualInvoiceCreate(Request $request)
     {
+        $this->ensureBillingStaff($request);
+
         return Inertia::render('Billing/ManualOperations/AdditionalInvoice', [
             'selectedRegistrationNumber' => $this->resolveSelectedRegistrationNumber($request),
         ]);
@@ -404,6 +411,8 @@ class InvoiceController extends Controller
 
     public function manualPaymentCreate(Request $request)
     {
+        $this->ensureBillingStaff($request);
+
         return Inertia::render('Billing/ManualOperations/RecordPayment', [
             'selectedRegistrationNumber' => $this->resolveSelectedRegistrationNumber($request),
         ]);
@@ -411,6 +420,8 @@ class InvoiceController extends Controller
 
     public function manualPenaltyCreate(Request $request)
     {
+        $this->ensureBillingStaff($request);
+
         return Inertia::render('Billing/ManualOperations/PostPenalty', [
             'selectedRegistrationNumber' => $this->resolveSelectedRegistrationNumber($request),
         ]);
@@ -418,6 +429,8 @@ class InvoiceController extends Controller
 
     public function manualAdjustmentCreate(Request $request)
     {
+        $this->ensureBillingStaff($request);
+
         return Inertia::render('Billing/ManualOperations/ApplyAdjustment', [
             'selectedRegistrationNumber' => $this->resolveSelectedRegistrationNumber($request),
         ]);
@@ -433,13 +446,7 @@ class InvoiceController extends Controller
             'due_date' => 'required|date|after_or_equal:issue_date',
         ]);
 
-        $creatorStaffId = auth()->user()?->staff?->id;
-
-        if (! $creatorStaffId) {
-            return back()->withErrors([
-                'manual_invoice' => 'A staff account is required to issue a manual invoice.',
-            ])->withInput();
-        }
+        $creatorStaffId = $this->ensureBillingStaff($request);
 
         $enrollment = $this->resolveEnrollmentByRegistrationNumber($validated['registration_number']);
         $idempotencyKey = $this->makeTransactionIdempotencyKey(
@@ -479,13 +486,7 @@ class InvoiceController extends Controller
             'applied_at' => 'required|date',
         ]);
 
-        $creatorStaffId = auth()->user()?->staff?->id;
-
-        if (! $creatorStaffId) {
-            return back()->withErrors([
-                'manual_penalty' => 'A staff account is required to post a penalty.',
-            ])->withInput();
-        }
+        $creatorStaffId = $this->ensureBillingStaff($request);
 
         $invoice = $this->resolveInvoiceByRegistrationNumber(
             $validated['registration_number'],
@@ -529,13 +530,7 @@ class InvoiceController extends Controller
             'replacement_description' => 'nullable|string|max:255',
         ]);
 
-        $creatorStaffId = auth()->user()?->staff?->id;
-
-        if (! $creatorStaffId) {
-            return back()->withErrors([
-                'manual_adjustment' => 'A staff account is required to apply a fee adjustment.',
-            ])->withInput();
-        }
+        $creatorStaffId = $this->ensureBillingStaff($request);
 
         $invoice = $this->resolveInvoiceByRegistrationNumber(
             $validated['registration_number'],
@@ -599,19 +594,13 @@ class InvoiceController extends Controller
         $validated = $request->validate([
             'registration_number' => 'required|string|max:100',
             'amount' => 'required|numeric|min:0.01',
-            'method' => 'required|string|max:100',
+            'method' => 'required|in:mpesa,bank,cash,card,cheque,other',
             'reference' => 'nullable|string|max:150',
             'payment_date' => 'required|date',
             'notes' => 'nullable|string|max:500',
         ]);
 
-        $creatorStaffId = auth()->user()?->staff?->id;
-
-        if (! $creatorStaffId) {
-            return back()->withErrors([
-                'manual_payment' => 'A staff account is required to record a payment.',
-            ])->withInput();
-        }
+        $creatorStaffId = $this->ensureBillingStaff($request);
 
         $student = $this->resolveStudentByRegistrationNumber($validated['registration_number']);
         $idempotencyKey = $this->makeTransactionIdempotencyKey(
@@ -656,7 +645,7 @@ class InvoiceController extends Controller
     protected function resolveSelectedRegistrationNumber(Request $request): ?string
     {
         if ($request->filled('registration_number')) {
-            return $request->string('registration_number')->toString();
+            return trim($request->string('registration_number')->toString());
         }
 
         if ($request->filled('invoice')) {
@@ -667,6 +656,17 @@ class InvoiceController extends Controller
         }
 
         return null;
+    }
+
+    protected function ensureBillingStaff(Request $request): int
+    {
+        $staffId = $request->user()?->staff?->id;
+
+        if (! $staffId) {
+            throw new HttpException(403, 'A staff billing account is required to access manual billing.');
+        }
+
+        return (int) $staffId;
     }
 
     protected function resolveEnrollmentByRegistrationNumber(string $registrationNumber): AcademicSessionEnrollment

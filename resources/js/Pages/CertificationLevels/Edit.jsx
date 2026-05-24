@@ -7,7 +7,7 @@ import TextArea from "@/Components/TextArea";
 import SearchSelect from "@/Components/SearchSelect";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 
-const Edit = ({ certification_level, exam_bodies }) => {
+const Edit = ({ certification_level, exam_bodies, selectedExamBody }) => {
     const cert = certification_level || null;
     const hasExamBodies = exam_bodies.length > 0;
 
@@ -122,7 +122,9 @@ const Edit = ({ certification_level, exam_bodies }) => {
 
                         <div className="flex justify-between pt-4">
                             <Link
-                                href={route("certification-levels.index")}
+                                href={route("certification-levels.index", selectedExamBody?.id ? {
+                                    exam_body_id: selectedExamBody.id,
+                                } : {})}
                                 className="px-4 py-2 bg-slate-400 text-white rounded hover:bg-slate-700"
                             >
                                 Cancel

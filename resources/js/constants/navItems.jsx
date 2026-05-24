@@ -30,19 +30,19 @@ export const NAV_ITEMS = [
     },
     {
         key: "exam-bodies",
-        label: "Exam Bodies",
+        label: "Exams & Certifications",
         icon: "book",
         basePath: "/exam-bodies",
-        permissions: ["exam.bodies.view"],
+        permissions: ["exam.bodies.view", "certification.levels.view"],
         children: [
             {
-                routeName: "exam-bodies.index",
+                routeName: "exam.bodies.index",
                 fallback: "/exam-bodies",
                 label: "Exam Bodies",
                 permission: "exam.bodies.view",
             },
             {
-                routeName: "/exam-bodies/certification-levels.index",
+                routeName: "certification-levels.index",
                 fallback: "/exam-bodies/certification-levels",
                 label: "Certification Levels",
                 permission: "certification.levels.view",

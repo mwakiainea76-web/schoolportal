@@ -19,27 +19,45 @@ class CertificationLevelController extends Controller
         $this->service = $service;
     }
 
-    public function index(CertificationLevelFilter $filter)
+    public function index(Request $request, CertificationLevelFilter $filter)
     {
         $certificationLevels = CertificationLevel::query()
             ->tap(fn ($query) => $filter->apply(
                 $query,
-                request()->only(['search', 'sort', 'direction'])
+                $request->only(['search', 'sort', 'direction', 'exam_body_id'])
             ))
             ->with('examBody')
             ->latest()
             ->paginate(10)
             ->withQueryString();
 
-        return inertia('CertificationLevels/Index', [
+        $selectedExamBody = $request->filled('exam_body_id')
+            ? ExamBody::select('id', 'name', 'code')->find($request->integer('exam_body_id'))
+            : null;
+
+        return inertia('ExamBodies/Workspace', [
+            'activeTab' => 'certification-levels',
             'certificationLevels' => $certificationLevels,
+            'selectedExamBody' => $selectedExamBody,
+            'filters' => [
+                'search' => $request->search,
+                'sort' => $request->sort,
+                'direction' => $request->direction,
+                'exam_body_id' => $request->exam_body_id,
+            ],
         ]);
     }
 
-    public function create()
+    public function create(Request $request)
     {
+        $selectedExamBodyId = $request->integer('exam_body_id');
+
         return inertia('CertificationLevels/Create', [
             'examBodies' => ExamBody::all(),
+            'selectedExamBodyId' => $selectedExamBodyId ?: null,
+            'selectedExamBody' => $selectedExamBodyId
+                ? ExamBody::select('id', 'name', 'code')->find($selectedExamBodyId)
+                : null,
         ]);
     }
 
@@ -57,6 +75,9 @@ class CertificationLevelController extends Controller
         return inertia('CertificationLevels/Edit', [
             'exam_bodies' => ExamBody::select('id', 'name')->limit(20)->get(),
             'certification_level' => $certification_level,
+            'selectedExamBody' => $certification_level->examBody()
+                ->select('id', 'name', 'code')
+                ->first(),
         ]);
     }
 

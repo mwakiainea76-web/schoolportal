@@ -20,6 +20,7 @@ class CertificationLevelFilter
     public function apply(Builder $query, array $filters): Builder
     {
         return $query
+            ->when($filters['exam_body_id'] ?? null, fn ($q, $examBodyId) => $q->where('exam_body_id', $examBodyId))
             ->when($filters['search'] ?? null, fn ($q, $search) => $this->search($q, $search))
             ->when($filters['sort'] ?? null, fn ($q, $sort) => $this->sort($q, $sort, $filters['direction'] ?? 'desc'));
     }
