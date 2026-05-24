@@ -885,40 +885,26 @@ class KenyaTvetDemoSeeder extends Seeder
 
         $billing->recordPayment($kevinInvoice, 12000, 'M-Pesa', $bursarStaff->id, 'QK34M8P1', '2026-01-15');
         $billing->recordPayment($faithInvoice, 8000, 'Bank', $bursarStaff->id, 'KCB/TVET/0091', '2026-01-18');
-        $billing->recordPayment($derrickInvoice, (float) $derrickInvoice->amount_due, 'M-Pesa', $bursarStaff->id, 'QK89N1D7', '2026-01-20');
+        $billing->recordPayment($derrickInvoice, (float) $derrickInvoice->amount_due + 1500, 'M-Pesa', $bursarStaff->id, 'QK89N1D7', '2026-01-20');
 
         $billing->applyAdjustment($faithInvoice, 'bursary', 5000, $bursarStaff->id, 'County bursary support posted.', '2026-01-19');
         $billing->applyAdjustment($sharonInvoice, 'helb', 7000, $bursarStaff->id, 'HELB TVET support received.', '2026-01-22');
         $billing->applyAdjustment($brianInvoice, 'penalty', 1500, $bursarStaff->id, 'Late registration penalty.', '2026-01-25');
-
-        LedgerTransaction::firstOrCreate(
-            ['reference' => 'RFND-2026-001'],
-            [
-                'student_id' => $kevinInvoice->student_id,
-                'student_invoice_id' => $kevinInvoice->id,
-                'academic_session_id' => $kevinInvoice->academic_session_id,
-                'type' => 'refund',
-                'debit' => 1500,
-                'credit' => 0,
-                'description' => 'Refund for overcharged workshop consumables.',
-                'transaction_date' => '2026-02-01',
-                'created_by' => $bursarStaff->id,
-            ]
+        $billing->applyAdjustment(
+            $derrickInvoice,
+            'refund',
+            1500,
+            $bursarStaff->id,
+            'Cash refund issued after final overpayment reconciliation.',
+            '2026-02-01'
         );
-
-        LedgerTransaction::firstOrCreate(
-            ['reference' => 'REV-2026-001'],
-            [
-                'student_id' => $faithInvoice->student_id,
-                'student_invoice_id' => $faithInvoice->id,
-                'academic_session_id' => $faithInvoice->academic_session_id,
-                'type' => 'reversal',
-                'debit' => 0,
-                'credit' => 1500,
-                'description' => 'Reversal of duplicated manual charge.',
-                'transaction_date' => '2026-02-03',
-                'created_by' => $bursarStaff->id,
-            ]
+        $billing->applyAdjustment(
+            $faithInvoice,
+            'reversal',
+            1500,
+            $bursarStaff->id,
+            'Reversal of duplicated manual charge.',
+            '2026-02-03'
         );
     }
 

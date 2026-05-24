@@ -13,11 +13,13 @@ class Payment extends Model
 
     protected $fillable = [
         'student_invoice_id',
+        'student_id',
         'amount',
         'payment_date',
         'method',
         'reference',
         'status',
+        'idempotency_key',
         'created_by',
         'notes',
     ];
@@ -32,8 +34,28 @@ class Payment extends Model
         return $this->belongsTo(StudentInvoice::class, 'student_invoice_id');
     }
 
+    public function student()
+    {
+        return $this->belongsTo(Student::class);
+    }
+
+    public function allocations()
+    {
+        return $this->hasMany(PaymentAllocation::class);
+    }
+
     public function createdBy()
     {
         return $this->belongsTo(Staff::class, 'created_by');
+    }
+
+    public function getAllocatedTotalAttribute(): float
+    {
+        return (float) $this->allocations()->sum('amount');
+    }
+
+    public function getUnallocatedAmountAttribute(): float
+    {
+        return max(0, (float) $this->amount - $this->allocated_total);
     }
 }

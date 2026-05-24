@@ -15,6 +15,7 @@ class FeeAdjustment extends Model
         'student_invoice_id',
         'type',
         'amount',
+        'idempotency_key',
         'description',
         'applied_at',
         'created_by',
@@ -37,6 +38,14 @@ class FeeAdjustment extends Model
 
     public function signedAmount(): float
     {
-        return in_array($this->type, ['discount', 'waiver', 'bursary', 'helb']) ? -1 * (float) $this->amount : (float) $this->amount;
+        if (in_array($this->type, ['discount', 'waiver', 'bursary', 'helb', 'reversal'])) {
+            return -1 * (float) $this->amount;
+        }
+
+        if ($this->type === 'refund') {
+            return 0.0;
+        }
+
+        return (float) $this->amount;
     }
 }

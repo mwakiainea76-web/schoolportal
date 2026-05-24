@@ -4,12 +4,7 @@ use App\Http\Controllers\AcademicSessionController;
 use App\Http\Controllers\AcademicSessionEnrollmentController;
 use App\Http\Controllers\AcademicYearController;
 use App\Http\Controllers\CertificationLevelController;
-use App\Http\Controllers\ProgramController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\ProgramEnrollmentController;
-use App\Http\Controllers\ProgramVersionMappingController;
-use App\Http\Controllers\ProgramVersionController;
-use App\Http\Controllers\ProgramVersionUnitController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\ExamBodyController;
 use App\Http\Controllers\FeeAssignmentController;
@@ -19,6 +14,11 @@ use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LedgerTransactionController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ProgramController;
+use App\Http\Controllers\ProgramEnrollmentController;
+use App\Http\Controllers\ProgramVersionController;
+use App\Http\Controllers\ProgramVersionMappingController;
+use App\Http\Controllers\ProgramVersionUnitController;
 use App\Http\Controllers\ReportingController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\StudentController;
@@ -40,24 +40,21 @@ Route::get('/dashboard', [DashboardController::class, 'redirect'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
-Route::get('/student/dashboard', [DashboardController::class, 'studentDashboard'])
-    ->middleware(['auth', 'verified'])
-    ->name('student.dashboard');
-Route::post('/student/dashboard/register-session', [AcademicSessionEnrollmentController::class, 'registerCurrentStudent'])
-    ->middleware(['auth', 'verified'])
-    ->name('student.dashboard.register-session');
-Route::get('/student/program-units', [ProgramVersionUnitController::class, 'studentIndex'])
-    ->middleware(['auth', 'verified'])
-    ->name('student.program-units.index');
-Route::get('/student/fee-statements', [InvoiceController::class, 'studentStatementsIndex'])
-    ->middleware(['auth', 'verified'])
-    ->name('student.fee-statements.index');
-Route::get('/student/fee-statements/{invoice}', [InvoiceController::class, 'studentStatementShow'])
-    ->middleware(['auth', 'verified'])
-    ->name('student.fee-statements.show');
+Route::middleware(['auth', 'verified', 'role:student'])->group(function () {
+    Route::get('/student/dashboard', [DashboardController::class, 'studentDashboard'])
+        ->name('student.dashboard');
+    Route::post('/student/dashboard/register-session', [AcademicSessionEnrollmentController::class, 'registerCurrentStudent'])
+        ->name('student.dashboard.register-session');
+    Route::get('/student/program-units', [ProgramVersionUnitController::class, 'studentIndex'])
+        ->name('student.program-units.index');
+    Route::get('/student/fee-statements', [InvoiceController::class, 'studentStatementsIndex'])
+        ->name('student.fee-statements.index');
+    Route::get('/student/fee-statements/{invoice}', [InvoiceController::class, 'studentStatementShow'])
+        ->name('student.fee-statements.show');
+});
 
 Route::get('/staff/dashboard', [DashboardController::class, 'staffDashboard'])
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth', 'verified', 'non_student'])
     ->name('staff.dashboard');
 
 /*
@@ -76,7 +73,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
 
+Route::middleware(['auth', 'non_student'])->group(function () {
     /*
     |--------------------------------------------------------------------------
     | EXAM BODIES
@@ -334,6 +333,15 @@ Route::middleware('auth')->group(function () {
         Route::get('/invoices/create', [InvoiceController::class, 'create'])->name('invoices.create');
         Route::post('/invoices', [InvoiceController::class, 'store'])->name('invoices.store');
         Route::get('/ledger', [LedgerTransactionController::class, 'index'])->name('ledger.index');
+        Route::get('/manual-operations', [InvoiceController::class, 'manualOperations'])->name('manual.index');
+        Route::get('/manual-operations/additional-invoice', [InvoiceController::class, 'manualInvoiceCreate'])->name('manual.invoices.create');
+        Route::get('/manual-operations/record-payment', [InvoiceController::class, 'manualPaymentCreate'])->name('manual.payments.create');
+        Route::get('/manual-operations/post-penalty', [InvoiceController::class, 'manualPenaltyCreate'])->name('manual.penalties.create');
+        Route::get('/manual-operations/apply-adjustment', [InvoiceController::class, 'manualAdjustmentCreate'])->name('manual.adjustments.create');
+        Route::post('/manual-invoices', [InvoiceController::class, 'storeManualInvoice'])->name('manual.invoices.store');
+        Route::post('/manual-payments', [InvoiceController::class, 'storePayment'])->name('manual.payments.store');
+        Route::post('/manual-penalties', [InvoiceController::class, 'storePenalty'])->name('manual.penalties.store');
+        Route::post('/manual-adjustments', [InvoiceController::class, 'storeAdjustment'])->name('manual.adjustments.store');
 
         Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
         Route::delete('/invoices/{invoice}', [InvoiceController::class, 'destroy'])->name('invoices.destroy');
@@ -420,5 +428,3 @@ Route::middleware('auth')->group(function () {
 |--------------------------------------------------------------------------
 */
 require __DIR__.'/auth.php';
-
-

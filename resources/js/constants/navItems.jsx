@@ -161,7 +161,7 @@ export const NAV_ITEMS = [
         key: "billing",
         label: "Billing",
         icon: "finance",
-        basePath: "/biling/",
+        basePath: "/billing/",
         permissions: ["students.view"],
         children: [
             {
@@ -171,15 +171,9 @@ export const NAV_ITEMS = [
                 permission: "students.view",
             },
             {
-                routeName: "billing.bulk.operations",
-                fallback: "/billing/bulk-operations",
-                label: "Bulk Operations",
-                permission: "students.view",
-            },
-            {
-                routeName: "billing.invoices.create",
-                fallback: "/billing/invoices/create",
-                label: "Create invoice",
+                routeName: "billing.manual.index",
+                fallback: "/billing/manual-operations",
+                label: "Manual Billing",
                 permission: "students.view",
             },
             {

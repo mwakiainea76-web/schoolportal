@@ -111,6 +111,11 @@ class AcademicSessionEnrollment extends Model
         return $this->programVersionMapping?->programVersion;
     }
 
+    public function getCurriculumAttribute()
+    {
+        return $this->getProgramVersionAttribute();
+    }
+
     public function getProgramAttribute()
     {
         return $this->programVersionMapping?->program;

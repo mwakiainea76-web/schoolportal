@@ -34,6 +34,7 @@ return new class extends Migration
                 $table->decimal('amount_due', 10, 2)->default(0);
                 $table->decimal('paid_amount', 10, 2)->default(0);
                 $table->decimal('balance_due', 10, 2)->default(0);
+                $table->string('idempotency_key')->nullable()->unique();
                 $table->text('notes')->nullable();
                 $table->foreignId('created_by')
                     ->constrained('staffs')
@@ -71,14 +72,21 @@ return new class extends Migration
             Schema::create('payments', function (Blueprint $table) {
                 $table->id();
                 $table->foreignId('student_invoice_id')
+                    ->nullable()
                     ->constrained('student_invoices')
-                    ->cascadeOnDelete()
+                    ->nullOnDelete()
+                    ->cascadeOnUpdate();
+                $table->foreignId('student_id')
+                    ->nullable()
+                    ->constrained('students')
+                    ->nullOnDelete()
                     ->cascadeOnUpdate();
                 $table->decimal('amount', 10, 2);
                 $table->date('payment_date');
                 $table->string('method')->nullable();
                 $table->string('reference')->nullable();
                 $table->enum('status', ['completed', 'pending', 'failed'])->default('completed');
+                $table->string('idempotency_key')->nullable()->unique();
                 $table->foreignId('created_by')
                     ->constrained('staffs')
                     ->cascadeOnDelete()
@@ -90,6 +98,25 @@ return new class extends Migration
             });
         }
 
+        if (! Schema::hasTable('payment_allocations')) {
+            Schema::create('payment_allocations', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('payment_id')
+                    ->constrained('payments')
+                    ->cascadeOnDelete()
+                    ->cascadeOnUpdate();
+                $table->foreignId('student_invoice_id')
+                    ->constrained('student_invoices')
+                    ->cascadeOnDelete()
+                    ->cascadeOnUpdate();
+                $table->decimal('amount', 10, 2);
+                $table->date('allocated_at')->nullable();
+                $table->timestamps();
+
+                $table->index(['payment_id', 'student_invoice_id']);
+            });
+        }
+
         if (! Schema::hasTable('fee_adjustments')) {
             Schema::create('fee_adjustments', function (Blueprint $table) {
                 $table->id();
@@ -97,8 +124,9 @@ return new class extends Migration
                     ->constrained('student_invoices')
                     ->cascadeOnDelete()
                     ->cascadeOnUpdate();
-                $table->enum('type', ['discount', 'waiver', 'penalty', 'bursary', 'helb', 'refund', 'other'])->default('other');
+                $table->enum('type', ['discount', 'waiver', 'penalty', 'bursary', 'helb', 'refund', 'reversal', 'other'])->default('other');
                 $table->decimal('amount', 10, 2);
+                $table->string('idempotency_key')->nullable()->unique();
                 $table->text('description')->nullable();
                 $table->date('applied_at')->nullable();
                 $table->foreignId('created_by')
@@ -177,6 +205,7 @@ return new class extends Migration
     {
         Schema::dropIfExists('ledger_transactions');
         Schema::dropIfExists('fee_adjustments');
+        Schema::dropIfExists('payment_allocations');
         Schema::dropIfExists('payments');
         Schema::dropIfExists('invoice_items');
         Schema::dropIfExists('student_invoices');

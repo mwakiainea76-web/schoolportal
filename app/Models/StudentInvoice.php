@@ -25,6 +25,7 @@ class StudentInvoice extends Model
         'amount_due',
         'paid_amount',
         'balance_due',
+        'idempotency_key',
         'notes',
         'created_by',
     ];
@@ -62,6 +63,11 @@ class StudentInvoice extends Model
         return $this->hasMany(Payment::class, 'student_invoice_id');
     }
 
+    public function paymentAllocations()
+    {
+        return $this->hasMany(PaymentAllocation::class, 'student_invoice_id');
+    }
+
     public function adjustments()
     {
         return $this->hasMany(FeeAdjustment::class, 'student_invoice_id');
@@ -83,7 +89,7 @@ class StudentInvoice extends Model
         $adjustmentsTotal = $this->adjustments()->get()->sum(fn ($adjustment) => $adjustment->signedAmount());
 
         $amountDue = $itemsTotal + $adjustmentsTotal;
-        $paidAmount = $this->payments()->sum('amount');
+        $paidAmount = $this->paymentAllocations()->sum('amount');
         $balanceDue = max(0, $amountDue - $paidAmount);
 
         $this->update([

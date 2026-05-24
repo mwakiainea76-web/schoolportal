@@ -68,6 +68,7 @@ export default function Index({ statements }) {
                                             Statement
                                         </th>
                                         <th className="px-6 py-4">Session</th>
+                                        <th className="px-6 py-4">Coverage</th>
                                         <th className="px-6 py-4">
                                             Issue Date
                                         </th>
@@ -95,14 +96,24 @@ export default function Index({ statements }) {
                                         >
                                             <td className="px-6 py-4">
                                                 <p className="font-semibold text-zinc-900">
-                                                    {
-                                                        statement.invoice_number
-                                                    }
+                                                    {statement.statement_reference}
+                                                </p>
+                                                <p className="mt-1 text-xs text-zinc-500">
+                                                    {statement.invoice_count} invoice
+                                                    {statement.invoice_count === 1
+                                                        ? ""
+                                                        : "s"}
                                                 </p>
                                             </td>
                                             <td className="px-6 py-4">
                                                 {statement.session ??
                                                     "Session not linked"}
+                                            </td>
+                                            <td className="px-6 py-4 text-zinc-500">
+                                                {statement.transaction_count} transaction
+                                                {statement.transaction_count === 1
+                                                    ? ""
+                                                    : "s"}
                                             </td>
                                             <td className="px-6 py-4">
                                                 {statement.issue_date ?? "-"}

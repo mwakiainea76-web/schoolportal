@@ -31,7 +31,7 @@ export default function Show({ statement }) {
             tone: "bg-amber-50 text-amber-600",
         },
         {
-            label: "Amount Paid",
+            label: "Payments and Credits",
             value: currency(statement.totals.paid_amount),
             icon: Wallet,
             tone: "bg-emerald-50 text-emerald-600",
@@ -46,7 +46,7 @@ export default function Show({ statement }) {
 
     return (
         <AuthenticatedLayout>
-            <Head title={`Fee Statement ${statement.invoice_number}`} />
+            <Head title={`Fee Statement ${statement.statement_reference}`} />
 
             <div className="mx-auto w-full max-w-7xl animate-in fade-in slide-in-from-bottom-4 duration-700">
                 <div className="mb-6 flex items-center justify-between">
@@ -89,7 +89,7 @@ export default function Show({ statement }) {
                                     Statement No.
                                 </p>
                                 <p className="mt-1 font-semibold">
-                                    {statement.invoice_number}
+                                    {statement.statement_reference}
                                 </p>
                             </div>
                             <div>
@@ -164,6 +164,37 @@ export default function Show({ statement }) {
                                 }
                             />
                         </div>
+
+                        {statement.included_invoices?.length > 1 ? (
+                            <div className="mt-6 rounded-2xl bg-zinc-50 px-4 py-4">
+                                <p className="text-sm font-semibold text-zinc-900">
+                                    Included Session Invoices
+                                </p>
+                                <p className="mt-1 text-sm text-zinc-500">
+                                    This statement combines all invoices issued
+                                    for the same academic session.
+                                </p>
+                                <div className="mt-3 space-y-2">
+                                    {statement.included_invoices.map(
+                                        (invoice) => (
+                                            <div
+                                                key={invoice.id}
+                                                className="flex items-center justify-between text-sm"
+                                            >
+                                                <span className="font-medium text-zinc-800">
+                                                    {invoice.invoice_number}
+                                                </span>
+                                                <span className="text-zinc-500">
+                                                    {currency(
+                                                        invoice.amount_due,
+                                                    )}
+                                                </span>
+                                            </div>
+                                        ),
+                                    )}
+                                </div>
+                            </div>
+                        ) : null}
                     </div>
 
                     <div className="grid gap-4">
