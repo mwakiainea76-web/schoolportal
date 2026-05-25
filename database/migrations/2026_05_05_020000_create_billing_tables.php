@@ -151,6 +151,7 @@ return new class extends Migration
                     'helb',
                     'discount',
                     'penalty',
+                    'hostel',
                     'adjustment',
                     'refund',
                     'reversal',

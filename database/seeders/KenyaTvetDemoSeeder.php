@@ -14,12 +14,18 @@ use App\Models\FeeComponent;
 use App\Models\FeePlan;
 use App\Models\FeePlanItem;
 use App\Models\LedgerTransaction;
+use App\Models\LectureRoom;
+use App\Models\Hostel;
+use App\Models\HostelAllocation;
+use App\Models\HostelBed;
+use App\Models\HostelRoom;
 use App\Models\NextOfKin;
 use App\Models\Program;
 use App\Models\ProgramEnrollment;
 use App\Models\ProgramVersion;
 use App\Models\ProgramVersionMapping;
 use App\Models\ProgramVersionUnit;
+use App\Models\AcademicTimetable;
 use App\Models\Staff;
 use App\Models\Student;
 use App\Models\Unit;
@@ -45,12 +51,16 @@ class KenyaTvetDemoSeeder extends Seeder
             $programs = $this->seedPrograms($departments, $levels);
             $mappings = $this->seedProgramMappings($programs, $versions, $users['admin']);
             $this->seedUnitsAndMappings($mappings);
+            $lectureRooms = $this->seedLectureRooms($departments);
+            $this->seedHostels();
+            $this->seedTimetableData($users, $lectureRooms, $mappings);
             $students = $this->seedStudents($roles['student'], $mappings);
             $feePlans = $this->seedFeePlans($users['bursar_user'], $users['bursar_staff']);
             $this->seedLegacyFeeAssignments($feePlans, $mappings, $calendar['active_year'], $users['bursar_staff']);
             $this->seedModernFeePlanAssignments($feePlans, $versions['active'], $calendar['active_year'], $calendar['active_session'], $users['bursar_user']);
             $sessionEnrollments = $this->seedAcademicSessionEnrollments($students, $calendar['active_session']);
             $this->seedBillingData($sessionEnrollments, $users['bursar_staff'], $feePlans['level4'], $feePlans['level5'], $feePlans['level6']);
+            $this->seedHostelAllocations($sessionEnrollments, $users['bursar_staff']);
             $this->seedApprovalsSample($users['bursar_staff']);
         });
     }
@@ -110,10 +120,17 @@ class KenyaTvetDemoSeeder extends Seeder
             ['user_id' => $admin->id],
             [
                 'department_id' => $departments['BUS'] ?? $departments->first(),
+                'designation' => 'Principal',
                 'staff_number' => 'TVET/STAFF/001',
+                'national_id_number' => '20100001',
                 'salary' => 145000,
                 'hired_date' => '2023-01-10',
                 'employment_type' => 'Permanent',
+                'highest_qualification' => 'Masters in Education Administration',
+                'specialization' => 'Institutional Leadership',
+                'kra_pin' => 'A001000001X',
+                'nhif_number' => 'NHIF000001',
+                'nssf_number' => 'NSSF000001',
                 'staff_status' => 'active',
             ]
         );
@@ -122,10 +139,17 @@ class KenyaTvetDemoSeeder extends Seeder
             ['user_id' => $registrarUser->id],
             [
                 'department_id' => $departments['BUS'] ?? $departments->first(),
+                'designation' => 'Registrar',
                 'staff_number' => 'TVET/STAFF/002',
+                'national_id_number' => '20100002',
                 'salary' => 98000,
                 'hired_date' => '2024-03-04',
                 'employment_type' => 'Permanent',
+                'highest_qualification' => 'Bachelor of Education',
+                'specialization' => 'Academic Administration',
+                'kra_pin' => 'A001000002X',
+                'nhif_number' => 'NHIF000002',
+                'nssf_number' => 'NSSF000002',
                 'staff_status' => 'active',
             ]
         );
@@ -134,22 +158,36 @@ class KenyaTvetDemoSeeder extends Seeder
             ['user_id' => $bursarUser->id],
             [
                 'department_id' => $departments['BUS'] ?? $departments->first(),
+                'designation' => 'Bursar',
                 'staff_number' => 'TVET/STAFF/003',
+                'national_id_number' => '20100003',
                 'salary' => 110000,
                 'hired_date' => '2022-07-11',
                 'employment_type' => 'Permanent',
+                'highest_qualification' => 'Bachelor of Commerce',
+                'specialization' => 'Finance',
+                'kra_pin' => 'A001000003X',
+                'nhif_number' => 'NHIF000003',
+                'nssf_number' => 'NSSF000003',
                 'staff_status' => 'active',
             ]
         );
 
-        Staff::firstOrCreate(
+        $hodStaff = Staff::firstOrCreate(
             ['user_id' => $hodUser->id],
             [
                 'department_id' => $departments['ICT'] ?? $departments->first(),
+                'designation' => 'Head of Department',
                 'staff_number' => 'TVET/STAFF/004',
+                'national_id_number' => '20100004',
                 'salary' => 120000,
                 'hired_date' => '2023-09-18',
                 'employment_type' => 'Contract',
+                'highest_qualification' => 'Bachelor of Science in IT',
+                'specialization' => 'Networking and Systems',
+                'kra_pin' => 'A001000004X',
+                'nhif_number' => 'NHIF000004',
+                'nssf_number' => 'NSSF000004',
                 'staff_status' => 'active',
             ]
         );
@@ -161,6 +199,7 @@ class KenyaTvetDemoSeeder extends Seeder
             'registrar_user' => $registrarUser,
             'registrar_staff' => $registrarStaff,
             'admin_staff' => $adminStaff,
+            'hod_staff' => $hodStaff,
         ];
     }
 
@@ -701,6 +740,175 @@ class KenyaTvetDemoSeeder extends Seeder
         return $students;
     }
 
+    protected function seedLectureRooms(array $departments): array
+    {
+        return [
+            'ict_lab_1' => LectureRoom::firstOrCreate(
+                ['code' => 'ICT-LAB-1'],
+                [
+                    'department_id' => $departments['ict']->id,
+                    'name' => 'ICT Lab 1',
+                    'capacity' => 40,
+                    'location' => 'ICT Block Ground Floor',
+                    'description' => 'Computer laboratory for software, networking, and common theory sessions.',
+                    'is_active' => true,
+                ]
+            ),
+            'business_hall' => LectureRoom::firstOrCreate(
+                ['code' => 'BUS-HALL-1'],
+                [
+                    'department_id' => $departments['business']->id,
+                    'name' => 'Business Lecture Hall',
+                    'capacity' => 120,
+                    'location' => 'Business Block First Floor',
+                    'description' => 'Large hall for shared theory classes and departmental forums.',
+                    'is_active' => true,
+                ]
+            ),
+            'hospitality_demo' => LectureRoom::firstOrCreate(
+                ['code' => 'HOS-DEMO-1'],
+                [
+                    'department_id' => $departments['hospitality']->id,
+                    'name' => 'Hospitality Demonstration Room',
+                    'capacity' => 35,
+                    'location' => 'Hospitality Wing',
+                    'description' => 'Demo room for food production and service practical orientation.',
+                    'is_active' => true,
+                ]
+            ),
+        ];
+    }
+
+    protected function seedTimetableData(array $users, array $lectureRooms, array $mappings): void
+    {
+        $ictTrainer = $users['hod_staff'];
+
+        $ictMainUnit = ProgramVersionUnit::query()
+            ->where('program_version_mapping_id', $mappings['ict_l4']->id)
+            ->whereHas('unit', fn ($query) => $query->where('code', 'ICT101'))
+            ->first();
+
+        $ictSharedTheoryUnit = ProgramVersionUnit::query()
+            ->where('program_version_mapping_id', $mappings['ict_l4']->id)
+            ->whereHas('unit', fn ($query) => $query->where('code', 'COM101'))
+            ->first();
+
+        if (! $ictMainUnit || ! $ictSharedTheoryUnit) {
+            return;
+        }
+
+        $mondaySession = AcademicTimetable::firstOrCreate(
+            [
+                'department_id' => $ictTrainer->department_id,
+                'trainer_staff_id' => $ictTrainer->id,
+                'lecture_room_id' => $lectureRooms['ict_lab_1']->id,
+                'day_of_week' => 'monday',
+                'start_time' => '08:00:00',
+                'end_time' => '10:00:00',
+            ],
+            [
+                'program_version_unit_id' => $ictMainUnit->id,
+                'created_by' => $ictTrainer->id,
+                'updated_by' => $ictTrainer->id,
+            ]
+        );
+        $mondaySession->programVersionUnits()->syncWithoutDetaching([
+            $ictMainUnit->id,
+            $ictSharedTheoryUnit->id,
+        ]);
+
+        $wednesdaySession = AcademicTimetable::firstOrCreate(
+            [
+                'department_id' => $ictTrainer->department_id,
+                'trainer_staff_id' => $ictTrainer->id,
+                'lecture_room_id' => $lectureRooms['ict_lab_1']->id,
+                'day_of_week' => 'wednesday',
+                'start_time' => '11:00:00',
+                'end_time' => '13:00:00',
+            ],
+            [
+                'program_version_unit_id' => $ictMainUnit->id,
+                'created_by' => $ictTrainer->id,
+                'updated_by' => $ictTrainer->id,
+            ]
+        );
+        $wednesdaySession->programVersionUnits()->syncWithoutDetaching([
+            $ictMainUnit->id,
+        ]);
+    }
+
+    protected function seedHostels(): array
+    {
+        $sunrise = Hostel::firstOrCreate(
+            ['code' => 'SUN-HSTL'],
+            [
+                'name' => 'Sunrise Hostel',
+                'session_fee_amount' => 18000,
+                'gender' => 'male',
+                'location' => 'North Boarding Wing',
+                'description' => 'Male hostel serving level 4 and level 5 boarders.',
+                'is_active' => true,
+            ]
+        );
+
+        $sunriseRooms = [
+            ['name' => 'Sunrise Block A - Room 1', 'code' => 'SUN-A1', 'floor' => 'Ground Floor', 'bed_count' => 4],
+            ['name' => 'Sunrise Block A - Room 2', 'code' => 'SUN-A2', 'floor' => 'Ground Floor', 'bed_count' => 4],
+        ];
+
+        foreach ($sunriseRooms as $room) {
+            $hostelRoom = HostelRoom::firstOrCreate(
+                ['code' => $room['code']],
+                [
+                    'hostel_id' => $sunrise->id,
+                    'name' => $room['name'],
+                    'floor' => $room['floor'],
+                    'bed_count' => $room['bed_count'],
+                    'is_active' => true,
+                ]
+            );
+
+            $this->seedHostelBeds($hostelRoom, $room['bed_count']);
+        }
+
+        $starlight = Hostel::firstOrCreate(
+            ['code' => 'STR-HSTL'],
+            [
+                'name' => 'Starlight Hostel',
+                'session_fee_amount' => 19500,
+                'gender' => 'female',
+                'location' => 'East Boarding Wing',
+                'description' => 'Female hostel close to hospitality and business blocks.',
+                'is_active' => true,
+            ]
+        );
+
+        $starlightRooms = [
+            ['name' => 'Starlight Block B - Room 1', 'code' => 'STR-B1', 'floor' => 'First Floor', 'bed_count' => 3],
+            ['name' => 'Starlight Block B - Room 2', 'code' => 'STR-B2', 'floor' => 'First Floor', 'bed_count' => 3],
+        ];
+
+        foreach ($starlightRooms as $room) {
+            $hostelRoom = HostelRoom::firstOrCreate(
+                ['code' => $room['code']],
+                [
+                    'hostel_id' => $starlight->id,
+                    'name' => $room['name'],
+                    'floor' => $room['floor'],
+                    'bed_count' => $room['bed_count'],
+                    'is_active' => true,
+                ]
+            );
+
+            $this->seedHostelBeds($hostelRoom, $room['bed_count']);
+        }
+
+        return [
+            'sunrise' => $sunrise->fresh('rooms.beds'),
+            'starlight' => $starlight->fresh('rooms.beds'),
+        ];
+    }
+
     protected function seedFeePlans(User $bursarUser, Staff $bursarStaff): array
     {
         $plans = [
@@ -908,6 +1116,95 @@ class KenyaTvetDemoSeeder extends Seeder
         );
     }
 
+    protected function seedHostelAllocations(array $sessionEnrollments, Staff $bursarStaff): void
+    {
+        /** @var BillingService $billing */
+        $billing = app(BillingService::class);
+
+        $kevinEnrollment = $sessionEnrollments['TVET/2026/ICT/001'] ?? null;
+        $sharonEnrollment = $sessionEnrollments['TVET/2026/HOS/004'] ?? null;
+
+        if ($kevinEnrollment) {
+            $room = HostelRoom::query()->where('code', 'SUN-A1')->first();
+            $bed = HostelBed::query()->where('hostel_room_id', $room?->id)->where('bed_number', 1)->first();
+
+            if ($room && $bed) {
+                $invoice = $billing->createManualInvoice(
+                    $kevinEnrollment,
+                    18000,
+                    $bursarStaff->id,
+                    'Hostel accommodation - Sunrise Hostel - Sunrise Block A - Room 1 - SUN-A1-BED-01',
+                    '2026-01-10',
+                    '2026-01-10',
+                    BillingService::NOTE_HOSTEL,
+                    'seed-hostel-invoice-'.$kevinEnrollment->id,
+                    'hostel'
+                );
+                $billing->recordPayment($invoice, 18000, 'M-Pesa', $bursarStaff->id, 'HOSTEL-KEVIN-001', '2026-01-11');
+
+                HostelAllocation::updateOrCreate(
+                    [
+                        'academic_session_enrollment_id' => $kevinEnrollment->id,
+                        'academic_session_id' => $kevinEnrollment->academic_session_id,
+                    ],
+                    [
+                        'student_id' => $kevinEnrollment->student_id,
+                        'hostel_id' => $room->hostel_id,
+                        'hostel_room_id' => $room->id,
+                        'hostel_bed_id' => $bed->id,
+                        'student_invoice_id' => $invoice->id,
+                        'hostel_fee_amount' => 18000,
+                        'allocated_on' => '2026-01-12',
+                        'status' => 'active',
+                        'notes' => 'Demo boarding allocation after confirmed full hostel payment.',
+                        'created_by' => $bursarStaff->id,
+                        'updated_by' => $bursarStaff->id,
+                    ]
+                );
+            }
+        }
+
+        if ($sharonEnrollment) {
+            $room = HostelRoom::query()->where('code', 'STR-B1')->first();
+            $bed = HostelBed::query()->where('hostel_room_id', $room?->id)->where('bed_number', 1)->first();
+
+            if ($room && $bed) {
+                $invoice = $billing->createManualInvoice(
+                    $sharonEnrollment,
+                    19500,
+                    $bursarStaff->id,
+                    'Hostel accommodation - Starlight Hostel - Starlight Block B - Room 1 - STR-B1-BED-01',
+                    '2026-01-12',
+                    '2026-01-12',
+                    BillingService::NOTE_HOSTEL,
+                    'seed-hostel-invoice-'.$sharonEnrollment->id,
+                    'hostel'
+                );
+                $billing->recordPayment($invoice, 19500, 'Bank', $bursarStaff->id, 'HOSTEL-SHARON-001', '2026-01-13');
+
+                HostelAllocation::updateOrCreate(
+                    [
+                        'academic_session_enrollment_id' => $sharonEnrollment->id,
+                        'academic_session_id' => $sharonEnrollment->academic_session_id,
+                    ],
+                    [
+                        'student_id' => $sharonEnrollment->student_id,
+                        'hostel_id' => $room->hostel_id,
+                        'hostel_room_id' => $room->id,
+                        'hostel_bed_id' => $bed->id,
+                        'student_invoice_id' => $invoice->id,
+                        'hostel_fee_amount' => 19500,
+                        'allocated_on' => '2026-01-14',
+                        'status' => 'active',
+                        'notes' => 'Demo hostel allocation after confirmed full hostel payment.',
+                        'created_by' => $bursarStaff->id,
+                        'updated_by' => $bursarStaff->id,
+                    ]
+                );
+            }
+        }
+    }
+
     protected function seedApprovalsSample(Staff $bursarStaff): void
     {
         Approval::firstOrCreate(
@@ -963,5 +1260,21 @@ class KenyaTvetDemoSeeder extends Seeder
             'email_verified_at' => now(),
             'password' => $password,
         ];
+    }
+
+    protected function seedHostelBeds(HostelRoom $room, int $bedCount): void
+    {
+        for ($bedNumber = 1; $bedNumber <= $bedCount; $bedNumber++) {
+            HostelBed::firstOrCreate(
+                [
+                    'hostel_room_id' => $room->id,
+                    'bed_number' => $bedNumber,
+                ],
+                [
+                    'label' => $room->code.'-BED-'.str_pad((string) $bedNumber, 2, '0', STR_PAD_LEFT),
+                    'is_active' => true,
+                ]
+            );
+        }
     }
 }

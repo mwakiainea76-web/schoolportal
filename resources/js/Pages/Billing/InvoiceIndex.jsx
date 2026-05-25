@@ -252,13 +252,8 @@ export default function InvoiceIndex({
                                                 </span>
                                             </Tdata>
                                             <Tdata>
-                                                {invoice.invoice_type ===
-                                                "default_fees"
-                                                    ? "Default Fees"
-                                                    : invoice.invoice_type ===
-                                                        "penalty"
-                                                      ? "Penalty"
-                                                      : "Fees"}
+                                                {invoice.display_type_label ??
+                                                    "STANDARD INVOICE"}
                                             </Tdata>
                                             <Tdata>{sessionName}</Tdata>
                                             <Tdata>

@@ -1,12 +1,11 @@
 import { Link, useForm } from "@inertiajs/react";
 import { useState } from "react";
-import { CreditCard, FilePlus2, ShieldAlert, Wallet } from "lucide-react";
+import { CreditCard, FilePlus2, Wallet } from "lucide-react";
 import Modal from "@/Components/Modal";
 import FormScaffold from "./FormScaffold";
 import ActionCard from "./ActionCard";
 import AdditionalInvoiceForm from "./AdditionalInvoiceForm";
 import ApplyAdjustmentForm from "./ApplyAdjustmentForm";
-import PostPenaltyForm from "./PostPenaltyForm";
 import RecordPaymentForm from "./RecordPaymentForm";
 
 const today = new Date().toISOString().split("T")[0];
@@ -22,6 +21,7 @@ export default function Index({ selectedRegistrationNumber = "" }) {
 
     const invoiceForm = useForm({
         registration_number: selectedRegistrationNumber || "",
+        invoice_kind: "standard_invoice",
         description: "",
         amount: "",
         issue_date: today,
@@ -34,12 +34,6 @@ export default function Index({ selectedRegistrationNumber = "" }) {
         reference: "",
         payment_date: today,
         notes: "",
-    });
-    const penaltyForm = useForm({
-        registration_number: selectedRegistrationNumber || "",
-        amount: "",
-        description: "",
-        applied_at: today,
     });
     const adjustmentForm = useForm({
         registration_number: selectedRegistrationNumber || "",
@@ -58,6 +52,7 @@ export default function Index({ selectedRegistrationNumber = "" }) {
                 closeModal();
                 invoiceForm.reset("description", "amount", "issue_date", "due_date");
                 invoiceForm.setData("registration_number", selectedRegistrationNumber || "");
+                invoiceForm.setData("invoice_kind", "standard_invoice");
                 invoiceForm.setData("issue_date", today);
                 invoiceForm.setData("due_date", plusDays(14));
             },
@@ -74,19 +69,6 @@ export default function Index({ selectedRegistrationNumber = "" }) {
                 paymentForm.setData("registration_number", selectedRegistrationNumber || "");
                 paymentForm.setData("method", "mpesa");
                 paymentForm.setData("payment_date", today);
-            },
-        });
-    };
-
-    const submitPenaltyForm = (e) => {
-        e.preventDefault();
-        penaltyForm.post(route("billing.manual.penalties.store"), {
-            preserveScroll: true,
-            onSuccess: () => {
-                closeModal();
-                penaltyForm.reset("amount", "description");
-                penaltyForm.setData("registration_number", selectedRegistrationNumber || "");
-                penaltyForm.setData("applied_at", today);
             },
         });
     };
@@ -108,18 +90,18 @@ export default function Index({ selectedRegistrationNumber = "" }) {
     return (
         <FormScaffold
             title="Manual Billing"
-            description="Pick an action."
+            description="Pick whether you are charging the student account, recording a payment, or reducing existing charges."
             backHref={route("billing.invoices.index")}
             backLabel="Back to invoices"
         >
-            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
                 <ActionCard
                     onClick={() => openModal("invoice")}
                     icon={FilePlus2}
                     imageSrc="/images/manual-billing-invoice.svg"
                     imageAlt="Additional invoice"
-                    title="Additional Invoice"
-                    description="Add a charge."
+                    title="Post Student Charge"
+                    description="Increase the student account with a standard invoice, penalty, hostel invoice, or invoice adjustment."
                 />
                 <ActionCard
                     onClick={() => openModal("payment")}
@@ -130,20 +112,12 @@ export default function Index({ selectedRegistrationNumber = "" }) {
                     description="Post a payment."
                 />
                 <ActionCard
-                    onClick={() => openModal("penalty")}
-                    icon={ShieldAlert}
-                    imageSrc="/images/manual-billing-penalty.svg"
-                    imageAlt="Post penalty"
-                    title="Post Penalty"
-                    description="Add a penalty."
-                />
-                <ActionCard
                     onClick={() => openModal("adjustment")}
                     icon={Wallet}
                     imageSrc="/images/manual-billing-adjustment.svg"
-                    imageAlt="Fee adjustment"
-                    title="Fee Adjustment"
-                    description="Apply an adjustment."
+                    imageAlt="Reduce student charges"
+                    title="Reduce Student Charges"
+                    description="Apply waivers, bursaries, HELB support, refunds, or reversals without posting a payment."
                 />
             </div>
 
@@ -152,10 +126,10 @@ export default function Index({ selectedRegistrationNumber = "" }) {
                     Quick Notes
                 </h2>
                 <div className="mt-4 space-y-3 text-sm text-zinc-600">
-                    <p>Invoices add debits.</p>
+                    <p>Student charges increase what the student owes, including hostel prepayment invoices.</p>
                     <p>Payments add credits.</p>
-                    <p>Penalties and adjustments keep the ledger intact.</p>
-                    <p>Use reversals to correct mistakes.</p>
+                    <p>Charge reductions lower or correct existing student charges.</p>
+                    <p>Use reversals to correct mistakes and corrected invoices to reissue the right charge.</p>
                     <p>Refunds only apply to cleared overpayments.</p>
                 </div>
 
@@ -177,9 +151,9 @@ export default function Index({ selectedRegistrationNumber = "" }) {
             >
                 <div className="p-6">
                     <h2 className="text-2xl font-bold tracking-tight text-zinc-900">
-                        Additional Invoice
+                        Post Student Charge
                     </h2>
-                    <p className="mt-1 text-sm text-zinc-500">Add a charge.</p>
+                    <p className="mt-1 text-sm text-zinc-500">This action increases the student account.</p>
                     <div className="mt-6">
                         <AdditionalInvoiceForm form={{ ...invoiceForm, onSubmit: submitInvoiceForm }} onCancel={closeModal} />
                     </div>
@@ -204,23 +178,6 @@ export default function Index({ selectedRegistrationNumber = "" }) {
             </Modal>
 
             <Modal
-                show={activeModal === "penalty"}
-                onClose={closeModal}
-                maxWidth="xl"
-                align="top"
-            >
-                <div className="p-6">
-                    <h2 className="text-2xl font-bold tracking-tight text-zinc-900">
-                        Post Penalty
-                    </h2>
-                    <p className="mt-1 text-sm text-zinc-500">Add a penalty.</p>
-                    <div className="mt-6">
-                        <PostPenaltyForm form={{ ...penaltyForm, onSubmit: submitPenaltyForm }} onCancel={closeModal} />
-                    </div>
-                </div>
-            </Modal>
-
-            <Modal
                 show={activeModal === "adjustment"}
                 onClose={closeModal}
                 maxWidth="xl"
@@ -228,9 +185,9 @@ export default function Index({ selectedRegistrationNumber = "" }) {
             >
                 <div className="p-6">
                     <h2 className="text-2xl font-bold tracking-tight text-zinc-900">
-                        Fee Adjustment
+                        Reduce Student Charges
                     </h2>
-                    <p className="mt-1 text-sm text-zinc-500">Apply an adjustment.</p>
+                    <p className="mt-1 text-sm text-zinc-500">Use approved credits or reversals to reduce or correct charges, not to record payments.</p>
                     <div className="mt-6">
                         <ApplyAdjustmentForm form={{ ...adjustmentForm, onSubmit: submitAdjustmentForm }} onCancel={closeModal} />
                     </div>

@@ -21,10 +21,17 @@ return new class extends Migration
                 ->constrained('departments', 'id')
                 ->cascadeOnDelete()
                 ->cascadeOnUpdate();
+            $table->string('designation')->nullable();
             $table->string('staff_number')->unique();
+            $table->string('national_id_number')->nullable()->unique();
             $table->unsignedInteger('salary')->default(0);
             $table->date('hired_date');
             $table->string('employment_type');
+            $table->string('highest_qualification')->nullable();
+            $table->string('specialization')->nullable();
+            $table->string('kra_pin')->nullable();
+            $table->string('nhif_number')->nullable();
+            $table->string('nssf_number')->nullable();
             $table->enum('staff_status', [
                 'active',
                 'suspended',

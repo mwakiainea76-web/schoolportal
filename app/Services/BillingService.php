@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\AcademicSessionEnrollment;
 use App\Models\FeeAdjustment;
+use App\Models\HostelAllocation;
 use App\Models\InvoiceItem;
 use App\Models\LedgerTransaction;
 use App\Models\Payment;
@@ -17,6 +18,13 @@ use Illuminate\Validation\ValidationException;
 
 class BillingService
 {
+    public const NOTE_CARRY_FORWARD = 'Carry-forward balance invoice.';
+    public const NOTE_CORRECTED_REVERSAL = 'Corrected reversed invoice.';
+    public const NOTE_MANUAL_STANDARD = 'Manual standard invoice.';
+    public const NOTE_MANUAL_ADJUSTMENT = 'Manual invoice adjustment.';
+    public const NOTE_MANUAL_PENALTY = 'Manual penalty invoice.';
+    public const NOTE_HOSTEL = 'Hostel accommodation invoice.';
+
     protected FeeAssignmentService $feeAssignmentService;
 
     public function __construct(FeeAssignmentService $feeAssignmentService)
@@ -92,7 +100,7 @@ class BillingService
                 'student_id' => $enrollment->student_id,
                 'student_invoice_id' => $invoice->id,
                 'academic_session_id' => $invoice->academic_session_id,
-                'type' => 'invoice',
+                'type' => $this->resolveLedgerTypeForInvoice('default_fees'),
                 'debit' => (float) $invoice->amount_due,
                 'credit' => 0,
                 'reference' => $invoice->invoice_number,
@@ -115,7 +123,8 @@ class BillingService
         ?string $issueDate = null,
         ?string $dueDate = null,
         ?string $notes = null,
-        ?string $idempotencyKey = null
+        ?string $idempotencyKey = null,
+        string $invoiceType = 'fees'
     ): StudentInvoice {
         if ($idempotencyKey) {
             $existingInvoice = StudentInvoice::query()
@@ -127,13 +136,13 @@ class BillingService
             }
         }
 
-        return DB::transaction(function () use ($enrollment, $amount, $createdBy, $description, $issueDate, $dueDate, $notes, $idempotencyKey) {
+        return DB::transaction(function () use ($enrollment, $amount, $createdBy, $description, $issueDate, $dueDate, $notes, $idempotencyKey, $invoiceType) {
             $invoice = StudentInvoice::create([
                 'invoice_number' => StudentInvoice::generateInvoiceNumber(),
                 'student_id' => $enrollment->student_id,
                 'enrollment_id' => $enrollment->id,
                 'fee_assignment_id' => null,
-                'invoice_type' => 'fees',
+                'invoice_type' => $invoiceType,
                 'academic_session_id' => $enrollment->academic_session_id,
                 'status' => 'issued',
                 'issue_date' => $issueDate ?? now()->toDateString(),
@@ -142,7 +151,7 @@ class BillingService
                 'paid_amount' => 0,
                 'balance_due' => 0,
                 'idempotency_key' => $idempotencyKey,
-                'notes' => $notes ?? 'Manual additional invoice issued by billing office.',
+                'notes' => $notes ?? self::NOTE_MANUAL_ADJUSTMENT,
                 'created_by' => $createdBy,
             ]);
 
@@ -160,7 +169,7 @@ class BillingService
                 'student_id' => $enrollment->student_id,
                 'student_invoice_id' => $invoice->id,
                 'academic_session_id' => $invoice->academic_session_id,
-                'type' => 'invoice',
+                'type' => $this->resolveLedgerTypeForInvoice($invoiceType, $invoice->notes),
                 'debit' => (float) $invoice->amount_due,
                 'credit' => 0,
                 'reference' => $invoice->invoice_number,
@@ -173,6 +182,46 @@ class BillingService
 
             return $invoice;
         });
+    }
+
+    public function createHostelInvoice(
+        HostelAllocation $allocation,
+        int $createdBy,
+        ?string $issueDate = null,
+        ?string $dueDate = null
+    ): StudentInvoice {
+        if ($allocation->student_invoice_id && $allocation->invoice) {
+            return $allocation->invoice->loadMissing(['items', 'adjustments', 'paymentAllocations']);
+        }
+
+        $allocation->loadMissing(['enrollment', 'hostel', 'room', 'bed', 'invoice']);
+
+        $effectiveIssueDate = $issueDate ?? optional($allocation->allocated_on)->toDateString() ?? now()->toDateString();
+        $description = trim(collect([
+            'Hostel accommodation',
+            $allocation->hostel?->name,
+            $allocation->room?->name,
+            $allocation->bed?->label,
+        ])->filter()->implode(' - '));
+
+        $invoice = $this->createManualInvoice(
+            $allocation->enrollment,
+            (float) $allocation->hostel_fee_amount,
+            $createdBy,
+            $description,
+            $effectiveIssueDate,
+            $dueDate ?? Carbon::parse($effectiveIssueDate)->addDays(14)->toDateString(),
+            self::NOTE_HOSTEL,
+            'hostel-allocation:'.$allocation->id,
+            'hostel'
+        );
+
+        $allocation->update([
+            'student_invoice_id' => $invoice->id,
+            'updated_by' => $createdBy,
+        ]);
+
+        return $invoice;
     }
 
     protected function transferClosedSessionBalancesToCurrentSession(
@@ -191,7 +240,7 @@ class BillingService
         $existingCarryForwardInvoice = StudentInvoice::query()
             ->where('student_id', $studentId)
             ->where('academic_session_id', $currentSessionId)
-            ->where('notes', 'Carry-forward balance invoice.')
+            ->where('notes', self::NOTE_CARRY_FORWARD)
             ->latest('id')
             ->first();
 
@@ -253,7 +302,7 @@ class BillingService
             $description,
             $issueDate,
             $dueDate,
-            'Carry-forward balance invoice.'
+            self::NOTE_CARRY_FORWARD
         );
     }
 
@@ -294,24 +343,17 @@ class BillingService
             }
         }
 
-        return DB::transaction(function () use ($invoice, $amount, $method, $createdBy, $reference, $paymentDate, $notes, $idempotencyKey) {
-            $payment = Payment::create([
-                'student_invoice_id' => $invoice->id,
-                'student_id' => $invoice->student_id,
-                'amount' => $amount,
-                'payment_date' => $paymentDate ?? now()->toDateString(),
-                'method' => $method,
-                'reference' => $reference,
-                'status' => 'completed',
-                'idempotency_key' => $idempotencyKey,
-                'created_by' => $createdBy,
-                'notes' => $notes,
-            ]);
-
-            $this->allocatePaymentAcrossInvoices($payment, $invoice->student, $createdBy);
-
-            return $payment;
-        });
+        return $this->createAndAllocatePayment(
+            $invoice->student,
+            $amount,
+            $method,
+            $createdBy,
+            $reference,
+            $paymentDate,
+            $notes,
+            $idempotencyKey,
+            $invoice->id
+        );
     }
 
     public function recordStudentPayment(
@@ -334,9 +376,32 @@ class BillingService
             }
         }
 
-        return DB::transaction(function () use ($student, $amount, $method, $createdBy, $reference, $paymentDate, $notes, $idempotencyKey) {
+        return $this->createAndAllocatePayment(
+            $student,
+            $amount,
+            $method,
+            $createdBy,
+            $reference,
+            $paymentDate,
+            $notes,
+            $idempotencyKey
+        );
+    }
+
+    protected function createAndAllocatePayment(
+        Student $student,
+        float $amount,
+        string $method,
+        int $createdBy,
+        ?string $reference = null,
+        ?string $paymentDate = null,
+        ?string $notes = null,
+        ?string $idempotencyKey = null,
+        ?int $studentInvoiceId = null
+    ): Payment {
+        return DB::transaction(function () use ($student, $amount, $method, $createdBy, $reference, $paymentDate, $notes, $idempotencyKey, $studentInvoiceId) {
             $payment = Payment::create([
-                'student_invoice_id' => null,
+                'student_invoice_id' => $studentInvoiceId,
                 'student_id' => $student->id,
                 'amount' => $amount,
                 'payment_date' => $paymentDate ?? now()->toDateString(),
@@ -452,7 +517,7 @@ class BillingService
                     $replacementDescription ?: 'Corrected invoice issued after reversal.',
                     $issueDate,
                     $dueDate,
-                    null,
+                    self::NOTE_CORRECTED_REVERSAL,
                     $idempotencyKey ? $idempotencyKey.':replacement' : null
                 );
             }
@@ -491,6 +556,23 @@ class BillingService
             'reversal' => ['reversal', 0, $amount],
             default => ['adjustment', $amount, 0],
         };
+    }
+
+    protected function resolveLedgerTypeForInvoice(string $invoiceType, ?string $notes = null): string
+    {
+        if (in_array($notes, [self::NOTE_CARRY_FORWARD, self::NOTE_CORRECTED_REVERSAL, self::NOTE_MANUAL_ADJUSTMENT], true)) {
+            return 'adjustment';
+        }
+
+        if ($invoiceType === 'penalty' || $notes === self::NOTE_MANUAL_PENALTY) {
+            return 'penalty';
+        }
+
+        if ($invoiceType === 'hostel' || $notes === self::NOTE_HOSTEL) {
+            return 'hostel';
+        }
+
+        return 'invoice';
     }
 
     protected function assertRefundCanBeProcessed(StudentInvoice $invoice, float $amount): void

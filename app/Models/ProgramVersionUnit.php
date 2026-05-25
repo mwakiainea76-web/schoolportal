@@ -27,5 +27,20 @@ class ProgramVersionUnit extends Model
     {
         return $this->belongsTo(Unit::class);
     }
+
+    public function academicTimetables()
+    {
+        return $this->hasMany(AcademicTimetable::class, 'program_version_unit_id');
+    }
+
+    public function timetableSessions()
+    {
+        return $this->belongsToMany(
+            AcademicTimetable::class,
+            'academic_timetable_program_version_unit',
+            'program_version_unit_id',
+            'academic_timetable_id'
+        )->withTimestamps();
+    }
 }
 

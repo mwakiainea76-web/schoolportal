@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AcademicSessionController;
 use App\Http\Controllers\AcademicSessionEnrollmentController;
+use App\Http\Controllers\AcademicTimetableController;
 use App\Http\Controllers\AcademicYearController;
 use App\Http\Controllers\CertificationLevelController;
 use App\Http\Controllers\DashboardController;
@@ -12,6 +13,9 @@ use App\Http\Controllers\FeePlanController;
 use App\Http\Controllers\FeePlanItemController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LedgerTransactionController;
+use App\Http\Controllers\LectureRoomController;
+use App\Http\Controllers\HostelAllocationController;
+use App\Http\Controllers\HostelController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProgramController;
@@ -21,6 +25,7 @@ use App\Http\Controllers\ProgramVersionMappingController;
 use App\Http\Controllers\ProgramVersionUnitController;
 use App\Http\Controllers\ReportingController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\StaffController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\UnitController;
 use Illuminate\Support\Facades\Route;
@@ -255,6 +260,41 @@ Route::middleware(['auth', 'non_student'])->group(function () {
         Route::delete('/{academicSessionEnrollment}', [AcademicSessionEnrollmentController::class, 'destroy'])->name('destroy');
     });
 
+    Route::prefix('academic/timetables')->name('academic.timetables.')->group(function () {
+        Route::get('/', [AcademicTimetableController::class, 'index'])->name('index');
+        Route::get('/create', [AcademicTimetableController::class, 'create'])->name('create');
+        Route::post('/', [AcademicTimetableController::class, 'store'])->name('store');
+        Route::get('/{timetable}/edit', [AcademicTimetableController::class, 'edit'])->name('edit');
+        Route::put('/{timetable}', [AcademicTimetableController::class, 'update'])->name('update');
+        Route::delete('/{timetable}', [AcademicTimetableController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('lecture-rooms')->name('lecture-rooms.')->group(function () {
+        Route::get('/', [LectureRoomController::class, 'index'])->name('index');
+        Route::get('/create', [LectureRoomController::class, 'create'])->name('create');
+        Route::post('/', [LectureRoomController::class, 'store'])->name('store');
+        Route::get('/{lecture_room}/edit', [LectureRoomController::class, 'edit'])->name('edit');
+        Route::put('/{lecture_room}', [LectureRoomController::class, 'update'])->name('update');
+        Route::delete('/{lecture_room}', [LectureRoomController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('hostels')->name('hostels.')->group(function () {
+        Route::get('/', [HostelController::class, 'index'])->name('index');
+        Route::get('/create', [HostelController::class, 'create'])->name('create');
+        Route::post('/', [HostelController::class, 'store'])->name('store');
+        Route::get('/{hostel}/edit', [HostelController::class, 'edit'])->name('edit');
+        Route::put('/{hostel}', [HostelController::class, 'update'])->name('update');
+        Route::delete('/{hostel}', [HostelController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('hostel-allocations')->name('hostel-allocations.')->group(function () {
+        Route::get('/', [HostelAllocationController::class, 'index'])->name('index');
+        Route::get('/create', [HostelAllocationController::class, 'create'])->name('create');
+        Route::post('/', [HostelAllocationController::class, 'store'])->name('store');
+        Route::get('/{hostel_allocation}/edit', [HostelAllocationController::class, 'edit'])->name('edit');
+        Route::put('/{hostel_allocation}', [HostelAllocationController::class, 'update'])->name('update');
+    });
+
     /*
     |--------------------------------------------------------------------------
     | FEES → PLANS
@@ -353,6 +393,23 @@ Route::middleware(['auth', 'non_student'])->group(function () {
         Route::post('/bulk-generate-from-plans', [InvoiceController::class, 'store'])->name('bulk.generate.from.plans');
 
         Route::get('/bulk-operations', [InvoiceController::class, 'bulkOperations'])->name('bulk.operations');
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | STAFFS
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('staffs')->name('staffs.')->group(function () {
+        Route::get('/', [StaffController::class, 'index'])->name('index');
+        Route::get('/create', [StaffController::class, 'create'])->name('create');
+        Route::post('/', [StaffController::class, 'store'])->name('store');
+
+        Route::get('/{staff}/edit', [StaffController::class, 'edit'])->name('edit');
+        Route::put('/{staff}', [StaffController::class, 'update'])->name('update');
+        Route::delete('/{staff}', [StaffController::class, 'destroy'])->name('destroy');
+
+        Route::post('/validate-step', [StaffController::class, 'validateStep'])->name('validateStep');
     });
 
     /*

@@ -10,9 +10,11 @@ const plusDays = (days) =>
 
 export default function AdditionalInvoice({
     selectedRegistrationNumber,
+    selectedInvoiceKind = "standard_invoice",
 }) {
     const form = useForm({
         registration_number: selectedRegistrationNumber || "",
+        invoice_kind: selectedInvoiceKind || "standard_invoice",
         description: "",
         amount: "",
         issue_date: today,
@@ -28,8 +30,8 @@ export default function AdditionalInvoice({
 
     return (
         <FormScaffold
-            title="Additional Invoice"
-            description="Raise a manual charge for a specific student session enrollment."
+            title="Post Student Charge"
+            description="This form increases the student account by posting a Standard Invoice, Penalty, or Invoice Adjustment."
             backHref={route("billing.manual.index")}
         >
             <div className="max-w-4xl rounded-[1.75rem] border border-zinc-100 bg-white p-6 shadow-sm">

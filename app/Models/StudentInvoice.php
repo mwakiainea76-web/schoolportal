@@ -83,6 +83,11 @@ class StudentInvoice extends Model
         return $this->hasMany(LedgerTransaction::class, 'student_invoice_id');
     }
 
+    public function hostelAllocation()
+    {
+        return $this->hasOne(HostelAllocation::class, 'student_invoice_id');
+    }
+
     public function recalculateTotals(): self
     {
         $itemsTotal = $this->items()->sum('total_amount');
@@ -90,7 +95,7 @@ class StudentInvoice extends Model
 
         $amountDue = $itemsTotal + $adjustmentsTotal;
         $paidAmount = $this->paymentAllocations()->sum('amount');
-        $balanceDue = max(0, $amountDue - $paidAmount);
+        $balanceDue = $amountDue - $paidAmount;
 
         $this->update([
             'amount_due' => $amountDue,
@@ -105,7 +110,7 @@ class StudentInvoice extends Model
 
     public function refreshStatus(): self
     {
-        if ($this->paid_amount >= $this->amount_due && $this->amount_due > 0) {
+        if ($this->amount_due <= 0 || $this->balance_due <= 0) {
             $status = 'paid';
         } elseif ($this->paid_amount > 0 && $this->paid_amount < $this->amount_due) {
             $status = 'partial';

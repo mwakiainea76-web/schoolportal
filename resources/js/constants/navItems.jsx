@@ -8,7 +8,6 @@ import {
     CalendarRange,
     ShieldCheck,
     UserRound,
-    Users,
     Wallet,
 } from "lucide-react";
 
@@ -123,9 +122,33 @@ export const NAV_ITEMS = [
                 permission: "academic.sessions.view",
             },
             {
-                routeName: "academic/sessions/enrollments.index",
+                routeName: "academic.timetables.index",
+                fallback: "/academic/timetables",
+                label: "Class Timetable",
+                permission: "academic.sessions.view",
+            },
+            {
+                routeName: "lecture-rooms.index",
+                fallback: "/lecture-rooms",
+                label: "Lecture Rooms",
+                permission: "academic.sessions.view",
+            },
+            {
+                routeName: "academic.sessions.enrollments.index",
                 fallback: "/academic/sessions/enrollments",
                 label: "Session Enrollments",
+                permission: "students.view",
+            },
+            {
+                routeName: "hostels.index",
+                fallback: "/hostels",
+                label: "Hostels",
+                permission: "students.view",
+            },
+            {
+                routeName: "hostel-allocations.index",
+                fallback: "/hostel-allocations",
+                label: "Hostel Allocations",
                 permission: "students.view",
             },
         ],

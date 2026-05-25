@@ -24,8 +24,8 @@ export default function ApplyAdjustment({ selectedRegistrationNumber }) {
 
     return (
         <FormScaffold
-            title="Fee Adjustment"
-            description="Apply approved finance adjustments to the selected invoice, including full reversals of wrong charges."
+            title="Reduce Student Charges"
+            description="Use this form for waivers, bursaries, HELB, refunds, and reversals that reduce or correct what the student owes. It is not for posting payments."
             backHref={route("billing.manual.index")}
         >
             <div className="max-w-4xl rounded-[1.75rem] border border-zinc-100 bg-white p-6 shadow-sm">

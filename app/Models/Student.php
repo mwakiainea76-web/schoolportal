@@ -55,5 +55,10 @@ class Student extends Model
     {
         return $this->hasMany(Payment::class);
     }
+
+    public function hostelAllocations()
+    {
+        return $this->hasMany(HostelAllocation::class);
+    }
 }
 

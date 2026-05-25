@@ -44,9 +44,22 @@ class UpdateStaffRequest extends FormRequest
             // -------------------
             'department_id' => ['required', 'exists:departments,id'],
             'role_name' => ['required', 'exists:roles,name'],
+            'designation' => ['required', 'string', 'max:255'],
+            'national_id_number' => [
+                'required',
+                'string',
+                'max:50',
+                Rule::unique('staffs', 'national_id_number')->ignore($staffId),
+            ],
             'salary' => ['nullable', 'numeric'],
-            'staff_status' => ['nullable', 'string'],
+            'staff_status' => ['nullable', 'in:active,suspended,onleave,exited'],
             'employment_type' => ['required', 'string'],
+            'hired_date' => ['required', 'date'],
+            'highest_qualification' => ['required', 'string', 'max:255'],
+            'specialization' => ['nullable', 'string', 'max:255'],
+            'kra_pin' => ['nullable', 'string', 'max:50'],
+            'nhif_number' => ['nullable', 'string', 'max:50'],
+            'nssf_number' => ['nullable', 'string', 'max:50'],
 
             // -------------------
             // NEXT OF KIN

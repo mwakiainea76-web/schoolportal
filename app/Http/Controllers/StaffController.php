@@ -51,9 +51,24 @@ class StaffController extends Controller
             2 => [
                 'department_id' => ['required', 'exists:departments,id'],
                 'role_name' => ['required', 'exists:roles,name'],
+                'designation' => ['required', 'string', 'max:255'],
+                'national_id_number' => [
+                    'required',
+                    'string',
+                    'max:50',
+                    $ignoreUserId
+                        ? Rule::unique('staffs', 'national_id_number')->ignore($request->input('_staff_id'))
+                        : Rule::unique('staffs', 'national_id_number'),
+                ],
                 'salary' => ['nullable', 'numeric'],
                 'employment_type' => ['required', 'string'],
-                'staff_number' => ['required', 'string'],
+                'hired_date' => ['required', 'date'],
+                'staff_status' => ['nullable', 'in:active,suspended,onleave,exited'],
+                'highest_qualification' => ['required', 'string', 'max:255'],
+                'specialization' => ['nullable', 'string', 'max:255'],
+                'kra_pin' => ['nullable', 'string', 'max:50'],
+                'nhif_number' => ['nullable', 'string', 'max:50'],
+                'nssf_number' => ['nullable', 'string', 'max:50'],
             ],
             3 => [
                 'kin_first_name' => ['required', 'string', 'max:255'],
@@ -166,10 +181,18 @@ class StaffController extends Controller
             Staff::create([
                 'user_id' => $user->id,
                 'department_id' => $request->department_id,
+                'designation' => $request->designation,
                 'staff_number' => $staffNumber,
+                'national_id_number' => $request->national_id_number,
                 'salary' => $request->salary,
                 'employment_type' => $request->employment_type,
-                'hired_date' => now(),
+                'hired_date' => $request->hired_date,
+                'staff_status' => $request->staff_status ?: 'active',
+                'highest_qualification' => $request->highest_qualification,
+                'specialization' => $request->specialization,
+                'kra_pin' => $request->kra_pin,
+                'nhif_number' => $request->nhif_number,
+                'nssf_number' => $request->nssf_number,
             ]);
 
             $user->nextOfKin()->create([
@@ -228,10 +251,18 @@ class StaffController extends Controller
 
             $staff->update([
                 'department_id' => $request->department_id,
+                'designation' => $request->designation,
                 'staff_number' => $request->staff_number,
+                'national_id_number' => $request->national_id_number,
                 'salary' => $request->salary,
                 'employment_type' => $request->employment_type,
+                'hired_date' => $request->hired_date,
                 'staff_status' => $request->staff_status,
+                'highest_qualification' => $request->highest_qualification,
+                'specialization' => $request->specialization,
+                'kra_pin' => $request->kra_pin,
+                'nhif_number' => $request->nhif_number,
+                'nssf_number' => $request->nssf_number,
             ]);
 
             $staff->user->nextOfKin()->updateOrCreate(

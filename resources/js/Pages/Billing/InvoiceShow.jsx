@@ -2,10 +2,10 @@ import { Head, Link } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import {
     ArrowLeft,
+    CalendarClock,
     CreditCard,
     FilePlus2,
     Receipt,
-    ShieldAlert,
     Wallet,
 } from "lucide-react";
 
@@ -46,11 +46,15 @@ export default function Show({ invoice, sessionSummary }) {
         invoice.enrollment?.academic_session?.display_name ??
         invoice.academic_session?.display_name ??
         "Session not linked";
-    const itemsTotal = Number(sessionSummary?.items_total || invoice.items_total || 0);
+    const itemsTotal = Number(
+        sessionSummary?.items_total || invoice.items_total || 0,
+    );
     const adjustmentsTotal = Number(
         sessionSummary?.adjustments_total || invoice.adjustments_total || 0,
     );
-    const paidTotal = Number(sessionSummary?.paid_amount || invoice.paid_amount || 0);
+    const paidTotal = Number(
+        sessionSummary?.paid_amount || invoice.paid_amount || 0,
+    );
     const balanceTotal = Number(
         sessionSummary?.balance_due ?? invoice.balance_due ?? 0,
     );
@@ -84,34 +88,55 @@ export default function Show({ invoice, sessionSummary }) {
                             Back to invoices
                         </Link>
                         <h1 className="mt-3 text-3xl font-bold tracking-tight text-zinc-900">
-                            Invoice {invoice.invoice_number}
+                            Billing statement for {invoice.invoice_number}
                         </h1>
-                        <p className="mt-2 text-sm text-zinc-500">
-                            Review the invoice, ledger activity, and manual
-                            billing actions for this student.
+                        <p className="mt-2 max-w-3xl text-sm text-zinc-500">
+                            This admin view shows the same session-based story the
+                            student sees: total charges, applied credits, payments,
+                            and the remaining balance.
                         </p>
                     </div>
                 </div>
 
-                <div className="rounded-[2rem] bg-[#1b263b] px-8 py-8 text-white shadow-xl">
-                    <div className="grid gap-6 lg:grid-cols-[1.1fr,0.9fr]">
+                <section className="overflow-hidden rounded-[2rem] bg-[radial-gradient(circle_at_top_left,_rgba(52,211,153,0.24),_transparent_26%),linear-gradient(135deg,#102542_0%,#1b263b_55%,#243b53_100%)] px-6 py-8 text-white shadow-xl sm:px-8">
+                    <div className="grid gap-8 xl:grid-cols-[1.05fr,0.95fr]">
                         <div>
                             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-300">
                                 Session Billing Overview
                             </p>
-                            <h2 className="mt-3 text-2xl font-bold">
+                            <h2 className="mt-3 text-2xl font-bold sm:text-3xl">
                                 {studentName || "Student not linked"}
                             </h2>
                             <p className="mt-2 text-sm text-slate-300">
-                                {invoice.student?.registration_number ?? "N/A"}{" "}
-                                | {program} | {programVersion}
+                                {invoice.student?.registration_number ?? "N/A"} |{" "}
+                                {program} | {programVersion}
                             </p>
                             <p className="mt-2 text-sm text-slate-300">
                                 {session}
                             </p>
+
+                            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                                <ProfileMetric
+                                    label="Invoice date"
+                                    value={invoice.issue_date ?? "-"}
+                                />
+                                <ProfileMetric
+                                    label="Due date"
+                                    value={invoice.due_date ?? "-"}
+                                />
+                                <ProfileMetric
+                                    label="Session invoices"
+                                    value={`${sessionSummary?.invoice_count || 1}`}
+                                />
+                                <ProfileMetric
+                                    label="Status"
+                                    value={invoice.status}
+                                    chip
+                                />
+                            </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid gap-4 sm:grid-cols-2">
                             <StatCard
                                 icon={Receipt}
                                 label="Base Charges"
@@ -127,15 +152,15 @@ export default function Show({ invoice, sessionSummary }) {
                                 label="Payments and Credits"
                                 value={currency(paidTotal)}
                             />
-                            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                                <p className="text-xs uppercase tracking-wide text-slate-300">
-                                    Invoice Balance
+                            <div className="rounded-[1.5rem] border border-white/10 bg-white/10 p-5">
+                                <p className="text-xs uppercase tracking-[0.16em] text-slate-300">
+                                    Outstanding Balance
                                 </p>
-                                <p className="mt-2 text-lg font-semibold">
+                                <p className="mt-3 text-2xl font-bold text-white">
                                     {signedCurrency(balanceTotal)}
                                 </p>
                                 <span
-                                    className={`mt-3 inline-flex rounded-full px-3 py-1 text-xs font-semibold capitalize ${
+                                    className={`mt-4 inline-flex rounded-full px-3 py-1 text-xs font-semibold capitalize ${
                                         statusClasses[invoice.status] ??
                                         "bg-slate-100 text-slate-600"
                                     }`}
@@ -145,13 +170,24 @@ export default function Show({ invoice, sessionSummary }) {
                             </div>
                         </div>
                     </div>
-                </div>
+                </section>
 
-                <div className="grid gap-6 xl:grid-cols-[1.2fr,0.8fr]">
+                <div className="grid gap-6 xl:grid-cols-[1.15fr,0.85fr]">
                     <section className="rounded-[1.75rem] border border-zinc-100 bg-white p-6 shadow-sm">
-                        <h2 className="text-lg font-semibold text-zinc-900">
-                            Invoice Details
-                        </h2>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h2 className="text-lg font-semibold text-zinc-900">
+                                    Student Context
+                                </h2>
+                                <p className="mt-1 text-sm text-zinc-500">
+                                    Core information tied to this session statement.
+                                </p>
+                            </div>
+                            <div className="rounded-2xl bg-sky-50 p-3 text-sky-600">
+                                <CalendarClock className="h-5 w-5" />
+                            </div>
+                        </div>
+
                         <div className="mt-5 grid gap-4 md:grid-cols-2">
                             <InfoCard
                                 label="Student"
@@ -159,10 +195,7 @@ export default function Show({ invoice, sessionSummary }) {
                             />
                             <InfoCard
                                 label="Registration Number"
-                                value={
-                                    invoice.student?.registration_number ??
-                                    "N/A"
-                                }
+                                value={invoice.student?.registration_number ?? "N/A"}
                             />
                             <InfoCard label="Program" value={program} />
                             <InfoCard
@@ -171,49 +204,46 @@ export default function Show({ invoice, sessionSummary }) {
                             />
                             <InfoCard label="Session" value={session} />
                             <InfoCard
-                                label="Due Date"
-                                value={invoice.due_date ?? "-"}
-                            />
-                            <InfoCard
                                 label="Invoice Total"
                                 value={currency(invoice.amount_due)}
                             />
                             <InfoCard
-                                label="Status"
-                                value={invoice.status}
+                                label="Invoice Class"
+                                value={
+                                    invoice.display_type_label ??
+                                    "STANDARD INVOICE"
+                                }
                             />
                         </div>
+
                         {hasAdditionalInvoices ? (
-                            <div className="mt-6 rounded-2xl bg-zinc-50 px-4 py-4">
+                            <div className="mt-6 rounded-[1.5rem] border border-zinc-100 bg-zinc-50 p-4">
                                 <p className="text-sm font-semibold text-zinc-900">
                                     Included Session Invoices
                                 </p>
                                 <p className="mt-1 text-sm text-zinc-500">
-                                    This admin view combines all invoices issued
-                                    for the same student and academic session.
+                                    This record groups all invoices issued for the same
+                                    student and session.
                                 </p>
-                                <div className="mt-3 space-y-2">
+                                <div className="mt-4 grid gap-3">
                                     {includedInvoices.map((sessionInvoice) => (
                                         <div
                                             key={sessionInvoice.id}
-                                            className="flex items-center justify-between gap-4 text-sm"
+                                            className="flex flex-col gap-2 rounded-2xl bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
                                         >
                                             <div>
-                                                <p className="font-medium text-zinc-800">
+                                                <p className="font-medium text-zinc-900">
                                                     {sessionInvoice.invoice_number}
                                                 </p>
-                                                <p className="text-zinc-500">
-                                                    {sessionInvoice.issue_date ||
-                                                        "-"}
+                                                <p className="text-sm text-zinc-500">
+                                                    {sessionInvoice.issue_date || "-"}
                                                 </p>
                                             </div>
-                                            <div className="text-right">
-                                                <p className="font-medium text-zinc-800">
-                                                    {currency(
-                                                        sessionInvoice.amount_due,
-                                                    )}
+                                            <div className="text-left sm:text-right">
+                                                <p className="font-medium text-zinc-900">
+                                                    {currency(sessionInvoice.amount_due)}
                                                 </p>
-                                                <p className="text-zinc-500">
+                                                <p className="text-sm text-zinc-500">
                                                     Balance{" "}
                                                     {signedCurrency(
                                                         sessionInvoice.balance_due,
@@ -231,6 +261,9 @@ export default function Show({ invoice, sessionSummary }) {
                         <h2 className="text-lg font-semibold text-zinc-900">
                             Manual Actions
                         </h2>
+                        <p className="mt-1 text-sm text-zinc-500">
+                            Post the next billing action from the same student context.
+                        </p>
                         <div className="mt-5 space-y-4">
                             <ActionLink
                                 href={route("billing.manual.invoices.create", {
@@ -238,8 +271,8 @@ export default function Show({ invoice, sessionSummary }) {
                                         invoice.student?.registration_number,
                                 })}
                                 icon={FilePlus2}
-                                title="Issue additional invoice"
-                                helper="Raise a new manual charge for this student."
+                                title="Post student charge"
+                                helper="Charge the student account using Standard Invoice, Penalty, or Invoice Adjustment."
                             />
                             <ActionLink
                                 href={route("billing.manual.payments.create", {
@@ -251,22 +284,13 @@ export default function Show({ invoice, sessionSummary }) {
                                 helper="Post a receipt and reduce the invoice balance."
                             />
                             <ActionLink
-                                href={route("billing.manual.penalties.create", {
-                                    registration_number:
-                                        invoice.student?.registration_number,
-                                })}
-                                icon={ShieldAlert}
-                                title="Post penalty"
-                                helper="Add a late fee or other penalty to this invoice."
-                            />
-                            <ActionLink
                                 href={route("billing.manual.adjustments.create", {
                                     registration_number:
                                         invoice.student?.registration_number,
                                 })}
                                 icon={Wallet}
-                                title="Apply fee adjustment"
-                                helper="Post bursary, HELB, waiver, refund payout, reversal, or other adjustments."
+                                title="Reduce student charges"
+                                helper="Use waivers, bursaries, HELB, refunds, and reversals here. This is not a payment entry."
                             />
                         </div>
                     </section>
@@ -347,22 +371,17 @@ export default function Show({ invoice, sessionSummary }) {
                                 </thead>
                                 <tbody className="divide-y divide-zinc-100 bg-white">
                                     {sessionPayments.length ? (
-                                        sessionPayments.map(
-                                            (allocation) => (
+                                        sessionPayments.map((allocation) => (
                                             <tr key={allocation.id}>
                                                 <td className="px-5 py-4 text-sm text-zinc-700">
-                                                    {allocation.payment_date ??
-                                                        "-"}
+                                                    {allocation.payment_date ?? "-"}
                                                 </td>
                                                 <td className="px-5 py-4 text-sm text-zinc-700 capitalize">
                                                     {allocation.method ?? "-"}
                                                 </td>
                                                 <td className="px-5 py-4 text-sm text-zinc-700">
                                                     <div>
-                                                        <p>
-                                                            {allocation.reference ??
-                                                                "-"}
-                                                        </p>
+                                                        <p>{allocation.reference ?? "-"}</p>
                                                         {allocation.invoice_number ? (
                                                             <p className="mt-1 text-xs text-zinc-500">
                                                                 {allocation.invoice_number}
@@ -371,13 +390,10 @@ export default function Show({ invoice, sessionSummary }) {
                                                     </div>
                                                 </td>
                                                 <td className="px-5 py-4 text-right text-sm font-semibold text-emerald-700">
-                                                    {currency(
-                                                        allocation.amount,
-                                                    )}
+                                                    {currency(allocation.amount)}
                                                 </td>
                                             </tr>
-                                            ),
-                                        )
+                                        ))
                                     ) : (
                                         <EmptyRow
                                             colSpan="4"
@@ -398,9 +414,7 @@ export default function Show({ invoice, sessionSummary }) {
                                 <thead className="bg-zinc-50">
                                     <tr className="text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">
                                         <th className="px-5 py-4">Type</th>
-                                        <th className="px-5 py-4">
-                                            Description
-                                        </th>
+                                        <th className="px-5 py-4">Description</th>
                                         <th className="px-5 py-4">Applied</th>
                                         <th className="px-5 py-4 text-right">
                                             Amount
@@ -425,63 +439,51 @@ export default function Show({ invoice, sessionSummary }) {
                                                 adjustment.type === "refund"
                                                     ? 0
                                                     : reducesInvoice
-                                                      ? -Number(
-                                                            adjustment.amount,
-                                                        )
-                                                      : Number(
-                                                            adjustment.amount,
-                                                        );
+                                                      ? -Number(adjustment.amount)
+                                                      : Number(adjustment.amount);
 
                                             return (
-                                            <tr key={adjustment.id}>
-                                                <td className="px-5 py-4 text-sm font-medium capitalize text-zinc-900">
-                                                    {adjustment.type}
-                                                </td>
-                                                <td className="px-5 py-4 text-sm text-zinc-700">
-                                                    <div>
-                                                        <p>
-                                                            {adjustment.description ??
-                                                                "-"}
-                                                        </p>
-                                                        {adjustment.invoice_number ? (
-                                                            <p className="mt-1 text-xs text-zinc-500">
-                                                                {adjustment.invoice_number}
+                                                <tr key={adjustment.id}>
+                                                    <td className="px-5 py-4 text-sm font-medium capitalize text-zinc-900">
+                                                        {adjustment.display_type ??
+                                                            adjustment.type}
+                                                    </td>
+                                                    <td className="px-5 py-4 text-sm text-zinc-700">
+                                                        <div>
+                                                            <p>
+                                                                {adjustment.description ?? "-"}
                                                             </p>
-                                                        ) : null}
-                                                    </div>
-                                                </td>
-                                                <td className="px-5 py-4 text-sm text-zinc-700">
-                                                    {adjustment.applied_at ??
-                                                        "-"}
-                                                </td>
-                                                <td
-                                                    className={`px-5 py-4 text-right text-sm font-semibold ${
-                                                        adjustment.type ===
-                                                        "refund"
-                                                            ? "text-slate-700"
-                                                            : increasesInvoice
-                                                              ? "text-amber-700"
-                                                              : "text-emerald-700"
-                                                    }`}
-                                                >
-                                                    {adjustment.type ===
-                                                    "refund"
-                                                        ? currency(
-                                                              adjustment.amount,
-                                                          )
-                                                        : signedCurrency(
-                                                              effectAmount,
-                                                          )}
-                                                    <div className="mt-1 text-xs font-normal text-zinc-500">
-                                                        {adjustment.type ===
-                                                        "refund"
-                                                            ? "Cash payout, no invoice total effect"
-                                                            : reducesInvoice
-                                                              ? "Reduces invoice"
-                                                              : "Increases invoice"}
-                                                    </div>
-                                                </td>
-                                            </tr>
+                                                            {adjustment.invoice_number ? (
+                                                                <p className="mt-1 text-xs text-zinc-500">
+                                                                    {adjustment.invoice_number}
+                                                                </p>
+                                                            ) : null}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-5 py-4 text-sm text-zinc-700">
+                                                        {adjustment.applied_at ?? "-"}
+                                                    </td>
+                                                    <td
+                                                        className={`px-5 py-4 text-right text-sm font-semibold ${
+                                                            adjustment.type === "refund"
+                                                                ? "text-slate-700"
+                                                                : increasesInvoice
+                                                                  ? "text-amber-700"
+                                                                  : "text-emerald-700"
+                                                        }`}
+                                                    >
+                                                        {adjustment.type === "refund"
+                                                            ? currency(adjustment.amount)
+                                                            : signedCurrency(effectAmount)}
+                                                        <div className="mt-1 text-xs font-normal text-zinc-500">
+                                                            {adjustment.type === "refund"
+                                                                ? "Cash payout only"
+                                                                : reducesInvoice
+                                                                  ? "Reduces invoice"
+                                                                  : "Increases invoice"}
+                                                        </div>
+                                                    </td>
+                                                </tr>
                                             );
                                         })
                                     ) : (
@@ -502,14 +504,37 @@ export default function Show({ invoice, sessionSummary }) {
 
 function StatCard({ icon: Icon, label, value }) {
     return (
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+        <div className="rounded-[1.5rem] border border-white/10 bg-white/10 p-5">
             <div className="inline-flex rounded-xl bg-white/10 p-2 text-white">
                 <Icon className="h-4 w-4" />
             </div>
-            <p className="mt-3 text-xs uppercase tracking-wide text-slate-300">
+            <p className="mt-3 text-xs uppercase tracking-[0.16em] text-slate-300">
                 {label}
             </p>
-            <p className="mt-2 text-lg font-semibold">{value}</p>
+            <p className="mt-2 text-xl font-semibold text-white">{value}</p>
+        </div>
+    );
+}
+
+function ProfileMetric({ label, value, chip = false }) {
+    return (
+        <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3">
+            <p className="text-xs uppercase tracking-[0.14em] text-slate-300">
+                {label}
+            </p>
+            {chip ? (
+                <span
+                    className={`mt-2 inline-flex rounded-full px-3 py-1 text-xs font-semibold capitalize ${
+                        statusClasses[value] ?? "bg-slate-100 text-slate-600"
+                    }`}
+                >
+                    {value}
+                </span>
+            ) : (
+                <p className="mt-2 text-sm font-semibold text-white">
+                    {value}
+                </p>
+            )}
         </div>
     );
 }

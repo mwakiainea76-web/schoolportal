@@ -14,11 +14,18 @@ class Staff extends Model
     protected $table = 'staffs';
 
     protected $fillable = [
+        'designation',
         'salary',
         'staff_status',
         'hired_date',
         'employment_type',
         'staff_number',
+        'national_id_number',
+        'highest_qualification',
+        'specialization',
+        'kra_pin',
+        'nhif_number',
+        'nssf_number',
 
         'user_id',
         'department_id',
@@ -37,5 +44,15 @@ class Staff extends Model
     public function next_of_kin()
     {
         return $this->hasMany(NextOfKin::class, 'user_id', 'user_id');
+    }
+
+    public function timetableSessions()
+    {
+        return $this->hasMany(AcademicTimetable::class, 'trainer_staff_id');
+    }
+
+    public function createdTimetableSessions()
+    {
+        return $this->hasMany(AcademicTimetable::class, 'created_by');
     }
 }

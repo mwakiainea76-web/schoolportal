@@ -26,6 +26,10 @@ export default function ApplyAdjustmentForm({
                 Uses the latest invoice where applicable.
             </p>
 
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+                Use this section when you want to reduce or correct student charges through waivers, bursaries, HELB support, refunds, or reversals. Do not use it to record payments.
+            </div>
+
             {isReversal ? (
                 <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
                     Reversal credits the wrong charge. Add corrected values below to issue a replacement invoice.
@@ -134,7 +138,7 @@ export default function ApplyAdjustmentForm({
                     disabled={form.processing}
                     className="bg-emerald-600 px-6 py-3 text-sm normal-case tracking-normal hover:bg-emerald-700"
                 >
-                    {submitLabel ?? (isReversal ? "Apply Reversal" : "Apply Fee Adjustment")}
+                    {submitLabel ?? (isReversal ? "Apply Reversal" : "Apply Charge Reduction")}
                 </PrimaryButton>
             </div>
         </form>

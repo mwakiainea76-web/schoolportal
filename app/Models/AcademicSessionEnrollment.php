@@ -158,5 +158,10 @@ class AcademicSessionEnrollment extends Model
     {
         return $this->hasMany(StudentInvoice::class, 'enrollment_id');
     }
+
+    public function hostelAllocation()
+    {
+        return $this->hasOne(HostelAllocation::class, 'academic_session_enrollment_id');
+    }
 }
 

@@ -22,5 +22,20 @@ class Department extends Model
     {
         return $this->hasMany(Program::class, 'department_id');
     }
+
+    public function staffs()
+    {
+        return $this->hasMany(Staff::class, 'department_id');
+    }
+
+    public function academicTimetables()
+    {
+        return $this->hasMany(AcademicTimetable::class, 'department_id');
+    }
+
+    public function lectureRooms()
+    {
+        return $this->hasMany(LectureRoom::class, 'department_id');
+    }
 }
 

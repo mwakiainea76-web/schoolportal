@@ -13,7 +13,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('student_invoices', function (Blueprint $table) {
-            $table->enum('invoice_type', ['fees', 'penalty', 'default_fees'])
+            $table->enum('invoice_type', ['fees', 'penalty', 'hostel', 'default_fees'])
                 ->default('fees')
                 ->after('fee_assignment_id');
 

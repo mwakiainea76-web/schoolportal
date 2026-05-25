@@ -75,6 +75,7 @@ class LedgerTransactionController extends Controller
                 'helb',
                 'discount',
                 'penalty',
+                'hostel',
                 'adjustment',
                 'refund',
                 'reversal',
