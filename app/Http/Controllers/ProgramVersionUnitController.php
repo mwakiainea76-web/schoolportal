@@ -4,17 +4,18 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreProgramVersionUnitRequest;
 use App\Http\Requests\UpdateProgramVersionUnitRequest;
-use App\Models\ProgramEnrollment;
 use App\Models\ProgramVersionMapping;
 use App\Models\ProgramVersionUnit;
 use App\Models\Unit;
 use App\Services\ProgramVersionUnitService;
+use App\Services\StudentAcademicContextService;
 use Illuminate\Http\Request;
 
 class ProgramVersionUnitController extends Controller
 {
     public function __construct(
-        protected ProgramVersionUnitService $service
+        protected ProgramVersionUnitService $service,
+        protected StudentAcademicContextService $studentAcademicContextService
     ) {}
 
     public function index()
@@ -38,16 +39,7 @@ class ProgramVersionUnitController extends Controller
     public function studentIndex(Request $request)
     {
         $student = $request->user()?->student;
-        $programEnrollment = $student
-            ? ProgramEnrollment::query()
-                ->with([
-                    'programVersionMapping.program:id,name',
-                    'programVersionMapping.programVersion:id,name',
-                ])
-                ->where('student_id', $student->id)
-                ->latest()
-                ->first()
-            : null;
+        $programEnrollment = $this->studentAcademicContextService->currentProgramEnrollmentForStudent($student);
 
         $units = $programEnrollment
             ? ProgramVersionUnit::query()

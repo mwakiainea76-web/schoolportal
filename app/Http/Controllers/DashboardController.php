@@ -2,16 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\AcademicSessionEnrollment;
 use App\Models\AcademicSession;
 use App\Models\AcademicYear;
 use App\Models\Department;
 use App\Models\Program;
-use App\Models\ProgramEnrollment;
 use App\Models\ProgramVersion;
 use App\Models\ProgramVersionUnit;
 use App\Models\StudentInvoice;
 use App\Services\FeeAssignmentService;
+use App\Services\StudentAcademicContextService;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
@@ -19,7 +18,10 @@ use Inertia\Response;
 
 class DashboardController extends Controller
 {
-    public function __construct(protected FeeAssignmentService $feeAssignmentService)
+    public function __construct(
+        protected FeeAssignmentService $feeAssignmentService,
+        protected StudentAcademicContextService $studentAcademicContextService
+    )
     {
     }
 
@@ -39,16 +41,8 @@ class DashboardController extends Controller
         $user = $request->user();
         $student = $user?->student;
 
-        $programEnrollment = $student
-            ? ProgramEnrollment::query()
-                ->with([
-                    'programVersionMapping.program',
-                    'programVersionMapping.programVersion',
-                ])
-                ->where('student_id', $student->id)
-                ->latest()
-                ->first()
-            : null;
+        $latestSessionEnrollment = $this->studentAcademicContextService->latestSessionEnrollmentForStudent($student);
+        $programEnrollment = $this->studentAcademicContextService->currentProgramEnrollmentForStudent($student);
 
         $programVersionMapping = $programEnrollment?->programVersionMapping;
         $activeSession = AcademicSession::with('academicYear')
@@ -63,13 +57,6 @@ class DashboardController extends Controller
                 $activeYearOfStudy,
                 $activeSessionNumber
             )
-            : null;
-        $latestSessionEnrollment = $programEnrollment
-            ? AcademicSessionEnrollment::query()
-                ->with('academicSession.academicYear')
-                ->where('program_enrollment_id', $programEnrollment->id)
-                ->latest()
-                ->first()
             : null;
         $currentModule = $latestSessionEnrollment?->module
             ?? $activeSessionNumber

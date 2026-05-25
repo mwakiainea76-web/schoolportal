@@ -3,11 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\AcademicSessionEnrollment;
-use App\Models\ProgramEnrollment;
 use App\Models\Student;
 use App\Models\StudentInvoice;
 use App\Services\BillingService;
 use App\Services\BillingStatementService;
+use App\Services\StudentAcademicContextService;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -18,7 +18,8 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 class InvoiceController extends Controller
 {
     public function __construct(
-        protected BillingStatementService $billingStatementService
+        protected BillingStatementService $billingStatementService,
+        protected StudentAcademicContextService $studentAcademicContextService
     ) {}
 
     /**
@@ -239,11 +240,7 @@ class InvoiceController extends Controller
             ])
             ->get();
 
-        $programEnrollment = ProgramEnrollment::query()
-            ->with(['programVersionMapping.program', 'programVersionMapping.programVersion'])
-            ->where('student_id', $student->id)
-            ->latest()
-            ->first();
+        $programEnrollment = $this->studentAcademicContextService->programEnrollmentForInvoice($invoice);
 
         return Inertia::render('Billing/StudentStatements/Show', [
             'statement' => $this->billingStatementService->buildStudentStatement(
