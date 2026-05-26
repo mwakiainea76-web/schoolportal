@@ -135,6 +135,16 @@ export default function EditStudent({ student, courseCurricula = [] }) {
             <Head title="Edit Student" />
 
             <div className="mx-auto w-full">
+                <div className="mb-4 flex justify-end">
+                    <a
+                        href={route("students.admission-letter", student.id)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center rounded-lg bg-sky-600 px-4 py-2 text-sm text-white transition hover:bg-sky-700"
+                    >
+                        Print Admission Letter
+                    </a>
+                </div>
                 <div className="rounded-xl pt-2">
                     {/* Step indicator */}
                     <div className="flex justify-center gap-2 mb-4">

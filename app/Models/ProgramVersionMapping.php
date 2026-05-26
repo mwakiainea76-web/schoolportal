@@ -55,7 +55,11 @@ class ProgramVersionMapping extends Model
 
     public function getNameAttribute(): string
     {
-        return $this->programVersion?->name ?? '';
+        if (! $this->relationLoaded('programVersion')) {
+            return '';
+        }
+
+        return $this->getRelation('programVersion')?->name ?? '';
     }
 
     // Access department through program
@@ -83,4 +87,3 @@ class ProgramVersionMapping extends Model
             ->withTimestamps();
     }
 }
-

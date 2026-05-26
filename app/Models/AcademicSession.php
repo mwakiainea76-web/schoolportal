@@ -37,8 +37,12 @@ class AcademicSession extends Model
 
     public function getDisplayNameAttribute()
     {
-        return $this->academicYear
-            ? ($this->academicYear->label ?? $this->academicYear->academic_year).' - Session '.($this->session_number ?? $this->session_No)
+        $academicYear = $this->relationLoaded('academicYear')
+            ? $this->getRelation('academicYear')
+            : null;
+
+        return $academicYear
+            ? ($academicYear->label ?? $academicYear->academic_year).' - Session '.($this->session_number ?? $this->session_No)
             : 'Session '.($this->session_number ?? $this->session_No);
     }
 

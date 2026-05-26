@@ -60,8 +60,11 @@ class Program extends Model
 
     public function getDisplayNameAttribute(): string
     {
-        return $this->name.' - '.
-            optional($this->certificationLevel)->name;
+        $certificationLevel = $this->relationLoaded('certificationLevel')
+            ? $this->getRelation('certificationLevel')
+            : null;
+
+        return trim($this->name.' - '.($certificationLevel?->name ?? ''), ' -');
     }
 }
 

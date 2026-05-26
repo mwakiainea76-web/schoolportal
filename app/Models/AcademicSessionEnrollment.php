@@ -108,7 +108,17 @@ class AcademicSessionEnrollment extends Model
 
     public function getProgramVersionAttribute()
     {
-        return $this->programVersionMapping?->programVersion;
+        if (! $this->relationLoaded('programVersionMapping')) {
+            return null;
+        }
+
+        $mapping = $this->getRelation('programVersionMapping');
+
+        if (! $mapping || ! $mapping->relationLoaded('programVersion')) {
+            return null;
+        }
+
+        return $mapping->getRelation('programVersion');
     }
 
     public function getCurriculumAttribute()
@@ -118,21 +128,45 @@ class AcademicSessionEnrollment extends Model
 
     public function getProgramAttribute()
     {
-        return $this->programVersionMapping?->program;
+        if (! $this->relationLoaded('programVersionMapping')) {
+            return null;
+        }
+
+        $mapping = $this->getRelation('programVersionMapping');
+
+        if (! $mapping || ! $mapping->relationLoaded('program')) {
+            return null;
+        }
+
+        return $mapping->getRelation('program');
     }
 
     public function getStudentIdAttribute()
     {
-        return $this->programEnrollment?->student_id;
+        if (! $this->relationLoaded('programEnrollment')) {
+            return null;
+        }
+
+        return $this->getRelation('programEnrollment')?->student_id;
     }
 
     public function getDisplayNameAttribute(): string
     {
+        $student = $this->relationLoaded('student')
+            ? $this->getRelation('student')
+            : null;
+        $studentUser = $student && $student->relationLoaded('user')
+            ? $student->getRelation('user')
+            : null;
+        $academicSession = $this->relationLoaded('academicSession')
+            ? $this->getRelation('academicSession')
+            : null;
+
         $studentName = trim(
-            ($this->student?->user?->first_name ?? '').' '.($this->student?->user?->last_name ?? '')
+            ($studentUser?->first_name ?? '').' '.($studentUser?->last_name ?? '')
         );
-        $registration = $this->student?->registration_number ?? 'N/A';
-        $session = $this->academicSession?->session_No ?? $this->academicSession?->name ?? 'No Session';
+        $registration = $student?->registration_number ?? 'N/A';
+        $session = $academicSession?->session_No ?? $academicSession?->name ?? 'No Session';
         $curriculum = $this->curriculum?->name ?? 'No ProgramVersion';
         $program = $this->program?->name ?? 'No Program';
 

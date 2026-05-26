@@ -107,6 +107,17 @@ export default function StudentIndex({ students }) {
 
                                     <Tdata>
                                         <div className="flex items-center justify-center gap-4">
+                                            <a
+                                                href={route(
+                                                    "students.admission-letter",
+                                                    student.id,
+                                                )}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="text-sky-600 hover:underline text-sm"
+                                            >
+                                                Letter
+                                            </a>
                                             <Link
                                                 href={route(
                                                     "students.edit",

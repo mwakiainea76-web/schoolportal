@@ -9,6 +9,7 @@ use App\Models\ProgramVersionMapping;
 use App\Models\ProgramEnrollment;
 use App\Models\Student;
 use App\Models\User;
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -252,6 +253,34 @@ class StudentController extends Controller
             ]);
 
         return inertia('students/Edit', compact('student', 'courseCurricula'));
+    }
+
+    public function admissionLetter(Student $student): View
+    {
+        $student->loadMissing([
+            'user',
+            'programEnrollment.programVersionMapping.program.department',
+            'programEnrollment.programVersionMapping.program.certificationLevel',
+            'programEnrollment.programVersionMapping.programVersion',
+        ]);
+
+        $mapping = $student->programEnrollment?->programVersionMapping;
+        $program = $mapping?->program;
+        $programVersion = $mapping?->programVersion;
+
+        return view('students.admission-letter', [
+            'student' => $student,
+            'user' => $student->user,
+            'program' => $program,
+            'programVersion' => $programVersion,
+            'department' => $program?->department,
+            'certificationLevel' => $program?->certificationLevel,
+            'credentials' => [
+                'login_url' => route('login'),
+                'email' => $student->user?->email,
+                'default_password' => $student->user?->phone_number,
+            ],
+        ]);
     }
 
     // ----------------------------------------------------------------

@@ -35,12 +35,20 @@ class ProgramEnrollment extends Model
 
     public function curriculum()
     {
-        return $this->programVersionMapping?->programVersion();
+        if (! $this->relationLoaded('programVersionMapping')) {
+            return null;
+        }
+
+        return $this->getRelation('programVersionMapping')?->programVersion();
     }
 
     public function program()
     {
-        return $this->programVersionMapping?->program();
+        if (! $this->relationLoaded('programVersionMapping')) {
+            return null;
+        }
+
+        return $this->getRelation('programVersionMapping')?->program();
     }
 }
 
