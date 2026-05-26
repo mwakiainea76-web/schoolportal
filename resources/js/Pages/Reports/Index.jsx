@@ -1,12 +1,41 @@
-import { Head } from "@inertiajs/react";
+import { Head, Link } from "@inertiajs/react";
 import { useEffect, useState } from "react";
 
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import InputLabel from "@/Components/InputLabel";
-import SearchSelect from "@/Components/SearchSelect";
+import LoadingSpinner from "@/Components/LoadingSpinner";
 import TextInput from "@/Components/TextInput";
+import SearchSelect from "@/Components/SearchSelect";
 
-export default function ReportsIndex({ academicSessions = [] }) {
+const ANALYTICS_SECTIONS = [
+    { key: "all", label: "Overview", routeName: "reports.dashboard" },
+    { key: "executive", label: "Executive", routeName: "reports.executive" },
+    { key: "finance", label: "Finance", routeName: "reports.finance" },
+    { key: "academic", label: "Academic", routeName: "reports.academic" },
+    {
+        key: "admissions",
+        label: "Admissions",
+        routeName: "reports.admissions",
+    },
+    { key: "hostel", label: "Hostel", routeName: "reports.hostel" },
+    {
+        key: "data-quality",
+        label: "Data Quality",
+        routeName: "reports.data-quality",
+    },
+    {
+        key: "snapshots",
+        label: "Snapshot Trends",
+        routeName: "reports.snapshots",
+    },
+];
+
+export default function ReportsIndex({
+    academicSessions = [],
+    activeSection = "all",
+    pageTitle = "Reports Dashboard",
+    pageDescription = "A consolidated analytics workspace.",
+}) {
     const [academicSummary, setAcademicSummary] = useState(null);
     const [admissionsSummary, setAdmissionsSummary] = useState(null);
     const [dataQualitySummary, setDataQualitySummary] = useState(null);
@@ -24,14 +53,29 @@ export default function ReportsIndex({ academicSessions = [] }) {
         year_of_study: "",
         session_number: "",
     });
+    const showExecutive = activeSection === "all" || activeSection === "executive";
+    const showFinance = activeSection === "all" || activeSection === "finance";
+    const showAcademic = activeSection === "all" || activeSection === "academic";
+    const showAdmissions =
+        activeSection === "all" || activeSection === "admissions";
+    const showHostel = activeSection === "all" || activeSection === "hostel";
+    const showDataQuality =
+        activeSection === "all" || activeSection === "data-quality";
+    const showSnapshots =
+        activeSection === "all" || activeSection === "snapshots";
 
     useEffect(() => {
         loadReports();
     }, []);
 
     useEffect(() => {
+        if (!showFinance) {
+            return;
+        }
+
         loadFeePlanUsage();
     }, [
+        showFinance,
         usageFilters.academic_session_id,
         usageFilters.year_of_study,
         usageFilters.session_number,
@@ -40,65 +84,79 @@ export default function ReportsIndex({ academicSessions = [] }) {
     const loadReports = async () => {
         setLoading(true);
         try {
-            const executiveResponse = await fetch(
-                route("reports.api.executive-summary"),
-            );
-            const executiveData = await executiveResponse.json();
-            setExecutiveSummary(executiveData);
+            if (showExecutive) {
+                const executiveResponse = await fetch(
+                    route("reports.api.executive-summary"),
+                );
+                const executiveData = await executiveResponse.json();
+                setExecutiveSummary(executiveData);
+            }
 
-            const financeResponse = await fetch(
-                route("reports.api.finance-summary"),
-            );
-            const financeData = await financeResponse.json();
-            setFinanceSummary(financeData);
+            if (showFinance) {
+                const financeResponse = await fetch(
+                    route("reports.api.finance-summary"),
+                );
+                const financeData = await financeResponse.json();
+                setFinanceSummary(financeData);
 
-            const academicResponse = await fetch(
-                route("reports.api.academic-summary"),
-            );
-            const academicData = await academicResponse.json();
-            setAcademicSummary(academicData);
+                const outstandingResponse = await fetch(
+                    route("reports.api.outstanding"),
+                );
+                const outstandingData = await outstandingResponse.json();
+                setOutstandingBalance(outstandingData);
 
-            const admissionsResponse = await fetch(
-                route("reports.api.admissions-summary"),
-            );
-            const admissionsData = await admissionsResponse.json();
-            setAdmissionsSummary(admissionsData);
+                const overdueResponse = await fetch(route("reports.api.overdue"));
+                const overdueData = await overdueResponse.json();
+                setOverdueByDepartment(overdueData);
 
-            const dataQualityResponse = await fetch(
-                route("reports.api.data-quality-summary"),
-            );
-            const dataQualityData = await dataQualityResponse.json();
-            setDataQualitySummary(dataQualityData);
+                const collectionResponse = await fetch(
+                    route("reports.api.collection"),
+                );
+                const collectionData = await collectionResponse.json();
+                setCollectionPerformance(collectionData);
 
-            const hostelResponse = await fetch(
-                route("reports.api.hostel-summary"),
-            );
-            const hostelData = await hostelResponse.json();
-            setHostelSummary(hostelData);
+                await loadFeePlanUsage();
+            }
 
-            const snapshotResponse = await fetch(
-                route("reports.api.snapshot-trends", { days: 14 }),
-            );
-            const snapshotData = await snapshotResponse.json();
-            setSnapshotTrends(snapshotData);
+            if (showAcademic) {
+                const academicResponse = await fetch(
+                    route("reports.api.academic-summary"),
+                );
+                const academicData = await academicResponse.json();
+                setAcademicSummary(academicData);
+            }
 
-            const outstandingResponse = await fetch(
-                route("reports.api.outstanding"),
-            );
-            const outstandingData = await outstandingResponse.json();
-            setOutstandingBalance(outstandingData);
+            if (showAdmissions) {
+                const admissionsResponse = await fetch(
+                    route("reports.api.admissions-summary"),
+                );
+                const admissionsData = await admissionsResponse.json();
+                setAdmissionsSummary(admissionsData);
+            }
 
-            const overdueResponse = await fetch(route("reports.api.overdue"));
-            const overdueData = await overdueResponse.json();
-            setOverdueByDepartment(overdueData);
+            if (showHostel) {
+                const hostelResponse = await fetch(
+                    route("reports.api.hostel-summary"),
+                );
+                const hostelData = await hostelResponse.json();
+                setHostelSummary(hostelData);
+            }
 
-            const collectionResponse = await fetch(
-                route("reports.api.collection"),
-            );
-            const collectionData = await collectionResponse.json();
-            setCollectionPerformance(collectionData);
+            if (showDataQuality) {
+                const dataQualityResponse = await fetch(
+                    route("reports.api.data-quality-summary"),
+                );
+                const dataQualityData = await dataQualityResponse.json();
+                setDataQualitySummary(dataQualityData);
+            }
 
-            await loadFeePlanUsage();
+            if (showSnapshots) {
+                const snapshotResponse = await fetch(
+                    route("reports.api.snapshot-trends", { days: 14 }),
+                );
+                const snapshotData = await snapshotResponse.json();
+                setSnapshotTrends(snapshotData);
+            }
         } catch (error) {
             console.error("Error loading reports:", error);
         } finally {
@@ -107,6 +165,10 @@ export default function ReportsIndex({ academicSessions = [] }) {
     };
 
     const loadFeePlanUsage = async () => {
+        if (!showFinance) {
+            return;
+        }
+
         try {
             const usageResponse = await fetch(
                 route("reports.api.usage", {
@@ -133,9 +195,12 @@ export default function ReportsIndex({ academicSessions = [] }) {
     if (loading) {
         return (
             <AuthenticatedLayout>
-                <Head title="Reports Dashboard" />
+                <Head title={pageTitle} />
                 <div className="flex h-64 items-center justify-center">
-                    <div className="text-lg">Loading reports...</div>
+                    <LoadingSpinner
+                        size="lg"
+                        centered
+                    />
                 </div>
             </AuthenticatedLayout>
         );
@@ -143,22 +208,52 @@ export default function ReportsIndex({ academicSessions = [] }) {
 
     return (
         <AuthenticatedLayout>
-            <Head title="Reports Dashboard" />
+            <Head title={pageTitle} />
 
             <div className="mx-auto w-full space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                <div className="flex items-center justify-between">
-                    <h1 className="text-lg font-semibold text-zinc-700">
-                        Reports Dashboard
-                    </h1>
-                    <button
-                        onClick={loadReports}
-                        className="rounded-lg bg-slate-600 px-4 py-2 text-white transition hover:bg-slate-800"
-                    >
-                        Refresh Data
-                    </button>
+                <div className="rounded-2xl border border-zinc-100 bg-white p-6 shadow-sm">
+                    <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                        <div className="max-w-3xl">
+                            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-emerald-600">
+                                Analytics
+                            </p>
+                            <h1 className="mt-2 text-2xl font-semibold text-zinc-800">
+                                {pageTitle}
+                            </h1>
+                            <p className="mt-2 text-sm text-zinc-500">
+                                {pageDescription}
+                            </p>
+                        </div>
+                        <button
+                            onClick={loadReports}
+                            className="rounded-lg bg-slate-600 px-4 py-2 text-white transition hover:bg-slate-800"
+                        >
+                            Refresh Data
+                        </button>
+                    </div>
+
+                    <div className="mt-5 flex flex-wrap gap-3">
+                        {ANALYTICS_SECTIONS.map((section) => {
+                            const isActive = section.key === activeSection;
+
+                            return (
+                                <Link
+                                    key={section.key}
+                                    href={route(section.routeName)}
+                                    className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+                                        isActive
+                                            ? "bg-emerald-600 text-white shadow-sm"
+                                            : "border border-zinc-200 bg-zinc-50 text-zinc-600 hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
+                                    }`}
+                                >
+                                    {section.label}
+                                </Link>
+                            );
+                        })}
+                    </div>
                 </div>
 
-                {executiveSummary && (
+                {showExecutive && executiveSummary && (
                     <>
                         <div className="rounded-lg border border-zinc-100 bg-white p-6 shadow-sm">
                             <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
@@ -309,7 +404,7 @@ export default function ReportsIndex({ academicSessions = [] }) {
                     </>
                 )}
 
-                {financeSummary && (
+                {showFinance && financeSummary && (
                     <>
                         <div className="rounded-lg border border-zinc-100 bg-white p-6 shadow-sm">
                             <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
@@ -679,7 +774,7 @@ export default function ReportsIndex({ academicSessions = [] }) {
                     </>
                 )}
 
-                {academicSummary && (
+                {showAcademic && academicSummary && (
                     <>
                         <div className="rounded-lg border border-zinc-100 bg-white p-6 shadow-sm">
                             <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
@@ -1055,7 +1150,7 @@ export default function ReportsIndex({ academicSessions = [] }) {
                     </>
                 )}
 
-                {admissionsSummary && (
+                {showAdmissions && admissionsSummary && (
                     <>
                         <div className="rounded-lg border border-zinc-100 bg-white p-6 shadow-sm">
                             <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
@@ -1480,7 +1575,7 @@ export default function ReportsIndex({ academicSessions = [] }) {
                     </>
                 )}
 
-                {hostelSummary && (
+                {showHostel && hostelSummary && (
                     <>
                         <div className="rounded-lg border border-zinc-100 bg-white p-6 shadow-sm">
                             <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
@@ -1867,7 +1962,7 @@ export default function ReportsIndex({ academicSessions = [] }) {
                     </>
                 )}
 
-                {dataQualitySummary && (
+                {showDataQuality && dataQualitySummary && (
                     <>
                         <div className="rounded-lg border border-zinc-100 bg-white p-6 shadow-sm">
                             <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
@@ -2220,7 +2315,7 @@ export default function ReportsIndex({ academicSessions = [] }) {
                     </>
                 )}
 
-                {snapshotTrends && (
+                {showSnapshots && snapshotTrends && (
                     <div className="rounded-lg border border-zinc-100 bg-white p-6 shadow-sm">
                         <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
                             <div>
@@ -2290,6 +2385,8 @@ export default function ReportsIndex({ academicSessions = [] }) {
                     </div>
                 )}
 
+                {showFinance && (
+                    <>
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
                     <div className="rounded-lg border border-zinc-100 bg-white p-6 shadow-sm">
                         <h3 className="text-sm font-medium text-zinc-500">
@@ -2439,7 +2536,7 @@ export default function ReportsIndex({ academicSessions = [] }) {
                             <div className="min-w-56">
                                 <InputLabel value="Academic Session" />
                                 <SearchSelect
-                                    routeName="academic-sessions.search"
+                                    routeName="academic.sessions.search"
                                     defaultOptions={academicSessions}
                                     placeholder="Filter session..."
                                     onChange={(item) =>
@@ -2540,6 +2637,8 @@ export default function ReportsIndex({ academicSessions = [] }) {
                         </table>
                     </div>
                 </div>
+                    </>
+                )}
             </div>
         </AuthenticatedLayout>
     );

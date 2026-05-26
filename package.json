@@ -24,6 +24,7 @@
     },
     "dependencies": {
         "lucide-react": "^1.8.0",
+        "react-spinners": "^0.17.0",
         "react-toastify": "^11.0.5",
         "ziggy-js": "^2.6.2"
     }

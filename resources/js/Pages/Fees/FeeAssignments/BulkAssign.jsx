@@ -4,6 +4,7 @@ import { Head, Link, useForm } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
+import LoadingSpinner from "@/Components/LoadingSpinner";
 import SearchSelect from "@/Components/SearchSelect";
 import TextInput from "@/Components/TextInput";
 
@@ -262,9 +263,10 @@ export default function BulkAssign({ feePlans, academicYear, departments }) {
                                     message={errors.certification_level_id}
                                 />
                                 {loadingLevels && (
-                                    <p className="mt-1 text-xs text-slate-500">
-                                        Loading certification levels...
-                                    </p>
+                                    <LoadingSpinner
+                                        size="sm"
+                                        className="mt-2"
+                                    />
                                 )}
                                 {!loadingLevels &&
                                 data.department_id &&
@@ -333,8 +335,10 @@ export default function BulkAssign({ feePlans, academicYear, departments }) {
                             </div>
 
                             {loadingRows ? (
-                                <div className="px-4 py-6 text-sm text-slate-500">
-                                    Loading program versions...
+                                <div className="px-4 py-6">
+                                    <LoadingSpinner
+                                        size="md"
+                                    />
                                 </div>
                             ) : rows.length === 0 ? (
                                 <div className="px-4 py-6 text-sm text-slate-500">
@@ -478,9 +482,14 @@ export default function BulkAssign({ feePlans, academicYear, departments }) {
                                 type="submit"
                                 className="rounded bg-emerald-600 px-4 py-2 text-white hover:bg-slate-800 disabled:opacity-50"
                             >
-                                {processing
-                                    ? "Saving..."
-                                    : "Save Program Version Assignments"}
+                                {processing ? (
+                                    <LoadingSpinner
+                                        size="sm"
+                                        className="mx-auto"
+                                    />
+                                ) : (
+                                    "Save Program Version Assignments"
+                                )}
                             </button>
                         </div>
                     </form>

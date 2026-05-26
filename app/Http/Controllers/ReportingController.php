@@ -26,6 +26,78 @@ class ReportingController extends Controller
 
     public function index()
     {
+        return $this->renderAnalyticsPage(
+            'all',
+            'Reports Dashboard',
+            'A consolidated analytics workspace across finance, academics, admissions, hostels, and data quality.',
+        );
+    }
+
+    public function executive()
+    {
+        return $this->renderAnalyticsPage(
+            'executive',
+            'Executive Analytics',
+            'Cross-functional institutional performance metrics for leadership review.',
+        );
+    }
+
+    public function finance()
+    {
+        return $this->renderAnalyticsPage(
+            'finance',
+            'Finance Analytics',
+            'Billing health, collections, debt exposure, and revenue-focused operational queues.',
+        );
+    }
+
+    public function academic()
+    {
+        return $this->renderAnalyticsPage(
+            'academic',
+            'Academic Analytics',
+            'Registration, timetable delivery, clashes, and academic operations monitoring.',
+        );
+    }
+
+    public function admissions()
+    {
+        return $this->renderAnalyticsPage(
+            'admissions',
+            'Admissions Analytics',
+            'Intake trends, demographic breakdowns, and onboarding completion visibility.',
+        );
+    }
+
+    public function hostel()
+    {
+        return $this->renderAnalyticsPage(
+            'hostel',
+            'Hostel Analytics',
+            'Occupancy, allocation linkage, and accommodation exception monitoring.',
+        );
+    }
+
+    public function dataQuality()
+    {
+        return $this->renderAnalyticsPage(
+            'data-quality',
+            'Data Quality Analytics',
+            'Integrity signals, anomalous records, and runtime health affecting reporting trust.',
+        );
+    }
+
+    public function snapshots()
+    {
+        return $this->renderAnalyticsPage(
+            'snapshots',
+            'Snapshot Trends',
+            'Historical analytics trends sourced from daily snapshot tables.',
+        );
+    }
+
+    protected function renderAnalyticsPage(string $section, string $title, string $description)
+    {
         $sessions = AcademicSession::with('academicYear')
             ->get()
             ->map(fn ($session) => [
@@ -35,6 +107,9 @@ class ReportingController extends Controller
 
         return Inertia::render('Reports/Index', [
             'academicSessions' => $sessions,
+            'activeSection' => $section,
+            'pageTitle' => $title,
+            'pageDescription' => $description,
         ]);
     }
 

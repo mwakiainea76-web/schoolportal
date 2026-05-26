@@ -1,6 +1,7 @@
 import { Head, Link, router, useForm } from "@inertiajs/react";
 import { useState } from "react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
+import LoadingSpinner from "@/Components/LoadingSpinner";
 
 export default function BulkOperations({ enrollments, students }) {
     const [operation, setOperation] = useState("invoices");
@@ -319,9 +320,14 @@ export default function BulkOperations({ enrollments, students }) {
                                 }
                                 className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
                             >
-                                {loading
-                                    ? "Generating Invoices..."
-                                    : `Generate ${selectedEnrollments.length} Invoices`}
+                                {loading ? (
+                                    <LoadingSpinner
+                                        size="sm"
+                                        className="mx-auto"
+                                    />
+                                ) : (
+                                    `Generate ${selectedEnrollments.length} Invoices`
+                                )}
                             </button>
                         </div>
                     )}
@@ -476,9 +482,14 @@ export default function BulkOperations({ enrollments, students }) {
                                 }
                                 className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
                             >
-                                {loading
-                                    ? "Applying Discounts..."
-                                    : `Apply Discounts to ${selectedStudents.length} Students`}
+                                {loading ? (
+                                    <LoadingSpinner
+                                        size="sm"
+                                        className="mx-auto"
+                                    />
+                                ) : (
+                                    `Apply Discounts to ${selectedStudents.length} Students`
+                                )}
                             </button>
                         </div>
                     )}
