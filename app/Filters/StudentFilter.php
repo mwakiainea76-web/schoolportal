@@ -8,6 +8,8 @@ class StudentFilter
 {
     public function apply(Builder $query, array $filters)
     {
+        $this->joinUsers($query);
+
         return $query
             ->when($filters['search'] ?? null, fn ($q, $v) => $this->search($q, $v))
             ->when($filters['gender'] ?? null, fn ($q, $v) => $this->gender($q, $v))
@@ -21,42 +23,56 @@ class StudentFilter
             );
     }
 
+    protected function joinUsers(Builder $query): void
+    {
+        $joins = $query->getQuery()->joins ?? [];
+
+        foreach ($joins as $join) {
+            if ($join->table === 'users') {
+                return;
+            }
+        }
+
+        $query->join('users', function ($join) {
+            $join->on('users.id', '=', 'students.user_id')
+                ->whereNull('users.deleted_at');
+        });
+    }
+
     protected function search($query, $term)
     {
         $query->where(function ($q) use ($term) {
-            $q->where('registration_number', 'like', "%$term%")
-                ->orWhereHas('user', function ($q2) use ($term) {
-                    $q2->where('first_name', 'like', "%$term%")
-                        ->orWhere('last_name', 'like', "%$term%")
-                        ->orWhere('email', 'like', "%$term%")
-                        ->orWhere('phone_number', 'like', "%$term%");
-                });
+            $q->where('students.registration_number', 'like', "%{$term}%")
+                ->orWhere('users.first_name', 'like', "%{$term}%")
+                ->orWhere('users.last_name', 'like', "%{$term}%")
+                ->orWhere('users.email', 'like', "%{$term}%")
+                ->orWhere('users.phone_number', 'like', "%{$term}%");
         });
     }
 
     protected function gender($query, $value)
     {
-        $query->whereHas('user', fn ($q) => $q->where('gender', $value));
+        $query->where('users.gender', $value);
     }
 
     protected function county($query, $value)
     {
-        $query->whereHas('user', fn ($q) => $q->where('county', $value));
+        $query->where('users.county', $value);
     }
 
     protected function status($query, $value)
     {
-        $query->where('student_status', $value);
+        $query->where('students.student_status', $value);
     }
 
     protected function module($query, $value)
     {
-        $query->where('current_module', $value);
+        $query->where('students.current_module', $value);
     }
 
     protected function active($query, $value)
     {
-        $query->whereHas('user', fn ($q) => $q->where('is_active', $value));
+        $query->where('users.is_active', $value);
     }
 
     protected function dateRange($query, $filters)
@@ -65,11 +81,11 @@ class StudentFilter
         $to = $filters['date_to'] ?? null;
 
         if ($from && $to) {
-            $query->whereBetween('admission_date', [$from, $to]);
+            $query->whereBetween('students.admission_date', [$from, $to]);
         } elseif ($from) {
-            $query->whereDate('admission_date', '>=', $from);
+            $query->whereDate('students.admission_date', '>=', $from);
         } elseif ($to) {
-            $query->whereDate('admission_date', '<=', $to);
+            $query->whereDate('students.admission_date', '<=', $to);
         }
     }
 }

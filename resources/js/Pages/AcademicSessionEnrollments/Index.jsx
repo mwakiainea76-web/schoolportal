@@ -7,6 +7,7 @@ import THdata from "@/Components/Table/THdata";
 import Tbody from "@/Components/Table/Tbody";
 import Trow from "@/Components/Table/Trow";
 import Tdata from "@/Components/Table/Tdata";
+import formatDate from "@/utils/date";
 
 const STATUS_STYLES = {
     active: "bg-green-100 text-green-700",
@@ -163,7 +164,7 @@ export default function Index({ enrollments }) {
                                                 enrollment.status.slice(1)}
                                         </span>
                                     </Tdata>
-                                    <Tdata>{enrollment.created_at}</Tdata>
+                                    <Tdata>{formatDate(enrollment.created_at)}</Tdata>
                                     <Tdata>
                                         <div className="flex items-center justify-center gap-x-6">
                                             <Link

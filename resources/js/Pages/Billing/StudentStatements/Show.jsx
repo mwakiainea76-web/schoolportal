@@ -1,5 +1,6 @@
 import { Head, Link } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
+import formatDate from "@/utils/date";
 import {
     ArrowLeft,
     BookOpen,
@@ -113,15 +114,15 @@ export default function Show({ statement }) {
                         <div className="grid gap-3 rounded-[1.5rem] border border-white/10 bg-white/10 p-5 backdrop-blur print:border-zinc-200 print:bg-zinc-50">
                             <MetaPair
                                 label="Generated on"
-                                value={statement.generated_on ?? "-"}
+                                value={formatDate(statement.generated_on)}
                             />
                             <MetaPair
                                 label="Issue date"
-                                value={statement.issue_date ?? "-"}
+                                value={formatDate(statement.issue_date)}
                             />
                             <MetaPair
                                 label="Due date"
-                                value={statement.due_date ?? "-"}
+                                value={formatDate(statement.due_date)}
                             />
                             <div className="pt-2">
                                 <p className="text-xs uppercase tracking-[0.15em] text-slate-300 print:text-zinc-500">
@@ -183,7 +184,7 @@ export default function Show({ statement }) {
                             />
                             <InfoCard
                                 label="Admission Date"
-                                value={statement.student.admission_date ?? "-"}
+                                value={formatDate(statement.student.admission_date)}
                             />
                         </div>
                     </div>
@@ -244,7 +245,7 @@ export default function Show({ statement }) {
                                         {currency(invoice.amount_due)}
                                     </p>
                                     <p className="mt-1 text-sm text-zinc-500">
-                                        Issued {invoice.issue_date ?? "-"}
+                                        Issued {formatDate(invoice.issue_date)}
                                     </p>
                                 </div>
                             ))}
@@ -329,7 +330,7 @@ export default function Show({ statement }) {
                                     statement.entries.map((entry) => (
                                         <tr key={entry.id}>
                                             <td className="px-5 py-4 text-sm text-zinc-700">
-                                                {entry.date ?? "-"}
+                                                {formatDate(entry.date)}
                                             </td>
                                             <td className="px-5 py-4 text-sm font-medium text-zinc-900">
                                                 {entry.reference ?? "-"}

@@ -100,11 +100,33 @@ class StudentController extends Controller
     {
         $students = $filter
             ->apply(
-                Student::query()->with(['user']),
+                Student::query(),
                 $request->all()
             )
-            ->latest()
+            ->select([
+                'students.id',
+                'students.registration_number',
+                'students.current_module',
+                'students.admission_date',
+                'students.student_status',
+                'users.first_name as user_first_name',
+                'users.last_name as user_last_name',
+                'users.email as user_email',
+            ])
+            ->latest('students.id')
             ->paginate(10)
+            ->through(fn ($student) => [
+                'id' => $student->id,
+                'registration_number' => $student->registration_number,
+                'current_module' => $student->current_module,
+                'admission_date' => $student->admission_date,
+                'student_status' => $student->student_status,
+                'user' => [
+                    'first_name' => $student->user_first_name,
+                    'last_name' => $student->user_last_name,
+                    'email' => $student->user_email,
+                ],
+            ])
             ->withQueryString();
 
         return inertia('students/Index', compact('students'));
@@ -308,20 +330,34 @@ class StudentController extends Controller
      */
     public function search(Request $request)
     {
-        $q = $request->get('q');
+        $q = trim((string) $request->get('q'));
 
-        return Student::with('user')
-            ->where('registration_number', 'like', "%{$q}%")
-            ->orWhereHas('user', function ($query) use ($q) {
-                $query->where('first_name', 'like', "%{$q}%")
-                    ->orWhere('last_name', 'like', "%{$q}%")
-                    ->orWhere('email', 'like', "%{$q}%");
+        return Student::query()
+            ->join('users', function ($join) {
+                $join->on('users.id', '=', 'students.user_id')
+                    ->whereNull('users.deleted_at');
             })
+            ->when($q !== '', function ($query) use ($q) {
+                $query->where(function ($builder) use ($q) {
+                    $builder->where('students.registration_number', 'like', "%{$q}%")
+                        ->orWhere('users.first_name', 'like', "%{$q}%")
+                        ->orWhere('users.last_name', 'like', "%{$q}%")
+                        ->orWhere('users.email', 'like', "%{$q}%");
+                });
+            })
+            ->select([
+                'students.id',
+                'students.registration_number',
+                'users.first_name',
+                'users.last_name',
+            ])
+            ->orderBy('users.first_name')
+            ->orderBy('users.last_name')
             ->limit(10)
             ->get()
             ->map(fn ($s) => [
                 'id' => $s->id,
-                'name' => ($s->user->first_name ?? '').' '.($s->user->last_name ?? '').' ('.($s->registration_number ?? 'N/A').')',
+                'name' => trim(($s->first_name ?? '').' '.($s->last_name ?? '')).' ('.($s->registration_number ?? 'N/A').')',
             ]);
     }
 }

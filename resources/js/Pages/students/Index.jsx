@@ -8,6 +8,7 @@ import Tbody from "@/Components/Table/Tbody";
 import Trow from "@/Components/Table/Trow";
 import Tdata from "@/Components/Table/Tdata";
 import TextInput from "@/Components/TextInput";
+import formatDate from "@/utils/date";
 
 const STATUS_STYLES = {
     active: "bg-emerald-50 text-emerald-700",
@@ -93,7 +94,7 @@ export default function StudentIndex({ students }) {
                                         Module {student.current_module}
                                     </Tdata>
 
-                                    <Tdata>{student.admission_date}</Tdata>
+                                    <Tdata>{formatDate(student.admission_date)}</Tdata>
 
                                     <Tdata>
                                         <span

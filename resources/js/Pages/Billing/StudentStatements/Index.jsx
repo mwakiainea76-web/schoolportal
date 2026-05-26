@@ -1,5 +1,6 @@
 import { Head, Link } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
+import formatDate from "@/utils/date";
 import {
     ArrowRight,
     CalendarRange,
@@ -199,11 +200,11 @@ export default function Index({ statements }) {
                                             <div className="grid w-full gap-3 rounded-[1.25rem] border border-zinc-100 bg-white p-4 lg:max-w-xs">
                                                 <MetaRow
                                                     label="Issue date"
-                                                    value={statement.issue_date ?? "-"}
+                                                    value={formatDate(statement.issue_date)}
                                                 />
                                                 <MetaRow
                                                     label="Due date"
-                                                    value={statement.due_date ?? "-"}
+                                                    value={formatDate(statement.due_date)}
                                                 />
                                             </div>
 

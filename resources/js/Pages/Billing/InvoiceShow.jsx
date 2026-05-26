@@ -1,5 +1,6 @@
 import { Head, Link } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
+import formatDate from "@/utils/date";
 import {
     ArrowLeft,
     CalendarClock,
@@ -118,11 +119,11 @@ export default function Show({ invoice, sessionSummary }) {
                             <div className="mt-6 grid gap-3 sm:grid-cols-2">
                                 <ProfileMetric
                                     label="Invoice date"
-                                    value={invoice.issue_date ?? "-"}
+                                    value={formatDate(invoice.issue_date)}
                                 />
                                 <ProfileMetric
                                     label="Due date"
-                                    value={invoice.due_date ?? "-"}
+                                    value={formatDate(invoice.due_date)}
                                 />
                                 <ProfileMetric
                                     label="Session invoices"
@@ -236,7 +237,7 @@ export default function Show({ invoice, sessionSummary }) {
                                                     {sessionInvoice.invoice_number}
                                                 </p>
                                                 <p className="text-sm text-zinc-500">
-                                                    {sessionInvoice.issue_date || "-"}
+                                                    {formatDate(sessionInvoice.issue_date)}
                                                 </p>
                                             </div>
                                             <div className="text-left sm:text-right">
@@ -374,7 +375,7 @@ export default function Show({ invoice, sessionSummary }) {
                                         sessionPayments.map((allocation) => (
                                             <tr key={allocation.id}>
                                                 <td className="px-5 py-4 text-sm text-zinc-700">
-                                                    {allocation.payment_date ?? "-"}
+                                                    {formatDate(allocation.payment_date)}
                                                 </td>
                                                 <td className="px-5 py-4 text-sm text-zinc-700 capitalize">
                                                     {allocation.method ?? "-"}
@@ -461,7 +462,7 @@ export default function Show({ invoice, sessionSummary }) {
                                                         </div>
                                                     </td>
                                                     <td className="px-5 py-4 text-sm text-zinc-700">
-                                                        {adjustment.applied_at ?? "-"}
+                                                        {formatDate(adjustment.applied_at)}
                                                     </td>
                                                     <td
                                                         className={`px-5 py-4 text-right text-sm font-semibold ${

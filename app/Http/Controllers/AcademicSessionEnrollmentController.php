@@ -55,7 +55,7 @@ class AcademicSessionEnrollmentController extends Controller
             'module' => $e->module,
             'year_of_study' => $e->year_of_study,
             'status' => $e->status,
-            'created_at' => $e->created_at->format('d M Y'),
+            'created_at' => optional($e->created_at)->toDateString(),
         ]);
 
         return Inertia::render('AcademicSessionEnrollments/Index', [

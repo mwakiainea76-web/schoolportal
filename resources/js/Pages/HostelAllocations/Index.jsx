@@ -7,6 +7,7 @@ import Tdata from "@/Components/Table/Tdata";
 import THdata from "@/Components/Table/THdata";
 import Thead from "@/Components/Table/Thead";
 import Trow from "@/Components/Table/Trow";
+import formatDate from "@/utils/date";
 
 const currency = (amount) =>
     `Ksh ${new Intl.NumberFormat("en-KE", {
@@ -179,7 +180,7 @@ export default function Index({ allocations, filters, hostels, sessions }) {
                                             {allocation.status}
                                         </span>
                                     </Tdata>
-                                    <Tdata>{allocation.allocated_on || "-"}</Tdata>
+                                    <Tdata>{formatDate(allocation.allocated_on)}</Tdata>
                                     <Tdata>
                                         <Link href={route("hostel-allocations.edit", allocation.id)} className="text-emerald-600 hover:underline">
                                             Edit

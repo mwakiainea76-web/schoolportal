@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Head, Link, useForm, usePage } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import Modal from "@/Components/Modal";
+import formatDate from "@/utils/date";
 import {
     BookMarked,
     BookOpen,
@@ -38,7 +39,7 @@ function StudentDashboard({ dashboard, fullName }) {
             label: "Outstanding Balance",
             value: currency(dashboard.finance.outstanding_balance),
             helper: dashboard.finance.next_invoice_due_date
-                ? `Next due ${dashboard.finance.next_invoice_due_date}`
+                ? `Next due ${formatDate(dashboard.finance.next_invoice_due_date)}`
                 : "No invoice due date available",
             icon: Wallet,
             tone: "from-emerald-500 to-emerald-600",

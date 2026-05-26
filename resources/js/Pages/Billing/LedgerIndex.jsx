@@ -7,6 +7,7 @@ import THdata from "@/Components/Table/THdata";
 import Tbody from "@/Components/Table/Tbody";
 import Trow from "@/Components/Table/Trow";
 import Tdata from "@/Components/Table/Tdata";
+import formatDate from "@/utils/date";
 
 const currency = (amount) =>
     `Ksh ${new Intl.NumberFormat("en-KE", {
@@ -59,7 +60,7 @@ export default function LedgerIndex({
 
     const renderArrow = (field) => {
         if (sortField !== field) return null;
-        return sortDirection === "asc" ? "↑" : "↓";
+        return sortDirection === "asc" ? "^" : "v";
     };
 
     const updateFilter = (key, value) => {
@@ -79,7 +80,8 @@ export default function LedgerIndex({
                             Financial Ledger
                         </h1>
                         <p className="mt-1 text-sm text-zinc-500">
-                            Core transaction history for invoices, payments, discounts, penalties, and reversals.
+                            Core transaction history for invoices, payments,
+                            discounts, penalties, and reversals.
                         </p>
                     </div>
                 </div>
@@ -174,19 +176,31 @@ export default function LedgerIndex({
                         sortDirection={sortDirection}
                     >
                         <Thead>
-                            <THdata onClick={() => handleSort("transaction_date")} className="cursor-pointer">
+                            <THdata
+                                onClick={() => handleSort("transaction_date")}
+                                className="cursor-pointer"
+                            >
                                 Date {renderArrow("transaction_date")}
                             </THdata>
                             <THdata>Student</THdata>
-                            <THdata onClick={() => handleSort("type")} className="cursor-pointer">
+                            <THdata
+                                onClick={() => handleSort("type")}
+                                className="cursor-pointer"
+                            >
                                 Type {renderArrow("type")}
                             </THdata>
                             <THdata>Reference</THdata>
                             <THdata>Session</THdata>
-                            <THdata onClick={() => handleSort("debit")} className="cursor-pointer">
+                            <THdata
+                                onClick={() => handleSort("debit")}
+                                className="cursor-pointer"
+                            >
                                 Debit {renderArrow("debit")}
                             </THdata>
-                            <THdata onClick={() => handleSort("credit")} className="cursor-pointer">
+                            <THdata
+                                onClick={() => handleSort("credit")}
+                                className="cursor-pointer"
+                            >
                                 Credit {renderArrow("credit")}
                             </THdata>
                             <THdata>Description</THdata>
@@ -197,12 +211,17 @@ export default function LedgerIndex({
                             {transactions?.data?.length ? (
                                 transactions.data.map((transaction) => (
                                     <Trow key={transaction.id}>
-                                        <Tdata>{transaction.transaction_date ?? "—"}</Tdata>
                                         <Tdata>
-                                            {transaction.student || "—"}
+                                            {formatDate(
+                                                transaction.transaction_date,
+                                            )}
+                                        </Tdata>
+                                        <Tdata>
+                                            {transaction.student || "-"}
                                             <br />
                                             <span className="text-xs text-zinc-500">
-                                                {transaction.registration_number || ""}
+                                                {transaction.registration_number ||
+                                                    ""}
                                             </span>
                                         </Tdata>
                                         <Tdata>
@@ -210,25 +229,28 @@ export default function LedgerIndex({
                                                 {transaction.type}
                                             </span>
                                         </Tdata>
-                                        <Tdata>{transaction.reference || "—"}</Tdata>
-                                        <Tdata>{transaction.session || "—"}</Tdata>
+                                        <Tdata>{transaction.reference || "-"}</Tdata>
+                                        <Tdata>{transaction.session || "-"}</Tdata>
                                         <Tdata className="font-medium text-red-600">
                                             {transaction.debit
                                                 ? currency(transaction.debit)
-                                                : "—"}
+                                                : "-"}
                                         </Tdata>
                                         <Tdata className="font-medium text-emerald-600">
                                             {transaction.credit
                                                 ? currency(transaction.credit)
-                                                : "—"}
+                                                : "-"}
                                         </Tdata>
-                                        <Tdata>{transaction.description || "—"}</Tdata>
-                                        <Tdata>{transaction.created_by || "—"}</Tdata>
+                                        <Tdata>{transaction.description || "-"}</Tdata>
+                                        <Tdata>{transaction.created_by || "-"}</Tdata>
                                     </Trow>
                                 ))
                             ) : (
                                 <Trow>
-                                    <Tdata colSpan="9" className="py-8 text-center text-zinc-500">
+                                    <Tdata
+                                        colSpan="9"
+                                        className="py-8 text-center text-zinc-500"
+                                    >
                                         No ledger transactions found.
                                     </Tdata>
                                 </Trow>

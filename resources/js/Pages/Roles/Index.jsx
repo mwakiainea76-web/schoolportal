@@ -9,6 +9,7 @@ import Tbody from "@/Components/Table/Tbody";
 import Trow from "@/Components/Table/Trow";
 import Tdata from "@/Components/Table/Tdata";
 import SearchSelect from "@/Components/SearchSelect";
+import formatDate from "@/utils/date";
 export default function RolesIndex({ roles }) {
     const [searchTerm, setSearchTerm] = useState("");
 
@@ -88,11 +89,7 @@ export default function RolesIndex({ roles }) {
                                         {role.permissions?.length ?? 0}
                                     </Tdata>
 
-                                    <Tdata>
-                                        {new Date(
-                                            role.created_at,
-                                        ).toLocaleDateString()}
-                                    </Tdata>
+                                    <Tdata>{formatDate(role.created_at)}</Tdata>
 
                                     <Tdata>
                                         <div className="flex items-center justify-center gap-x-10">
