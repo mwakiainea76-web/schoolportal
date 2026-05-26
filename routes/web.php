@@ -473,13 +473,6 @@ Route::middleware(['auth', 'non_student'])->group(function () {
     */
     Route::prefix('reports')->name('reports.')->group(function () {
         Route::get('/', [ReportingController::class, 'index'])->name('dashboard');
-        Route::get('/executive', [ReportingController::class, 'executive'])->name('executive');
-        Route::get('/finance', [ReportingController::class, 'finance'])->name('finance');
-        Route::get('/academic', [ReportingController::class, 'academic'])->name('academic');
-        Route::get('/admissions', [ReportingController::class, 'admissions'])->name('admissions');
-        Route::get('/hostel', [ReportingController::class, 'hostel'])->name('hostel');
-        Route::get('/data-quality', [ReportingController::class, 'dataQuality'])->name('data-quality');
-        Route::get('/snapshots', [ReportingController::class, 'snapshots'])->name('snapshots');
         Route::get('/api/academic-summary', [ReportingController::class, 'academicSummary'])->name('api.academic-summary');
         Route::get('/api/admissions-summary', [ReportingController::class, 'admissionsSummary'])->name('api.admissions-summary');
         Route::get('/api/data-quality-summary', [ReportingController::class, 'dataQualitySummary'])->name('api.data-quality-summary');
