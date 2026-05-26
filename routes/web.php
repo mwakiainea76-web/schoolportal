@@ -304,6 +304,7 @@ Route::middleware(['auth', 'non_student'])->group(function () {
         Route::get('/', [FeePlanController::class, 'index'])->name('index');
         Route::get('/create', [FeePlanController::class, 'create'])->name('create');
         Route::post('/', [FeePlanController::class, 'store'])->name('store');
+        Route::get('/search', [FeePlanController::class, 'search'])->name('search');
 
         Route::get('/{feePlan}/edit', [FeePlanController::class, 'edit'])->name('edit');
         Route::get('/{feePlan}/items', [FeePlanController::class, 'items'])->name('items');
@@ -472,6 +473,13 @@ Route::middleware(['auth', 'non_student'])->group(function () {
     */
     Route::prefix('reports')->name('reports.')->group(function () {
         Route::get('/', [ReportingController::class, 'index'])->name('dashboard');
+        Route::get('/api/academic-summary', [ReportingController::class, 'academicSummary'])->name('api.academic-summary');
+        Route::get('/api/admissions-summary', [ReportingController::class, 'admissionsSummary'])->name('api.admissions-summary');
+        Route::get('/api/data-quality-summary', [ReportingController::class, 'dataQualitySummary'])->name('api.data-quality-summary');
+        Route::get('/api/executive-summary', [ReportingController::class, 'executiveSummary'])->name('api.executive-summary');
+        Route::get('/api/finance-summary', [ReportingController::class, 'financeSummary'])->name('api.finance-summary');
+        Route::get('/api/hostel-summary', [ReportingController::class, 'hostelSummary'])->name('api.hostel-summary');
+        Route::get('/api/snapshot-trends', [ReportingController::class, 'snapshotTrends'])->name('api.snapshot-trends');
         Route::get('/api/outstanding-balance', [ReportingController::class, 'outstandingBalance'])->name('api.outstanding');
         Route::get('/api/overdue-department', [ReportingController::class, 'overdueByDepartment'])->name('api.overdue');
         Route::get('/api/collection-performance', [ReportingController::class, 'collectionPerformance'])->name('api.collection');

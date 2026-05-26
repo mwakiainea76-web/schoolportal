@@ -28,4 +28,3 @@ class EloquentProgramVersionRepository implements ProgramVersionRepositoryInterf
             ->get();
     }
 }
-

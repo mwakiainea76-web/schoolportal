@@ -9,6 +9,13 @@ use App\Models\Program;
 use App\Models\ProgramVersion;
 use App\Models\ProgramVersionUnit;
 use App\Models\StudentInvoice;
+use App\Services\Analytics\AcademicAnalyticsService;
+use App\Services\Analytics\AdmissionsAnalyticsService;
+use App\Services\Analytics\AnalyticsSnapshotReadService;
+use App\Services\Analytics\DataQualityAnalyticsService;
+use App\Services\Analytics\ExecutiveAnalyticsService;
+use App\Services\Analytics\FinanceAnalyticsService;
+use App\Services\Analytics\HostelAnalyticsService;
 use App\Services\FeeAssignmentService;
 use App\Services\StudentAcademicContextService;
 use Illuminate\Http\Request;
@@ -152,8 +159,24 @@ class DashboardController extends Controller
         ]);
     }
 
-    public function staffDashboard(): Response
+    public function staffDashboard(
+        ExecutiveAnalyticsService $executiveAnalyticsService,
+        FinanceAnalyticsService $financeAnalyticsService,
+        AcademicAnalyticsService $academicAnalyticsService,
+        AdmissionsAnalyticsService $admissionsAnalyticsService,
+        HostelAnalyticsService $hostelAnalyticsService,
+        DataQualityAnalyticsService $dataQualityAnalyticsService,
+        AnalyticsSnapshotReadService $analyticsSnapshotReadService,
+    ): Response
     {
+        $executive = $executiveAnalyticsService->summary();
+        $finance = $financeAnalyticsService->summary();
+        $academic = $academicAnalyticsService->summary();
+        $admissions = $admissionsAnalyticsService->summary();
+        $hostel = $hostelAnalyticsService->summary();
+        $dataQuality = $dataQualityAnalyticsService->summary();
+        $snapshotTrends = $analyticsSnapshotReadService->trendSummary(14);
+
         return Inertia::render('Dashboard', [
             'dashboard' => [
                 'type' => 'staff',
@@ -174,6 +197,15 @@ class DashboardController extends Controller
                         'label' => 'Academic Years',
                         'value' => AcademicYear::query()->count(),
                     ],
+                ],
+                'analytics' => [
+                    'executive' => $executive,
+                    'finance' => $finance,
+                    'academic' => $academic,
+                    'admissions' => $admissions,
+                    'hostel' => $hostel,
+                    'data_quality' => $dataQuality,
+                    'snapshot_trends' => $snapshotTrends,
                 ],
             ],
         ]);

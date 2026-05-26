@@ -471,6 +471,15 @@ function StudentDashboard({ dashboard, fullName }) {
 }
 
 function StaffDashboard({ dashboard }) {
+    const analytics = dashboard.analytics ?? {};
+    const executive = analytics.executive ?? {};
+    const finance = analytics.finance ?? {};
+    const academic = analytics.academic ?? {};
+    const admissions = analytics.admissions ?? {};
+    const hostel = analytics.hostel ?? {};
+    const dataQuality = analytics.data_quality ?? {};
+    const snapshotTrends = analytics.snapshot_trends ?? {};
+
     const cards = [
         {
             label: "Programs",
@@ -495,6 +504,124 @@ function StaffDashboard({ dashboard }) {
             value: dashboard.stats?.[3]?.value ?? 0,
             icon: CalendarDays,
             tone: "bg-slate-100 text-slate-700",
+        },
+    ];
+
+    const executiveCards = [
+        {
+            label: "Total Students",
+            value: executive.metrics?.total_students ?? 0,
+        },
+        {
+            label: "Active Students",
+            value: executive.metrics?.active_students ?? 0,
+        },
+        {
+            label: "Registered In Session",
+            value: executive.metrics?.students_registered_in_active_session ?? 0,
+            helper: `${executive.metrics?.session_registration_rate ?? 0}% registration`,
+        },
+        {
+            label: "Outstanding Balance",
+            value: currency(executive.metrics?.outstanding_balance ?? 0),
+        },
+    ];
+
+    const financeCards = [
+        {
+            label: "Collection Rate",
+            value: `${finance.metrics?.collection_rate ?? 0}%`,
+        },
+        {
+            label: "Overdue Balance",
+            value: currency(finance.metrics?.overdue_balance ?? 0),
+        },
+        {
+            label: "Approval Backlog",
+            value: finance.metrics?.approval_backlog_count ?? 0,
+        },
+        {
+            label: "Credit Balance Students",
+            value: finance.metrics?.credit_balance_students ?? 0,
+        },
+    ];
+
+    const academicCards = [
+        {
+            label: "Registration Rate",
+            value: `${academic.metrics?.session_registration_rate ?? 0}%`,
+        },
+        {
+            label: "Students Not Registered",
+            value: academic.metrics?.students_not_registered_count ?? 0,
+        },
+        {
+            label: "Timetable Completion",
+            value: `${academic.metrics?.timetable_completion_rate ?? 0}%`,
+        },
+        {
+            label: "Lecturer Clashes",
+            value: academic.metrics?.lecturer_clash_count ?? 0,
+        },
+    ];
+
+    const admissionsCards = [
+        {
+            label: "Admissions In Range",
+            value: admissions.metrics?.new_admissions_in_range ?? 0,
+        },
+        {
+            label: "Inactive Accounts",
+            value: admissions.metrics?.inactive_accounts ?? 0,
+        },
+        {
+            label: "Missing Program Enrollment",
+            value:
+                admissions.metrics?.students_missing_program_enrollment_count ??
+                0,
+        },
+        {
+            label: "Duplicate Contacts",
+            value: admissions.metrics?.duplicate_contact_risk_count ?? 0,
+        },
+    ];
+
+    const hostelCards = [
+        {
+            label: "Occupancy Rate",
+            value: `${hostel.metrics?.occupancy_rate ?? 0}%`,
+        },
+        {
+            label: "Available Beds",
+            value: hostel.metrics?.available_beds ?? 0,
+        },
+        {
+            label: "Revenue Collected",
+            value: currency(hostel.metrics?.hostel_revenue_collected ?? 0),
+        },
+        {
+            label: "Allocated Not Billed",
+            value: hostel.metrics?.allocated_but_not_billed_count ?? 0,
+        },
+    ];
+
+    const qualityCards = [
+        {
+            label: "Missing Relationships",
+            value:
+                dataQuality.metrics?.records_missing_required_relationships ?? 0,
+        },
+        {
+            label: "Orphaned Financial Records",
+            value: dataQuality.metrics?.orphaned_financial_records ?? 0,
+        },
+        {
+            label: "Slow Queries",
+            value: dataQuality.metrics?.slow_query_count ?? 0,
+        },
+        {
+            label: "Failed Jobs",
+            value: dataQuality.metrics?.failed_job_count ?? 0,
         },
     ];
 
@@ -531,6 +658,217 @@ function StaffDashboard({ dashboard }) {
                         </div>
                     );
                 })}
+            </div>
+
+            <div className="mt-10 space-y-8">
+                <DashboardSection
+                    title="Executive Analytics"
+                    description={`Active session: ${executive.active_session?.label ?? "No active session"}`}
+                    cards={executiveCards}
+                />
+
+                <DashboardSection
+                    title="Finance Analytics"
+                    description="Billing health, debt exposure, and finance exception signals."
+                    cards={financeCards}
+                />
+
+                <DashboardSection
+                    title="Academic Analytics"
+                    description="Session registration, timetable coverage, and academic operational signals."
+                    cards={academicCards}
+                />
+
+                <DashboardSection
+                    title="Admissions Analytics"
+                    description="Intake quality, onboarding completeness, and admissions risk indicators."
+                    cards={admissionsCards}
+                />
+
+                <DashboardSection
+                    title="Hostel Analytics"
+                    description="Occupancy, billing linkage, and accommodation exception indicators."
+                    cards={hostelCards}
+                />
+
+                <DashboardSection
+                    title="Data Quality Signals"
+                    description="Cross-system data integrity and operational health indicators."
+                    cards={qualityCards}
+                />
+
+                <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+                    <DashboardListCard
+                        title="Students Not Registered"
+                        items={academic.exceptions?.students_not_registered ?? []}
+                        emptyText="No unregistered active students in the current sample."
+                        renderItem={(item) => ({
+                            key: item.student_id,
+                            title: item.student_name,
+                            subtitle: item.registration_number,
+                            meta: `Module ${item.current_module}`,
+                        })}
+                    />
+
+                    <DashboardListCard
+                        title="Admissions Exceptions"
+                        items={
+                            admissions.exceptions
+                                ?.students_missing_program_enrollment ?? []
+                        }
+                        emptyText="No missing program-enrollment cases found."
+                        renderItem={(item) => ({
+                            key: item.student_id,
+                            title: item.student_name,
+                            subtitle: item.registration_number,
+                            meta: item.admission_date ?? "",
+                        })}
+                    />
+
+                    <DashboardListCard
+                        title="Hostel Billing Gaps"
+                        items={
+                            hostel.exceptions?.allocated_but_not_billed ?? []
+                        }
+                        emptyText="No hostel allocation billing gaps found."
+                        renderItem={(item) => ({
+                            key: item.allocation_id,
+                            title: item.student_name,
+                            subtitle: item.registration_number,
+                            meta: item.hostel_name,
+                        })}
+                    />
+                </div>
+
+                <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+                    <SnapshotTrendCard
+                        title="Collections"
+                        points={snapshotTrends.finance?.total_collected ?? []}
+                        formatter={currency}
+                    />
+                    <SnapshotTrendCard
+                        title="Outstanding Balance"
+                        points={
+                            snapshotTrends.finance?.outstanding_balance ?? []
+                        }
+                        formatter={currency}
+                    />
+                    <SnapshotTrendCard
+                        title="Registration Rate"
+                        points={
+                            snapshotTrends.academic?.session_registration_rate ??
+                            []
+                        }
+                        suffix="%"
+                    />
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function DashboardSection({ title, description, cards }) {
+    return (
+        <div className="rounded-[1.75rem] border border-zinc-100 bg-white p-7 shadow-sm">
+            <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
+                <div>
+                    <h2 className="text-xl font-semibold text-zinc-900">
+                        {title}
+                    </h2>
+                    <p className="text-sm text-zinc-500">{description}</p>
+                </div>
+            </div>
+
+            <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+                {cards.map((card) => (
+                    <div
+                        key={card.label}
+                        className="rounded-2xl border border-zinc-100 bg-zinc-50 px-5 py-4"
+                    >
+                        <p className="text-sm font-medium text-zinc-500">
+                            {card.label}
+                        </p>
+                        <p className="mt-2 text-2xl font-bold tracking-tight text-zinc-900">
+                            {card.value}
+                        </p>
+                        {card.helper ? (
+                            <p className="mt-2 text-xs text-zinc-500">
+                                {card.helper}
+                            </p>
+                        ) : null}
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+function DashboardListCard({ title, items, emptyText, renderItem }) {
+    return (
+        <div className="rounded-[1.75rem] border border-zinc-100 bg-white p-7 shadow-sm">
+            <h2 className="text-lg font-semibold text-zinc-900">{title}</h2>
+            <div className="mt-5 space-y-4">
+                {items.length ? (
+                    items.map((item) => {
+                        const row = renderItem(item);
+
+                        return (
+                            <div
+                                key={row.key}
+                                className="rounded-2xl border border-zinc-100 bg-zinc-50 px-4 py-3"
+                            >
+                                <p className="font-medium text-zinc-800">
+                                    {row.title}
+                                </p>
+                                <p className="mt-1 text-sm text-zinc-500">
+                                    {row.subtitle}
+                                </p>
+                                {row.meta ? (
+                                    <p className="mt-2 text-xs text-zinc-500">
+                                        {row.meta}
+                                    </p>
+                                ) : null}
+                            </div>
+                        );
+                    })
+                ) : (
+                    <p className="text-sm text-zinc-500">{emptyText}</p>
+                )}
+            </div>
+        </div>
+    );
+}
+
+function SnapshotTrendCard({
+    title,
+    points,
+    formatter = (value) => value,
+    suffix = "",
+}) {
+    return (
+        <div className="rounded-[1.75rem] border border-zinc-100 bg-white p-7 shadow-sm">
+            <h2 className="text-lg font-semibold text-zinc-900">{title}</h2>
+            <div className="mt-5 space-y-3">
+                {points.length ? (
+                    points.slice(-7).map((point) => (
+                        <div
+                            key={`${title}-${point.date}`}
+                            className="flex items-center justify-between rounded-2xl bg-zinc-50 px-4 py-3 text-sm"
+                        >
+                            <span className="text-zinc-500">
+                                {point.date}
+                            </span>
+                            <span className="font-medium text-zinc-900">
+                                {formatter(point.value)}
+                                {suffix}
+                            </span>
+                        </div>
+                    ))
+                ) : (
+                    <p className="text-sm text-zinc-500">
+                        No snapshot trend data available yet.
+                    </p>
+                )}
             </div>
         </div>
     );

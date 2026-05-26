@@ -11,4 +11,3 @@ interface ProgramVersionRepositoryInterface
 
     public function activeByDepartmentAndCertificationLevel(int $departmentId, int $certificationLevelId): Collection;
 }
-

@@ -3,6 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\AcademicSession;
+use App\Services\Analytics\AcademicAnalyticsService;
+use App\Services\Analytics\AdmissionsAnalyticsService;
+use App\Services\Analytics\AnalyticsSnapshotReadService;
+use App\Services\Analytics\DataQualityAnalyticsService;
+use App\Services\Analytics\ExecutiveAnalyticsService;
+use App\Services\Analytics\FinanceAnalyticsService;
+use App\Services\Analytics\HostelAnalyticsService;
 use App\Services\ReportingService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -29,6 +36,55 @@ class ReportingController extends Controller
         return Inertia::render('Reports/Index', [
             'academicSessions' => $sessions,
         ]);
+    }
+
+    public function executiveSummary(Request $request, ExecutiveAnalyticsService $executiveAnalyticsService): JsonResponse
+    {
+        return response()->json(
+            $executiveAnalyticsService->summary($request->all())
+        );
+    }
+
+    public function financeSummary(Request $request, FinanceAnalyticsService $financeAnalyticsService): JsonResponse
+    {
+        return response()->json(
+            $financeAnalyticsService->summary($request->all())
+        );
+    }
+
+    public function academicSummary(Request $request, AcademicAnalyticsService $academicAnalyticsService): JsonResponse
+    {
+        return response()->json(
+            $academicAnalyticsService->summary($request->all())
+        );
+    }
+
+    public function admissionsSummary(Request $request, AdmissionsAnalyticsService $admissionsAnalyticsService): JsonResponse
+    {
+        return response()->json(
+            $admissionsAnalyticsService->summary($request->all())
+        );
+    }
+
+    public function hostelSummary(Request $request, HostelAnalyticsService $hostelAnalyticsService): JsonResponse
+    {
+        return response()->json(
+            $hostelAnalyticsService->summary($request->all())
+        );
+    }
+
+    public function dataQualitySummary(Request $request, DataQualityAnalyticsService $dataQualityAnalyticsService): JsonResponse
+    {
+        return response()->json(
+            $dataQualityAnalyticsService->summary($request->all())
+        );
+    }
+
+    public function snapshotTrends(Request $request, AnalyticsSnapshotReadService $analyticsSnapshotReadService): JsonResponse
+    {
+        return response()->json(
+            $analyticsSnapshotReadService->trendSummary((int) $request->integer('days', 30))
+        );
     }
 
     public function outstandingBalance(Request $request): JsonResponse

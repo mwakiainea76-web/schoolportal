@@ -74,7 +74,6 @@ export default function Edit({
                             <div>
                                 <InputLabel value="Fee Plan" />
                                 <SearchSelect
-                                    routeName="fee-plans.search"
                                     defaultOptions={feePlans}
                                     value={data.fee_plan_id}
                                     placeholder="Select fee plan..."
@@ -94,7 +93,6 @@ export default function Edit({
                             <div>
                                 <InputLabel value="Program Version" />
                                 <SearchSelect
-                                    routeName="program-versions.search"
                                     defaultOptions={curriculums}
                                     value={data.course_curriculum_id}
                                     placeholder="Select program version..."

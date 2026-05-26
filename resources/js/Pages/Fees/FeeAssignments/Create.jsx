@@ -68,7 +68,6 @@ export default function Create({ feePlans, academicYear, curriculums }) {
                             <div>
                                 <InputLabel value="Fee Plan" />
                                 <SearchSelect
-                                    routeName="fee-plans.search"
                                     defaultOptions={feePlans}
                                     placeholder="Select fee plan..."
                                     disabled={!hasFeePlans}
@@ -87,7 +86,6 @@ export default function Create({ feePlans, academicYear, curriculums }) {
                             <div>
                                 <InputLabel value="Program Version" />
                                 <SearchSelect
-                                    routeName="program-versions.search"
                                     defaultOptions={curriculums}
                                     placeholder="Select program version..."
                                     disabled={!hasProgramVersions}

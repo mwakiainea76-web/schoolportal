@@ -11,7 +11,7 @@ class LedgerTransactionController extends Controller
 {
     public function index(Request $request)
     {
-        $query = LedgerTransaction::query()
+        $baseQuery = LedgerTransaction::query()
             ->with([
                 'student.user',
                 'invoice:id,invoice_number',
@@ -36,9 +36,31 @@ class LedgerTransactionController extends Controller
             ->when($request->type, fn ($query, $type) => $query->where('type', $type))
             ->when($request->academic_session_id, fn ($query, $sessionId) => $query->where('academic_session_id', $sessionId));
 
-        $summary = (clone $query)
+        $summary = (clone $baseQuery)
+            ->toBase()
             ->selectRaw('COALESCE(SUM(debit), 0) as debit_total, COALESCE(SUM(credit), 0) as credit_total')
             ->first();
+
+        $query = (clone $baseQuery)
+            ->select([
+                'id',
+                'student_id',
+                'student_invoice_id',
+                'academic_session_id',
+                'type',
+                'debit',
+                'credit',
+                'reference',
+                'description',
+                'transaction_date',
+                'created_by',
+            ])
+            ->with([
+                'student.user',
+                'invoice:id,invoice_number',
+                'academicSession.academicYear',
+                'createdBy.user',
+            ]);
 
         $transactions = $query
             ->orderBy($request->sort ?? 'transaction_date', $request->direction ?? 'desc')

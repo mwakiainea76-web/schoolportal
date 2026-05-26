@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Filters\FeeAssignmentFilter;
 use App\Http\Requests\StoreFeeAssignmentRequest;
 use App\Http\Requests\UpdateFeeAssignmentRequest;
+use App\Models\AcademicSessionEnrollment;
 use App\Models\AcademicYear;
 use App\Models\CertificationLevel;
 use App\Models\ProgramVersionMapping;
@@ -17,6 +18,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Inertia\Inertia;
 
 class FeeAssignmentController extends Controller
 {
@@ -34,7 +36,7 @@ class FeeAssignmentController extends Controller
     {
         $query = FeeAssignment::with([
             'feePlan',
-            'academicSession',
+            'academicYear',
             'programVersionMapping',
             'programVersionMapping.program.certificationLevel',
             'createdBy',
@@ -120,7 +122,7 @@ class FeeAssignmentController extends Controller
         return inertia('Fees/FeeAssignments/Edit', [
             'assignment' => $feeAssignment->load([
                 'feePlan',
-                'academicSession',
+                'academicYear',
                 'programVersionMapping',
             ]),
             'feePlans' => FeePlan::select('id', 'name')->get(),
@@ -242,7 +244,7 @@ class FeeAssignmentController extends Controller
         return inertia('Fees/FeeAssignments/Show', [
             'assignment' => $feeAssignment->load([
                 'feePlan',
-                'academicSession',
+                'academicYear',
                 'programVersionMapping',
                 'createdBy',
             ]),
@@ -272,14 +274,29 @@ class FeeAssignmentController extends Controller
      ========================================================= */
     public function search(Request $request)
     {
-        return FeeAssignment::with(['feePlan', 'student'])
+        return FeeAssignment::with([
+            'feePlan:id,name',
+            'programVersionMapping:id,program_id,program_version_id',
+            'programVersionMapping.program:id,name',
+            'programVersionMapping.programVersion:id,name',
+        ])
             ->when($request->search, function ($q, $search) {
-                $q->whereHas('feePlan', fn ($q) => $q->where('name', 'like', "%$search%")
-                )->orWhereHas('student', fn ($q) => $q->where('registration_number', 'like', "%$search%")
-                );
+                $q->where(function ($query) use ($search) {
+                    $query->whereHas('feePlan', fn ($feePlanQuery) => $feePlanQuery->where('name', 'like', "%{$search}%"))
+                        ->orWhereHas('programVersionMapping.program', fn ($programQuery) => $programQuery->where('name', 'like', "%{$search}%"))
+                        ->orWhereHas('programVersionMapping.programVersion', fn ($versionQuery) => $versionQuery->where('name', 'like', "%{$search}%"));
+                });
             })
             ->limit(20)
-            ->get();
+            ->get()
+            ->map(fn (FeeAssignment $assignment) => [
+                'id' => $assignment->id,
+                'name' => collect([
+                    $assignment->feePlan?->name,
+                    $assignment->programVersionMapping?->program?->name,
+                    $assignment->programVersionMapping?->programVersion?->name,
+                ])->filter()->implode(' - '),
+            ]);
     }
 
     /* =========================================================
@@ -347,7 +364,7 @@ class FeeAssignmentController extends Controller
     {
         $validated = $request->validate([
             'fee_plan_id' => 'required|exists:fee_plans,id',
-            'academic_year_id' => 'required|exists:academic_sessions,id',
+            'academic_year_id' => 'required|exists:academic_years,id',
             'department_id' => 'required|exists:departments,id',
             'certification_level_id' => 'required|exists:certification_levels,id',
             'year_of_study' => 'required|integer|min:1|max:20',
@@ -408,7 +425,7 @@ class FeeAssignmentController extends Controller
     {
         $validated = $request->validate([
             'fee_plan_id' => 'required|exists:fee_plans,id',
-            'academic_year_id' => 'required|exists:academic_sessions,id',
+            'academic_year_id' => 'required|exists:academic_years,id',
             'department_id' => 'nullable|exists:departments,id',
             'certification_level_id' => 'nullable|exists:certification_levels,id',
             'year_of_study' => 'required|integer|min:1|max:20',
@@ -472,7 +489,7 @@ class FeeAssignmentController extends Controller
         $validated = $request->validate([
             'from_fee_plan_id' => 'required|exists:fee_plans,id',
             'to_fee_plan_id' => 'required|exists:fee_plans,id|different:from_fee_plan_id',
-            'academic_year_id' => 'required|exists:academic_sessions,id',
+            'academic_year_id' => 'required|exists:academic_years,id',
             'year_of_study' => 'required|integer|min:1|max:20',
             'session_number' => 'required|integer|min:1|max:20',
         ]);
@@ -545,13 +562,17 @@ class FeeAssignmentController extends Controller
         $validated = $request->validate([
             'from_fee_plan_id' => 'required|exists:fee_plans,id',
             'to_fee_plan_id' => 'required|exists:fee_plans,id|different:from_fee_plan_id',
-            'academic_year_id' => 'required|exists:academic_sessions,id',
+            'academic_year_id' => 'required|exists:academic_years,id',
             'year_of_study' => 'required|integer|min:1|max:20',
             'session_number' => 'required|integer|min:1|max:20',
         ]);
 
         $affected = FeeAssignment::query()
-            ->with(['feePlan:id,name', 'programVersionMapping:id,program_version_id,program_id', 'academicSession'])
+            ->with([
+                'feePlan:id,name',
+                'programVersionMapping:id,program_version_id,program_id',
+                'programVersionMapping.programVersion:id,name',
+            ])
             ->where('fee_plan_id', $validated['from_fee_plan_id'])
             ->where('academic_year_id', $validated['academic_year_id'])
             ->where('year_of_study', $validated['year_of_study'])
@@ -581,7 +602,7 @@ class FeeAssignmentController extends Controller
     {
         return [
             'fee_plan_id' => 'required|exists:fee_plans,id',
-            'academic_year_id' => 'required|exists:academic_sessions,id',
+            'academic_year_id' => 'required|exists:academic_years,id',
             'course_curriculum_id' => 'required|exists:program_version_mappings,id',
             'year_of_study' => 'required|integer|min:1|max:20',
             'session_number' => 'required|integer|min:1|max:20',

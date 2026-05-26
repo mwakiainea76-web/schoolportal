@@ -102,6 +102,22 @@ class FeePlanController extends Controller
         ]);
     }
 
+    public function search(Request $request)
+    {
+        return FeePlan::query()
+            ->when($request->filled('q'), function ($query) use ($request) {
+                $term = $request->string('q')->toString();
+
+                $query->where(function ($nested) use ($term) {
+                    $nested->where('name', 'like', "%{$term}%")
+                        ->orWhere('version', 'like', "%{$term}%");
+                });
+            })
+            ->orderBy('name')
+            ->limit(20)
+            ->get(['id', 'name']);
+    }
+
     /**
      * UPDATE
      */

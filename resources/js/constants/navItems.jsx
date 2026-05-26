@@ -13,6 +13,21 @@ import {
 
 export const NAV_ITEMS = [
     {
+        key: "reports",
+        label: "Analytics & Reports",
+        icon: "reports",
+        basePath: "/reports",
+        permissions: ["students.view"],
+        children: [
+            {
+                routeName: "reports.dashboard",
+                fallback: "/reports",
+                label: "Reports Dashboard",
+                permission: "students.view",
+            },
+        ],
+    },
+    {
         key: "departments",
         label: "Departments",
         icon: "department",
@@ -276,6 +291,7 @@ export const NAV_ITEMS = [
 
 export const ICONS = {
     dashboard: <LayoutDashboard className="w-5 h-5 shrink-0" />,
+    reports: <LayoutDashboard className="w-5 h-5 shrink-0" />,
     book: <BookOpen className="w-5 h-5 shrink-0" />, // Exam Bodies
     department: <Building2 className="w-5 h-5 shrink-0" />, // Departments
     programs: <BookMarked className="w-5 h-5 shrink-0" />, // Programs (was FileText)

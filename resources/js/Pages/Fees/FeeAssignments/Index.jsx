@@ -129,12 +129,9 @@ export default function FeeAssignmentsIndex({ assignments, filters }) {
                             Bulk Assign
                         </Link>
 
-                        <Link
-                            href={route("fees.assignments.bulk.replace")}
-                            className="rounded bg-orange-600 px-4 py-1 text-white transition hover:bg-orange-800"
-                        >
-                            Bulk Replace
-                        </Link>
+                        <span className="rounded bg-orange-100 px-4 py-1 text-orange-700">
+                            Bulk Replace starts from Preview
+                        </span>
                     </div>
                 </div>
 
