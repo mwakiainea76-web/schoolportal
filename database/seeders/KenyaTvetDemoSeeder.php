@@ -192,6 +192,11 @@ class KenyaTvetDemoSeeder extends Seeder
             ]
         );
 
+        $admin->forceFill(['login_id' => 'TVET/STAFF/001'])->save();
+        $registrarUser->forceFill(['login_id' => 'TVET/STAFF/002'])->save();
+        $bursarUser->forceFill(['login_id' => 'TVET/STAFF/003'])->save();
+        $hodUser->forceFill(['login_id' => 'TVET/STAFF/004'])->save();
+
         return [
             'admin' => $admin,
             'bursar_user' => $bursarUser,
@@ -699,6 +704,7 @@ class KenyaTvetDemoSeeder extends Seeder
                 )
             );
             $user->syncRoles([$studentRole->name]);
+            $user->forceFill(['login_id' => $row['registration']])->save();
 
             $student = Student::firstOrCreate(
                 ['registration_number' => $row['registration']],

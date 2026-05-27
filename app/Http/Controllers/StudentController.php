@@ -212,6 +212,10 @@ class StudentController extends Controller
                 'student_status' => 'active',
             ]);
 
+            $user->update([
+                'login_id' => $registrationNumber,
+            ]);
+
             $programEnrollment = new ProgramEnrollment();
             $programEnrollment->student_id = $student->id;
             $programEnrollment->program_version_mapping_id = $request->course_curriculum_id;
@@ -316,6 +320,10 @@ class StudentController extends Controller
                 'current_module' => $request->current_module,
                 'admission_date' => $request->admission_date,
                 'student_status' => $request->student_status,
+            ]);
+
+            $student->user->update([
+                'login_id' => $student->registration_number,
             ]);
 
             $programEnrollment = $student->programEnrollment()->firstOrNew([

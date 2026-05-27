@@ -178,7 +178,7 @@ class StaffController extends Controller
 
             throw_if(! $staffNumber, \RuntimeException::class, 'Failed to generate a unique staff number.');
 
-            Staff::create([
+            $staff = Staff::create([
                 'user_id' => $user->id,
                 'department_id' => $request->department_id,
                 'designation' => $request->designation,
@@ -193,6 +193,10 @@ class StaffController extends Controller
                 'kra_pin' => $request->kra_pin,
                 'nhif_number' => $request->nhif_number,
                 'nssf_number' => $request->nssf_number,
+            ]);
+
+            $user->update([
+                'login_id' => trim($staff->staff_number),
             ]);
 
             $user->nextOfKin()->create([
@@ -263,6 +267,10 @@ class StaffController extends Controller
                 'kra_pin' => $request->kra_pin,
                 'nhif_number' => $request->nhif_number,
                 'nssf_number' => $request->nssf_number,
+            ]);
+
+            $staff->user->update([
+                'login_id' => trim((string) $staff->staff_number),
             ]);
 
             $staff->user->nextOfKin()->updateOrCreate(

@@ -36,6 +36,7 @@ class UserSeeder extends Seeder
                 'first_name' => 'System',
                 'last_name' => 'Admin',
                 'other_name' => '',
+                'login_id' => 'ST12/0023/19',
                 'phone_number' => '0700000000',
                 'date_of_birth' => '1990-01-01',
                 'county' => 'Nairobi',
@@ -77,7 +78,7 @@ class UserSeeder extends Seeder
             ['user_id' => $admin->id],
             [
                 'employment_type' => 'Permanent ',
-                'staff_number' => 'ST12/0023/19 ',
+                'staff_number' => 'ST12/0023/19',
                 'salary' => 100000,
                 'department_id' => 1,
                 'hired_date' => now(),
