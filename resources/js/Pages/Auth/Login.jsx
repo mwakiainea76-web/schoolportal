@@ -45,7 +45,7 @@ export default function Login({ status, canResetPassword }) {
                         <div className="absolute inset-y-0 right-[-1px] w-32 bg-[#f6f7fb] [clip-path:polygon(42%_0,100%_0,100%_100%,0_100%)]" />
                     </div>
 
-                    <div className="relative flex h-screen items-start justify-center bg-[#f6f7fb] px-4 pt-8 sm:px-8 sm:pt-12 lg:pt-8 xl:pt-10">
+                    <div className="relative flex h-screen items-center justify-center bg-[#f6f7fb] px-4 sm:px-8">
                         <div className="absolute inset-y-0 left-0 hidden w-28 bg-white/35 lg:block [clip-path:polygon(0_0,68%_0,22%_100%,0_100%)]" />
                         <div className="w-full max-w-[400px]">
                             <div className="mb-6 text-center">

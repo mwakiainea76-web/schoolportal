@@ -25,6 +25,7 @@ return new class extends Migration
                 $table->string('profile_photo')->nullable();
                 $table->string('religion');
                 $table->string('email')->unique();
+                $table->string('login_id')->nullable()->unique();
                 $table->boolean('is_pwd')->default(false);
                 $table->string('disability_type')->nullable();
                 $table->string('medical_condition')->nullable();
