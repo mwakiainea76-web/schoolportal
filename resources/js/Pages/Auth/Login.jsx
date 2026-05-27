@@ -1,7 +1,6 @@
 import { Head, Link, useForm } from "@inertiajs/react";
 import { useState } from "react";
 
-import ApplicationLogo from "@/Components/ApplicationLogo";
 import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import TextInput from "@/Components/TextInput";
@@ -9,6 +8,7 @@ import ToggleSwitch from "@/Components/ToggleSwitch";
 
 const campusPhoto =
     "https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=1200&q=80";
+const schoolLogo = "/images/school%20logo.png";
 
 export default function Login({ status, canResetPassword }) {
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -49,9 +49,11 @@ export default function Login({ status, canResetPassword }) {
                         <div className="absolute inset-y-0 left-0 hidden w-28 bg-white/35 lg:block [clip-path:polygon(0_0,68%_0,22%_100%,0_100%)]" />
                         <div className="w-full max-w-[400px]">
                             <div className="mb-6 text-center">
-                                <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-zinc-200">
-                                    <ApplicationLogo className="h-12 w-12 fill-current text-emerald-700" />
-                                </div>
+                                <img
+                                    src={schoolLogo}
+                                    alt="School logo"
+                                    className="mx-auto h-10 w-auto object-contain"
+                                />
                                 <h2 className="mt-5 text-3xl font-bold tracking-tight text-slate-800 sm:text-4xl">
                                     Hi, welcome back
                                 </h2>
