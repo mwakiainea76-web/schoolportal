@@ -11,19 +11,21 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('program_enrollments', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('student_id')
-                ->constrained('students', 'id')
-                ->cascadeOnUpdate()
-                ->cascadeOnDelete();
-            $table->foreignId('program_version_mapping_id')
-                ->constrained('program_version_mappings', 'id')
-                ->cascadeOnUpdate()
-                ->cascadeOnDelete();
-            $table->softDeletes();
-            $table->timestamps();
-        });
+        if (! Schema::hasTable('program_enrollments')) {
+            Schema::create('program_enrollments', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('student_id')
+                    ->constrained('students', 'id')
+                    ->cascadeOnUpdate()
+                    ->cascadeOnDelete();
+                $table->foreignId('program_version_mapping_id')
+                    ->constrained('program_version_mappings', 'id')
+                    ->cascadeOnUpdate()
+                    ->cascadeOnDelete();
+                $table->softDeletes();
+                $table->timestamps();
+            });
+        }
     }
 
     /**
