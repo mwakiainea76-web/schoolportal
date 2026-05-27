@@ -6,7 +6,9 @@ use App\Http\Requests\StoreAcademicSessionEnrollmentRequest;
 use App\Models\AcademicSession;
 use App\Models\AcademicSessionEnrollment;
 use App\Models\ProgramEnrollment;
+use App\Models\ProgramVersionUnit;
 use App\Models\Student;
+use App\Models\StudentUnitRegistration;
 use App\Services\BillingService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -127,6 +129,30 @@ class AcademicSessionEnrollmentController extends Controller
             ->with('success', "You have been registered for {$activeSession->academicYear->academic_year} - Session {$sessionNumber}. Your session invoice has been generated.");
     }
 
+    public function registerCurrentStudentUnits(Request $request)
+    {
+        $student = $request->user()?->student;
+
+        if (! $student) {
+            return back()->withErrors([
+                'unit_registration' => 'Your account is not linked to a student profile.',
+            ]);
+        }
+
+        try {
+            $result = $this->registerUnitsForCurrentStudent(
+                $student,
+                collect($request->input('program_version_unit_ids', []))
+            );
+        } catch (ValidationException $e) {
+            return back()->withErrors($this->normalizeUnitRegistrationErrors($e));
+        }
+
+        return redirect()
+            ->route('student.dashboard')
+            ->with('success', "You have registered {$result['registered_count']} unit(s) for {$result['session_name']}.");
+    }
+
     public function edit(AcademicSessionEnrollment $academicSessionEnrollment)
     {
         $e = $academicSessionEnrollment->load([
@@ -233,6 +259,96 @@ class AcademicSessionEnrollmentController extends Controller
         });
     }
 
+    protected function registerUnitsForCurrentStudent(Student $student, \Illuminate\Support\Collection $selectedUnitIds): array
+    {
+        $programEnrollment = ProgramEnrollment::query()
+            ->where('student_id', $student->id)
+            ->latest('id')
+            ->first();
+
+        if (! $programEnrollment) {
+            throw ValidationException::withMessages([
+                'unit_registration' => "Student '{$student->registration_number}' is not enrolled in any program.",
+            ]);
+        }
+
+        $activeSession = AcademicSession::with('academicYear')
+            ->where('is_active', true)
+            ->first();
+
+        if (! $activeSession) {
+            throw ValidationException::withMessages([
+                'unit_registration' => 'No active academic session found. Please contact the school office.',
+            ]);
+        }
+
+        $sessionEnrollment = AcademicSessionEnrollment::query()
+            ->with('academicSession.academicYear')
+            ->where('program_enrollment_id', $programEnrollment->id)
+            ->where('academic_session_id', $activeSession->id)
+            ->latest('id')
+            ->first();
+
+        if (! $sessionEnrollment) {
+            throw ValidationException::withMessages([
+                'unit_registration' => 'Register the current active session before registering units.',
+            ]);
+        }
+
+        $moduleUnits = ProgramVersionUnit::query()
+            ->where('program_version_mapping_id', $programEnrollment->program_version_mapping_id)
+            ->where('module_taught', $sessionEnrollment->module)
+            ->orderBy('id')
+            ->get(['id']);
+
+        if ($moduleUnits->isEmpty()) {
+            throw ValidationException::withMessages([
+                'unit_registration' => 'No units have been mapped to your current module yet.',
+            ]);
+        }
+
+        $selectedIds = $selectedUnitIds
+            ->filter(fn ($value) => filled($value))
+            ->map(fn ($value) => (int) $value)
+            ->unique()
+            ->values();
+
+        if ($selectedIds->isEmpty()) {
+            throw ValidationException::withMessages([
+                'unit_registration' => 'Select the units for this module before submitting your registration.',
+            ]);
+        }
+
+        $expectedIds = $moduleUnits->pluck('id')->values();
+
+        if ($selectedIds->sort()->values()->all() !== $expectedIds->sort()->values()->all()) {
+            throw ValidationException::withMessages([
+                'unit_registration' => 'You must select every unit assigned to your current module before registration can be completed.',
+            ]);
+        }
+
+        DB::transaction(function () use ($sessionEnrollment, $expectedIds) {
+            StudentUnitRegistration::query()
+                ->where('academic_session_enrollment_id', $sessionEnrollment->id)
+                ->delete();
+
+            StudentUnitRegistration::query()->insert(
+                $expectedIds->map(fn (int $programVersionUnitId) => [
+                    'academic_session_enrollment_id' => $sessionEnrollment->id,
+                    'program_version_unit_id' => $programVersionUnitId,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ])->all()
+            );
+        });
+
+        return [
+            'registered_count' => $expectedIds->count(),
+            'session_name' => $sessionEnrollment->academicSession?->display_name
+                ?? "Session {$sessionEnrollment->session_number}",
+        ];
+    }
+
     protected function normalizeSessionRegistrationErrors(ValidationException $exception): array
     {
         $errors = $exception->errors();
@@ -249,6 +365,26 @@ class AcademicSessionEnrollmentController extends Controller
         return [
             'session_registration' => [
                 $firstMessage ?: 'Session registration failed. Please try again.',
+            ],
+        ];
+    }
+
+    protected function normalizeUnitRegistrationErrors(ValidationException $exception): array
+    {
+        $errors = $exception->errors();
+
+        if (isset($errors['unit_registration'])) {
+            return $errors;
+        }
+
+        $firstMessage = collect($errors)
+            ->flatten()
+            ->filter()
+            ->first();
+
+        return [
+            'unit_registration' => [
+                $firstMessage ?: 'Unit registration failed. Please try again.',
             ],
         ];
     }

@@ -50,6 +50,8 @@ Route::middleware(['auth', 'verified', 'role:student'])->group(function () {
         ->name('student.dashboard');
     Route::post('/student/dashboard/register-session', [AcademicSessionEnrollmentController::class, 'registerCurrentStudent'])
         ->name('student.dashboard.register-session');
+    Route::post('/student/dashboard/register-units', [AcademicSessionEnrollmentController::class, 'registerCurrentStudentUnits'])
+        ->name('student.dashboard.register-units');
     Route::get('/student/program-units', [ProgramVersionUnitController::class, 'studentIndex'])
         ->name('student.program-units.index');
     Route::get('/student/fee-statements', [InvoiceController::class, 'studentStatementsIndex'])

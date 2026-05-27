@@ -20,6 +20,22 @@ export default function Sidebar({
     const dashboardFallback = hasRole("student")
         ? "/student/dashboard"
         : "/staff/dashboard";
+    const studentQuickLinks = hasRole("student")
+        ? [
+              {
+                  label: "Fee Statements",
+                  routeName: "student.fee-statements.index",
+                  fallback: "/student/fee-statements",
+                  icon: ICONS.finance,
+              },
+              {
+                  label: "Program Units",
+                  routeName: "student.program-units.index",
+                  fallback: "/student/program-units",
+                  icon: ICONS.grid,
+              },
+          ]
+        : [];
 
     const visibleNav = filterNav(NAV_ITEMS, can);
 
@@ -100,6 +116,28 @@ export default function Sidebar({
                     </div>
 
                     {/* Filtered menu */}
+                    {studentQuickLinks.map(
+                        ({ label, routeName, fallback, icon }) => (
+                            <div
+                                key={routeName}
+                                className="border-b border-white/5"
+                            >
+                                <Link
+                                    href={safeRoute(routeName, fallback)}
+                                    onClick={closeMobile}
+                                    className={`w-full flex items-center gap-3 px-4 py-3 text-sm transition ${
+                                        isRouteCurrent(routeName, fallback, url)
+                                            ? "bg-emerald-500 text-white"
+                                            : "text-zinc-400 hover:bg-white/5 hover:text-white"
+                                    }`}
+                                >
+                                    {icon}
+                                    {!collapsed && <span>{label}</span>}
+                                </Link>
+                            </div>
+                        ),
+                    )}
+
                     {visibleNav.map(
                         ({ key, label, icon, basePath, children }) => {
                             const isOpen = openMenu === key;

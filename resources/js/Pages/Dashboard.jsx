@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Head, Link, useForm, usePage } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
+import Checkbox from "@/Components/Checkbox";
 import Modal from "@/Components/Modal";
 import formatDate from "@/utils/date";
 import {
@@ -9,7 +10,6 @@ import {
     CalendarDays,
     CreditCard,
     GraduationCap,
-    Receipt,
     ShieldCheck,
     Wallet,
 } from "lucide-react";
@@ -21,19 +21,10 @@ const currency = (amount) =>
         maximumFractionDigits: 2,
     }).format(Number(amount || 0))}`;
 
-const statusClasses = {
-    active: "bg-emerald-100 text-emerald-700",
-    issued: "bg-amber-100 text-amber-700",
-    partial: "bg-blue-100 text-blue-700",
-    paid: "bg-emerald-100 text-emerald-700",
-    draft: "bg-slate-100 text-slate-600",
-    suspended: "bg-red-100 text-red-700",
-    graduated: "bg-indigo-100 text-indigo-700",
-    dropped: "bg-red-100 text-red-700",
-    completed: "bg-blue-100 text-blue-700",
-};
-
 function StudentDashboard({ dashboard, fullName }) {
+    const moduleUnitIds = (dashboard.module_units ?? []).map((unit) =>
+        String(unit.id),
+    );
     const cards = [
         {
             label: "Outstanding Balance",
@@ -69,12 +60,39 @@ function StudentDashboard({ dashboard, fullName }) {
     ];
     const [showSessionRegistrationModal, setShowSessionRegistrationModal] =
         useState(false);
-    const { post, processing, errors, clearErrors } = useForm({});
+    const {
+        post,
+        processing,
+        errors,
+        clearErrors,
+    } = useForm({});
+    const {
+        data: unitRegistrationData,
+        setData: setUnitRegistrationData,
+        post: postUnitRegistration,
+        processing: unitRegistrationProcessing,
+        errors: unitRegistrationErrors,
+        clearErrors: clearUnitRegistrationErrors,
+    } = useForm({
+        program_version_unit_ids: (dashboard.module_units ?? [])
+            .filter((unit) => unit.is_registered)
+            .map((unit) => String(unit.id)),
+    });
+
     useEffect(() => {
         if (errors.session_registration) {
             setShowSessionRegistrationModal(true);
         }
     }, [errors.session_registration]);
+
+    useEffect(() => {
+        setUnitRegistrationData(
+            "program_version_unit_ids",
+            (dashboard.module_units ?? [])
+                .filter((unit) => unit.is_registered)
+                .map((unit) => String(unit.id)),
+        );
+    }, [dashboard.module_units, setUnitRegistrationData]);
 
     const submitSessionRegistration = (e) => {
         e.preventDefault();
@@ -88,6 +106,32 @@ function StudentDashboard({ dashboard, fullName }) {
             onError: () => setShowSessionRegistrationModal(true),
         });
     };
+
+    const toggleUnitSelection = (unitId) => {
+        const value = String(unitId);
+
+        setUnitRegistrationData(
+            "program_version_unit_ids",
+            unitRegistrationData.program_version_unit_ids.includes(value)
+                ? unitRegistrationData.program_version_unit_ids.filter(
+                      (id) => id !== value,
+                  )
+                : [...unitRegistrationData.program_version_unit_ids, value],
+        );
+    };
+
+    const submitUnitRegistration = (e) => {
+        e.preventDefault();
+        postUnitRegistration(route("student.dashboard.register-units"), {
+            preserveScroll: true,
+            onBefore: () => clearUnitRegistrationErrors(),
+        });
+    };
+
+    const selectedUnitCount =
+        unitRegistrationData.program_version_unit_ids.length;
+    const allModuleUnitsSelected =
+        moduleUnitIds.length > 0 && selectedUnitCount === moduleUnitIds.length;
 
     return (
         <div className="animate-in fade-in slide-in-from-bottom-2 duration-700">
@@ -178,79 +222,133 @@ function StudentDashboard({ dashboard, fullName }) {
                     <div className="flex items-center justify-between">
                         <div>
                             <h2 className="text-xl font-semibold text-zinc-900">
-                                Recent Invoices
+                                This Module&apos;s Units
                             </h2>
                             <p className="mt-1 text-sm text-zinc-500">
-                                Your latest finance activity and balances.
+                                Units assigned to your current module.
                             </p>
                         </div>
-                        <div className="flex items-center gap-3">
-                            <Link
-                                href={route("student.fee-statements.index")}
-                                className="text-sm font-medium text-emerald-700 transition hover:text-emerald-800"
-                            >
-                                View all statements
-                            </Link>
-                            <div className="rounded-2xl bg-emerald-50 p-3 text-emerald-600">
-                                <Receipt className="h-5 w-5" />
+                        <Link
+                            href={route("student.program-units.index")}
+                            className="text-sm font-medium text-emerald-700 transition hover:text-emerald-800"
+                        >
+                            View all units
+                        </Link>
+                    </div>
+
+                        <div className="mt-6">
+                            {dashboard.module_units?.length ? (
+                                <form
+                                    onSubmit={submitUnitRegistration}
+                                    className="space-y-4"
+                                >
+                                    <div className="overflow-hidden rounded-2xl border border-zinc-100">
+                                        <div className="grid grid-cols-[0.5fr,0.9fr,1.8fr] gap-4 bg-zinc-50 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                                            <p>Select</p>
+                                            <p>Code</p>
+                                            <p>Unit</p>
+                                        </div>
+                                        {dashboard.module_units.map((unit) => (
+                                            <label
+                                                key={unit.id}
+                                                className="grid cursor-pointer grid-cols-[0.5fr,0.9fr,1.8fr] gap-4 border-t border-zinc-100 bg-white px-4 py-3 text-sm text-zinc-700"
+                                            >
+                                                <div className="flex items-center">
+                                                    <Checkbox
+                                                        checked={unitRegistrationData.program_version_unit_ids.includes(
+                                                            String(unit.id),
+                                                        )}
+                                                        onChange={() =>
+                                                            toggleUnitSelection(
+                                                                unit.id,
+                                                            )
+                                                        }
+                                                        disabled={
+                                                            dashboard
+                                                                .unit_registration
+                                                                ?.is_complete
+                                                        }
+                                                        className="h-4 w-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-600"
+                                                    />
+                                                </div>
+                                                <p className="font-semibold text-emerald-700">
+                                                    {unit.code ?? "-"}
+                                                </p>
+                                                <div>
+                                                    <p className="font-semibold text-zinc-900">
+                                                        {unit.name}
+                                                    </p>
+                                                    <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-zinc-500">
+                                                        <span>
+                                                            Credit Factor:{" "}
+                                                            {unit.credit_factor ??
+                                                                "-"}
+                                                        </span>
+                                                        {unit.is_registered ? (
+                                                            <span className="rounded-full bg-emerald-100 px-2 py-0.5 font-semibold text-emerald-700">
+                                                                Registered
+                                                            </span>
+                                                        ) : null}
+                                                    </div>
+                                                </div>
+                                            </label>
+                                        ))}
+                                    </div>
+
+                                    {unitRegistrationErrors.unit_registration ? (
+                                        <p className="text-sm text-red-600">
+                                            {
+                                                unitRegistrationErrors.unit_registration
+                                            }
+                                        </p>
+                                    ) : null}
+
+                                    {dashboard.unit_registration?.blocker ? (
+                                        <p className="text-xs text-amber-700">
+                                            {
+                                                dashboard.unit_registration
+                                                    .blocker
+                                            }
+                                        </p>
+                                    ) : null}
+
+                                    <div className="flex flex-col gap-3 rounded-2xl bg-zinc-50 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+                                        <div className="text-sm text-zinc-600">
+                                            {dashboard.unit_registration
+                                                ?.is_complete
+                                                ? "Units registered"
+                                                : "Register all units"}
+                                        </div>
+                                        <button
+                                            type="submit"
+                                            disabled={
+                                                unitRegistrationProcessing ||
+                                                !dashboard.unit_registration
+                                                    ?.can_register ||
+                                                !allModuleUnitsSelected
+                                            }
+                                            className="inline-flex rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                        >
+                                            {unitRegistrationProcessing
+                                                ? "Registering..."
+                                                : "Register Units"}
+                                        </button>
+                                    </div>
+                                </form>
+                            ) : (
+                                <div className="rounded-2xl bg-[#F8F9FA] px-4 py-4 text-sm text-zinc-500">
+                                    No units have been assigned to this module
+                                    yet.
+                                </div>
+                            )}
+
+                            <div className="mt-3 rounded-2xl bg-[#F8F9FA] px-4 py-3 text-xs text-zinc-500">
+                                {dashboard.all_units_count
+                                    ? `${dashboard.all_units_count} total unit(s) are mapped to your program version.`
+                                    : "Your full unit list will appear once units are mapped to your program version."}
                             </div>
                         </div>
                     </div>
-
-                    <div className="mt-6 space-y-4">
-                        {dashboard.recent_invoices?.length ? (
-                            dashboard.recent_invoices.map((invoice) => (
-                                <div
-                                    key={invoice.id}
-                                    className="flex flex-col gap-4 rounded-2xl border border-zinc-100 bg-zinc-50/70 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
-                                >
-                                    <div>
-                                        <p className="font-semibold text-zinc-800">
-                                            {invoice.invoice_number}
-                                        </p>
-                                        <p className="mt-1 text-sm text-zinc-500">
-                                            {invoice.session ??
-                                                "Session not linked"}
-                                        </p>
-                                    </div>
-
-                                    <div className="flex items-center gap-4">
-                                        <div className="text-right">
-                                            <p className="text-sm text-zinc-500">
-                                                Balance
-                                            </p>
-                                            <p className="font-semibold text-zinc-900">
-                                                {currency(invoice.balance_due)}
-                                            </p>
-                                        </div>
-                                        <span
-                                            className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${
-                                                statusClasses[invoice.status] ??
-                                                "bg-slate-100 text-slate-600"
-                                            }`}
-                                        >
-                                            {invoice.status}
-                                        </span>
-                                        <Link
-                                            href={route(
-                                                "student.fee-statements.show",
-                                                invoice.id,
-                                            )}
-                                            className="inline-flex rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white transition hover:bg-slate-700"
-                                        >
-                                            View statement
-                                        </Link>
-                                    </div>
-                                </div>
-                            ))
-                        ) : (
-                            <div className="rounded-2xl border border-dashed border-zinc-200 px-6 py-10 text-center text-sm text-zinc-400">
-                                No invoices have been generated for your
-                                account yet.
-                            </div>
-                        )}
-                    </div>
-                </div>
 
                 <div className="space-y-6">
                     <div className="rounded-[1.75rem] border border-zinc-100 bg-white p-7 shadow-sm">
@@ -320,74 +418,6 @@ function StudentDashboard({ dashboard, fullName }) {
                                         ? `Year ${dashboard.latest_session.year_of_study}`
                                         : "-"}
                                 </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="rounded-[1.75rem] border border-zinc-100 bg-white p-7 shadow-sm">
-                        <div className="flex items-center justify-between">
-                            <h2 className="text-xl font-semibold text-zinc-900">
-                                This Module&apos;s Units
-                            </h2>
-                            <div className="rounded-2xl bg-amber-50 p-3 text-amber-600">
-                                <BookOpen className="h-5 w-5" />
-                            </div>
-                        </div>
-
-                        <div className="mt-2 flex items-center justify-between">
-                            <p className="text-sm text-zinc-500">
-                                Units assigned to your current module.
-                            </p>
-                            <Link
-                                href={route("student.program-units.index")}
-                                className="text-xs font-semibold text-emerald-700 transition hover:text-emerald-800"
-                            >
-                                View all units
-                            </Link>
-                        </div>
-
-                        <div className="mt-6">
-                            {dashboard.module_units?.length ? (
-                                <div className="overflow-hidden rounded-2xl border border-zinc-100">
-                                    <div className="grid grid-cols-[0.9fr,1.6fr,0.8fr] gap-4 bg-zinc-50 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                                        <p>Code</p>
-                                        <p>Unit</p>
-                                        <p className="text-right">Hours</p>
-                                    </div>
-                                    {dashboard.module_units.map((unit) => (
-                                        <div
-                                            key={unit.id}
-                                            className="grid grid-cols-[0.9fr,1.6fr,0.8fr] gap-4 border-t border-zinc-100 bg-white px-4 py-3 text-sm text-zinc-700"
-                                        >
-                                            <p className="font-semibold text-emerald-700">
-                                                {unit.code ?? "-"}
-                                            </p>
-                                            <div>
-                                                <p className="font-semibold text-zinc-900">
-                                                    {unit.name}
-                                                </p>
-                                                <p className="mt-1 text-xs text-zinc-500">
-                                                    Credit Factor:{" "}
-                                                    {unit.credit_factor ?? "-"}
-                                                </p>
-                                            </div>
-                                            <p className="text-right font-medium text-zinc-600">
-                                                {unit.training_hours ?? "-"}
-                                            </p>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="rounded-2xl bg-[#F8F9FA] px-4 py-4 text-sm text-zinc-500">
-                                    No units have been assigned to this module
-                                    yet.
-                                </div>
-                            )}
-
-                            <div className="mt-3 rounded-2xl bg-[#F8F9FA] px-4 py-3 text-xs text-zinc-500">
-                                {dashboard.all_units_count
-                                    ? `${dashboard.all_units_count} total unit(s) are mapped to your program version.`
-                                    : "Your full unit list will appear once units are mapped to your program version."}
                             </div>
                         </div>
                     </div>

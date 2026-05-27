@@ -197,5 +197,10 @@ class AcademicSessionEnrollment extends Model
     {
         return $this->hasOne(HostelAllocation::class, 'academic_session_enrollment_id');
     }
+
+    public function unitRegistrations()
+    {
+        return $this->hasMany(StudentUnitRegistration::class, 'academic_session_enrollment_id');
+    }
 }
 

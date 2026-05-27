@@ -9,6 +9,7 @@ use App\Models\Program;
 use App\Models\ProgramVersion;
 use App\Models\ProgramVersionUnit;
 use App\Models\StudentInvoice;
+use App\Models\StudentUnitRegistration;
 use App\Services\Analytics\AcademicAnalyticsService;
 use App\Services\Analytics\AdmissionsAnalyticsService;
 use App\Services\Analytics\AnalyticsSnapshotReadService;
@@ -65,8 +66,16 @@ class DashboardController extends Controller
                 $activeSessionNumber
             )
             : null;
-        $currentModule = $latestSessionEnrollment?->module
+        $currentEnrollment = ($activeSession && $programEnrollment)
+            ? $programEnrollment->academicSessionEnrollments()
+                ->with('academicSession.academicYear')
+                ->where('academic_session_id', $activeSession->id)
+                ->latest('id')
+                ->first()
+            : $latestSessionEnrollment;
+        $currentModule = $currentEnrollment?->module
             ?? $activeSessionNumber
+            ?? $latestSessionEnrollment?->module
             ?? $student?->current_module;
         $moduleUnits = $programEnrollment && $currentModule
             ? ProgramVersionUnit::query()
@@ -75,6 +84,11 @@ class DashboardController extends Controller
                 ->where('module_taught', $currentModule)
                 ->orderBy('id')
                 ->get()
+            : collect();
+        $registeredUnitIds = $currentEnrollment
+            ? StudentUnitRegistration::query()
+                ->where('academic_session_enrollment_id', $currentEnrollment->id)
+                ->pluck('program_version_unit_id')
             : collect();
         $allUnitsCount = $programEnrollment
             ? ProgramVersionUnit::query()
@@ -119,6 +133,7 @@ class DashboardController extends Controller
                     'name' => $programVersionUnit->unit?->name,
                     'credit_factor' => $programVersionUnit->unit?->credit_factor,
                     'training_hours' => $programVersionUnit->unit?->training_hours,
+                    'is_registered' => $registeredUnitIds->contains($programVersionUnit->id),
                 ])->values(),
                 'all_units_count' => $allUnitsCount,
                 'latest_session' => $latestSessionEnrollment ? [
@@ -137,6 +152,17 @@ class DashboardController extends Controller
                             : (! $activeFeeAssignment
                                 ? 'No fee plan has been assigned to your program version for the current session yet.'
                                 : null)),
+                ],
+                'unit_registration' => [
+                    'can_register' => (bool) ($currentEnrollment && $moduleUnits->isNotEmpty() && $registeredUnitIds->count() !== $moduleUnits->count()),
+                    'blocker' => ! $currentEnrollment
+                        ? 'Register the current session first before selecting your units.'
+                        : ($moduleUnits->isEmpty()
+                            ? 'No units have been assigned to your current module yet.'
+                            : null),
+                    'registered_count' => $registeredUnitIds->count(),
+                    'total_count' => $moduleUnits->count(),
+                    'is_complete' => $moduleUnits->isNotEmpty() && $registeredUnitIds->count() === $moduleUnits->count(),
                 ],
                 'finance' => [
                     'total_due' => round($totalDue, 2),

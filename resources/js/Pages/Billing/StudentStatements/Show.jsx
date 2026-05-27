@@ -5,11 +5,9 @@ import {
     ArrowLeft,
     BookOpen,
     CalendarClock,
-    Coins,
     FileText,
     Printer,
     Receipt,
-    Wallet,
 } from "lucide-react";
 
 const currency = (amount) =>
@@ -26,27 +24,6 @@ const statusClasses = {
 };
 
 export default function Show({ statement }) {
-    const totals = [
-        {
-            label: "Total Charges",
-            value: currency(statement.totals.amount_due),
-            icon: Receipt,
-            tone: "bg-amber-50 text-amber-600",
-        },
-        {
-            label: "Payments and Credits",
-            value: currency(statement.totals.paid_amount),
-            icon: Wallet,
-            tone: "bg-emerald-50 text-emerald-600",
-        },
-        {
-            label: "Outstanding Balance",
-            value: currency(statement.totals.balance_due),
-            icon: Coins,
-            tone: "bg-slate-100 text-slate-700",
-        },
-    ];
-
     return (
         <AuthenticatedLayout>
             <Head title={`Fee Statement ${statement.statement_reference}`} />
@@ -140,118 +117,6 @@ export default function Show({ statement }) {
                         </div>
                     </div>
                 </section>
-
-                <section className="grid gap-4 lg:grid-cols-[1.1fr,0.9fr]">
-                    <div className="rounded-[1.75rem] border border-zinc-100 bg-white p-6 shadow-sm">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <h2 className="text-lg font-semibold text-zinc-900">
-                                    Student and Program Details
-                                </h2>
-                                <p className="mt-1 text-sm text-zinc-500">
-                                    Registration and academic information on
-                                    this statement.
-                                </p>
-                            </div>
-                            <div className="rounded-2xl bg-sky-50 p-3 text-sky-600">
-                                <BookOpen className="h-5 w-5" />
-                            </div>
-                        </div>
-
-                        <div className="mt-6 grid gap-4 md:grid-cols-2">
-                            <InfoCard
-                                label="Student Name"
-                                value={statement.student.name}
-                            />
-                            <InfoCard
-                                label="Registration Number"
-                                value={statement.student.registration_number}
-                            />
-                            <InfoCard
-                                label="Program"
-                                value={statement.program.name ?? "Not assigned"}
-                            />
-                            <InfoCard
-                                label="Program Version"
-                                value={
-                                    statement.program.version ??
-                                    "Not assigned"
-                                }
-                            />
-                            <InfoCard
-                                label="Session"
-                                value={statement.session ?? "Not linked"}
-                            />
-                            <InfoCard
-                                label="Admission Date"
-                                value={formatDate(statement.student.admission_date)}
-                            />
-                        </div>
-                    </div>
-
-                    <div className="grid gap-4">
-                        {totals.map((item) => {
-                            const Icon = item.icon;
-
-                            return (
-                                <div
-                                    key={item.label}
-                                    className="rounded-[1.75rem] border border-zinc-100 bg-white p-6 shadow-sm"
-                                >
-                                    <div
-                                        className={`inline-flex rounded-2xl p-3 ${item.tone}`}
-                                    >
-                                        <Icon className="h-5 w-5" />
-                                    </div>
-                                    <p className="mt-4 text-sm font-medium text-zinc-500">
-                                        {item.label}
-                                    </p>
-                                    <p className="mt-2 text-2xl font-bold text-zinc-900">
-                                        {item.value}
-                                    </p>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </section>
-
-                {statement.included_invoices?.length ? (
-                    <section className="rounded-[1.75rem] border border-zinc-100 bg-white p-6 shadow-sm">
-                        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-                            <div>
-                                <h2 className="text-lg font-semibold text-zinc-900">
-                                    Session Invoice Coverage
-                                </h2>
-                                <p className="mt-1 text-sm text-zinc-500">
-                                    All invoices included in this session statement.
-                                </p>
-                            </div>
-                            <p className="text-sm text-zinc-500">
-                                {statement.included_invoices.length} invoice
-                                {statement.included_invoices.length === 1 ? "" : "s"}
-                            </p>
-                        </div>
-
-                        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                            {statement.included_invoices.map((invoice) => (
-                                <div
-                                    key={invoice.id}
-                                    className="rounded-2xl border border-zinc-100 bg-zinc-50 px-4 py-4"
-                                >
-                                    <p className="text-xs uppercase tracking-[0.16em] text-zinc-500">
-                                        {invoice.invoice_number}
-                                    </p>
-                                    <p className="mt-2 text-lg font-semibold text-zinc-900">
-                                        {currency(invoice.amount_due)}
-                                    </p>
-                                    <p className="mt-1 text-sm text-zinc-500">
-                                        Issued {formatDate(invoice.issue_date)}
-                                    </p>
-                                </div>
-                            ))}
-                        </div>
-                    </section>
-                ) : null}
 
                 <section className="rounded-[1.75rem] border border-zinc-100 bg-white p-6 shadow-sm">
                     <h2 className="text-lg font-semibold text-zinc-900">
@@ -376,18 +241,16 @@ export default function Show({ statement }) {
 function ProfileChip({ icon: Icon, label, value }) {
     return (
         <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 print:border-zinc-200 print:bg-zinc-50">
-            <div className="flex items-start gap-3">
-                <div className="rounded-xl bg-white/10 p-2 text-emerald-200 print:bg-emerald-50 print:text-emerald-700">
+            <div className="space-y-3">
+                <div className="inline-flex rounded-xl bg-white/10 p-2 text-emerald-200 print:bg-emerald-50 print:text-emerald-700">
                     <Icon className="h-4 w-4" />
                 </div>
-                <div>
-                    <p className="text-xs uppercase tracking-[0.14em] text-slate-300 print:text-zinc-500">
-                        {label}
-                    </p>
-                    <p className="mt-1 text-sm font-semibold text-white print:text-zinc-900">
-                        {value || "-"}
-                    </p>
-                </div>
+                <span className="block text-xs uppercase tracking-[0.14em] text-slate-300 print:text-zinc-500">
+                    {label}
+                </span>
+                <span className="block text-sm font-semibold text-white print:text-zinc-900">
+                    {value || "-"}
+                </span>
             </div>
         </div>
     );
@@ -400,15 +263,6 @@ function MetaPair({ label, value }) {
             <span className="font-semibold text-white print:text-zinc-900">
                 {value}
             </span>
-        </div>
-    );
-}
-
-function InfoCard({ label, value }) {
-    return (
-        <div className="rounded-2xl bg-zinc-50 px-4 py-3">
-            <p className="text-sm text-zinc-500">{label}</p>
-            <p className="mt-1 font-semibold text-zinc-900">{value || "-"}</p>
         </div>
     );
 }

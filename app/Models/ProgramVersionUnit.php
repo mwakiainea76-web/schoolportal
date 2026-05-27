@@ -42,5 +42,10 @@ class ProgramVersionUnit extends Model
             'academic_timetable_id'
         )->withTimestamps();
     }
+
+    public function studentRegistrations()
+    {
+        return $this->hasMany(StudentUnitRegistration::class, 'program_version_unit_id');
+    }
 }
 

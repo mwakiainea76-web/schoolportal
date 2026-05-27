@@ -7,7 +7,6 @@ use App\Models\Student;
 use App\Models\StudentInvoice;
 use App\Services\BillingService;
 use App\Services\BillingStatementService;
-use App\Services\StudentAcademicContextService;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -19,7 +18,6 @@ class InvoiceController extends Controller
 {
     public function __construct(
         protected BillingStatementService $billingStatementService,
-        protected StudentAcademicContextService $studentAcademicContextService
     ) {}
 
     /**
@@ -188,6 +186,9 @@ class InvoiceController extends Controller
         $invoices = StudentInvoice::query()
             ->with([
                 'academicSession.academicYear',
+                'items',
+                'adjustments',
+                'paymentAllocations.payment',
                 'ledgerTransactions',
             ])
             ->where('student_id', $student->id)
@@ -228,25 +229,24 @@ class InvoiceController extends Controller
         $invoice->load([
             'student.user',
             'academicSession.academicYear',
-            'enrollment.programEnrollment.programVersionMapping.program',
-            'enrollment.programEnrollment.programVersionMapping.programVersion',
+            'items',
+            'adjustments',
+            'paymentAllocations.payment',
         ]);
 
         $statementInvoices = $this->sessionInvoicesQuery($invoice)
             ->with([
                 'items',
                 'adjustments',
+                'paymentAllocations.payment',
                 'ledgerTransactions',
             ])
             ->get();
 
-        $programEnrollment = $this->studentAcademicContextService->programEnrollmentForInvoice($invoice);
-
         return Inertia::render('Billing/StudentStatements/Show', [
             'statement' => $this->billingStatementService->buildStudentStatement(
                 $invoice,
-                $statementInvoices,
-                $programEnrollment
+                $statementInvoices
             ),
         ]);
     }

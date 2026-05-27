@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Models\ProgramEnrollment;
 use App\Models\StudentInvoice;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -11,6 +10,12 @@ class BillingStatementService
 {
     public function decorateInvoice(StudentInvoice $invoice): StudentInvoice
     {
+        $invoice->loadMissing([
+            'items',
+            'adjustments',
+            'paymentAllocations.payment',
+        ]);
+
         $itemsTotal = (float) $invoice->items->sum(fn ($item) => (float) $item->total_amount);
         $adjustmentsTotal = (float) $invoice->adjustments->sum(fn ($adjustment) => (float) $adjustment->signedAmount());
         $paidAmount = (float) $invoice->paymentAllocations->sum(fn ($allocation) => (float) $allocation->amount);
@@ -126,7 +131,6 @@ class BillingStatementService
     public function buildStudentStatement(
         StudentInvoice $invoice,
         Collection $sessionInvoices,
-        ?ProgramEnrollment $programEnrollment = null
     ): array {
         $sessionInvoices = $this->decorateInvoices($sessionInvoices);
         $ledgerEntries = $this->collectLedgerEntries($sessionInvoices);
@@ -173,19 +177,7 @@ class BillingStatementService
                 'registration_number' => $student?->registration_number,
                 'admission_date' => optional($student?->admission_date)->toDateString(),
             ],
-            'program' => [
-                'name' => $invoice->enrollment?->programEnrollment?->programVersionMapping?->program?->name
-                    ?? $programEnrollment?->programVersionMapping?->program?->name,
-                'version' => $invoice->enrollment?->programEnrollment?->programVersionMapping?->programVersion?->name
-                    ?? $programEnrollment?->programVersionMapping?->programVersion?->name,
-            ],
             'session' => $invoice->academicSession?->display_name,
-            'included_invoices' => $this->mapIncludedInvoices($sessionInvoices, false),
-            'totals' => [
-                'amount_due' => $totals['amount_due'],
-                'paid_amount' => $totals['paid_amount'],
-                'balance_due' => $totals['balance_due'],
-            ],
             'entries' => $entries,
             'items' => $statementItems,
         ];
