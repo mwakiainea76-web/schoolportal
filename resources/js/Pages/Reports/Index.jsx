@@ -1,4 +1,4 @@
-import { Head } from "@inertiajs/react";
+import { Head, Link } from "@inertiajs/react";
 import { useEffect, useState } from "react";
 
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
@@ -8,17 +8,31 @@ import TextInput from "@/Components/TextInput";
 import SearchSelect from "@/Components/SearchSelect";
 
 const ANALYTICS_SECTIONS = [
-    { key: "executive", label: "Executive" },
-    { key: "finance", label: "Finance" },
-    { key: "academic", label: "Academic" },
-    { key: "admissions", label: "Admissions" },
-    { key: "hostel", label: "Hostel" },
-    { key: "data-quality", label: "Data Quality" },
-    { key: "snapshots", label: "Snapshots" },
+    { key: "all", label: "Overview", routeName: "reports.dashboard" },
+    { key: "executive", label: "Executive", routeName: "reports.executive" },
+    { key: "finance", label: "Finance", routeName: "reports.finance" },
+    { key: "academic", label: "Academic", routeName: "reports.academic" },
+    {
+        key: "admissions",
+        label: "Admissions",
+        routeName: "reports.admissions",
+    },
+    { key: "hostel", label: "Hostel", routeName: "reports.hostel" },
+    {
+        key: "data-quality",
+        label: "Data Quality",
+        routeName: "reports.data-quality",
+    },
+    {
+        key: "snapshots",
+        label: "Snapshot Trends",
+        routeName: "reports.snapshots",
+    },
 ];
 
 export default function ReportsIndex({
     academicSessions = [],
+    activeSection = "all",
     pageTitle = "Reports Dashboard",
     pageDescription = "A consolidated analytics workspace.",
 }) {
@@ -39,13 +53,16 @@ export default function ReportsIndex({
         year_of_study: "",
         session_number: "",
     });
-    const showExecutive = true;
-    const showFinance = true;
-    const showAcademic = true;
-    const showAdmissions = true;
-    const showHostel = true;
-    const showDataQuality = true;
-    const showSnapshots = true;
+    const showExecutive = activeSection === "all" || activeSection === "executive";
+    const showFinance = activeSection === "all" || activeSection === "finance";
+    const showAcademic = activeSection === "all" || activeSection === "academic";
+    const showAdmissions =
+        activeSection === "all" || activeSection === "admissions";
+    const showHostel = activeSection === "all" || activeSection === "hostel";
+    const showDataQuality =
+        activeSection === "all" || activeSection === "data-quality";
+    const showSnapshots =
+        activeSection === "all" || activeSection === "snapshots";
 
     useEffect(() => {
         loadReports();
@@ -216,24 +233,29 @@ export default function ReportsIndex({
                     </div>
 
                     <div className="mt-5 flex flex-wrap gap-3">
-                        {ANALYTICS_SECTIONS.map((section) => (
-                            <a
-                                key={section.key}
-                                href={`#${section.key}`}
-                                className="rounded-full border border-zinc-200 bg-zinc-50 px-4 py-2 text-sm font-medium text-zinc-600 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
-                            >
-                                {section.label}
-                            </a>
-                        ))}
+                        {ANALYTICS_SECTIONS.map((section) => {
+                            const isActive = section.key === activeSection;
+
+                            return (
+                                <Link
+                                    key={section.key}
+                                    href={route(section.routeName)}
+                                    className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+                                        isActive
+                                            ? "bg-emerald-600 text-white shadow-sm"
+                                            : "border border-zinc-200 bg-zinc-50 text-zinc-600 hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
+                                    }`}
+                                >
+                                    {section.label}
+                                </Link>
+                            );
+                        })}
                     </div>
                 </div>
 
                 {showExecutive && executiveSummary && (
                     <>
-                        <div
-                            id="executive"
-                            className="scroll-mt-24 rounded-lg border border-zinc-100 bg-white p-6 shadow-sm"
-                        >
+                        <div className="rounded-lg border border-zinc-100 bg-white p-6 shadow-sm">
                             <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
                                 <div>
                                     <h2 className="text-lg font-semibold text-zinc-700">
@@ -384,10 +406,7 @@ export default function ReportsIndex({
 
                 {showFinance && financeSummary && (
                     <>
-                        <div
-                            id="finance"
-                            className="scroll-mt-24 rounded-lg border border-zinc-100 bg-white p-6 shadow-sm"
-                        >
+                        <div className="rounded-lg border border-zinc-100 bg-white p-6 shadow-sm">
                             <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
                                 <div>
                                     <h2 className="text-lg font-semibold text-zinc-700">
@@ -757,10 +776,7 @@ export default function ReportsIndex({
 
                 {showAcademic && academicSummary && (
                     <>
-                        <div
-                            id="academic"
-                            className="scroll-mt-24 rounded-lg border border-zinc-100 bg-white p-6 shadow-sm"
-                        >
+                        <div className="rounded-lg border border-zinc-100 bg-white p-6 shadow-sm">
                             <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
                                 <div>
                                     <h2 className="text-lg font-semibold text-zinc-700">
@@ -1136,10 +1152,7 @@ export default function ReportsIndex({
 
                 {showAdmissions && admissionsSummary && (
                     <>
-                        <div
-                            id="admissions"
-                            className="scroll-mt-24 rounded-lg border border-zinc-100 bg-white p-6 shadow-sm"
-                        >
+                        <div className="rounded-lg border border-zinc-100 bg-white p-6 shadow-sm">
                             <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
                                 <div>
                                     <h2 className="text-lg font-semibold text-zinc-700">
@@ -1564,10 +1577,7 @@ export default function ReportsIndex({
 
                 {showHostel && hostelSummary && (
                     <>
-                        <div
-                            id="hostel"
-                            className="scroll-mt-24 rounded-lg border border-zinc-100 bg-white p-6 shadow-sm"
-                        >
+                        <div className="rounded-lg border border-zinc-100 bg-white p-6 shadow-sm">
                             <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
                                 <div>
                                     <h2 className="text-lg font-semibold text-zinc-700">
@@ -1954,10 +1964,7 @@ export default function ReportsIndex({
 
                 {showDataQuality && dataQualitySummary && (
                     <>
-                        <div
-                            id="data-quality"
-                            className="scroll-mt-24 rounded-lg border border-zinc-100 bg-white p-6 shadow-sm"
-                        >
+                        <div className="rounded-lg border border-zinc-100 bg-white p-6 shadow-sm">
                             <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
                                 <div>
                                     <h2 className="text-lg font-semibold text-zinc-700">
@@ -2309,10 +2316,7 @@ export default function ReportsIndex({
                 )}
 
                 {showSnapshots && snapshotTrends && (
-                    <div
-                        id="snapshots"
-                        className="scroll-mt-24 rounded-lg border border-zinc-100 bg-white p-6 shadow-sm"
-                    >
+                    <div className="rounded-lg border border-zinc-100 bg-white p-6 shadow-sm">
                         <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
                             <div>
                                 <h2 className="text-lg font-semibold text-zinc-700">
@@ -2686,4 +2690,3 @@ function SnapshotTrendCard({
         </div>
     );
 }
-
