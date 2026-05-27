@@ -164,7 +164,7 @@ export const NAV_ITEMS = [
         label: "Academic Calendar",
         icon: "academic",
         basePath: "/academic/",
-        permissions: ["academic.years.view", "academic.sessions.view"],
+        permissions: ["academic.years.view", "academic.sessions.view", "grades.view"],
         children: [
             {
                 routeName: "academic.years.index",
@@ -207,6 +207,12 @@ export const NAV_ITEMS = [
                 fallback: "/hostel-allocations",
                 label: "Hostel Allocations",
                 permission: "students.view",
+            },
+            {
+                routeName: "academic.marks.index",
+                fallback: "/academic/marks",
+                label: "Marks Entry",
+                permission: "grades.view",
             },
         ],
     },

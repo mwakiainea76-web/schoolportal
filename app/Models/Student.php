@@ -60,5 +60,10 @@ class Student extends Model
     {
         return $this->hasMany(HostelAllocation::class);
     }
+
+    public function marks()
+    {
+        return $this->hasMany(StudentMark::class);
+    }
 }
 

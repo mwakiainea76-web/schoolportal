@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AcademicSessionController;
 use App\Http\Controllers\AcademicSessionEnrollmentController;
+use App\Http\Controllers\StudentMarkController;
 use App\Http\Controllers\AcademicTimetableController;
 use App\Http\Controllers\AcademicYearController;
 use App\Http\Controllers\CertificationLevelController;
@@ -54,6 +55,8 @@ Route::middleware(['auth', 'verified', 'role:student'])->group(function () {
         ->name('student.dashboard.register-units');
     Route::get('/student/program-units', [ProgramVersionUnitController::class, 'studentIndex'])
         ->name('student.program-units.index');
+    Route::get('/student/results', [StudentMarkController::class, 'studentResultsIndex'])
+        ->name('student.results.index');
     Route::get('/student/fee-statements', [InvoiceController::class, 'studentStatementsIndex'])
         ->name('student.fee-statements.index');
     Route::get('/student/fee-statements/{invoice}', [InvoiceController::class, 'studentStatementShow'])
@@ -269,6 +272,17 @@ Route::middleware(['auth', 'non_student'])->group(function () {
         Route::get('/{timetable}/edit', [AcademicTimetableController::class, 'edit'])->name('edit');
         Route::put('/{timetable}', [AcademicTimetableController::class, 'update'])->name('update');
         Route::delete('/{timetable}', [AcademicTimetableController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('academic/marks')->name('academic.marks.')->group(function () {
+        Route::get('/', [StudentMarkController::class, 'index'])->name('index');
+        Route::post('/', [StudentMarkController::class, 'store'])->name('store');
+        Route::get('/publish', [StudentMarkController::class, 'publishIndex'])
+            ->name('publish.index');
+        Route::post('/publish', [StudentMarkController::class, 'publishAssessment'])
+            ->name('publish.assessment');
+        Route::post('/{studentMark}/publish-toggle', [StudentMarkController::class, 'togglePublish'])
+            ->name('publish.toggle');
     });
 
     Route::prefix('lecture-rooms')->name('lecture-rooms.')->group(function () {

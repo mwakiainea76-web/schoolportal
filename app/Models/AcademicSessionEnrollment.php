@@ -202,5 +202,10 @@ class AcademicSessionEnrollment extends Model
     {
         return $this->hasMany(StudentUnitRegistration::class, 'academic_session_enrollment_id');
     }
+
+    public function marks()
+    {
+        return $this->hasMany(StudentMark::class, 'academic_session_enrollment_id');
+    }
 }
 

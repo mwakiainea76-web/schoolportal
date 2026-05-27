@@ -47,5 +47,10 @@ class ProgramVersionUnit extends Model
     {
         return $this->hasMany(StudentUnitRegistration::class, 'program_version_unit_id');
     }
+
+    public function marks()
+    {
+        return $this->hasMany(StudentMark::class, 'program_version_unit_id');
+    }
 }
 

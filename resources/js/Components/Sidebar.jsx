@@ -34,6 +34,38 @@ export default function Sidebar({
                   fallback: "/student/program-units",
                   icon: ICONS.grid,
               },
+              {
+                  label: "Results",
+                  routeName: "student.results.index",
+                  fallback: "/student/results",
+                  icon: ICONS.book,
+              },
+          ]
+        : [];
+    const hodQuickLinks = hasRole("hod")
+        ? [
+              {
+                  label: "HOD Marks",
+                  routeName: "academic.marks.publish.index",
+                  fallback: "/academic/marks/publish",
+                  icon: ICONS.book,
+              },
+          ]
+        : [];
+    const adminQuickLinks = hasRole("admin")
+        ? [
+              {
+                  label: "Staff Marks",
+                  routeName: "academic.marks.index",
+                  fallback: "/academic/marks",
+                  icon: ICONS.academic,
+              },
+              {
+                  label: "HOD Marks",
+                  routeName: "academic.marks.publish.index",
+                  fallback: "/academic/marks/publish",
+                  icon: ICONS.book,
+              },
           ]
         : [];
 
@@ -117,6 +149,48 @@ export default function Sidebar({
 
                     {/* Filtered menu */}
                     {studentQuickLinks.map(
+                        ({ label, routeName, fallback, icon }) => (
+                            <div
+                                key={routeName}
+                                className="border-b border-white/5"
+                            >
+                                <Link
+                                    href={safeRoute(routeName, fallback)}
+                                    onClick={closeMobile}
+                                    className={`w-full flex items-center gap-3 px-4 py-3 text-sm transition ${
+                                        isRouteCurrent(routeName, fallback, url)
+                                            ? "bg-emerald-500 text-white"
+                                            : "text-zinc-400 hover:bg-white/5 hover:text-white"
+                                    }`}
+                                >
+                                    {icon}
+                                    {!collapsed && <span>{label}</span>}
+                                </Link>
+                            </div>
+                        ),
+                    )}
+                    {hodQuickLinks.map(
+                        ({ label, routeName, fallback, icon }) => (
+                            <div
+                                key={routeName}
+                                className="border-b border-white/5"
+                            >
+                                <Link
+                                    href={safeRoute(routeName, fallback)}
+                                    onClick={closeMobile}
+                                    className={`w-full flex items-center gap-3 px-4 py-3 text-sm transition ${
+                                        isRouteCurrent(routeName, fallback, url)
+                                            ? "bg-emerald-500 text-white"
+                                            : "text-zinc-400 hover:bg-white/5 hover:text-white"
+                                    }`}
+                                >
+                                    {icon}
+                                    {!collapsed && <span>{label}</span>}
+                                </Link>
+                            </div>
+                        ),
+                    )}
+                    {adminQuickLinks.map(
                         ({ label, routeName, fallback, icon }) => (
                             <div
                                 key={routeName}

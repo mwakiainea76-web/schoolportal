@@ -72,6 +72,7 @@ class KenyaTvetDemoSeeder extends Seeder
             'student' => Role::firstOrCreate(['name' => 'student', 'guard_name' => 'web']),
             'bursar' => Role::firstOrCreate(['name' => 'bursar', 'guard_name' => 'web']),
             'registrar' => Role::firstOrCreate(['name' => 'registrar', 'guard_name' => 'web']),
+            'hod' => Role::firstOrCreate(['name' => 'hod', 'guard_name' => 'web']),
         ];
     }
 
@@ -99,6 +100,7 @@ class KenyaTvetDemoSeeder extends Seeder
             ['email' => 'hod.ict@tvetdemo.ke'],
             $this->userData('Mercy', 'Achieng', '0701001004', '1989-12-21', 'Kisumu', 'Milimani, Kisumu', 'female', 'Christian', 'Password@123')
         );
+        $hodUser->syncRoles([$roles['hod']->name]);
 
         foreach ([$admin, $registrarUser, $bursarUser, $hodUser] as $user) {
             NextOfKin::firstOrCreate(

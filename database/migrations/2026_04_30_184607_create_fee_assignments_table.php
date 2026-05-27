@@ -40,6 +40,13 @@ return new class extends Migration
             $table->boolean('is_active')->default(true);
             $table->date('valid_from');
             $table->date('valid_to')->nullable();
+            $table->enum('approval_status', ['draft', 'pending_approval', 'approved', 'rejected'])->default('draft');
+            $table->foreignId('approved_by')
+                ->nullable()
+                ->constrained('staffs')
+                ->nullOnDelete()
+                ->cascadeOnUpdate();
+            $table->timestamp('approved_at')->nullable();
             $table->index('valid_from');
             $table->index('valid_to');
             $table->index(['academic_year_id', 'program_version_mapping_id']);

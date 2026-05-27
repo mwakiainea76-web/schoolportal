@@ -28,7 +28,14 @@ return new class extends Migration
                     ->constrained('fee_assignments')
                     ->nullOnDelete()
                     ->cascadeOnUpdate();
+                $table->enum('invoice_type', ['fees', 'penalty', 'hostel', 'default_fees'])->default('fees');
+                $table->foreignId('academic_session_id')
+                    ->nullable()
+                    ->constrained('academic_sessions')
+                    ->nullOnDelete()
+                    ->cascadeOnUpdate();
                 $table->enum('status', ['draft', 'issued', 'partial', 'paid'])->default('draft');
+                $table->enum('approval_status', ['draft', 'pending_approval', 'approved', 'rejected'])->default('draft');
                 $table->date('issue_date')->nullable();
                 $table->date('due_date')->nullable();
                 $table->decimal('amount_due', 10, 2)->default(0);
@@ -40,6 +47,12 @@ return new class extends Migration
                     ->constrained('staffs')
                     ->cascadeOnDelete()
                     ->cascadeOnUpdate();
+                $table->foreignId('approved_by')
+                    ->nullable()
+                    ->constrained('staffs')
+                    ->nullOnDelete()
+                    ->cascadeOnUpdate();
+                $table->timestamp('approved_at')->nullable();
                 $table->softDeletes();
                 $table->timestamps();
                 $table->index('status');
