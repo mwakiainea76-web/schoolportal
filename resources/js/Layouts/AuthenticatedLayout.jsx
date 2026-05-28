@@ -128,10 +128,11 @@ export default function AuthenticatedLayout({ header, children }) {
                 </header>
 
                 {/* Content */}
-                <main className="px-10 pt-4 max-w-7xl flex-1 overflow-y-auto mb-8">
-                    {header && <div className="mb-8">{header}</div>}
-
-                    {children}
+                <main className="flex-1 overflow-y-auto mb-8 w-full">
+                    <div className="px-10 pt-4">
+                        {header && <div className="mb-8">{header}</div>}
+                        {children}
+                    </div>
                 </main>
 
                 {/* ✅ Toastify container (GLOBAL ONLY ONCE) */}

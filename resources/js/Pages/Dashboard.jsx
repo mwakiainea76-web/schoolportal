@@ -237,10 +237,21 @@ function StudentDashboard({ dashboard, fullName }) {
                     </div>
 
                         <div className="mt-6">
+                            {!dashboard.latest_session && dashboard.unit_registration?.blocker ? (
+                                <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm">
+                                    <p className="font-semibold text-amber-900">
+                                        📋 Register Your Session First
+                                    </p>
+                                    <p className="mt-2 text-amber-800">
+                                        You must register for the current active session before you can register units. Once session registration is complete, you'll be able to select your units here.
+                                    </p>
+                                </div>
+                            ) : null}
+
                             {dashboard.module_units?.length ? (
                                 <form
                                     onSubmit={submitUnitRegistration}
-                                    className="space-y-4"
+                                    className={`space-y-4 ${!dashboard.latest_session ? 'mt-4' : ''}`}
                                 >
                                     <div className="overflow-hidden rounded-2xl border border-zinc-100">
                                         <div className="grid grid-cols-[0.5fr,0.9fr,1.8fr] gap-4 bg-zinc-50 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
@@ -266,7 +277,8 @@ function StudentDashboard({ dashboard, fullName }) {
                                                         disabled={
                                                             dashboard
                                                                 .unit_registration
-                                                                ?.is_complete
+                                                                ?.is_complete ||
+                                                            !dashboard.latest_session
                                                         }
                                                         className="h-4 w-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-600"
                                                     />
@@ -303,15 +315,6 @@ function StudentDashboard({ dashboard, fullName }) {
                                         </p>
                                     ) : null}
 
-                                    {dashboard.unit_registration?.blocker ? (
-                                        <p className="text-xs text-amber-700">
-                                            {
-                                                dashboard.unit_registration
-                                                    .blocker
-                                            }
-                                        </p>
-                                    ) : null}
-
                                     <div className="flex flex-col gap-3 rounded-2xl bg-zinc-50 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
                                         <div className="text-sm text-zinc-600">
                                             {dashboard.unit_registration
@@ -325,7 +328,8 @@ function StudentDashboard({ dashboard, fullName }) {
                                                 unitRegistrationProcessing ||
                                                 !dashboard.unit_registration
                                                     ?.can_register ||
-                                                !allModuleUnitsSelected
+                                                !allModuleUnitsSelected ||
+                                                !dashboard.latest_session
                                             }
                                             className="inline-flex rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
                                         >

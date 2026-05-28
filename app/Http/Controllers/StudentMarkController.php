@@ -6,8 +6,8 @@ use App\Models\ProgramVersionUnit;
 use App\Models\Student;
 use App\Models\StudentMark;
 use App\Models\StudentUnitRegistration;
-use Illuminate\Support\Collection;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -201,8 +201,8 @@ class StudentMarkController extends Controller
         $publishedMarks = $student
             ? StudentMark::query()
                 ->with([
-                    'academicSession:id,academic_year_id,name,session_No,session_number',
-                    'academicSession.academicYear:id,name',
+                    'academicSession:id,academic_year_id,session_No,session_number,label',
+                    'academicSession.academicYear:id,label,academic_year',
                     'academicSessionEnrollment:id,year_of_study,module',
                     'programVersionUnit:id,program_version_mapping_id,unit_id,module_taught',
                     'programVersionUnit.unit:id,code,name',
@@ -232,14 +232,44 @@ class StudentMarkController extends Controller
             ->sort()
             ->values();
 
-        $filteredMarks = $publishedMarks
-            ->when($selectedModule, fn (Collection $marks) => $marks->filter(
-                fn (StudentMark $mark) => (int) $mark->programVersionUnit?->module_taught === $selectedModule
-            ))
-            ->when($selectedYearOfStudy, fn (Collection $marks) => $marks->filter(
-                fn (StudentMark $mark) => (int) $mark->academicSessionEnrollment?->year_of_study === $selectedYearOfStudy
-            ))
-            ->values();
+$filteredMarks = $publishedMarks
+             ->when($selectedModule, fn (Collection $marks) => $marks->filter(
+                 fn (StudentMark $mark) => (int) $mark->programVersionUnit?->module_taught === $selectedModule
+             ))
+             ->when($selectedYearOfStudy, fn (Collection $marks) => $marks->filter(
+                 fn (StudentMark $mark) => (int) $mark->academicSessionEnrollment?->year_of_study === $selectedYearOfStudy
+             ))
+             ->values();
+
+         $results = $filteredMarks
+             ->groupBy(fn (StudentMark $mark) => implode('|', [
+                 $mark->academic_session_id,
+                 $mark->academic_session_enrollment_id,
+                 $mark->program_version_unit_id,
+             ]))
+             ->flatMap(function (Collection $marks) {
+                 $firstMark = $marks->first();
+                 
+                 // Get all individual assessments instead of averaging
+                 return $marks->map(function (StudentMark $mark) use ($firstMark) {
+                     return [
+                         'id' => $mark->id,
+                         'session' => $firstMark->academicSession?->display_name
+                             ?? $firstMark->academicSession?->label
+                             ?? 'Session not available',
+                         'year_of_study' => $firstMark->academicSessionEnrollment?->year_of_study,
+                         'module' => $firstMark->programVersionUnit?->module_taught,
+                         'unit_code' => $firstMark->programVersionUnit?->unit?->code,
+                         'unit_name' => $firstMark->programVersionUnit?->unit?->name,
+                         'mark_type' => $mark->assessment_type,
+                         'assessment_number' => $mark->assessment_number,
+                         'marks' => $mark->marks,
+                         'theory_marks' => $mark->assessment_type === 'theory' ? $mark->marks : null,
+                         'practical_marks' => $mark->assessment_type === 'practical' ? $mark->marks : null,
+                     ];
+                 });
+             })
+             ->values();
 
         return Inertia::render('Grades/StudentResults', [
             'filters' => [
@@ -264,19 +294,7 @@ class StudentMarkController extends Controller
                 'published_count' => $publishedMarks->count(),
                 'filtered_count' => $filteredMarks->count(),
             ],
-            'results' => $filteredMarks->map(fn (StudentMark $mark) => [
-                'id' => $mark->id,
-                'session' => $mark->academicSession?->display_name
-                    ?? $mark->academicSession?->name
-                    ?? 'Session not available',
-                'year_of_study' => $mark->academicSessionEnrollment?->year_of_study,
-                'module' => $mark->programVersionUnit?->module_taught,
-                'unit_code' => $mark->programVersionUnit?->unit?->code,
-                'unit_name' => $mark->programVersionUnit?->unit?->name,
-                'assessment_type' => ucfirst($mark->assessment_type),
-                'assessment_number' => (int) $mark->assessment_number,
-                'marks' => (int) $mark->marks,
-            ])->values(),
+'results' => $results,
         ]);
     }
 
@@ -368,6 +386,8 @@ class StudentMarkController extends Controller
             ->with([
                 'student.user',
                 'programVersionUnit.unit',
+                'academicSession.academicYear',
+                'academicSessionEnrollment',
             ])
             ->where('program_version_unit_id', $programVersionUnitId)
             ->where('assessment_type', $assessmentType)
@@ -381,6 +401,11 @@ class StudentMarkController extends Controller
                 'unit_name' => $mark->programVersionUnit?->unit?->name,
                 'marks' => (int) $mark->marks,
                 'is_published' => (bool) $mark->is_published,
+                'module' => $mark->programVersionUnit?->module_taught,
+                'session' => $mark->academicSession?->display_name ?? $mark->academicSession?->label ?? 'Session',
+                'academic_year' => $mark->academicSession?->academicYear?->academic_year,
+                'assessment_type' => $mark->assessment_type,
+                'assessment_number' => $mark->assessment_number,
             ])
             ->values();
     }

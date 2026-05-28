@@ -28,6 +28,7 @@ use App\Models\ProgramVersionUnit;
 use App\Models\AcademicTimetable;
 use App\Models\Staff;
 use App\Models\Student;
+use App\Models\StudentUnitRegistration;
 use App\Models\Unit;
 use App\Models\User;
 use App\Services\BillingService;
@@ -1072,6 +1073,19 @@ class KenyaTvetDemoSeeder extends Seeder
                     'status' => 'active',
                 ]
             );
+
+            // Create unit registrations for module 1
+            $units = ProgramVersionUnit::query()
+                ->where('program_version_mapping_id', $record['mapping']->id)
+                ->where('module_taught', 1)
+                ->get();
+
+            foreach ($units as $unit) {
+                StudentUnitRegistration::firstOrCreate([
+                    'academic_session_enrollment_id' => $enrollment->id,
+                    'program_version_unit_id' => $unit->id,
+                ]);
+            }
 
             $enrollments[$registration] = $enrollment->fresh(['academicSession', 'programEnrollment.programVersionMapping.program', 'programEnrollment.programVersionMapping.programVersion']);
         }

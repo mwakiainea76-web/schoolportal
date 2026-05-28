@@ -283,6 +283,8 @@ Route::middleware(['auth', 'non_student'])->group(function () {
             ->name('publish.assessment');
         Route::post('/{studentMark}/publish-toggle', [StudentMarkController::class, 'togglePublish'])
             ->name('publish.toggle');
+        Route::get('/marksheet', [StudentMarkController::class, 'marksheetIndex'])
+            ->name('marksheet.index');
     });
 
     Route::prefix('lecture-rooms')->name('lecture-rooms.')->group(function () {

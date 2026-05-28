@@ -46,7 +46,7 @@ export default function StudentResults({
                         My Results
                     </h1>
                     <p className="mt-2 max-w-3xl text-sm text-zinc-600">
-                        View only published marks and filter them by module or
+                        View all recorded marks and filter them by module or
                         year of study.
                     </p>
                 </div>
@@ -70,13 +70,13 @@ export default function StudentResults({
 
                     <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
                         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
-                            Published Results
+                            Total Marks
                         </p>
                         <p className="mt-3 text-3xl font-semibold text-zinc-900">
                             {summary.published_count}
                         </p>
                         <p className="mt-1 text-sm text-zinc-500">
-                            Marks released by HOD
+                            Recorded marks (theory & practical)
                         </p>
                     </div>
 
@@ -97,11 +97,11 @@ export default function StudentResults({
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                         <div>
                             <h2 className="text-xl font-semibold text-zinc-900">
-                                Published Results
+                                My Results
                             </h2>
                             <p className="mt-1 text-sm text-zinc-500">
-                                Filter by module or year of study to narrow the
-                                published results list.
+                                View all recorded marks and filter them by module or
+                                year of study. Marks are shown for both theory and practical assessments.
                             </p>
                         </div>
 
@@ -169,62 +169,113 @@ export default function StudentResults({
                         </button>
                     </div>
 
-                    <div className="mt-6 overflow-hidden rounded-2xl border border-zinc-100">
-                        <div className="grid grid-cols-[1fr,0.7fr,0.8fr,1.2fr,0.8fr,0.8fr,0.6fr] gap-4 bg-zinc-50 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                            <p>Session</p>
-                            <p>Year</p>
-                            <p>Module</p>
-                            <p>Unit</p>
-                            <p>Type</p>
-                            <p>Assessment</p>
-                            <p>Marks</p>
-                        </div>
+<div className="mt-6 overflow-x-auto rounded-2xl border border-zinc-100">
+   <table className="w-full border-collapse">
+     <thead>
+       <tr className="bg-zinc-50">
+         <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500 min-w-[100px]">Module</th>
+         <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500 min-w-[150px]">Unit</th>
+         <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500 min-w-[200px]">Theory Marks</th>
+         <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500 min-w-[200px]">Practical Marks</th>
+       </tr>
+     </thead>
+     <tbody>
+       {results.length ? (
+         Object.entries(
+           results.reduce((acc, result) => {
+             const unitKey = `${result.unit_code}-${result.unit_name}`;
+             if (!acc[unitKey]) {
+               acc[unitKey] = {
+                 module: result.module,
+                 unit_code: result.unit_code,
+                 unit_name: result.unit_name,
+                 marks: [],
+               };
+             }
+             acc[unitKey].marks.push(result);
+             return acc;
+           }, {})
+         ).map(([unitKey, unitData]) => {
+           const sessions = [...new Set(unitData.marks.map(m => m.session))].filter(Boolean);
 
-                        {results.length ? (
-                            results.map((result) => (
-                                <div
-                                    key={result.id}
-                                    className="grid grid-cols-[1fr,0.7fr,0.8fr,1.2fr,0.8fr,0.8fr,0.6fr] gap-4 border-t border-zinc-100 bg-white px-4 py-3 text-sm"
-                                >
-                                    <p className="text-zinc-700">
-                                        {result.session}
-                                    </p>
-                                    <p className="text-zinc-700">
-                                        {result.year_of_study
-                                            ? `Year ${result.year_of_study}`
-                                            : "-"}
-                                    </p>
-                                    <p className="text-zinc-700">
-                                        {result.module
-                                            ? `Module ${result.module}`
-                                            : "-"}
-                                    </p>
-                                    <div>
-                                        <p className="font-semibold text-zinc-900">
-                                            {result.unit_code || "-"}
-                                        </p>
-                                        <p className="text-zinc-500">
-                                            {result.unit_name || "-"}
-                                        </p>
-                                    </div>
-                                    <p className="text-zinc-700">
-                                        {result.assessment_type}
-                                    </p>
-                                    <p className="text-zinc-700">
-                                        Assessment {result.assessment_number}
-                                    </p>
-                                    <p className="font-semibold text-zinc-900">
-                                        {result.marks}
-                                    </p>
-                                </div>
-                            ))
-                        ) : (
-                            <div className="px-4 py-10 text-center text-sm text-zinc-500">
-                                No published results match the selected filter
-                                yet.
-                            </div>
-                        )}
-                    </div>
+           return (
+             <tr key={unitKey} className="border-t border-zinc-100 bg-white">
+               <td className="px-4 py-3 text-sm text-zinc-700">
+                    {unitData.unit_code || "-"}
+               </td>
+               <td className="px-4 py-3 text-sm text-zinc-500">
+            
+              {unitData.unit_name || "-"}
+               </td>
+               <td className="px-4 py-3">
+                 {(() => {
+                   const theoryMarks = unitData.marks
+                     .filter(m => m.mark_type === 'theory' || (m.theory_marks !== null && m.theory_marks !== undefined))
+                     .map(result => result.mark_type === 'theory' ? (result.marks || result.score) : result.theory_marks)
+                     .filter(m => m !== null && m !== undefined);
+                   const avg = theoryMarks.length > 0 ? Math.round(theoryMarks.reduce((a, b) => a + b, 0) / theoryMarks.length) : null;
+                   
+                   if (theoryMarks.length === 0) {
+                     return <span className="text-sm text-zinc-400">-</span>;
+                   }
+                   
+                   return (
+                     <div className="flex flex-wrap gap-2 items-center">
+                       {theoryMarks.map((mark, idx) => (
+                         <span key={`theory-${idx}`} className="rounded bg-blue-50 px-2 py-1 text-sm font-semibold text-blue-700">
+                           {mark}
+                         </span>
+                       ))}
+                       {avg !== null && (
+                         <span className="text-sm font-bold text-red-700">
+                           Avg: {avg}
+                         </span>
+                       )}
+                     </div>
+                   );
+                 })()}
+               </td>
+               <td className="px-4 py-3">
+                 {(() => {
+                   const practicalMarks = unitData.marks
+                     .filter(m => m.mark_type === 'practical' || (m.practical_marks !== null && m.practical_marks !== undefined))
+                     .map(result => result.mark_type === 'practical' ? (result.marks || result.score) : result.practical_marks)
+                     .filter(m => m !== null && m !== undefined);
+                   const avg = practicalMarks.length > 0 ? Math.round(practicalMarks.reduce((a, b) => a + b, 0) / practicalMarks.length) : null;
+                   
+                   if (practicalMarks.length === 0) {
+                     return <span className="text-sm text-zinc-400">-</span>;
+                   }
+                   
+                   return (
+                     <div className="flex flex-wrap gap-2 items-center">
+                       {practicalMarks.map((mark, idx) => (
+                         <span key={`practical-${idx}`} className="rounded bg-emerald-50 px-2 py-1 text-sm font-semibold text-emerald-700">
+                           {mark}
+                         </span>
+                       ))}
+                       {avg !== null && (
+                         <span className="text-sm font-bold text-red-700">
+                           Avg: {avg}
+                         </span>
+                       )}
+                     </div>
+                   );
+                 })()}
+               </td>
+             </tr>
+           );
+         })
+       ) : (
+         <tr>
+           <td colSpan={5} className="px-4 py-10 text-center text-sm text-zinc-500">
+             No recorded marks match the selected filter yet.
+           </td>
+         </tr>
+       )}
+     </tbody>
+   </table>
+</div>
                 </div>
             </div>
         </AuthenticatedLayout>

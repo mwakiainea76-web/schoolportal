@@ -19,52 +19,11 @@ export const NAV_ITEMS = [
         basePath: "/reports",
         permissions: ["students.view"],
         children: [
-            {
-                routeName: "reports.dashboard",
-                fallback: "/reports",
-                label: "Overview",
-                permission: "students.view",
-            },
+         
             {
                 routeName: "reports.executive",
                 fallback: "/reports/executive",
                 label: "Executive",
-                permission: "students.view",
-            },
-            {
-                routeName: "reports.finance",
-                fallback: "/reports/finance",
-                label: "Finance",
-                permission: "students.view",
-            },
-            {
-                routeName: "reports.academic",
-                fallback: "/reports/academic",
-                label: "Academic",
-                permission: "students.view",
-            },
-            {
-                routeName: "reports.admissions",
-                fallback: "/reports/admissions",
-                label: "Admissions",
-                permission: "students.view",
-            },
-            {
-                routeName: "reports.hostel",
-                fallback: "/reports/hostel",
-                label: "Hostel",
-                permission: "students.view",
-            },
-            {
-                routeName: "reports.data-quality",
-                fallback: "/reports/data-quality",
-                label: "Data Quality",
-                permission: "students.view",
-            },
-            {
-                routeName: "reports.snapshots",
-                fallback: "/reports/snapshots",
-                label: "Snapshot Trends",
                 permission: "students.view",
             },
         ],
@@ -212,6 +171,12 @@ export const NAV_ITEMS = [
                 routeName: "academic.marks.index",
                 fallback: "/academic/marks",
                 label: "Marks Entry",
+                permission: "grades.view",
+            },
+            {
+                routeName: "academic.marks.marksheet.index",
+                fallback: "/academic/marks/marksheet",
+                label: "Unit Marksheet",
                 permission: "grades.view",
             },
         ],
