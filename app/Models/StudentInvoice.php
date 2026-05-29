@@ -25,6 +25,9 @@ class StudentInvoice extends Model
         'amount_due',
         'paid_amount',
         'balance_due',
+        'approval_status',
+        'approved_by',
+        'approved_at',
         'idempotency_key',
         'notes',
         'created_by',
@@ -36,6 +39,7 @@ class StudentInvoice extends Model
         'amount_due' => 'decimal:2',
         'paid_amount' => 'decimal:2',
         'balance_due' => 'decimal:2',
+        'approved_at' => 'datetime',
     ];
 
     public function student()

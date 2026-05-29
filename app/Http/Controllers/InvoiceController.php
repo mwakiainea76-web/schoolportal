@@ -25,6 +25,25 @@ class InvoiceController extends Controller
      */
     public function index(Request $request)
     {
+        $this->ensureBillingStaff($request);
+
+        $allowedSorts = [
+            'invoice_number',
+            'invoice_type',
+            'status',
+            'approval_status',
+            'amount_due',
+            'paid_amount',
+            'balance_due',
+            'issue_date',
+            'due_date',
+            'created_at',
+        ];
+        $sort = in_array($request->query('sort'), $allowedSorts, true)
+            ? $request->query('sort')
+            : 'created_at';
+        $direction = $request->query('direction') === 'asc' ? 'asc' : 'desc';
+
         $query = StudentInvoice::with([
             'student',
             'student.user',
@@ -57,7 +76,7 @@ class InvoiceController extends Controller
             ->when($request->approval_status, fn ($q) => $q->where('approval_status', $request->approval_status));
 
         $invoices = $query
-            ->orderBy($request->sort ?? 'created_at', $request->direction ?? 'desc')
+            ->orderBy($sort, $direction)
             ->paginate(15)
             ->withQueryString();
 
@@ -78,6 +97,8 @@ class InvoiceController extends Controller
      */
     public function create()
     {
+        $this->ensureBillingStaff(request());
+
         return redirect()
             ->route('billing.invoices.index')
             ->with('info', 'Use Manual Billing to post student charges, charge reductions, reversals, and payments.');
@@ -88,65 +109,20 @@ class InvoiceController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'fee_plan_ids' => 'required|array|min:1',
-            'fee_plan_ids.*' => 'exists:fee_plans,id',
-            'issue_date' => 'required|date',
-            'due_date' => 'required|date|after:issue_date',
-        ]);
+        $this->ensureBillingStaff($request);
 
-        $billingService = app(BillingService::class);
-        $creatorStaffId = auth()->user()?->staff?->id;
-
-        try {
-            DB::transaction(function () use ($validated, $billingService, $creatorStaffId) {
-                $created = 0;
-
-                foreach ($validated['fee_plan_ids'] as $feePlanId) {
-                    // Find all active enrollments that have a fee assignment for this fee plan
-                    $enrollments = AcademicSessionEnrollment::query()
-                        ->whereHas('feeAssignments', function ($q) use ($feePlanId) {
-                            $q->where('fee_plan_id', $feePlanId)
-                                ->where('is_active', true);
-                        })
-                        ->with([
-                            'student',
-                            'programEnrollment.programVersionMapping.program',
-                            'programEnrollment.programVersionMapping.programVersion',
-                            'academicSession',
-                        ])
-                        ->get();
-
-                    foreach ($enrollments as $enrollment) {
-                        $billingService->createInvoiceForEnrollment(
-                            $enrollment,
-                            $creatorStaffId,
-                            $validated['issue_date'],
-                            $validated['due_date']
-                        );
-                        $created++;
-                    }
-                }
-
-                return $created;
-            });
-
-            return redirect()
-                ->route('billing.invoices.index')
-                ->with('success', 'Invoices created successfully');
-
-        } catch (\Throwable $e) {
-            return back()->withErrors([
-                'error' => $e->getMessage(),
-            ])->withInput();
-        }
+        return redirect()
+            ->route('billing.manual.invoices.create')
+            ->with('info', 'Use Manual Billing to create invoices. The legacy bulk invoice endpoint has been retired.');
     }
 
     /**
      * SHOW
      */
-    public function show(StudentInvoice $invoice)
+    public function show(Request $request, StudentInvoice $invoice)
     {
+        $this->ensureBillingStaff($request);
+
         $invoice->load([
             'student.user',
             'enrollment.programEnrollment.programVersionMapping.program',
@@ -254,8 +230,33 @@ class InvoiceController extends Controller
     /**
      * DELETE
      */
-    public function destroy(StudentInvoice $invoice)
+    public function destroy(Request $request, StudentInvoice $invoice)
     {
+        $this->ensureBillingStaff($request);
+
+        $invoice->loadCount([
+            'items',
+            'paymentAllocations',
+            'payments',
+            'adjustments',
+            'ledgerTransactions',
+        ]);
+
+        $hasFinancialActivity = $invoice->items_count > 0
+            || $invoice->payment_allocations_count > 0
+            || $invoice->payments_count > 0
+            || $invoice->adjustments_count > 0
+            || $invoice->ledger_transactions_count > 0
+            || (float) $invoice->amount_due !== 0.0
+            || (float) $invoice->paid_amount !== 0.0
+            || (float) $invoice->balance_due !== 0.0;
+
+        if ($invoice->status !== 'draft' || $invoice->approval_status !== 'draft' || $hasFinancialActivity) {
+            throw ValidationException::withMessages([
+                'invoice' => 'Only empty draft invoices with no financial activity can be deleted.',
+            ]);
+        }
+
         $invoice->delete();
 
         return back()->with('success', 'Invoice deleted successfully');
@@ -266,13 +267,27 @@ class InvoiceController extends Controller
      */
     public function approval(Request $request, StudentInvoice $invoice)
     {
+        $approverStaffId = $this->ensureBillingStaff($request);
+
         $request->validate([
             'action' => 'required|in:approve,reject',
         ]);
 
+        if ($invoice->approval_status !== 'pending_approval') {
+            throw ValidationException::withMessages([
+                'action' => 'Only invoices awaiting approval can be approved or rejected.',
+            ]);
+        }
+
+        if ($invoice->created_by && (int) $invoice->created_by === $approverStaffId) {
+            throw ValidationException::withMessages([
+                'action' => 'Invoices must be approved by a different staff member.',
+            ]);
+        }
+
         $invoice->update([
             'approval_status' => $request->action === 'approve' ? 'approved' : 'rejected',
-            'approved_by' => auth()->id(),
+            'approved_by' => $approverStaffId,
             'approved_at' => now(),
         ]);
 
@@ -302,9 +317,14 @@ class InvoiceController extends Controller
     {
         $this->ensureBillingStaff($request);
 
+        $requestedKind = $request->string('invoice_kind')->toString();
+        $invoiceKind = in_array($requestedKind, ['standard_invoice', 'penalty', 'hostel', 'invoice_adjustment'], true)
+            ? $requestedKind
+            : 'standard_invoice';
+
         return Inertia::render('Billing/ManualOperations/AdditionalInvoice', [
             'selectedRegistrationNumber' => $this->resolveSelectedRegistrationNumber($request),
-            'selectedInvoiceKind' => $request->string('invoice_kind')->toString() ?: 'standard_invoice',
+            'selectedInvoiceKind' => $invoiceKind,
         ]);
     }
 
@@ -612,7 +632,12 @@ class InvoiceController extends Controller
         $student = $this->resolveStudentByRegistrationNumber($registrationNumber);
 
         $query = StudentInvoice::query()
-            ->where('student_id', $student->id);
+            ->where('student_id', $student->id)
+            ->where(function ($statusQuery) {
+                $statusQuery
+                    ->whereNull('approval_status')
+                    ->orWhere('approval_status', '!=', 'rejected');
+            });
 
         if ($requireOutstanding) {
             $query->where('balance_due', '>', 0);
@@ -687,6 +712,8 @@ class InvoiceController extends Controller
      */
     public function bulkGenerate(Request $request)
     {
+        $creatorStaffId = $this->ensureBillingStaff($request);
+
         $request->validate([
             'enrollment_ids' => 'required|array',
             'enrollment_ids.*' => 'exists:academic_session_enrollments,id',
@@ -695,7 +722,6 @@ class InvoiceController extends Controller
         ]);
 
         $billingService = app(\App\Services\BillingService::class);
-        $creatorStaffId = auth()->user()?->staff?->id;
 
         $created = 0;
         $errors = [];
@@ -703,7 +729,13 @@ class InvoiceController extends Controller
         DB::transaction(function () use ($request, $billingService, $creatorStaffId, &$created, &$errors) {
             foreach ($request->enrollment_ids as $id) {
                 try {
-                    $enrollment = AcademicSessionEnrollment::findOrFail($id);
+                    $enrollment = AcademicSessionEnrollment::query()
+                        ->with([
+                            'programEnrollment.programVersionMapping.program',
+                            'programEnrollment.programVersionMapping.programVersion',
+                            'academicSession',
+                        ])
+                        ->findOrFail($id);
 
                     $billingService->createInvoiceForEnrollment(
                         $enrollment,
@@ -730,16 +762,17 @@ class InvoiceController extends Controller
      */
     public function bulkApplyDiscount(Request $request)
     {
+        $creatorStaffId = $this->ensureBillingStaff($request);
+
         $request->validate([
             'student_ids' => 'required|array',
             'student_ids.*' => 'exists:students,id',
-            'amount' => 'required|numeric|min:0',
+            'amount' => 'required|numeric|min:0.01',
             'type' => 'required|in:discount,waiver,bursary,helb,penalty,refund,other',
             'description' => 'nullable|string',
         ]);
 
         $billingService = app(\App\Services\BillingService::class);
-        $creatorStaffId = auth()->user()?->staff?->id;
 
         $count = 0;
         $errors = [];
@@ -749,6 +782,11 @@ class InvoiceController extends Controller
                 try {
                     $invoices = StudentInvoice::where('student_id', $studentId)
                         ->where('balance_due', '>', 0)
+                        ->where(function ($statusQuery) {
+                            $statusQuery
+                                ->whereNull('approval_status')
+                                ->orWhere('approval_status', '!=', 'rejected');
+                        })
                         ->get();
 
                     foreach ($invoices as $invoice) {

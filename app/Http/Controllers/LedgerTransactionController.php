@@ -6,11 +6,20 @@ use App\Models\AcademicSession;
 use App\Models\LedgerTransaction;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class LedgerTransactionController extends Controller
 {
     public function index(Request $request)
     {
+        $this->ensureBillingStaff($request);
+
+        $allowedSorts = ['transaction_date', 'type', 'debit', 'credit', 'created_at', 'id'];
+        $sort = in_array($request->query('sort'), $allowedSorts, true)
+            ? $request->query('sort')
+            : 'transaction_date';
+        $direction = $request->query('direction') === 'asc' ? 'asc' : 'desc';
+
         $baseQuery = LedgerTransaction::query()
             ->with([
                 'student.user',
@@ -63,7 +72,7 @@ class LedgerTransactionController extends Controller
             ]);
 
         $transactions = $query
-            ->orderBy($request->sort ?? 'transaction_date', $request->direction ?? 'desc')
+            ->orderBy($sort, $direction)
             ->paginate(20)
             ->withQueryString()
             ->through(fn (LedgerTransaction $transaction) => [
@@ -116,5 +125,16 @@ class LedgerTransactionController extends Controller
                 'net_total' => (float) (($summary->debit_total ?? 0) - ($summary->credit_total ?? 0)),
             ],
         ]);
+    }
+
+    protected function ensureBillingStaff(Request $request): int
+    {
+        $staffId = $request->user()?->staff?->id;
+
+        if (! $staffId) {
+            throw new HttpException(403, 'A staff billing account is required to access billing ledgers.');
+        }
+
+        return (int) $staffId;
     }
 }

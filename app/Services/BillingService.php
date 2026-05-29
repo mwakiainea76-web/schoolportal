@@ -24,6 +24,7 @@ class BillingService
     public const NOTE_MANUAL_ADJUSTMENT = 'Manual invoice adjustment.';
     public const NOTE_MANUAL_PENALTY = 'Manual penalty invoice.';
     public const NOTE_HOSTEL = 'Hostel accommodation invoice.';
+    protected const ALLOWED_INVOICE_TYPES = ['default_fees', 'fees', 'penalty', 'hostel'];
 
     protected FeeAssignmentService $feeAssignmentService;
 
@@ -128,6 +129,14 @@ class BillingService
         ?string $idempotencyKey = null,
         string $invoiceType = 'fees'
     ): StudentInvoice {
+        $this->assertPositiveAmount($amount);
+
+        if (! in_array($invoiceType, self::ALLOWED_INVOICE_TYPES, true)) {
+            throw ValidationException::withMessages([
+                'invoice_type' => 'The selected invoice type is not allowed.',
+            ]);
+        }
+
         if ($idempotencyKey) {
             $existingInvoice = StudentInvoice::query()
                 ->where('idempotency_key', $idempotencyKey)
@@ -243,6 +252,24 @@ class BillingService
         return $studentId ? (int) $studentId : null;
     }
 
+    protected function assertPositiveAmount(float $amount, string $field = 'amount'): void
+    {
+        if ($amount <= 0) {
+            throw ValidationException::withMessages([
+                $field => 'Amount must be greater than zero.',
+            ]);
+        }
+    }
+
+    protected function assertInvoiceAcceptsFinancialActivity(StudentInvoice $invoice): void
+    {
+        if ($invoice->approval_status === 'rejected') {
+            throw ValidationException::withMessages([
+                'invoice' => 'Rejected invoices cannot receive payments or adjustments.',
+            ]);
+        }
+    }
+
     protected function transferClosedSessionBalancesToCurrentSession(
         AcademicSessionEnrollment $enrollment,
         ?int $createdBy = null,
@@ -352,6 +379,9 @@ class BillingService
         ?string $idempotencyKey = null
     ): Payment
     {
+        $this->assertPositiveAmount($amount);
+        $this->assertInvoiceAcceptsFinancialActivity($invoice);
+
         if ($idempotencyKey) {
             $existingPayment = Payment::query()
                 ->where('idempotency_key', $idempotencyKey)
@@ -385,6 +415,8 @@ class BillingService
         ?string $notes = null,
         ?string $idempotencyKey = null
     ): Payment {
+        $this->assertPositiveAmount($amount);
+
         if ($idempotencyKey) {
             $existingPayment = Payment::query()
                 ->where('idempotency_key', $idempotencyKey)
@@ -440,6 +472,9 @@ class BillingService
 
     public function applyAdjustment(StudentInvoice $invoice, string $type, float $amount, int $createdBy, ?string $description = null, ?string $appliedAt = null, ?string $idempotencyKey = null): FeeAdjustment
     {
+        $this->assertPositiveAmount($amount);
+        $this->assertInvoiceAcceptsFinancialActivity($invoice);
+
         if ($idempotencyKey) {
             $existingAdjustment = FeeAdjustment::query()
                 ->where('idempotency_key', $idempotencyKey)
@@ -497,6 +532,12 @@ class BillingService
         ?string $replacementDescription = null,
         ?string $idempotencyKey = null
     ): array {
+        $this->assertPositiveAmount($reversalAmount, 'reversal_amount');
+
+        if ($replacementAmount !== null) {
+            $this->assertPositiveAmount($replacementAmount, 'replacement_amount');
+        }
+
         return DB::transaction(function () use (
             $invoice,
             $reversalAmount,
@@ -600,6 +641,11 @@ class BillingService
 
         $outstandingBalance = (float) StudentInvoice::query()
             ->where('student_id', $studentId)
+            ->where(function ($statusQuery) {
+                $statusQuery
+                    ->whereNull('approval_status')
+                    ->orWhere('approval_status', '!=', 'rejected');
+            })
             ->sum('balance_due');
 
         if ($outstandingBalance > 0) {
@@ -667,6 +713,11 @@ class BillingService
                 try {
                     $invoices = StudentInvoice::where('student_id', $studentId)
                         ->where('balance_due', '>', 0)
+                        ->where(function ($statusQuery) {
+                            $statusQuery
+                                ->whereNull('approval_status')
+                                ->orWhere('approval_status', '!=', 'rejected');
+                        })
                         ->get();
 
                     foreach ($invoices as $invoice) {
@@ -694,8 +745,14 @@ class BillingService
         $outstandingInvoices = StudentInvoice::query()
             ->where('student_id', $student->id)
             ->where('balance_due', '>', 0)
+            ->where(function ($statusQuery) {
+                $statusQuery
+                    ->whereNull('approval_status')
+                    ->orWhere('approval_status', '!=', 'rejected');
+            })
             ->orderBy('issue_date')
             ->orderBy('id')
+            ->lockForUpdate()
             ->get();
 
         foreach ($outstandingInvoices as $invoice) {
@@ -753,6 +810,10 @@ class BillingService
 
     protected function applyAvailableCredits(StudentInvoice $invoice, int $createdBy, ?string $allocatedAt = null): void
     {
+        if ($invoice->approval_status === 'rejected') {
+            return;
+        }
+
         $remainingBalance = (float) $invoice->balance_due;
 
         if ($remainingBalance <= 0) {
