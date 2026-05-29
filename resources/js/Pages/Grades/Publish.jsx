@@ -3,11 +3,13 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 
-export default function Publish({ filters, selected_unit, submitted_marks, blocker }) {
+export default function Publish({ filters, selected_unit, submitted_marks, blocker, filter_options }) {
     const filterForm = useForm({
         program_version_unit_code: filters.program_version_unit_code || "",
         assessment_type: filters.assessment_type || "theory",
         assessment_number: filters.assessment_number || "1",
+        academic_year: filters.academic_year || "",
+        module: filters.module || "",
     });
 
     const loadAssessment = (e) => {
@@ -17,8 +19,8 @@ export default function Publish({ filters, selected_unit, submitted_marks, block
             {
                 program_version_unit_code:
                     filterForm.data.program_version_unit_code,
-                assessment_type: filterForm.data.assessment_type,
-                assessment_number: filterForm.data.assessment_number,
+                academic_year: filterForm.data.academic_year,
+                module: filterForm.data.module,
             },
             {
                 preserveState: true,
@@ -32,8 +34,8 @@ export default function Publish({ filters, selected_unit, submitted_marks, block
             route("academic.marks.publish.assessment"),
             {
                 program_version_unit_code: filterForm.data.program_version_unit_code,
-                assessment_type: filterForm.data.assessment_type,
-                assessment_number: filterForm.data.assessment_number,
+                academic_year: filterForm.data.academic_year,
+                module: filterForm.data.module,
                 action,
             },
             {
@@ -98,36 +100,51 @@ export default function Publish({ filters, selected_unit, submitted_marks, block
                         </div>
 
                         <div>
-                            <InputLabel value="Assessment Type" required />
+                            <InputLabel value="Academic Year" required />
                             <select
-                                value={filterForm.data.assessment_type}
+                                value={filterForm.data.academic_year}
                                 onChange={(e) =>
                                     filterForm.setData(
-                                        "assessment_type",
+                                        "academic_year",
                                         e.target.value,
                                     )
                                 }
                                 className="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none transition focus:border-emerald-400"
                             >
-                                <option value="theory">Theory</option>
-                                <option value="practical">Practical</option>
+                                <option value="">All Years</option>
+                                {filter_options?.academic_years?.map((option) => (
+                                    <option
+                                        key={option.value}
+                                        value={option.value}
+                                    >
+                                        {option.label}
+                                    </option>
+                                ))}
                             </select>
                         </div>
 
                         <div>
-                            <InputLabel value="Assessment Number" required />
-                            <input
-                                type="number"
-                                min="1"
-                                value={filterForm.data.assessment_number}
+                            <InputLabel value="Module" required />
+                            <select
+                                value={filterForm.data.module}
                                 onChange={(e) =>
                                     filterForm.setData(
-                                        "assessment_number",
+                                        "module",
                                         e.target.value,
                                     )
                                 }
                                 className="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none transition focus:border-emerald-400"
-                            />
+                            >
+                                <option value="">All Modules</option>
+                                {filter_options?.modules?.map((option) => (
+                                    <option
+                                        key={option.value}
+                                        value={option.value}
+                                    >
+                                        {option.label}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
                     </div>
 
