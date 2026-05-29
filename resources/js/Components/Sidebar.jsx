@@ -66,6 +66,24 @@ export default function Sidebar({
                   fallback: "/academic/marks/publish",
                   icon: ICONS.book,
               },
+              {
+                  label: "API CORS Origins",
+                  routeName: "settings.cors-origins.index",
+                  fallback: "/settings/cors-origins",
+                  icon: ICONS.roles,
+              },
+              {
+                  label: "App Performance",
+                  routeName: "settings.performance.index",
+                  fallback: "/settings/performance",
+                  icon: ICONS.dashboard,
+              },
+              {
+                  label: "Log Files",
+                  routeName: "settings.logs.index",
+                  fallback: "/settings/logs",
+                  icon: ICONS.book,
+              },
           ]
         : [];
 

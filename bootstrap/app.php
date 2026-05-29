@@ -6,7 +6,9 @@ use App\Exceptions\ApiException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use App\Http\Middleware\DatabaseCors;
 use App\Http\Middleware\RedirectStudentsFromAdmin;
+use App\Http\Middleware\RecordRequestPerformance;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Spatie\Permission\Middleware\PermissionMiddleware;
@@ -24,6 +26,12 @@ return Application::configure(basePath: dirname(__DIR__))
         // Web middleware stack
         $middleware->web(append: [
             HandleInertiaRequests::class,
+            RecordRequestPerformance::class,
+        ]);
+
+        $middleware->api(prepend: [
+            DatabaseCors::class,
+            RecordRequestPerformance::class,
         ]);
 
         // Middleware aliases (Spatie)

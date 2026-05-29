@@ -587,6 +587,7 @@ class InvoiceController extends Controller
 
         $enrollment = AcademicSessionEnrollment::query()
             ->with([
+                'programEnrollment',
                 'student.user',
                 'academicSession',
                 'programVersionMapping.program',
@@ -772,4 +773,3 @@ class InvoiceController extends Controller
         ]);
     }
 }
-

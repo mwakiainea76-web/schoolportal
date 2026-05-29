@@ -35,6 +35,8 @@ class BillingService
     public function createInvoiceForEnrollment(AcademicSessionEnrollment $enrollment, ?int $createdBy = null, ?string $issueDate = null, ?string $dueDate = null): StudentInvoice
     {
         return DB::transaction(function () use ($enrollment, $createdBy, $issueDate, $dueDate) {
+            $studentId = $this->studentIdForEnrollment($enrollment);
+
             $assignment = $this->feeAssignmentService->resolveActiveAssignment(
                 $enrollment->academicSession?->academic_year_id ?? 0,
                 $enrollment->programEnrollment?->program_version_mapping_id ?? null,
@@ -80,7 +82,7 @@ class BillingService
 
             $invoice = StudentInvoice::create([
                 'invoice_number' => StudentInvoice::generateInvoiceNumber(),
-                'student_id' => $enrollment->student_id,
+                'student_id' => $studentId,
                 'enrollment_id' => $enrollment->id,
                 'fee_assignment_id' => $assignment->id,
                 'invoice_type' => 'default_fees',
@@ -97,7 +99,7 @@ class BillingService
             $this->createInvoiceItemsFromAssignment($invoice, $assignment);
             $invoice->recalculateTotals();
             $this->recordLedgerTransaction([
-                'student_id' => $enrollment->student_id,
+                'student_id' => $studentId,
                 'student_invoice_id' => $invoice->id,
                 'academic_session_id' => $invoice->academic_session_id,
                 'type' => $this->resolveLedgerTypeForInvoice('default_fees'),
@@ -137,9 +139,11 @@ class BillingService
         }
 
         return DB::transaction(function () use ($enrollment, $amount, $createdBy, $description, $issueDate, $dueDate, $notes, $idempotencyKey, $invoiceType) {
+            $studentId = $this->studentIdForEnrollment($enrollment);
+
             $invoice = StudentInvoice::create([
                 'invoice_number' => StudentInvoice::generateInvoiceNumber(),
-                'student_id' => $enrollment->student_id,
+                'student_id' => $studentId,
                 'enrollment_id' => $enrollment->id,
                 'fee_assignment_id' => null,
                 'invoice_type' => $invoiceType,
@@ -166,7 +170,7 @@ class BillingService
 
             $invoice->recalculateTotals();
             $this->recordLedgerTransaction([
-                'student_id' => $enrollment->student_id,
+                'student_id' => $studentId,
                 'student_invoice_id' => $invoice->id,
                 'academic_session_id' => $invoice->academic_session_id,
                 'type' => $this->resolveLedgerTypeForInvoice($invoiceType, $invoice->notes),
@@ -224,13 +228,28 @@ class BillingService
         return $invoice;
     }
 
+    protected function studentIdForEnrollment(AcademicSessionEnrollment $enrollment, bool $throw = true): ?int
+    {
+        $enrollment->loadMissing('programEnrollment');
+
+        $studentId = $enrollment->programEnrollment?->student_id ?? $enrollment->student_id;
+
+        if (! $studentId && $throw) {
+            throw ValidationException::withMessages([
+                'registration_number' => 'The selected session enrollment is not linked to a student.',
+            ]);
+        }
+
+        return $studentId ? (int) $studentId : null;
+    }
+
     protected function transferClosedSessionBalancesToCurrentSession(
         AcademicSessionEnrollment $enrollment,
         ?int $createdBy = null,
         ?string $issueDate = null,
         ?string $dueDate = null
     ): ?StudentInvoice {
-        $studentId = $enrollment->student_id;
+        $studentId = $this->studentIdForEnrollment($enrollment, false);
         $currentSessionId = $enrollment->academic_session_id;
 
         if (! $studentId || ! $currentSessionId || ! $createdBy) {
@@ -827,4 +846,3 @@ class BillingService
         ]);
     }
 }
-

@@ -6,6 +6,7 @@ use App\Http\Controllers\StudentMarkController;
 use App\Http\Controllers\AcademicTimetableController;
 use App\Http\Controllers\AcademicYearController;
 use App\Http\Controllers\CertificationLevelController;
+use App\Http\Controllers\CorsAllowedOriginController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\ExamBodyController;
@@ -15,9 +16,11 @@ use App\Http\Controllers\FeePlanItemController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LedgerTransactionController;
 use App\Http\Controllers\LectureRoomController;
+use App\Http\Controllers\LogViewerController;
 use App\Http\Controllers\HostelAllocationController;
 use App\Http\Controllers\HostelController;
 use App\Http\Controllers\PermissionController;
+use App\Http\Controllers\PerformanceDashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProgramController;
 use App\Http\Controllers\ProgramEnrollmentController;
@@ -86,6 +89,24 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::middleware(['auth', 'non_student'])->group(function () {
+    Route::middleware('role:admin')
+        ->prefix('settings/cors-origins')
+        ->name('settings.cors-origins.')
+        ->group(function () {
+            Route::get('/', [CorsAllowedOriginController::class, 'index'])->name('index');
+            Route::post('/', [CorsAllowedOriginController::class, 'store'])->name('store');
+            Route::put('/{corsAllowedOrigin}', [CorsAllowedOriginController::class, 'update'])->name('update');
+            Route::delete('/{corsAllowedOrigin}', [CorsAllowedOriginController::class, 'destroy'])->name('destroy');
+        });
+
+    Route::middleware('role:admin')
+        ->get('/settings/performance', [PerformanceDashboardController::class, 'index'])
+        ->name('settings.performance.index');
+
+    Route::middleware('role:admin')
+        ->get('/settings/logs', [LogViewerController::class, 'index'])
+        ->name('settings.logs.index');
+
     /*
     |--------------------------------------------------------------------------
     | EXAM BODIES

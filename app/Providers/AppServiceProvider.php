@@ -42,15 +42,17 @@ class AppServiceProvider extends ServiceProvider
         DB::whenQueryingForLongerThan(
             (int) config('performance.query_budget_ms', 200),
             function ($connection, QueryExecuted $event): void {
-                Log::warning('Slow database query detected.', [
+                $context = [
                     'connection' => $connection->getName(),
                     'sql' => $event->toRawSql(),
                     'time_ms' => $event->time,
                     'route' => request()?->route()?->getName(),
                     'url' => request()?->fullUrl(),
-                ]);
+                ];
+
+                Log::warning('Slow database query detected.', $context);
+                Log::channel('performance')->warning('Slow database query detected.', $context);
             }
         );
     }
 }
-

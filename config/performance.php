@@ -22,4 +22,14 @@ return [
     |
     */
     'query_budget_ms' => env('PERF_QUERY_BUDGET_MS', 200),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Slow Request Log Threshold
+    |--------------------------------------------------------------------------
+    |
+    | Requests at or above this duration are written to the performance log.
+    |
+    */
+    'slow_request_ms' => env('PERF_SLOW_REQUEST_MS', 1000),
 ];
