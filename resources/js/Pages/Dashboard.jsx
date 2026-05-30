@@ -521,7 +521,112 @@ function StudentDashboard({ dashboard, fullName }) {
 }
 
 function StaffDashboard({ dashboard }) {
-    const analytics = dashboard.analytics ?? {};
+    const [analytics, setAnalytics] = useState(dashboard.analytics ?? {});
+    const [analyticsLoading, setAnalyticsLoading] = useState(
+        !dashboard.analytics,
+    );
+    const [analyticsError, setAnalyticsError] = useState("");
+
+    useEffect(() => {
+        if (dashboard.analytics) {
+            setAnalytics(dashboard.analytics);
+            setAnalyticsLoading(false);
+            return;
+        }
+
+        let cancelled = false;
+
+        const loadAnalytics = async () => {
+            setAnalyticsLoading(true);
+            setAnalyticsError("");
+
+            try {
+                const [
+                    executiveResponse,
+                    financeResponse,
+                    academicResponse,
+                    admissionsResponse,
+                    hostelResponse,
+                    dataQualityResponse,
+                    snapshotResponse,
+                ] = await Promise.all([
+                    fetch(route("reports.api.executive-summary")),
+                    fetch(route("reports.api.finance-summary")),
+                    fetch(route("reports.api.academic-summary")),
+                    fetch(route("reports.api.admissions-summary")),
+                    fetch(route("reports.api.hostel-summary")),
+                    fetch(route("reports.api.data-quality-summary")),
+                    fetch(route("reports.api.snapshot-trends", { days: 14 })),
+                ]);
+
+                if (
+                    !executiveResponse.ok ||
+                    !financeResponse.ok ||
+                    !academicResponse.ok ||
+                    !admissionsResponse.ok ||
+                    !hostelResponse.ok ||
+                    !dataQualityResponse.ok ||
+                    !snapshotResponse.ok
+                ) {
+                    throw new Error(
+                        "One or more dashboard analytics requests failed.",
+                    );
+                }
+
+                const [
+                    executive,
+                    finance,
+                    academic,
+                    admissions,
+                    hostel,
+                    dataQuality,
+                    snapshotTrends,
+                ] = await Promise.all([
+                    executiveResponse.json(),
+                    financeResponse.json(),
+                    academicResponse.json(),
+                    admissionsResponse.json(),
+                    hostelResponse.json(),
+                    dataQualityResponse.json(),
+                    snapshotResponse.json(),
+                ]);
+
+                if (cancelled) {
+                    return;
+                }
+
+                setAnalytics({
+                    executive,
+                    finance,
+                    academic,
+                    admissions,
+                    hostel,
+                    data_quality: dataQuality,
+                    snapshot_trends: snapshotTrends,
+                });
+            } catch (error) {
+                if (cancelled) {
+                    return;
+                }
+
+                console.error("Failed to load dashboard analytics:", error);
+                setAnalyticsError(
+                    "Analytics are taking longer than expected to load. You can still use the portal while we keep trying.",
+                );
+            } finally {
+                if (!cancelled) {
+                    setAnalyticsLoading(false);
+                }
+            }
+        };
+
+        loadAnalytics();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [dashboard.analytics]);
+
     const executive = analytics.executive ?? {};
     const finance = analytics.finance ?? {};
     const academic = analytics.academic ?? {};
@@ -684,6 +789,18 @@ function StaffDashboard({ dashboard }) {
                 Manage programs, program versions, and institutional scheduling
                 from one place.
             </p>
+
+            {analyticsLoading ? (
+                <div className="mt-4 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800">
+                    Loading analytics in the background. Core navigation is ready.
+                </div>
+            ) : null}
+
+            {analyticsError ? (
+                <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                    {analyticsError}
+                </div>
+            ) : null}
 
             <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
                 {cards.map((card) => {

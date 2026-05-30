@@ -12,16 +12,10 @@ use App\Models\StudentInvoice;
 use App\Models\StudentUnitRegistration;
 use App\Services\Analytics\AcademicAnalyticsService;
 use App\Services\Analytics\AdmissionsAnalyticsService;
-use App\Services\Analytics\AnalyticsSnapshotReadService;
-use App\Services\Analytics\DataQualityAnalyticsService;
-use App\Services\Analytics\ExecutiveAnalyticsService;
-use App\Services\Analytics\FinanceAnalyticsService;
-use App\Services\Analytics\HostelAnalyticsService;
 use App\Services\FeeAssignmentService;
 use App\Services\StudentAcademicContextService;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -186,26 +180,11 @@ class DashboardController extends Controller
         ]);
     }
 
-    public function staffDashboard(
-        ExecutiveAnalyticsService $executiveAnalyticsService,
-        FinanceAnalyticsService $financeAnalyticsService,
-        AcademicAnalyticsService $academicAnalyticsService,
-        AdmissionsAnalyticsService $admissionsAnalyticsService,
-        HostelAnalyticsService $hostelAnalyticsService,
-        DataQualityAnalyticsService $dataQualityAnalyticsService,
-        AnalyticsSnapshotReadService $analyticsSnapshotReadService,
-    ): Response
+    public function staffDashboard(): Response
     {
-        $dashboardData = Cache::remember('dashboard.staff.analytics.v1', now()->addMinutes(1), function () use (
-            $executiveAnalyticsService,
-            $financeAnalyticsService,
-            $academicAnalyticsService,
-            $admissionsAnalyticsService,
-            $hostelAnalyticsService,
-            $dataQualityAnalyticsService,
-            $analyticsSnapshotReadService
-        ) {
-            return [
+        return Inertia::render('Dashboard', [
+            'dashboard' => [
+                'type' => 'staff',
                 'stats' => [
                     [
                         'label' => 'Programs',
@@ -224,23 +203,7 @@ class DashboardController extends Controller
                         'value' => AcademicYear::query()->count(),
                     ],
                 ],
-                'analytics' => [
-                    'executive' => $executiveAnalyticsService->summary(),
-                    'finance' => $financeAnalyticsService->summary(),
-                    'academic' => $academicAnalyticsService->summary(),
-                    'admissions' => $admissionsAnalyticsService->summary(),
-                    'hostel' => $hostelAnalyticsService->summary(),
-                    'data_quality' => $dataQualityAnalyticsService->summary(),
-                    'snapshot_trends' => $analyticsSnapshotReadService->trendSummary(14),
-                ],
-            ];
-        });
-
-        return Inertia::render('Dashboard', [
-            'dashboard' => [
-                'type' => 'staff',
-                'stats' => $dashboardData['stats'],
-                'analytics' => $dashboardData['analytics'],
+                'analytics' => null,
             ],
         ]);
     }
