@@ -123,6 +123,19 @@ class LogReaderService
         $current = null;
 
         foreach (preg_split('/\R/', $content) ?: [] as $line) {
+            $jsonEntry = $this->parseJsonEntry($line);
+
+            if ($jsonEntry !== null) {
+                if ($current) {
+                    $entries->push($this->normalizeEntryLevel($current));
+                    $current = null;
+                }
+
+                $entries->push($this->normalizeEntryLevel($jsonEntry));
+
+                continue;
+            }
+
             if (preg_match('/^\[(?<date>[^\]]+)\]\s+(?<env>[^.]+)\.(?<level>[A-Z]+):\s+(?<message>.*)$/', $line, $matches)) {
                 if ($current) {
                     $entries->push($this->normalizeEntryLevel($current));
@@ -150,6 +163,36 @@ class LogReaderService
         }
 
         return $entries;
+    }
+
+    private function parseJsonEntry(string $line): ?array
+    {
+        $trimmed = trim($line);
+
+        if ($trimmed === '' || ! str_starts_with($trimmed, '{')) {
+            return null;
+        }
+
+        $decoded = json_decode($trimmed, true);
+
+        if (! is_array($decoded)) {
+            return null;
+        }
+
+        $context = is_array($decoded['context'] ?? null) ? $decoded['context'] : [];
+        $level = strtolower((string) ($context['level'] ?? $decoded['level_name'] ?? 'info'));
+        $message = (string) ($context['message'] ?? $decoded['message'] ?? 'Log entry');
+        $timestamp = (string) ($context['timestamp'] ?? $decoded['datetime'] ?? '');
+        $environment = (string) ($decoded['channel'] ?? $context['environment'] ?? 'log');
+
+        return [
+            'timestamp' => $timestamp,
+            'environment' => $environment,
+            'message' => $message,
+            'raw' => $trimmed,
+            'original_level' => $level,
+            'level' => $level,
+        ];
     }
 
     private function normalizeEntryLevel(array $entry): array
