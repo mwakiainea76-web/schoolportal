@@ -64,9 +64,12 @@ class RecordRequestPerformance
             $statusCode = $response->getStatusCode();
 
             if ($statusCode >= 400 || $durationMs >= (int) config('performance.slow_request_ms', 1000)) {
+                $responseSizeBytes = $this->responseSize($response);
                 $context = $statusCode >= 400
                     ? RequestLogContext::responseError($request, $statusCode, $durationMs)
                     : RequestLogContext::slowRequest($request, $statusCode, $durationMs);
+                $context['response_size_bytes'] = $responseSizeBytes;
+                $context['memory_peak_kb'] = $memoryPeakKb;
 
                 $level = strtolower($context['level']);
 
@@ -101,6 +104,7 @@ class RecordRequestPerformance
             $statusCode,
             $durationMs
         );
+        $context['memory_peak_kb'] = (int) round(memory_get_peak_usage(true) / 1024);
         $level = strtolower($context['level']);
 
         Log::channel('performance')->{$level}($context['event'], $context);

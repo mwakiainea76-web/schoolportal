@@ -9,7 +9,6 @@ use App\Models\LectureRoom;
 use App\Models\ProgramVersionUnit;
 use App\Models\Student;
 use App\Services\Analytics\Concerns\BuildsAnalyticsFilters;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class AcademicAnalyticsService
@@ -232,39 +231,41 @@ class AcademicAnalyticsService
 
     protected function buildTimetableClashes(string $dimension, string $type): array
     {
-        $entries = AcademicTimetable::query()
+        $clashes = [];
+        $previousEntry = null;
+
+        foreach (AcademicTimetable::query()
             ->whereNull('deleted_at')
             ->whereNotNull($dimension)
             ->select('id', $dimension, 'day_of_week', 'start_time', 'end_time')
             ->orderBy($dimension)
             ->orderBy('day_of_week')
             ->orderBy('start_time')
-            ->get()
-            ->groupBy(fn ($row) => $row->{$dimension}.'|'.$row->day_of_week);
+            ->cursor() as $entry) {
+            if ($previousEntry !== null) {
+                $sameEntity = $previousEntry->{$dimension} === $entry->{$dimension};
+                $sameDay = $previousEntry->day_of_week === $entry->day_of_week;
 
-        $clashes = collect();
-
-        $entries->each(function (Collection $group) use ($dimension, $type, $clashes) {
-            $sorted = $group->values();
-
-            for ($i = 0; $i < $sorted->count() - 1; $i++) {
-                $current = $sorted[$i];
-                $next = $sorted[$i + 1];
-
-                if ($current->end_time > $next->start_time) {
-                    $clashes->push([
+                if ($sameEntity && $sameDay && $previousEntry->end_time > $entry->start_time) {
+                    $clashes[] = [
                         'type' => $type,
-                        'entity_id' => (int) $current->{$dimension},
-                        'day_of_week' => $current->day_of_week,
-                        'first_timetable_id' => (int) $current->id,
-                        'second_timetable_id' => (int) $next->id,
-                        'first_time_range' => substr((string) $current->start_time, 0, 5).' - '.substr((string) $current->end_time, 0, 5),
-                        'second_time_range' => substr((string) $next->start_time, 0, 5).' - '.substr((string) $next->end_time, 0, 5),
-                    ]);
+                        'entity_id' => (int) $entry->{$dimension},
+                        'day_of_week' => $entry->day_of_week,
+                        'first_timetable_id' => (int) $previousEntry->id,
+                        'second_timetable_id' => (int) $entry->id,
+                        'first_time_range' => substr((string) $previousEntry->start_time, 0, 5).' - '.substr((string) $previousEntry->end_time, 0, 5),
+                        'second_time_range' => substr((string) $entry->start_time, 0, 5).' - '.substr((string) $entry->end_time, 0, 5),
+                    ];
+
+                    if (count($clashes) >= 10) {
+                        break;
+                    }
                 }
             }
-        });
 
-        return $clashes->take(10)->values()->all();
+            $previousEntry = $entry;
+        }
+
+        return $clashes;
     }
 }

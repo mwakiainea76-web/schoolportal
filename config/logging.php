@@ -3,6 +3,7 @@
 use Monolog\Handler\NullHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\SyslogUdpHandler;
+use Monolog\Formatter\JsonFormatter;
 use Monolog\Processor\PsrLogMessageProcessor;
 
 return [
@@ -78,6 +79,7 @@ return [
             'path' => storage_path('logs/performance.log'),
             'level' => env('LOG_PERFORMANCE_LEVEL', 'warning'),
             'days' => env('LOG_PERFORMANCE_DAYS', 90),
+            'formatter' => JsonFormatter::class,
             'replace_placeholders' => true,
         ],
 
@@ -86,6 +88,7 @@ return [
             'path' => storage_path('logs/security.log'),
             'level' => env('LOG_SECURITY_LEVEL', 'info'),
             'days' => env('LOG_SECURITY_DAYS', 730),
+            'formatter' => JsonFormatter::class,
             'replace_placeholders' => true,
         ],
 

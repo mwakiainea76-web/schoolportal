@@ -21,12 +21,69 @@ export default function Login({ status, canResetPassword }) {
     });
     const [showPassword, setShowPassword] = useState(false);
     const [loginNotice, setLoginNotice] = useState("");
+    const [sessionRedirectNotice, setSessionRedirectNotice] = useState("");
+
+    const sessionOwnerStorageKey = "auth.sessionOwner";
+    const sessionHeartbeatStorageKey = "auth.sessionHeartbeat";
+    const sessionHeartbeatTtlMs = 120000;
 
     useEffect(() => {
         const context = loadSecurityContext();
         setData("device_id", context.device_id);
         setData("location_hint", context.location_hint);
     }, [setData]);
+
+    useEffect(() => {
+        const readActiveSessionOwner = () => {
+            try {
+                const ownerPayload = window.localStorage.getItem(
+                    sessionOwnerStorageKey,
+                );
+                const heartbeatValue = Number(
+                    window.localStorage.getItem(sessionHeartbeatStorageKey),
+                );
+
+                if (!ownerPayload || !heartbeatValue) {
+                    return null;
+                }
+
+                if (Date.now() - heartbeatValue > sessionHeartbeatTtlMs) {
+                    window.localStorage.removeItem(sessionOwnerStorageKey);
+                    window.localStorage.removeItem(sessionHeartbeatStorageKey);
+                    return null;
+                }
+
+                const owner = JSON.parse(ownerPayload);
+
+                return owner?.userId ? owner : null;
+            } catch {
+                window.localStorage.removeItem(sessionOwnerStorageKey);
+                window.localStorage.removeItem(sessionHeartbeatStorageKey);
+                return null;
+            }
+        };
+
+        const activeSessionOwner = readActiveSessionOwner();
+
+        if (!activeSessionOwner) {
+            return undefined;
+        }
+
+        const activeUserLabel =
+            activeSessionOwner.name ||
+            activeSessionOwner.email ||
+            "another account";
+
+        setSessionRedirectNotice(
+            `This browser profile is already signed in as ${activeUserLabel}. Redirecting you to that session.`,
+        );
+
+        const timeoutId = window.setTimeout(() => {
+            window.location.assign(route("dashboard"));
+        }, 1200);
+
+        return () => window.clearTimeout(timeoutId);
+    }, []);
 
     useEffect(() => {
         if (!errors.login) {
@@ -49,6 +106,11 @@ export default function Login({ status, canResetPassword }) {
 
     const submit = (e) => {
         e.preventDefault();
+
+        if (sessionRedirectNotice) {
+            window.location.assign(route("dashboard"));
+            return;
+        }
 
         post(route("login"), {
             onFinish: () => reset("password"),
@@ -91,6 +153,12 @@ export default function Login({ status, canResetPassword }) {
                                 {status && (
                                     <div className="mb-5 rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
                                         {status}
+                                    </div>
+                                )}
+
+                                {sessionRedirectNotice && (
+                                    <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                                        {sessionRedirectNotice}
                                     </div>
                                 )}
 

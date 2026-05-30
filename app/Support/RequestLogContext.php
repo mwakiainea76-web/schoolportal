@@ -39,10 +39,27 @@ class RequestLogContext
             'timestamp' => now()->utc()->toJSON(),
             'method' => $request->method(),
             'path' => '/'.ltrim($request->path(), '/'),
+            'request' => sprintf(
+                '%s %s %s',
+                $request->method(),
+                '/'.ltrim($request->path(), '/'),
+                (string) ($request->server('SERVER_PROTOCOL') ?: 'HTTP/1.1')
+            ),
             'route' => $request->route()?->getName(),
             'user_id' => $request->user()?->id,
+            'host' => $request->getHost(),
+            'http_version' => (string) ($request->server('SERVER_PROTOCOL') ?: 'HTTP/1.1'),
+            'http_referrer' => (string) $request->headers->get('referer', ''),
+            'http_user_agent' => (string) $request->userAgent(),
+            'http_x_forwarded_for' => (string) $request->headers->get('x-forwarded-for', ''),
+            'http_cf_connecting_ip' => self::sanitizeIp((string) $request->headers->get('cf-connecting-ip', '')),
+            'http_cf_ipcountry' => (string) $request->headers->get('cf-ipcountry', ''),
+            'http_cf_ray' => (string) $request->headers->get('cf-ray', ''),
             'ip_address' => self::sanitizeIp((string) $request->ip()),
+            'remote_addr' => self::sanitizeIp((string) $request->server('REMOTE_ADDR', '')),
+            'request_length_bytes' => self::requestLength($request),
             'request_id' => self::ensureRequestId($request),
+            'source' => 'laravel-app',
         ], $extra), fn ($value) => $value !== null && $value !== '');
     }
 
@@ -196,6 +213,12 @@ class RequestLogContext
 
     private static function sanitizeIp(string $ip): string
     {
+        $ip = trim($ip);
+
+        if ($ip === '') {
+            return '';
+        }
+
         if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
             $parts = explode('.', $ip);
 
@@ -207,5 +230,12 @@ class RequestLogContext
         }
 
         return 'unknown';
+    }
+
+    private static function requestLength(Request $request): ?int
+    {
+        $length = $request->server('CONTENT_LENGTH');
+
+        return is_numeric($length) ? (int) $length : null;
     }
 }

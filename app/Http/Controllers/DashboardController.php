@@ -21,6 +21,7 @@ use App\Services\FeeAssignmentService;
 use App\Services\StudentAcademicContextService;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -195,17 +196,16 @@ class DashboardController extends Controller
         AnalyticsSnapshotReadService $analyticsSnapshotReadService,
     ): Response
     {
-        $executive = $executiveAnalyticsService->summary();
-        $finance = $financeAnalyticsService->summary();
-        $academic = $academicAnalyticsService->summary();
-        $admissions = $admissionsAnalyticsService->summary();
-        $hostel = $hostelAnalyticsService->summary();
-        $dataQuality = $dataQualityAnalyticsService->summary();
-        $snapshotTrends = $analyticsSnapshotReadService->trendSummary(14);
-
-        return Inertia::render('Dashboard', [
-            'dashboard' => [
-                'type' => 'staff',
+        $dashboardData = Cache::remember('dashboard.staff.analytics.v1', now()->addMinutes(1), function () use (
+            $executiveAnalyticsService,
+            $financeAnalyticsService,
+            $academicAnalyticsService,
+            $admissionsAnalyticsService,
+            $hostelAnalyticsService,
+            $dataQualityAnalyticsService,
+            $analyticsSnapshotReadService
+        ) {
+            return [
                 'stats' => [
                     [
                         'label' => 'Programs',
@@ -225,14 +225,22 @@ class DashboardController extends Controller
                     ],
                 ],
                 'analytics' => [
-                    'executive' => $executive,
-                    'finance' => $finance,
-                    'academic' => $academic,
-                    'admissions' => $admissions,
-                    'hostel' => $hostel,
-                    'data_quality' => $dataQuality,
-                    'snapshot_trends' => $snapshotTrends,
+                    'executive' => $executiveAnalyticsService->summary(),
+                    'finance' => $financeAnalyticsService->summary(),
+                    'academic' => $academicAnalyticsService->summary(),
+                    'admissions' => $admissionsAnalyticsService->summary(),
+                    'hostel' => $hostelAnalyticsService->summary(),
+                    'data_quality' => $dataQualityAnalyticsService->summary(),
+                    'snapshot_trends' => $analyticsSnapshotReadService->trendSummary(14),
                 ],
+            ];
+        });
+
+        return Inertia::render('Dashboard', [
+            'dashboard' => [
+                'type' => 'staff',
+                'stats' => $dashboardData['stats'],
+                'analytics' => $dashboardData['analytics'],
             ],
         ]);
     }
