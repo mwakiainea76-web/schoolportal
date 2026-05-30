@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { ChevronLeft } from "lucide-react";
 import useRbac from "@/Hooks/UseRBAC";
 import NavLink from "./SideBarLink";
-import { NAV_ITEMS, ICONS } from "../constants/navItems";
+import { STAFF_NAV_ITEMS, STUDENT_NAV_ITEMS, ICONS } from "../constants/navItems";
 import { safeRoute, isRouteCurrent, filterNav } from "../utils/sidebarHelpers";
 
 const SIDEBAR_SCROLL_KEY = "sidebar-scroll-top";
@@ -22,26 +22,9 @@ export default function Sidebar({
     const dashboardFallback = hasRole("student")
         ? "/student/dashboard"
         : "/staff/dashboard";
-    const visibleNav = filterNav(NAV_ITEMS, can);
-    const studentQuickLinks = hasRole("student")
-        ? [
-              {
-                  label: "Fee Statements",
-                  routeName: "student.fee-statements.index",
-                  fallback: "/student/fee-statements",
-              },
-              {
-                  label: "Program Units",
-                  routeName: "student.program-units.index",
-                  fallback: "/student/program-units",
-              },
-              {
-                  label: "Results",
-                  routeName: "student.results.index",
-                  fallback: "/student/results",
-              },
-          ]
-        : [];
+    const dashboardLabel = hasRole("student") ? "Student Dashboard" : "Staff Dashboard";
+    const navItems = hasRole("student") ? STUDENT_NAV_ITEMS : STAFF_NAV_ITEMS;
+    const visibleNav = filterNav(navItems, can);
     const marksQuickLinks = [
         ...(hasRole("admin")
             ? [
@@ -72,18 +55,7 @@ export default function Sidebar({
             : []),
     ];
     const quickSections = [
-        ...(studentQuickLinks.length
-            ? [
-                  {
-                      key: "student-portal",
-                      label: "Student Portal",
-                      icon: "students",
-                      basePath: "/student",
-                      children: studentQuickLinks,
-                  },
-              ]
-            : []),
-        ...(marksQuickLinks.length
+        ...(!hasRole("student") && marksQuickLinks.length
             ? [
                   {
                       key: "marks-workspace",
@@ -101,7 +73,12 @@ export default function Sidebar({
             return child.children.some(isChildActive);
         }
 
-        return isRouteCurrent(child.routeName, child.fallback, url);
+        return isRouteCurrent(
+            child.routeName,
+            child.fallback,
+            url,
+            child.activeRouteNames,
+        );
     };
 
     const isSectionActive = ({ basePath, children }) =>
@@ -157,7 +134,7 @@ export default function Sidebar({
     const renderNestedSection = ({ key, label, icon, basePath, children }) => {
         const isOpen = openMenu === key;
         const parentActive = isSectionActive({ basePath, children });
-        const isSingle = children.length === 1;
+        const isSingle = children.length === 1 && !children[0].children;
 
         if (isSingle && !collapsed) {
             const { routeName, fallback } = children[0];
@@ -219,7 +196,7 @@ export default function Sidebar({
                                         {child.label}
                                     </p>
                                     {child.children.map(
-                                        ({ routeName, fallback, label: childLabel }) => (
+                                        ({ routeName, fallback, label: childLabel, activeRouteNames }) => (
                                             <NavLink
                                                 key={routeName}
                                                 href={safeRoute(routeName, fallback)}
@@ -228,6 +205,7 @@ export default function Sidebar({
                                                     routeName,
                                                     fallback,
                                                     url,
+                                                    activeRouteNames,
                                                 )}
                                                 onClick={handleSidebarLinkClick}
                                             />
@@ -248,6 +226,7 @@ export default function Sidebar({
                                     routeName,
                                     fallback,
                                     url,
+                                    child.activeRouteNames,
                                 )}
                                 onClick={handleSidebarLinkClick}
                             />
@@ -315,7 +294,7 @@ export default function Sidebar({
                         >
                             {ICONS.dashboard}
                             {!collapsed && (
-                                <span className="ml-3">Dashboard</span>
+                                <span className="ml-3">{dashboardLabel}</span>
                             )}
                         </Link>
                     </div>

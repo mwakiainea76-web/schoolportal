@@ -18,7 +18,7 @@ import {
     Wallet,
 } from "lucide-react";
 
-export const NAV_ITEMS = [
+export const STAFF_NAV_ITEMS = [
     {
         key: "reports",
         label: "Analytics & Reports",
@@ -316,7 +316,12 @@ export const NAV_ITEMS = [
         label: "Staff & Access",
         icon: "staffAccess",
         basePath: "/staffs",
-        permissions: ["staffs.view", "staffs.create", "roles.view", "permissions.view"],
+        permissions: [
+            "staffs.view",
+            "staffs.create",
+            "roles.view",
+            "permissions.view",
+        ],
         children: [
             {
                 key: "staff-records",
@@ -406,6 +411,83 @@ export const NAV_ITEMS = [
         ],
     },
 ];
+
+export const STUDENT_NAV_ITEMS = [
+    {
+        key: "student-academics",
+        label: "My Academics",
+        icon: "academic",
+        basePath: "/student/program-units",
+        children: [
+            {
+                key: "student-learning",
+                label: "Academic Records",
+                icon: "book",
+                children: [
+                    {
+                        routeName: "student.program-units.index",
+                        fallback: "/student/program-units",
+                        label: "View Registered Units",
+                        activeRouteNames: ["student.program-units.index"],
+                    },
+                    {
+                        routeName: "student.results.index",
+                        fallback: "/student/results",
+                        label: "View Results",
+                        activeRouteNames: ["student.results.index"],
+                    },
+                ],
+            },
+        ],
+    },
+    {
+        key: "student-finance",
+        label: "My Finance",
+        icon: "finance",
+        basePath: "/student/fee-statements",
+        children: [
+            {
+                key: "student-billing",
+                label: "Statements",
+                icon: "financeBilling",
+                children: [
+                    {
+                        routeName: "student.fee-statements.index",
+                        fallback: "/student/fee-statements",
+                        label: "View Statement",
+                        activeRouteNames: [
+                            "student.fee-statements.index",
+                            "student.fee-statements.show",
+                        ],
+                    },
+                ],
+            },
+        ],
+    },
+    {
+        key: "student-account",
+        label: "My Account",
+        icon: "students",
+        basePath: "/profile",
+        children: [
+            {
+                key: "student-profile",
+                label: "Profile",
+                icon: "users",
+                children: [
+                    {
+                        routeName: "profile.edit",
+                        fallback: "/profile",
+                        label: "Profile Settings",
+                        activeRouteNames: ["profile.edit"],
+                    },
+                ],
+            },
+        ],
+    },
+];
+
+export const NAV_ITEMS = STAFF_NAV_ITEMS;
 
 export const ICONS = {
     dashboard: <LayoutDashboard className="w-5 h-5 shrink-0" />,

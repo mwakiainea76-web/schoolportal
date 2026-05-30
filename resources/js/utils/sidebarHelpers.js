@@ -1,8 +1,15 @@
 export const safeRoute = (name, fallback) =>
     route().has(name) ? route(name) : fallback;
 
-export const isRouteCurrent = (name, fallback, url) =>
-    route().has(name) ? route().current(name) : url === fallback;
+export const isRouteCurrent = (name, fallback, url, activeRouteNames = []) => {
+    const routeNames = [name, ...activeRouteNames].filter(Boolean);
+
+    if (routeNames.some((routeName) => route().has(routeName) && route().current(routeName))) {
+        return true;
+    }
+
+    return url === fallback;
+};
 
 const filterChildren = (children, can) =>
     children
