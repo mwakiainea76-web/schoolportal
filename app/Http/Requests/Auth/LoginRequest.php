@@ -14,6 +14,8 @@ use Illuminate\Validation\ValidationException;
 
 class LoginRequest extends FormRequest
 {
+    private const LOGIN_THROTTLE_SECONDS = 300;
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -85,12 +87,12 @@ class LoginRequest extends FormRequest
             );
 
             throw ValidationException::withMessages([
-                'login' => 'This login account is inactive. Please use your latest admission number or contact administration.',
+                'login' => 'This account has been deactivated. Please contact the administrator for assistance.',
             ]);
         }
 
         if (! $user || ! Auth::attempt(['email' => $user->email, 'password' => $password], $this->boolean('remember'))) {
-            RateLimiter::hit($this->throttleKey());
+            RateLimiter::hit($this->throttleKey(), self::LOGIN_THROTTLE_SECONDS);
 
             $securityMonitoring->recordEvent(
                 'login.failed',
@@ -143,7 +145,7 @@ class LoginRequest extends FormRequest
             }
 
             throw ValidationException::withMessages([
-                'login' => trans('auth.failed'),
+                'login' => 'Invalid credentials. Please check your username and password, then try again.',
             ]);
         }
 
@@ -177,10 +179,7 @@ class LoginRequest extends FormRequest
         $seconds = RateLimiter::availableIn($this->throttleKey());
 
         throw ValidationException::withMessages([
-            'login' => trans('auth.throttle', [
-                'seconds' => $seconds,
-                'minutes' => ceil($seconds / 60),
-            ]),
+            'login' => 'Too many failed login attempts. Please wait 5 minutes before trying again.',
         ]);
     }
 

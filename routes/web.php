@@ -2,25 +2,23 @@
 
 use App\Http\Controllers\AcademicSessionController;
 use App\Http\Controllers\AcademicSessionEnrollmentController;
-use App\Http\Controllers\StudentMarkController;
 use App\Http\Controllers\AcademicTimetableController;
 use App\Http\Controllers\AcademicYearController;
 use App\Http\Controllers\CertificationLevelController;
-use App\Http\Controllers\CorsAllowedOriginController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\ExamBodyController;
 use App\Http\Controllers\FeeAssignmentController;
 use App\Http\Controllers\FeePlanController;
 use App\Http\Controllers\FeePlanItemController;
-use App\Http\Controllers\InvoiceController;
-use App\Http\Controllers\LedgerTransactionController;
-use App\Http\Controllers\LectureRoomController;
-use App\Http\Controllers\LogViewerController;
 use App\Http\Controllers\HostelAllocationController;
 use App\Http\Controllers\HostelController;
-use App\Http\Controllers\PermissionController;
+use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\LectureRoomController;
+use App\Http\Controllers\LedgerTransactionController;
+use App\Http\Controllers\LogViewerController;
 use App\Http\Controllers\PerformanceDashboardController;
+use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProgramController;
 use App\Http\Controllers\ProgramEnrollmentController;
@@ -31,8 +29,9 @@ use App\Http\Controllers\ReportingController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SecurityMonitoringController;
 use App\Http\Controllers\StaffController;
-use App\Http\Controllers\StudentCourseChangeController;
 use App\Http\Controllers\StudentController;
+use App\Http\Controllers\StudentCourseChangeController;
+use App\Http\Controllers\StudentMarkController;
 use App\Http\Controllers\UnitController;
 use Illuminate\Support\Facades\Route;
 
@@ -88,16 +87,6 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::middleware(['auth', 'non_student'])->group(function () {
-    Route::middleware('role:admin')
-        ->prefix('settings/cors-origins')
-        ->name('settings.cors-origins.')
-        ->group(function () {
-            Route::get('/', [CorsAllowedOriginController::class, 'index'])->name('index');
-            Route::post('/', [CorsAllowedOriginController::class, 'store'])->name('store');
-            Route::put('/{corsAllowedOrigin}', [CorsAllowedOriginController::class, 'update'])->name('update');
-            Route::delete('/{corsAllowedOrigin}', [CorsAllowedOriginController::class, 'destroy'])->name('destroy');
-        });
-
     Route::middleware('role:admin')
         ->get('/settings/performance', [PerformanceDashboardController::class, 'index'])
         ->name('settings.performance.index');
@@ -306,7 +295,7 @@ Route::middleware(['auth', 'non_student'])->group(function () {
         Route::delete('/{timetable}', [AcademicTimetableController::class, 'destroy'])->name('destroy');
     });
 
-    Route::prefix('academic/marks')->name('academic.marks.')->group(function () {
+    Route::middleware('role:admin|hod')->prefix('academic/marks')->name('academic.marks.')->group(function () {
         Route::get('/', [StudentMarkController::class, 'index'])->name('index');
         Route::post('/', [StudentMarkController::class, 'store'])->name('store');
         Route::get('/publish', [StudentMarkController::class, 'publishIndex'])
@@ -388,7 +377,7 @@ Route::middleware(['auth', 'non_student'])->group(function () {
         // BULK
         Route::get('/bulk', [FeeAssignmentController::class, 'bulk'])->name('bulk');
         Route::get('/bulk/certification-levels', [FeeAssignmentController::class, 'bulkCertificationLevels'])->name('bulk.certification-levels');
-        Route::get('/bulk/program-versionss', [FeeAssignmentController::class, 'bulkProgramVersions'])->name('bulk.curriculums');
+        Route::get('/bulk/program-versions', [FeeAssignmentController::class, 'bulkProgramVersions'])->name('bulk.curriculums');
         Route::post('/bulk/assign', [FeeAssignmentController::class, 'bulkAssign'])->name('bulk.assign');
         Route::post('/bulk/replace', [FeeAssignmentController::class, 'bulkReplace'])->name('bulk.replace');
         Route::post('/bulk/preview', [FeeAssignmentController::class, 'bulkPreview'])->name('bulk.preview');
@@ -418,7 +407,7 @@ Route::middleware(['auth', 'non_student'])->group(function () {
     | BILLING
     |--------------------------------------------------------------------------
     */
-    Route::prefix('billing')->name('billing.')->group(function () {
+    Route::middleware('role:admin')->prefix('billing')->name('billing.')->group(function () {
 
         Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');
         Route::get('/invoices/create', [InvoiceController::class, 'create'])->name('invoices.create');
@@ -476,7 +465,7 @@ Route::middleware(['auth', 'non_student'])->group(function () {
             Route::get('/course-change', [StudentCourseChangeController::class, 'index'])->name('course-change.index');
             Route::post('/course-change', [StudentCourseChangeController::class, 'store'])->name('course-change.store');
         });
-        Route::get('/{student}/admission-letter', [StudentController::class, 'admissionLetter'])->name('admission-letter');
+        Route::middleware('role:admin')->get('/{student}/admission-letter', [StudentController::class, 'admissionLetter'])->name('admission-letter');
 
         Route::get('/{student}/edit', [StudentController::class, 'edit'])->name('edit');
         Route::put('/{student}', [StudentController::class, 'update'])->name('update');
@@ -534,17 +523,6 @@ Route::middleware(['auth', 'non_student'])->group(function () {
         Route::get('/hostel', [ReportingController::class, 'hostel'])->name('hostel');
         Route::get('/data-quality', [ReportingController::class, 'dataQuality'])->name('data-quality');
         Route::get('/snapshots', [ReportingController::class, 'snapshots'])->name('snapshots');
-        Route::get('/api/academic-summary', [ReportingController::class, 'academicSummary'])->name('api.academic-summary');
-        Route::get('/api/admissions-summary', [ReportingController::class, 'admissionsSummary'])->name('api.admissions-summary');
-        Route::get('/api/data-quality-summary', [ReportingController::class, 'dataQualitySummary'])->name('api.data-quality-summary');
-        Route::get('/api/executive-summary', [ReportingController::class, 'executiveSummary'])->name('api.executive-summary');
-        Route::get('/api/finance-summary', [ReportingController::class, 'financeSummary'])->name('api.finance-summary');
-        Route::get('/api/hostel-summary', [ReportingController::class, 'hostelSummary'])->name('api.hostel-summary');
-        Route::get('/api/snapshot-trends', [ReportingController::class, 'snapshotTrends'])->name('api.snapshot-trends');
-        Route::get('/api/outstanding-balance', [ReportingController::class, 'outstandingBalance'])->name('api.outstanding');
-        Route::get('/api/overdue-department', [ReportingController::class, 'overdueByDepartment'])->name('api.overdue');
-        Route::get('/api/collection-performance', [ReportingController::class, 'collectionPerformance'])->name('api.collection');
-        Route::get('/api/fee-plan-usage', [ReportingController::class, 'feePlanUsage'])->name('api.usage');
     });
 
 });

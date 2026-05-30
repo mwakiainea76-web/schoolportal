@@ -20,12 +20,28 @@ export default function Login({ status, canResetPassword }) {
         location_hint: "",
     });
     const [showPassword, setShowPassword] = useState(false);
+    const [loginNotice, setLoginNotice] = useState("");
 
     useEffect(() => {
         const context = loadSecurityContext();
         setData("device_id", context.device_id);
         setData("location_hint", context.location_hint);
     }, [setData]);
+
+    useEffect(() => {
+        if (!errors.login) {
+            setLoginNotice("");
+            return undefined;
+        }
+
+        setLoginNotice(errors.login);
+
+        const timeoutId = window.setTimeout(() => {
+            setLoginNotice("");
+        }, 5000);
+
+        return () => window.clearTimeout(timeoutId);
+    }, [errors.login]);
 
     const handleChange = (e) => {
         setData(e.target.name, e.target.value);
@@ -91,7 +107,6 @@ export default function Login({ status, canResetPassword }) {
                                             autoFocus
                                             className="mt-2 bg-white"
                                         />
-                                        <InputError message={errors.login} />
                                     </div>
 
                                     <div>
@@ -158,6 +173,12 @@ export default function Login({ status, canResetPassword }) {
                                             ? "Signing In..."
                                             : "Sign In"}
                                     </button>
+
+                                    {loginNotice && (
+                                        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+                                            {loginNotice}
+                                        </div>
+                                    )}
                                 </form>
                             </div>
 

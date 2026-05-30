@@ -23,6 +23,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->append(DatabaseCors::class);
+
 
         // Web middleware stack
         $middleware->web(append: [
@@ -32,7 +34,6 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->api(prepend: [
-            DatabaseCors::class,
             RecordRequestPerformance::class,
         ]);
 

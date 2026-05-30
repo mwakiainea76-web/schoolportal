@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\AppRequestMetric;
-use App\Models\CorsAllowedOrigin;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Inertia\Inertia;
@@ -36,10 +35,6 @@ class PerformanceDashboardController extends Controller
             'traffic_trend' => $this->trafficTrend($metrics, $range),
             'slow_endpoints' => $this->slowEndpoints($metrics),
             'recent_errors' => $this->recentErrors($start),
-            'cors' => [
-                'active_origins' => CorsAllowedOrigin::query()->where('is_active', true)->count(),
-                'inactive_origins' => CorsAllowedOrigin::query()->where('is_active', false)->count(),
-            ],
         ]);
     }
 

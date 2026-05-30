@@ -189,7 +189,7 @@
             <div>
                 <p class="eyebrow">{{ config('app.name') }}</p>
                 <h1>Admission Letter</h1>
-                <p style="margin: 0; color: var(--muted);">Official confirmation of student admission and portal onboarding details.</p>
+                <p style="margin: 0; color: var(--muted);">Official confirmation of student admission and onboarding guidance.</p>
             </div>
             <div class="meta">
                 <div><strong>Date:</strong> {{ now()->format('F j, Y') }}</div>
@@ -202,7 +202,7 @@
             <p>Dear {{ trim(($user->first_name ?? '').' '.($user->last_name ?? '')) }},</p>
             <p>
                 We are pleased to confirm your admission to {{ config('app.name') }}.
-                This letter serves as your official admission notice and includes your student portal login credentials.
+                This letter serves as your official admission notice and confirms your onboarding details.
             </p>
         </section>
 
@@ -243,13 +243,11 @@
         </section>
 
         <section class="notice">
-            <h2>Student Portal Credentials</h2>
-            <p>Please use the following credentials to access the student portal.</p>
+            <h2>Student Portal Access</h2>
+            <p>The student portal account is managed separately for security. Share access details with the student through the approved onboarding channel.</p>
             <div class="credentials">
-                <p><strong>Portal URL:</strong> <code>{{ $credentials['login_url'] }}</code></p>
-                <p><strong>Username:</strong> <code>{{ $credentials['email'] ?? 'Not set' }}</code></p>
-                <p><strong>Default Password:</strong> <code>{{ $credentials['default_password'] ?? 'Not set' }}</code></p>
-                <p><strong>Important:</strong> The default password is set at admission and the student should change it after the first successful login.</p>
+                <p><strong>Portal URL:</strong> <code>{{ route('login') }}</code></p>
+                <p><strong>Important:</strong> Do not print or disclose default passwords in admission letters.</p>
             </div>
         </section>
 

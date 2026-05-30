@@ -2,26 +2,26 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\CorsAllowedOrigin;
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Symfony\Component\HttpFoundation\Response;
 
 class DatabaseCors
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $origin = CorsAllowedOrigin::normalizeOrigin((string) $request->headers->get('Origin', ''));
+        if (! $request->is('api/*')) {
+            return $next($request);
+        }
+
+        $origin = $this->normalizeOrigin((string) $request->headers->get('Origin', ''));
 
         if (! $origin) {
             return $next($request);
         }
 
         if (! $this->isAllowed($origin)) {
-            return $request->isMethod('OPTIONS')
-                ? response('', 403)
-                : $next($request);
+            return response('', 403);
         }
 
         if ($request->isMethod('OPTIONS')) {
@@ -33,14 +33,54 @@ class DatabaseCors
 
     private function isAllowed(string $origin): bool
     {
-        $allowedOrigins = Cache::remember('cors_allowed_origins.active', 300, fn () =>
-            CorsAllowedOrigin::query()
-                ->where('is_active', true)
-                ->pluck('origin')
-                ->all()
-        );
+        return in_array($origin, $this->allowedOrigins(), true);
+    }
 
-        return in_array($origin, $allowedOrigins, true);
+    private function allowedOrigins(): array
+    {
+        $allowedOrigins = config('cors.allowed_origins', []);
+
+        if (is_string($allowedOrigins)) {
+            $allowedOrigins = explode(',', $allowedOrigins);
+        }
+
+        $allowedOrigins = array_filter(array_map('trim', (array) $allowedOrigins));
+
+        $normalizedOrigins = array_filter(array_map(
+            fn (string $value): ?string => $this->normalizeOrigin($value),
+            $allowedOrigins
+        ));
+
+        return array_values(array_unique($normalizedOrigins));
+    }
+
+    private function normalizeOrigin(string $value): ?string
+    {
+        $value = trim($value);
+
+        if ($value === '') {
+            return null;
+        }
+
+        $parts = parse_url($value);
+
+        if (! is_array($parts) || empty($parts['scheme']) || empty($parts['host'])) {
+            return null;
+        }
+
+        $scheme = strtolower($parts['scheme']);
+
+        if (! in_array($scheme, ['http', 'https'], true)) {
+            return null;
+        }
+
+        $origin = $scheme . '://' . strtolower($parts['host']);
+
+        if (! empty($parts['port'])) {
+            $origin .= ':' . $parts['port'];
+        }
+
+        return $origin;
     }
 
     private function withCorsHeaders(Response $response, Request $request, string $origin): Response

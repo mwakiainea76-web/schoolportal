@@ -399,14 +399,7 @@ export const STAFF_NAV_ITEMS = [
                 key: "integrations",
                 label: "Integrations",
                 icon: "grid",
-                children: [
-                    {
-                        routeName: "settings.cors-origins.index",
-                        fallback: "/settings/cors-origins",
-                        label: "API CORS Origins",
-                        permission: "roles.view",
-                    },
-                ],
+                children: [],
             },
         ],
     },

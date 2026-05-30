@@ -279,11 +279,6 @@ class StudentController extends Controller
             'programVersion' => $programVersion,
             'department' => $program?->department,
             'certificationLevel' => $program?->certificationLevel,
-            'credentials' => [
-                'login_url' => route('login'),
-                'email' => $student->user?->email,
-                'default_password' => $student->user?->phone_number,
-            ],
         ]);
     }
 

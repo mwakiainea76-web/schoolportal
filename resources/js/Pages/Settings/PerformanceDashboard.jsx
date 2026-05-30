@@ -17,9 +17,7 @@ function Stat({ label, value, helper, tone = "emerald" }) {
             <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
                 {label}
             </p>
-            <p className="mt-3 text-3xl font-semibold text-zinc-900">
-                {value}
-            </p>
+            <p className="mt-3 text-3xl font-semibold text-zinc-900">{value}</p>
             <p
                 className={`mt-3 inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${
                     tones[tone]
@@ -35,7 +33,11 @@ function BarList({ items, labelKey, valueKey, emptyText }) {
     const max = Math.max(...items.map((item) => item[valueKey] || 0), 1);
 
     if (!items.length) {
-        return <div className="py-8 text-center text-sm text-zinc-500">{emptyText}</div>;
+        return (
+            <div className="py-8 text-center text-sm text-zinc-500">
+                {emptyText}
+            </div>
+        );
     }
 
     return (
@@ -53,7 +55,9 @@ function BarList({ items, labelKey, valueKey, emptyText }) {
                     <div className="h-2 overflow-hidden rounded-full bg-zinc-100">
                         <div
                             className="h-full rounded-full bg-emerald-500"
-                            style={{ width: `${(item[valueKey] / max) * 100}%` }}
+                            style={{
+                                width: `${(item[valueKey] / max) * 100}%`,
+                            }}
                         />
                     </div>
                 </div>
@@ -70,7 +74,6 @@ export default function PerformanceDashboard({
     traffic_trend,
     slow_endpoints,
     recent_errors,
-    cors,
 }) {
     const setRange = (nextRange) => {
         router.get(
@@ -87,7 +90,11 @@ export default function PerformanceDashboard({
     ];
 
     const healthTone =
-        summary.error_rate > 5 ? "rose" : summary.p95_ms > 1000 ? "amber" : "emerald";
+        summary.error_rate > 5
+            ? "rose"
+            : summary.p95_ms > 1000
+              ? "amber"
+              : "emerald";
 
     return (
         <AuthenticatedLayout
@@ -164,7 +171,9 @@ export default function PerformanceDashboard({
                             <div className="grid min-h-72 items-end gap-3 sm:grid-cols-6 lg:grid-cols-12">
                                 {traffic_trend.slice(-12).map((point) => {
                                     const maxRequests = Math.max(
-                                        ...traffic_trend.map((item) => item.requests || 0),
+                                        ...traffic_trend.map(
+                                            (item) => item.requests || 0,
+                                        ),
                                         1,
                                     );
                                     return (
@@ -176,7 +185,9 @@ export default function PerformanceDashboard({
                                                 className="rounded-t-lg bg-emerald-500"
                                                 style={{
                                                     height: `${Math.max(
-                                                        (point.requests / maxRequests) * 220,
+                                                        (point.requests /
+                                                            maxRequests) *
+                                                            220,
                                                         8,
                                                     )}px`,
                                                 }}
@@ -241,29 +252,50 @@ export default function PerformanceDashboard({
                             <table className="w-full min-w-[58rem] border-collapse">
                                 <thead className="bg-zinc-50">
                                     <tr className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                                        <th className="px-4 py-3 text-left">Endpoint</th>
-                                        <th className="px-4 py-3 text-left">Hits</th>
-                                        <th className="px-4 py-3 text-left">Avg</th>
-                                        <th className="px-4 py-3 text-left">P95</th>
-                                        <th className="px-4 py-3 text-left">Max</th>
-                                        <th className="px-4 py-3 text-left">Errors</th>
+                                        <th className="px-4 py-3 text-left">
+                                            Endpoint
+                                        </th>
+                                        <th className="px-4 py-3 text-left">
+                                            Hits
+                                        </th>
+                                        <th className="px-4 py-3 text-left">
+                                            Avg
+                                        </th>
+                                        <th className="px-4 py-3 text-left">
+                                            P95
+                                        </th>
+                                        <th className="px-4 py-3 text-left">
+                                            Max
+                                        </th>
+                                        <th className="px-4 py-3 text-left">
+                                            Errors
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-zinc-100 bg-white">
                                     {slow_endpoints.length ? (
                                         slow_endpoints.map((endpoint) => (
-                                            <tr key={endpoint.endpoint} className="text-sm">
+                                            <tr
+                                                key={endpoint.endpoint}
+                                                className="text-sm"
+                                            >
                                                 <td className="max-w-0 px-4 py-3 font-medium text-zinc-900">
                                                     <span className="block truncate">
                                                         {endpoint.endpoint}
                                                     </span>
                                                 </td>
-                                                <td className="px-4 py-3">{number(endpoint.requests)}</td>
-                                                <td className="px-4 py-3">{ms(endpoint.average_ms)}</td>
+                                                <td className="px-4 py-3">
+                                                    {number(endpoint.requests)}
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    {ms(endpoint.average_ms)}
+                                                </td>
                                                 <td className="px-4 py-3 font-semibold text-zinc-900">
                                                     {ms(endpoint.p95_ms)}
                                                 </td>
-                                                <td className="px-4 py-3">{ms(endpoint.max_ms)}</td>
+                                                <td className="px-4 py-3">
+                                                    {ms(endpoint.max_ms)}
+                                                </td>
                                                 <td
                                                     className={`px-4 py-3 ${
                                                         endpoint.errors
@@ -305,7 +337,8 @@ export default function PerformanceDashboard({
                                     >
                                         <div className="flex items-center justify-between gap-4">
                                             <p className="font-semibold text-red-800">
-                                                {error.status_code} {error.method}{" "}
+                                                {error.status_code}{" "}
+                                                {error.method}{" "}
                                                 {error.route_name || error.path}
                                             </p>
                                             <p className="text-xs text-red-600">
@@ -322,39 +355,6 @@ export default function PerformanceDashboard({
                                     No server errors in this range.
                                 </div>
                             )}
-                        </div>
-                    </div>
-
-                    <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
-                        <h2 className="text-lg font-semibold text-zinc-900">
-                            API Exposure
-                        </h2>
-                        <div className="mt-5 grid gap-4">
-                            <div className="rounded-2xl border border-zinc-100 bg-zinc-50 p-4">
-                                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                                    Active CORS Origins
-                                </p>
-                                <p className="mt-2 text-3xl font-semibold text-zinc-900">
-                                    {number(cors.active_origins)}
-                                </p>
-                            </div>
-                            <div className="rounded-2xl border border-zinc-100 bg-zinc-50 p-4">
-                                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                                    Inactive Origins
-                                </p>
-                                <p className="mt-2 text-3xl font-semibold text-zinc-900">
-                                    {number(cors.inactive_origins)}
-                                </p>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={() =>
-                                    router.visit(route("settings.cors-origins.index"))
-                                }
-                                className="rounded-xl bg-zinc-900 px-4 py-3 text-sm font-medium text-white transition hover:bg-zinc-800"
-                            >
-                                Manage API Origins
-                            </button>
                         </div>
                     </div>
                 </div>
