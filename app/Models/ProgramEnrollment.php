@@ -16,6 +16,13 @@ class ProgramEnrollment extends Model
     protected $fillable = [
         'student_id',
         'program_version_mapping_id',
+        'status',
+        'transferred_at',
+        'transferred_by',
+    ];
+
+    protected $casts = [
+        'transferred_at' => 'datetime',
     ];
 
     public function student()

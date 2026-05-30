@@ -13,6 +13,8 @@ class LogViewerController extends Controller
     {
         $files = $reader->files();
         $file = $request->query('file') ?: ($files[0]['name'] ?? 'laravel.log');
+        $lines = max(50, min((int) $request->query('lines', 250), 1000));
+        $perPage = max(10, min((int) $request->query('per_page', 25), 100));
 
         return Inertia::render('Settings/LogViewer', [
             'files' => $files,
@@ -20,13 +22,16 @@ class LogViewerController extends Controller
                 'file' => $file,
                 'level' => $request->query('level', ''),
                 'search' => $request->query('search', ''),
-                'lines' => (string) max(50, min((int) $request->query('lines', 250), 1000)),
+                'lines' => (string) $lines,
+                'per_page' => (string) $perPage,
             ],
             'log' => $reader->read(
                 $file,
-                (int) $request->query('lines', 250),
+                $lines,
                 $request->query('level') ?: null,
-                $request->query('search') ?: null
+                $request->query('search') ?: null,
+                (int) $request->query('page', 1),
+                $perPage
             ),
         ]);
     }

@@ -1,0 +1,51 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class CourseChangeLog extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'student_id',
+        'old_program_enrollment_id',
+        'new_program_enrollment_id',
+        'old_program_version_mapping_id',
+        'new_program_version_mapping_id',
+        'old_registration_number',
+        'new_registration_number',
+        'old_user_id',
+        'new_user_id',
+        'processed_by',
+        'changed_at',
+        'notes',
+    ];
+
+    protected $casts = [
+        'changed_at' => 'datetime',
+    ];
+
+    public function student(): BelongsTo
+    {
+        return $this->belongsTo(Student::class);
+    }
+
+    public function oldProgramVersionMapping(): BelongsTo
+    {
+        return $this->belongsTo(ProgramVersionMapping::class, 'old_program_version_mapping_id');
+    }
+
+    public function newProgramVersionMapping(): BelongsTo
+    {
+        return $this->belongsTo(ProgramVersionMapping::class, 'new_program_version_mapping_id');
+    }
+
+    public function processedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'processed_by');
+    }
+}

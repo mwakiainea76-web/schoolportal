@@ -428,50 +428,59 @@ export default function Index({
                             </div>
                         ) : (
                             <div className="overflow-hidden rounded-2xl border border-zinc-100">
-                                <div className="grid grid-cols-[1fr,1.2fr,1.2fr,0.7fr,0.8fr] gap-4 bg-zinc-50 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                                    <p>Reg. No.</p>
-                                    <p>Student</p>
-                                    <p>Unit</p>
-                                    <p>Marks</p>
-                                    <p>Status</p>
+                                <div className="overflow-x-auto">
+                                    <table className="w-full min-w-[52rem] border-collapse">
+                                        <thead className="bg-zinc-50">
+                                            <tr className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                                                <th className="px-4 py-3 text-left">Reg. No.</th>
+                                                <th className="px-4 py-3 text-left">Student</th>
+                                                <th className="px-4 py-3 text-left">Unit</th>
+                                                <th className="px-4 py-3 text-left">Marks</th>
+                                                <th className="px-4 py-3 text-left">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-zinc-100 bg-white">
+                                            {submitted_marks?.length ? (
+                                                submitted_marks.map((mark) => (
+                                                    <tr key={mark.id} className="text-sm">
+                                                        <td className="px-4 py-3 font-medium text-zinc-900">
+                                                            {mark.registration_number}
+                                                        </td>
+                                                        <td className="px-4 py-3 text-zinc-700">
+                                                            {mark.student_name || "–"}
+                                                        </td>
+                                                        <td className="px-4 py-3 text-zinc-700">
+                                                            {mark.unit_name || "–"}
+                                                        </td>
+                                                        <td className="px-4 py-3 font-semibold text-zinc-900">
+                                                            {mark.marks}
+                                                        </td>
+                                                        <td className="px-4 py-3">
+                                                            <span
+                                                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                                    mark.is_published
+                                                                        ? "bg-emerald-100 text-emerald-700"
+                                                                        : "bg-amber-100 text-amber-700"
+                                                                }`}
+                                                            >
+                                                                {mark.is_published ? "Published" : "Unpublished"}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            ) : (
+                                                <tr>
+                                                    <td
+                                                        colSpan="5"
+                                                        className="px-4 py-8 text-center text-sm text-zinc-500"
+                                                    >
+                                                        No submitted marks found for this filter.
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
                                 </div>
-
-                                {submitted_marks?.length ? (
-                                    submitted_marks.map((mark) => (
-                                        <div
-                                            key={mark.id}
-                                            className="grid grid-cols-[1fr,1.2fr,1.2fr,0.7fr,0.8fr] gap-4 border-t border-zinc-100 bg-white px-4 py-3 text-sm"
-                                        >
-                                            <p className="font-medium text-zinc-900">
-                                                {mark.registration_number}
-                                            </p>
-                                            <p className="text-zinc-700">
-                                                {mark.student_name || "–"}
-                                            </p>
-                                            <p className="text-zinc-700">
-                                                {mark.unit_name || "–"}
-                                            </p>
-                                            <p className="font-semibold text-zinc-900">
-                                                {mark.marks}
-                                            </p>
-                                            <p>
-                                                <span
-                                                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                                                        mark.is_published
-                                                            ? "bg-emerald-100 text-emerald-700"
-                                                            : "bg-amber-100 text-amber-700"
-                                                    }`}
-                                                >
-                                                    {mark.is_published ? "Published" : "Unpublished"}
-                                                </span>
-                                            </p>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <div className="px-4 py-8 text-center text-sm text-zinc-500">
-                                        No submitted marks found for this filter.
-                                    </div>
-                                )}
                             </div>
                         )}
                     </div>

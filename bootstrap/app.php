@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\EnforceSecurityBlock;
 use App\Support\ApiResponse;
 use App\Exceptions\ApiException;
 use Illuminate\Foundation\Application;
@@ -27,6 +28,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             HandleInertiaRequests::class,
             RecordRequestPerformance::class,
+            EnforceSecurityBlock::class,
         ]);
 
         $middleware->api(prepend: [

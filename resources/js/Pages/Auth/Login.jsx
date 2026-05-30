@@ -1,8 +1,9 @@
 import { Head, Link, useForm } from "@inertiajs/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
+import { loadSecurityContext } from "@/utils/securityContext";
 import TextInput from "@/Components/TextInput";
 import ToggleSwitch from "@/Components/ToggleSwitch";
 
@@ -15,8 +16,16 @@ export default function Login({ status, canResetPassword }) {
         login: "",
         password: "",
         remember: false,
+        device_id: "",
+        location_hint: "",
     });
     const [showPassword, setShowPassword] = useState(false);
+
+    useEffect(() => {
+        const context = loadSecurityContext();
+        setData("device_id", context.device_id);
+        setData("location_hint", context.location_hint);
+    }, [setData]);
 
     const handleChange = (e) => {
         setData(e.target.name, e.target.value);

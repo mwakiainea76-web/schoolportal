@@ -10,8 +10,8 @@ class ProgramEnrollmentController extends Controller
     {
         $courseEnrollments = ProgramEnrollment::with([
             'student.user',
-            'courseProgramVersion.course',
-            'courseProgramVersion.curriculum',
+            'programVersionMapping.program',
+            'programVersionMapping.programVersion',
         ])
             ->latest()
             ->paginate(20)

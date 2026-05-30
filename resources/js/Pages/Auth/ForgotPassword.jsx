@@ -3,11 +3,21 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, useForm } from '@inertiajs/react';
+import { useEffect } from 'react';
+import { loadSecurityContext } from '@/utils/securityContext';
 
 export default function ForgotPassword({ status }) {
     const { data, setData, post, processing, errors } = useForm({
         email: '',
+        device_id: '',
+        location_hint: '',
     });
+
+    useEffect(() => {
+        const context = loadSecurityContext();
+        setData('device_id', context.device_id);
+        setData('location_hint', context.location_hint);
+    }, [setData]);
 
     const submit = (e) => {
         e.preventDefault();

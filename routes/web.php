@@ -29,11 +29,12 @@ use App\Http\Controllers\ProgramVersionMappingController;
 use App\Http\Controllers\ProgramVersionUnitController;
 use App\Http\Controllers\ReportingController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\SecurityMonitoringController;
 use App\Http\Controllers\StaffController;
+use App\Http\Controllers\StudentCourseChangeController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\UnitController;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
 /*
 |--------------------------------------------------------------------------
@@ -42,8 +43,6 @@ use Inertia\Inertia;
 */
 
 Route::get('/', fn () => redirect()->route('login'));
-
-Route::get('/login', fn () => Inertia::render('Auth/Login'))->name('login');
 
 Route::get('/dashboard', [DashboardController::class, 'redirect'])
     ->middleware(['auth', 'verified'])
@@ -106,6 +105,18 @@ Route::middleware(['auth', 'non_student'])->group(function () {
     Route::middleware('role:admin')
         ->get('/settings/logs', [LogViewerController::class, 'index'])
         ->name('settings.logs.index');
+
+    Route::middleware('role:admin')
+        ->get('/settings/security', [SecurityMonitoringController::class, 'index'])
+        ->name('settings.security.index');
+
+    Route::middleware('role:admin')
+        ->post('/settings/security/blocks', [SecurityMonitoringController::class, 'storeBlock'])
+        ->name('settings.security.blocks.store');
+
+    Route::middleware('role:admin')
+        ->put('/settings/security/blocks/{securityBlock}/lift', [SecurityMonitoringController::class, 'liftBlock'])
+        ->name('settings.security.blocks.lift');
 
     /*
     |--------------------------------------------------------------------------
@@ -461,6 +472,10 @@ Route::middleware(['auth', 'non_student'])->group(function () {
         Route::get('/', [StudentController::class, 'index'])->name('index');
         Route::get('/create', [StudentController::class, 'create'])->name('create');
         Route::post('/', [StudentController::class, 'store'])->name('store');
+        Route::middleware('role:admin')->group(function () {
+            Route::get('/course-change', [StudentCourseChangeController::class, 'index'])->name('course-change.index');
+            Route::post('/course-change', [StudentCourseChangeController::class, 'store'])->name('course-change.store');
+        });
         Route::get('/{student}/admission-letter', [StudentController::class, 'admissionLetter'])->name('admission-letter');
 
         Route::get('/{student}/edit', [StudentController::class, 'edit'])->name('edit');

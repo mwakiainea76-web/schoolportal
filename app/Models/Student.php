@@ -28,7 +28,14 @@ class Student extends Model
 
     public function programEnrollment()
     {
-        return $this->hasOne(ProgramEnrollment::class);
+        return $this->hasOne(ProgramEnrollment::class)
+            ->where('status', 'active')
+            ->latestOfMany();
+    }
+
+    public function courseChangeLogs()
+    {
+        return $this->hasMany(CourseChangeLog::class);
     }
 
     public function enrollments()

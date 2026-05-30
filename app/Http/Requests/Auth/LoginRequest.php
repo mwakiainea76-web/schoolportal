@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Auth;
 
 use App\Models\User;
+use App\Services\SecurityMonitoringService;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -31,6 +32,8 @@ class LoginRequest extends FormRequest
         return [
             'login' => ['required', 'string'],
             'password' => ['required', 'string'],
+            'device_id' => ['nullable', 'string', 'max:191'],
+            'location_hint' => ['nullable', 'string', 'max:191'],
         ];
     }
 
@@ -44,13 +47,100 @@ class LoginRequest extends FormRequest
         $this->ensureIsNotRateLimited();
 
         $login = trim($this->string('login')->toString());
+        $password = $this->string('password')->toString();
+        $securityMonitoring = app(SecurityMonitoringService::class);
 
         $user = User::query()
             ->whereRaw('LOWER(TRIM(login_id)) = ?', [Str::lower($login)])
             ->first();
 
-        if (! $user || ! Auth::attempt(['email' => $user->email, 'password' => $this->string('password')->toString()], $this->boolean('remember'))) {
+        if ($block = $securityMonitoring->findMatchingActiveBlock($this, $user, $login, $user?->email)) {
+            $securityMonitoring->recordEvent(
+                'login.blocked',
+                $this,
+                $user,
+                'critical',
+                [
+                    'block_id' => $block->id,
+                    'reason' => $block->reason,
+                ],
+                $login,
+                $user?->email,
+            );
+
+            throw ValidationException::withMessages([
+                'login' => 'Access from this account or device has been temporarily blocked.',
+            ]);
+        }
+
+        if ($user && ! $user->is_active) {
+            $securityMonitoring->recordEvent(
+                'login.inactive_account',
+                $this,
+                $user,
+                'warning',
+                [],
+                $login,
+                $user->email,
+            );
+
+            throw ValidationException::withMessages([
+                'login' => 'This login account is inactive. Please use your latest admission number or contact administration.',
+            ]);
+        }
+
+        if (! $user || ! Auth::attempt(['email' => $user->email, 'password' => $password], $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
+
+            $securityMonitoring->recordEvent(
+                'login.failed',
+                $this,
+                $user,
+                'warning',
+                [],
+                $login,
+                $user?->email,
+            );
+
+            $failedAttempts = $securityMonitoring->recentEventCount('login.failed', [
+                'login_identifier' => $login,
+                'ip_address' => $this->ip(),
+                'device_id' => $this->input('device_id'),
+            ]);
+
+            if ($failedAttempts >= 3 && ! $securityMonitoring->recentRiskAlreadyLogged('login.risk_detected', [
+                'login_identifier' => $login,
+                'ip_address' => $this->ip(),
+                'device_id' => $this->input('device_id'),
+            ])) {
+                $riskEvent = $securityMonitoring->recordEvent(
+                    'login.risk_detected',
+                    $this,
+                    $user,
+                    'high',
+                    [
+                        'failed_attempts_last_15_minutes' => $failedAttempts,
+                    ],
+                    $login,
+                    $user?->email,
+                );
+
+                if ($failedAttempts >= 8) {
+                    $securityMonitoring->createAutomaticBlock(
+                        $this,
+                        'Repeated incorrect login attempts detected.',
+                        $user,
+                        $login,
+                        $user?->email,
+                        $riskEvent,
+                        30,
+                        'critical',
+                        [
+                            'failed_attempts_last_15_minutes' => $failedAttempts,
+                        ],
+                    );
+                }
+            }
 
             throw ValidationException::withMessages([
                 'login' => trans('auth.failed'),
@@ -71,6 +161,17 @@ class LoginRequest extends FormRequest
             return;
         }
 
+        app(SecurityMonitoringService::class)->recordEvent(
+            'login.rate_limited',
+            $this,
+            null,
+            'warning',
+            [
+                'throttle_key' => $this->throttleKey(),
+            ],
+            trim($this->string('login')->toString()),
+        );
+
         event(new Lockout($this));
 
         $seconds = RateLimiter::availableIn($this->throttleKey());
@@ -88,6 +189,11 @@ class LoginRequest extends FormRequest
      */
     public function throttleKey(): string
     {
-        return Str::transliterate(Str::lower($this->string('login')).'|'.$this->ip());
+        return Str::transliterate(
+            Str::lower($this->string('login'))
+            .'|'.$this->ip()
+            .'|'.trim((string) $this->input('device_id'))
+            .'|'.trim((string) $this->input('location_hint'))
+        );
     }
 }

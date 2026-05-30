@@ -3,21 +3,35 @@
 namespace App\Http\Middleware;
 
 use App\Models\AppRequestMetric;
+use App\Support\RequestLogContext;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
+use Throwable;
 
 class RecordRequestPerformance
 {
     public function handle(Request $request, Closure $next): Response
     {
         $startedAt = microtime(true);
+        $requestId = RequestLogContext::ensureRequestId($request);
 
-        /** @var Response $response */
-        $response = $next($request);
+        Log::shareContext([
+            'request_id' => $requestId,
+        ]);
+
+        try {
+            /** @var Response $response */
+            $response = $next($request);
+        } catch (Throwable $exception) {
+            $this->recordException($request, $exception, $startedAt);
+
+            throw $exception;
+        }
 
         $this->record($request, $response, $startedAt);
+        $response->headers->set('X-Request-Id', $requestId);
 
         return $response;
     }
@@ -47,23 +61,49 @@ class RecordRequestPerformance
                 'occurred_at' => now(),
             ]);
 
-            if ($durationMs >= (int) config('performance.slow_request_ms', 1000)) {
-                Log::channel('performance')->warning('Slow request detected.', [
-                    'method' => $request->method(),
-                    'path' => $path,
-                    'route' => $routeName,
-                    'status_code' => $response->getStatusCode(),
-                    'duration_ms' => $durationMs,
-                    'memory_peak_kb' => $memoryPeakKb,
-                    'is_api' => $request->is('api/*'),
-                    'user_id' => $request->user()?->id,
-                ]);
+            $statusCode = $response->getStatusCode();
+
+            if ($statusCode >= 400 || $durationMs >= (int) config('performance.slow_request_ms', 1000)) {
+                $context = $statusCode >= 400
+                    ? RequestLogContext::responseError($request, $statusCode, $durationMs)
+                    : RequestLogContext::slowRequest($request, $statusCode, $durationMs);
+
+                $level = strtolower($context['level']);
+
+                Log::channel('performance')->{$level}($context['event'], $context);
             }
         } catch (\Throwable $exception) {
-            Log::debug('Unable to record request performance metric.', [
-                'error' => $exception->getMessage(),
-            ]);
+            Log::warning('request_metric_recording_failed', RequestLogContext::request($request, [
+                'level' => 'WARNING',
+                'event' => 'request_metric_recording_failed',
+                'message' => 'Request completed, but the performance metric could not be persisted.',
+                'exception_class' => $exception::class,
+                'exception_message' => $exception->getMessage(),
+                'file' => basename($exception->getFile()),
+                'line' => $exception->getLine(),
+            ]));
         }
+    }
+
+    private function recordException(Request $request, Throwable $exception, float $startedAt): void
+    {
+        if ($this->shouldSkip($request)) {
+            return;
+        }
+
+        $statusCode = RequestLogContext::statusFromException($exception);
+        $durationMs = max(1, (int) round((microtime(true) - $startedAt) * 1000));
+        $context = RequestLogContext::exception(
+            $request,
+            $exception,
+            RequestLogContext::eventForException($exception),
+            RequestLogContext::messageForException($exception),
+            $statusCode,
+            $durationMs
+        );
+        $level = strtolower($context['level']);
+
+        Log::channel('performance')->{$level}($context['event'], $context);
     }
 
     private function shouldSkip(Request $request): bool

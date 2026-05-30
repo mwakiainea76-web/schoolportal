@@ -10,6 +10,7 @@ use App\Repositories\FeeManagement\Eloquent\EloquentProgramVersionRepository;
 use App\Repositories\FeeManagement\Eloquent\EloquentFeeComponentRepository;
 use App\Repositories\FeeManagement\Eloquent\EloquentFeePlanAssignmentRepository;
 use App\Repositories\FeeManagement\Eloquent\EloquentFeePlanRepository;
+use App\Support\RequestLogContext;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Support\Facades\DB;
@@ -42,16 +43,18 @@ class AppServiceProvider extends ServiceProvider
         DB::whenQueryingForLongerThan(
             (int) config('performance.query_budget_ms', 200),
             function ($connection, QueryExecuted $event): void {
-                $context = [
+                $request = request();
+                $context = RequestLogContext::request($request, [
+                    'level' => 'WARNING',
+                    'event' => 'slow_database_query_detected',
+                    'message' => 'A database query exceeded the configured query performance budget.',
                     'connection' => $connection->getName(),
-                    'sql' => $event->toRawSql(),
+                    'sql_template' => $event->sql,
                     'time_ms' => $event->time,
-                    'route' => request()?->route()?->getName(),
-                    'url' => request()?->fullUrl(),
-                ];
+                ]);
 
-                Log::warning('Slow database query detected.', $context);
-                Log::channel('performance')->warning('Slow database query detected.', $context);
+                Log::warning($context['event'], $context);
+                Log::channel('performance')->warning($context['event'], $context);
             }
         );
     }

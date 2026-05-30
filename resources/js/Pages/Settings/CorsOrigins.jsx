@@ -166,70 +166,81 @@ export default function CorsOrigins({ origins }) {
                 </form>
 
                 <div className="overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm">
-                    <div className="grid grid-cols-[1.3fr,1fr,0.7fr,1fr] gap-4 bg-zinc-50 px-6 py-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                        <p>Origin</p>
-                        <p>Label</p>
-                        <p>Status</p>
-                        <p className="text-right">Actions</p>
+                    <div className="overflow-x-auto">
+                        <table className="w-full min-w-[56rem] border-collapse">
+                            <thead className="bg-zinc-50">
+                                <tr className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                                    <th className="px-6 py-3 text-left">Origin</th>
+                                    <th className="px-6 py-3 text-left">Label</th>
+                                    <th className="px-6 py-3 text-left">Status</th>
+                                    <th className="px-6 py-3 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-zinc-100 bg-white">
+                                {origins.length ? (
+                                    origins.map((origin) => (
+                                        <tr key={origin.id} className="text-sm">
+                                            <td className="px-6 py-4 font-medium text-zinc-900">
+                                                {origin.origin}
+                                            </td>
+                                            <td className="px-6 py-4 text-zinc-600">
+                                                {origin.label || "-"}
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <span
+                                                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                        origin.is_active
+                                                            ? "bg-emerald-100 text-emerald-700"
+                                                            : "bg-zinc-100 text-zinc-600"
+                                                    }`}
+                                                >
+                                                    {origin.is_active
+                                                        ? "Active"
+                                                        : "Inactive"}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="flex justify-end gap-4">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => editOrigin(origin)}
+                                                        className="font-medium text-emerald-700 hover:text-emerald-800"
+                                                    >
+                                                        Edit
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => toggleOrigin(origin)}
+                                                        className="font-medium text-zinc-700 hover:text-zinc-900"
+                                                    >
+                                                        {origin.is_active
+                                                            ? "Disable"
+                                                            : "Enable"}
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => deleteOrigin(origin)}
+                                                        className="font-medium text-red-600 hover:text-red-700"
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td
+                                            colSpan="4"
+                                            className="px-6 py-10 text-center text-sm text-zinc-500"
+                                        >
+                                            No API origins have been added yet.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
                     </div>
-
-                    {origins.length ? (
-                        origins.map((origin) => (
-                            <div
-                                key={origin.id}
-                                className="grid grid-cols-[1.3fr,1fr,0.7fr,1fr] gap-4 border-t border-zinc-100 px-6 py-4 text-sm"
-                            >
-                                <p className="font-medium text-zinc-900">
-                                    {origin.origin}
-                                </p>
-                                <p className="text-zinc-600">
-                                    {origin.label || "-"}
-                                </p>
-                                <p>
-                                    <span
-                                        className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                                            origin.is_active
-                                                ? "bg-emerald-100 text-emerald-700"
-                                                : "bg-zinc-100 text-zinc-600"
-                                        }`}
-                                    >
-                                        {origin.is_active
-                                            ? "Active"
-                                            : "Inactive"}
-                                    </span>
-                                </p>
-                                <div className="flex justify-end gap-4">
-                                    <button
-                                        type="button"
-                                        onClick={() => editOrigin(origin)}
-                                        className="font-medium text-emerald-700 hover:text-emerald-800"
-                                    >
-                                        Edit
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => toggleOrigin(origin)}
-                                        className="font-medium text-zinc-700 hover:text-zinc-900"
-                                    >
-                                        {origin.is_active
-                                            ? "Disable"
-                                            : "Enable"}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => deleteOrigin(origin)}
-                                        className="font-medium text-red-600 hover:text-red-700"
-                                    >
-                                        Delete
-                                    </button>
-                                </div>
-                            </div>
-                        ))
-                    ) : (
-                        <div className="border-t border-zinc-100 px-6 py-10 text-center text-sm text-zinc-500">
-                            No API origins have been added yet.
-                        </div>
-                    )}
                 </div>
             </div>
         </AuthenticatedLayout>

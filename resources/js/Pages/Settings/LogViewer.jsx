@@ -21,11 +21,14 @@ const levelClass = (level) =>
     })[level] || "bg-zinc-100 text-zinc-700";
 
 export default function LogViewer({ files, filters, log }) {
+    const entries = log.entries?.data ?? [];
+    const pagination = log.entries ?? {};
     const form = useForm({
         file: filters.file || "laravel.log",
         level: filters.level || "",
         search: filters.search || "",
         lines: filters.lines || "250",
+        per_page: filters.per_page || "25",
     });
 
     const submit = (e) => {
@@ -57,13 +60,22 @@ export default function LogViewer({ files, filters, log }) {
                             without loading entire files into memory.
                         </p>
                     </div>
-                    <button
-                        type="button"
-                        onClick={refresh}
-                        className="rounded-xl bg-zinc-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-zinc-800"
-                    >
-                        Refresh
-                    </button>
+                    <div className="flex gap-3">
+                        <button
+                            type="button"
+                            onClick={() => router.visit(route("settings.security.index"))}
+                            className="rounded-xl border border-zinc-200 bg-white px-5 py-3 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
+                        >
+                            Security Monitor
+                        </button>
+                        <button
+                            type="button"
+                            onClick={refresh}
+                            className="rounded-xl bg-zinc-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-zinc-800"
+                        >
+                            Refresh
+                        </button>
+                    </div>
                 </div>
             }
         >
@@ -72,7 +84,7 @@ export default function LogViewer({ files, filters, log }) {
             <div className="mx-auto max-w-7xl space-y-6">
                 <form
                     onSubmit={submit}
-                    className="grid gap-4 rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm lg:grid-cols-[1.2fr,0.7fr,0.7fr,1fr,auto]"
+                    className="grid gap-4 rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm lg:grid-cols-[1.2fr,0.7fr,0.7fr,0.7fr,1fr,auto]"
                 >
                     <div>
                         <label className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
@@ -137,6 +149,23 @@ export default function LogViewer({ files, filters, log }) {
 
                     <div>
                         <label className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                            Page Size
+                        </label>
+                        <select
+                            value={form.data.per_page}
+                            onChange={(e) => form.setData("per_page", e.target.value)}
+                            className="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none transition focus:border-emerald-400"
+                        >
+                            {["10", "25", "50", "100"].map((count) => (
+                                <option key={count} value={count}>
+                                    {count}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
                             Search
                         </label>
                         <input
@@ -191,17 +220,18 @@ export default function LogViewer({ files, filters, log }) {
                             Recent Entries
                         </h2>
                         <span className="text-sm text-zinc-500">
-                            {log.entries.length} entries
+                            Showing {pagination.from ?? 0}-{pagination.to ?? 0} of{" "}
+                            {pagination.total ?? 0} entries
                         </span>
                     </div>
 
-                    {log.entries.length ? (
+                    {entries.length ? (
                         <div className="divide-y divide-zinc-100">
-                            {log.entries.map((entry, index) => (
+                            {entries.map((entry, index) => (
                                 <details
                                     key={`${entry.timestamp}-${index}`}
                                     className="group px-6 py-4"
-                                    open={index === log.entries.length - 1}
+                                    open={index === 0}
                                 >
                                     <summary className="flex cursor-pointer list-none items-start gap-4">
                                         <span
@@ -233,8 +263,77 @@ export default function LogViewer({ files, filters, log }) {
                             No log entries matched the selected filters.
                         </div>
                     )}
+
+                    <Pagination pagination={pagination} />
                 </div>
             </div>
         </AuthenticatedLayout>
+    );
+}
+
+function Pagination({ pagination }) {
+    if (!pagination || Number(pagination.last_page ?? 1) <= 1) {
+        return null;
+    }
+
+    const goToPage = (page) => {
+        const params = new URLSearchParams(window.location.search);
+        params.set("page", page);
+
+        router.get(
+            `${window.location.pathname}?${params.toString()}`,
+            {},
+            {
+                preserveScroll: true,
+                preserveState: true,
+                replace: true,
+            },
+        );
+    };
+
+    const current = Number(pagination.current_page ?? 1);
+    const last = Number(pagination.last_page ?? 1);
+    const start = Math.max(1, current - 2);
+    const end = Math.min(last, current + 2);
+    const pages = Array.from({ length: end - start + 1 }, (_, index) => start + index);
+
+    return (
+        <div className="flex flex-col gap-3 border-t border-zinc-100 bg-zinc-50 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-zinc-500">
+                Page {current} of {last}
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+                <button
+                    type="button"
+                    disabled={current <= 1}
+                    onClick={() => goToPage(current - 1)}
+                    className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                    Previous
+                </button>
+                {pages.map((page) => (
+                    <button
+                        type="button"
+                        key={page}
+                        onClick={() => goToPage(page)}
+                        className={`rounded-lg px-3 py-2 text-sm transition ${
+                            page === current
+                                ? "bg-zinc-900 text-white"
+                                : "border border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-100"
+                        }`}
+                    >
+                        {page}
+                    </button>
+                ))}
+                <button
+                    type="button"
+                    disabled={current >= last}
+                    onClick={() => goToPage(current + 1)}
+                    className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                    Next
+                </button>
+            </div>
+        </div>
     );
 }

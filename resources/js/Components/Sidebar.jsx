@@ -1,10 +1,12 @@
 import { Link, usePage } from "@inertiajs/react";
-import { useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronLeft } from "lucide-react";
 import useRbac from "@/Hooks/UseRBAC";
 import NavLink from "./SideBarLink";
 import { NAV_ITEMS, ICONS } from "../constants/navItems";
 import { safeRoute, isRouteCurrent, filterNav } from "../utils/sidebarHelpers";
+
+const SIDEBAR_SCROLL_KEY = "sidebar-scroll-top";
 
 export default function Sidebar({
     collapsed,
@@ -20,92 +22,241 @@ export default function Sidebar({
     const dashboardFallback = hasRole("student")
         ? "/student/dashboard"
         : "/staff/dashboard";
+    const visibleNav = filterNav(NAV_ITEMS, can);
     const studentQuickLinks = hasRole("student")
         ? [
               {
                   label: "Fee Statements",
                   routeName: "student.fee-statements.index",
                   fallback: "/student/fee-statements",
-                  icon: ICONS.finance,
               },
               {
                   label: "Program Units",
                   routeName: "student.program-units.index",
                   fallback: "/student/program-units",
-                  icon: ICONS.grid,
               },
               {
                   label: "Results",
                   routeName: "student.results.index",
                   fallback: "/student/results",
-                  icon: ICONS.book,
               },
           ]
         : [];
-    const hodQuickLinks = hasRole("hod")
-        ? [
-              {
-                  label: "HOD Marks",
-                  routeName: "academic.marks.publish.index",
-                  fallback: "/academic/marks/publish",
-                  icon: ICONS.book,
-              },
-          ]
-        : [];
-    const adminQuickLinks = hasRole("admin")
-        ? [
-              {
-                  label: "Staff Marks",
-                  routeName: "academic.marks.index",
-                  fallback: "/academic/marks",
-                  icon: ICONS.academic,
-              },
-              {
-                  label: "HOD Marks",
-                  routeName: "academic.marks.publish.index",
-                  fallback: "/academic/marks/publish",
-                  icon: ICONS.book,
-              },
-              {
-                  label: "API CORS Origins",
-                  routeName: "settings.cors-origins.index",
-                  fallback: "/settings/cors-origins",
-                  icon: ICONS.roles,
-              },
-              {
-                  label: "App Performance",
-                  routeName: "settings.performance.index",
-                  fallback: "/settings/performance",
-                  icon: ICONS.dashboard,
-              },
-              {
-                  label: "Log Files",
-                  routeName: "settings.logs.index",
-                  fallback: "/settings/logs",
-                  icon: ICONS.book,
-              },
-          ]
-        : [];
+    const marksQuickLinks = [
+        ...(hasRole("admin")
+            ? [
+                  {
+                      label: "Staff Marks",
+                      routeName: "academic.marks.index",
+                      fallback: "/academic/marks",
+                  },
+              ]
+            : []),
+        ...((hasRole("admin") || hasRole("hod"))
+            ? [
+                  {
+                      label: "HOD Marks",
+                      routeName: "academic.marks.publish.index",
+                      fallback: "/academic/marks/publish",
+                  },
+              ]
+            : []),
+        ...((hasRole("admin") || hasRole("hod"))
+            ? [
+                  {
+                      label: "Unit Marksheet",
+                      routeName: "academic.marks.marksheet.index",
+                      fallback: "/academic/marks/marksheet",
+                  },
+              ]
+            : []),
+    ];
+    const quickSections = [
+        ...(studentQuickLinks.length
+            ? [
+                  {
+                      key: "student-portal",
+                      label: "Student Portal",
+                      icon: "students",
+                      basePath: "/student",
+                      children: studentQuickLinks,
+                  },
+              ]
+            : []),
+        ...(marksQuickLinks.length
+            ? [
+                  {
+                      key: "marks-workspace",
+                      label: "Marks Workspace",
+                      icon: "academic",
+                      basePath: "/academic/marks",
+                      children: marksQuickLinks,
+                  },
+              ]
+            : []),
+    ];
 
-    const visibleNav = filterNav(NAV_ITEMS, can);
+    const isChildActive = (child) => {
+        if (child.children) {
+            return child.children.some(isChildActive);
+        }
+
+        return isRouteCurrent(child.routeName, child.fallback, url);
+    };
+
+    const isSectionActive = ({ basePath, children }) =>
+        url.startsWith(basePath) || children.some(isChildActive);
 
     const getActiveKey = () =>
-        visibleNav.find(({ basePath }) => url.startsWith(basePath))?.key ??
-        null;
+        [...quickSections, ...visibleNav].find(isSectionActive)?.key ?? null;
 
     const [openMenu, setOpenMenu] = useState(getActiveKey);
+    const navRef = useRef(null);
 
     useEffect(() => {
         const active = getActiveKey();
         if (active) setOpenMenu(active);
     }, [url]);
 
+    useEffect(() => {
+        if (!navRef.current || typeof window === "undefined") {
+            return;
+        }
+
+        const storedScrollTop = window.sessionStorage.getItem(
+            SIDEBAR_SCROLL_KEY,
+        );
+
+        if (storedScrollTop !== null) {
+            navRef.current.scrollTop = Number(storedScrollTop);
+        }
+    }, [url, collapsed, mobileOpen]);
+
     const closeMobile = () => mobileOpen && setMobileOpen(false);
+    const preserveSidebarScroll = () => {
+        if (!navRef.current || typeof window === "undefined") {
+            return;
+        }
+
+        window.sessionStorage.setItem(
+            SIDEBAR_SCROLL_KEY,
+            String(navRef.current.scrollTop),
+        );
+    };
+
+    const handleSidebarLinkClick = () => {
+        preserveSidebarScroll();
+        closeMobile();
+    };
+
     const toggleMenu = (key) =>
         setOpenMenu((prev) => (prev === key ? null : key));
     const isDashboardActive =
         isRouteCurrent("dashboard", "/dashboard", url) ||
         isRouteCurrent(dashboardRouteName, dashboardFallback, url);
+    const renderNestedSection = ({ key, label, icon, basePath, children }) => {
+        const isOpen = openMenu === key;
+        const parentActive = isSectionActive({ basePath, children });
+        const isSingle = children.length === 1;
+
+        if (isSingle && !collapsed) {
+            const { routeName, fallback } = children[0];
+
+            return (
+                <div key={key} className="border-b border-white/5">
+                    <Link
+                        href={safeRoute(routeName, fallback)}
+                        onClick={handleSidebarLinkClick}
+                        className={`w-full flex items-center gap-3 px-4 py-3 text-sm transition ${
+                            parentActive
+                                ? "bg-emerald-500 text-white"
+                                : "text-zinc-400 hover:bg-white/5 hover:text-white"
+                        }`}
+                    >
+                        {ICONS[icon]}
+                        <span>{label}</span>
+                    </Link>
+                </div>
+            );
+        }
+
+        return (
+            <div key={key} className="border-b border-white/5">
+                <button
+                    onClick={() => toggleMenu(key)}
+                    className={`w-full flex items-center justify-between px-4 py-3 text-sm transition ${
+                        parentActive
+                            ? "bg-emerald-500 text-white"
+                            : "text-zinc-400 hover:bg-white/5 hover:text-white"
+                    }`}
+                >
+                    <div className="flex items-center gap-3">
+                        {ICONS[icon]}
+                        {!collapsed && <span>{label}</span>}
+                    </div>
+                    {!collapsed && (
+                        <ChevronLeft
+                            className={`w-4 h-4 transition-transform duration-300 ${
+                                isOpen ? "-rotate-90" : "rotate-0"
+                            }`}
+                        />
+                    )}
+                </button>
+
+                <div
+                    className={`overflow-hidden transition-all duration-300 ${
+                        isOpen && !collapsed
+                            ? "max-h-[42rem] opacity-100"
+                            : "max-h-0 opacity-0"
+                    }`}
+                >
+                    {children.map((child) => {
+                        if (child.children) {
+                            return (
+                                <div key={child.key ?? child.label} className="py-2">
+                                    <p className="flex items-center gap-2 px-10 pb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-500 [&_svg]:h-3.5 [&_svg]:w-3.5">
+                                        {child.icon ? ICONS[child.icon] : null}
+                                        {child.label}
+                                    </p>
+                                    {child.children.map(
+                                        ({ routeName, fallback, label: childLabel }) => (
+                                            <NavLink
+                                                key={routeName}
+                                                href={safeRoute(routeName, fallback)}
+                                                label={childLabel}
+                                                active={isRouteCurrent(
+                                                    routeName,
+                                                    fallback,
+                                                    url,
+                                                )}
+                                                onClick={handleSidebarLinkClick}
+                                            />
+                                        ),
+                                    )}
+                                </div>
+                            );
+                        }
+
+                        const { routeName, fallback, label: childLabel } = child;
+
+                        return (
+                            <NavLink
+                                key={routeName}
+                                href={safeRoute(routeName, fallback)}
+                                label={childLabel}
+                                active={isRouteCurrent(
+                                    routeName,
+                                    fallback,
+                                    url,
+                                )}
+                                onClick={handleSidebarLinkClick}
+                            />
+                        );
+                    })}
+                </div>
+            </div>
+        );
+    };
 
     return (
         <>
@@ -144,7 +295,11 @@ export default function Sidebar({
                 </div>
 
                 {/* Nav */}
-                <nav className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                <nav
+                    ref={navRef}
+                    onScroll={preserveSidebarScroll}
+                    className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+                >
                     {/* Dashboard */}
                     <div className="border-b border-white/5">
                         <Link
@@ -152,7 +307,7 @@ export default function Sidebar({
                                 dashboardRouteName,
                                 dashboardFallback,
                             )}
-                            onClick={closeMobile}
+                            onClick={handleSidebarLinkClick}
                             className={`flex items-center px-4 py-3 transition ${isDashboardActive
                                 ? "bg-emerald-500 text-white"
                                 : "text-zinc-400 hover:bg-white/5 hover:text-white"
@@ -165,161 +320,10 @@ export default function Sidebar({
                         </Link>
                     </div>
 
-                    {/* Filtered menu */}
-                    {studentQuickLinks.map(
-                        ({ label, routeName, fallback, icon }) => (
-                            <div
-                                key={routeName}
-                                className="border-b border-white/5"
-                            >
-                                <Link
-                                    href={safeRoute(routeName, fallback)}
-                                    onClick={closeMobile}
-                                    className={`w-full flex items-center gap-3 px-4 py-3 text-sm transition ${
-                                        isRouteCurrent(routeName, fallback, url)
-                                            ? "bg-emerald-500 text-white"
-                                            : "text-zinc-400 hover:bg-white/5 hover:text-white"
-                                    }`}
-                                >
-                                    {icon}
-                                    {!collapsed && <span>{label}</span>}
-                                </Link>
-                            </div>
-                        ),
-                    )}
-                    {hodQuickLinks.map(
-                        ({ label, routeName, fallback, icon }) => (
-                            <div
-                                key={routeName}
-                                className="border-b border-white/5"
-                            >
-                                <Link
-                                    href={safeRoute(routeName, fallback)}
-                                    onClick={closeMobile}
-                                    className={`w-full flex items-center gap-3 px-4 py-3 text-sm transition ${
-                                        isRouteCurrent(routeName, fallback, url)
-                                            ? "bg-emerald-500 text-white"
-                                            : "text-zinc-400 hover:bg-white/5 hover:text-white"
-                                    }`}
-                                >
-                                    {icon}
-                                    {!collapsed && <span>{label}</span>}
-                                </Link>
-                            </div>
-                        ),
-                    )}
-                    {adminQuickLinks.map(
-                        ({ label, routeName, fallback, icon }) => (
-                            <div
-                                key={routeName}
-                                className="border-b border-white/5"
-                            >
-                                <Link
-                                    href={safeRoute(routeName, fallback)}
-                                    onClick={closeMobile}
-                                    className={`w-full flex items-center gap-3 px-4 py-3 text-sm transition ${
-                                        isRouteCurrent(routeName, fallback, url)
-                                            ? "bg-emerald-500 text-white"
-                                            : "text-zinc-400 hover:bg-white/5 hover:text-white"
-                                    }`}
-                                >
-                                    {icon}
-                                    {!collapsed && <span>{label}</span>}
-                                </Link>
-                            </div>
-                        ),
-                    )}
+                    {/* Grouped quick sections */}
+                    {quickSections.map(renderNestedSection)}
 
-                    {visibleNav.map(
-                        ({ key, label, icon, basePath, children }) => {
-                            const isOpen = openMenu === key;
-                            const parentActive = url.startsWith(basePath);
-                            const isSingle = children.length === 1;
-
-                            if (isSingle && !collapsed) {
-                                const { routeName, fallback } = children[0];
-                                return (
-                                    <div
-                                        key={key}
-                                        className="border-b border-white/5"
-                                    >
-                                        <Link
-                                            href={safeRoute(
-                                                routeName,
-                                                fallback,
-                                            )}
-                                            onClick={closeMobile}
-                                            className={`w-full flex items-center gap-3 px-4 py-3 text-sm transition ${parentActive
-                                                ? "bg-emerald-500 text-white"
-                                                : "text-zinc-400 hover:bg-white/5 hover:text-white"
-                                                }`}
-                                        >
-                                            {ICONS[icon]}
-                                            <span>{label}</span>
-                                        </Link>
-                                    </div>
-                                );
-                            }
-
-                            return (
-                                <div
-                                    key={key}
-                                    className="border-b border-white/5"
-                                >
-                                    <button
-                                        onClick={() => toggleMenu(key)}
-                                        className={`w-full flex items-center justify-between px-4 py-3 text-sm transition ${parentActive
-                                            ? "bg-emerald-500 text-white"
-                                            : "text-zinc-400 hover:bg-white/5 hover:text-white"
-                                            }`}
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            {ICONS[icon]}
-                                            {!collapsed && <span>{label}</span>}
-                                        </div>
-                                        {!collapsed && (
-                                            <ChevronLeft
-                                                className={`w-4 h-4 transition-transform duration-300 ${isOpen
-                                                    ? "-rotate-90"
-                                                    : "rotate-0"
-                                                    }`}
-                                            />
-                                        )}
-                                    </button>
-
-                                    <div
-                                        className={`overflow-hidden transition-all duration-300 ${isOpen && !collapsed
-                                            ? "max-h-96 opacity-100"
-                                            : "max-h-0 opacity-0"
-                                            }`}
-                                    >
-                                        {children.map(
-                                            ({
-                                                routeName,
-                                                fallback,
-                                                label: childLabel,
-                                            }) => (
-                                                <NavLink
-                                                    key={routeName}
-                                                    href={safeRoute(
-                                                        routeName,
-                                                        fallback,
-                                                    )}
-                                                    label={childLabel}
-                                                    active={isRouteCurrent(
-                                                        routeName,
-                                                        fallback,
-                                                        url,
-                                                    )}
-                                                    onClick={closeMobile}
-                                                />
-                                            ),
-                                        )}
-                                    </div>
-                                </div>
-                            );
-                        },
-                    )}
+                    {visibleNav.map(renderNestedSection)}
                 </nav>
 
                 <div className="p-3 border-t border-white/5" />

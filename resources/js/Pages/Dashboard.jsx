@@ -254,57 +254,73 @@ function StudentDashboard({ dashboard, fullName }) {
                                     className={`space-y-4 ${!dashboard.latest_session ? 'mt-4' : ''}`}
                                 >
                                     <div className="overflow-hidden rounded-2xl border border-zinc-100">
-                                        <div className="grid grid-cols-[0.5fr,0.9fr,1.8fr] gap-4 bg-zinc-50 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                                            <p>Select</p>
-                                            <p>Code</p>
-                                            <p>Unit</p>
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full min-w-[42rem] border-collapse">
+                                                <thead className="bg-zinc-50">
+                                                    <tr className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                                                        <th className="px-4 py-3 text-left">
+                                                            Select
+                                                        </th>
+                                                        <th className="px-4 py-3 text-left">
+                                                            Code
+                                                        </th>
+                                                        <th className="px-4 py-3 text-left">
+                                                            Unit
+                                                        </th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-zinc-100 bg-white">
+                                                    {dashboard.module_units.map((unit) => (
+                                                        <tr
+                                                            key={unit.id}
+                                                            className="text-sm text-zinc-700"
+                                                        >
+                                                            <td className="px-4 py-3 align-top">
+                                                                <label className="flex cursor-pointer items-center">
+                                                                    <Checkbox
+                                                                        checked={unitRegistrationData.program_version_unit_ids.includes(
+                                                                            String(unit.id),
+                                                                        )}
+                                                                        onChange={() =>
+                                                                            toggleUnitSelection(
+                                                                                unit.id,
+                                                                            )
+                                                                        }
+                                                                        disabled={
+                                                                            dashboard
+                                                                                .unit_registration
+                                                                                ?.is_complete ||
+                                                                            !dashboard.latest_session
+                                                                        }
+                                                                        className="h-4 w-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-600"
+                                                                    />
+                                                                </label>
+                                                            </td>
+                                                            <td className="px-4 py-3 align-top font-semibold text-emerald-700">
+                                                                {unit.code ?? "-"}
+                                                            </td>
+                                                            <td className="px-4 py-3 align-top">
+                                                                <p className="font-semibold text-zinc-900">
+                                                                    {unit.name}
+                                                                </p>
+                                                                <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-zinc-500">
+                                                                    <span>
+                                                                        Credit Factor:{" "}
+                                                                        {unit.credit_factor ??
+                                                                            "-"}
+                                                                    </span>
+                                                                    {unit.is_registered ? (
+                                                                        <span className="rounded-full bg-emerald-100 px-2 py-0.5 font-semibold text-emerald-700">
+                                                                            Registered
+                                                                        </span>
+                                                                    ) : null}
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
                                         </div>
-                                        {dashboard.module_units.map((unit) => (
-                                            <label
-                                                key={unit.id}
-                                                className="grid cursor-pointer grid-cols-[0.5fr,0.9fr,1.8fr] gap-4 border-t border-zinc-100 bg-white px-4 py-3 text-sm text-zinc-700"
-                                            >
-                                                <div className="flex items-center">
-                                                    <Checkbox
-                                                        checked={unitRegistrationData.program_version_unit_ids.includes(
-                                                            String(unit.id),
-                                                        )}
-                                                        onChange={() =>
-                                                            toggleUnitSelection(
-                                                                unit.id,
-                                                            )
-                                                        }
-                                                        disabled={
-                                                            dashboard
-                                                                .unit_registration
-                                                                ?.is_complete ||
-                                                            !dashboard.latest_session
-                                                        }
-                                                        className="h-4 w-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-600"
-                                                    />
-                                                </div>
-                                                <p className="font-semibold text-emerald-700">
-                                                    {unit.code ?? "-"}
-                                                </p>
-                                                <div>
-                                                    <p className="font-semibold text-zinc-900">
-                                                        {unit.name}
-                                                    </p>
-                                                    <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-zinc-500">
-                                                        <span>
-                                                            Credit Factor:{" "}
-                                                            {unit.credit_factor ??
-                                                                "-"}
-                                                        </span>
-                                                        {unit.is_registered ? (
-                                                            <span className="rounded-full bg-emerald-100 px-2 py-0.5 font-semibold text-emerald-700">
-                                                                Registered
-                                                            </span>
-                                                        ) : null}
-                                                    </div>
-                                                </div>
-                                            </label>
-                                        ))}
                                     </div>
 
                                     {unitRegistrationErrors.unit_registration ? (

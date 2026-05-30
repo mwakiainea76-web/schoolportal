@@ -41,8 +41,8 @@ class EnrollmentFilter
 
     protected function course($query, $value)
     {
-        $query->whereHas('courseEnrollment.courseProgramVersion', function ($courseProgramVersionQuery) use ($value) {
-            $courseProgramVersionQuery->where('course_id', $value);
+        $query->whereHas('programEnrollment.programVersionMapping', function ($programVersionMappingQuery) use ($value) {
+            $programVersionMappingQuery->where('program_id', $value);
         });
     }
 }

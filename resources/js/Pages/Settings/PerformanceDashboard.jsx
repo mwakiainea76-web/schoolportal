@@ -237,39 +237,57 @@ export default function PerformanceDashboard({
                         </span>
                     </div>
                     <div className="overflow-hidden rounded-2xl border border-zinc-100">
-                        <div className="grid grid-cols-[1.7fr,0.5fr,0.6fr,0.6fr,0.6fr,0.5fr] gap-4 bg-zinc-50 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                            <p>Endpoint</p>
-                            <p>Hits</p>
-                            <p>Avg</p>
-                            <p>P95</p>
-                            <p>Max</p>
-                            <p>Errors</p>
+                        <div className="overflow-x-auto">
+                            <table className="w-full min-w-[58rem] border-collapse">
+                                <thead className="bg-zinc-50">
+                                    <tr className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                                        <th className="px-4 py-3 text-left">Endpoint</th>
+                                        <th className="px-4 py-3 text-left">Hits</th>
+                                        <th className="px-4 py-3 text-left">Avg</th>
+                                        <th className="px-4 py-3 text-left">P95</th>
+                                        <th className="px-4 py-3 text-left">Max</th>
+                                        <th className="px-4 py-3 text-left">Errors</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-zinc-100 bg-white">
+                                    {slow_endpoints.length ? (
+                                        slow_endpoints.map((endpoint) => (
+                                            <tr key={endpoint.endpoint} className="text-sm">
+                                                <td className="max-w-0 px-4 py-3 font-medium text-zinc-900">
+                                                    <span className="block truncate">
+                                                        {endpoint.endpoint}
+                                                    </span>
+                                                </td>
+                                                <td className="px-4 py-3">{number(endpoint.requests)}</td>
+                                                <td className="px-4 py-3">{ms(endpoint.average_ms)}</td>
+                                                <td className="px-4 py-3 font-semibold text-zinc-900">
+                                                    {ms(endpoint.p95_ms)}
+                                                </td>
+                                                <td className="px-4 py-3">{ms(endpoint.max_ms)}</td>
+                                                <td
+                                                    className={`px-4 py-3 ${
+                                                        endpoint.errors
+                                                            ? "text-red-600"
+                                                            : "text-zinc-500"
+                                                    }`}
+                                                >
+                                                    {number(endpoint.errors)}
+                                                </td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td
+                                                colSpan="6"
+                                                className="px-4 py-8 text-center text-sm text-zinc-500"
+                                            >
+                                                No endpoint data in this range.
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
                         </div>
-                        {slow_endpoints.length ? (
-                            slow_endpoints.map((endpoint) => (
-                                <div
-                                    key={endpoint.endpoint}
-                                    className="grid grid-cols-[1.7fr,0.5fr,0.6fr,0.6fr,0.6fr,0.5fr] gap-4 border-t border-zinc-100 px-4 py-3 text-sm"
-                                >
-                                    <p className="truncate font-medium text-zinc-900">
-                                        {endpoint.endpoint}
-                                    </p>
-                                    <p>{number(endpoint.requests)}</p>
-                                    <p>{ms(endpoint.average_ms)}</p>
-                                    <p className="font-semibold text-zinc-900">
-                                        {ms(endpoint.p95_ms)}
-                                    </p>
-                                    <p>{ms(endpoint.max_ms)}</p>
-                                    <p className={endpoint.errors ? "text-red-600" : "text-zinc-500"}>
-                                        {number(endpoint.errors)}
-                                    </p>
-                                </div>
-                            ))
-                        ) : (
-                            <div className="border-t border-zinc-100 px-4 py-8 text-center text-sm text-zinc-500">
-                                No endpoint data in this range.
-                            </div>
-                        )}
                     </div>
                 </div>
 

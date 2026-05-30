@@ -51,31 +51,39 @@ export default function StudentIndex({ program, units_by_module }) {
                                 </div>
 
                                 <div className="mt-5 overflow-hidden rounded-2xl border border-zinc-100">
-                                    <div className="grid grid-cols-[0.85fr,1.8fr,0.8fr,0.8fr] gap-4 bg-zinc-50 px-5 py-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                                        <p>Code</p>
-                                        <p>Unit Name</p>
-                                        <p className="text-right">Credits</p>
-                                        <p className="text-right">Hours</p>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[44rem] border-collapse">
+                                            <thead className="bg-zinc-50">
+                                                <tr className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                                                    <th className="px-5 py-3 text-left">Code</th>
+                                                    <th className="px-5 py-3 text-left">Unit Name</th>
+                                                    <th className="px-5 py-3 text-right">Credits</th>
+                                                    <th className="px-5 py-3 text-right">Hours</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-zinc-100 bg-white">
+                                                {group.units.map((unit) => (
+                                                    <tr
+                                                        key={unit.id}
+                                                        className="text-sm text-zinc-700"
+                                                    >
+                                                        <td className="px-5 py-4 font-semibold text-emerald-700">
+                                                            {unit.code ?? "-"}
+                                                        </td>
+                                                        <td className="px-5 py-4 font-semibold text-zinc-900">
+                                                            {unit.name}
+                                                        </td>
+                                                        <td className="px-5 py-4 text-right">
+                                                            {unit.credit_factor ?? "-"}
+                                                        </td>
+                                                        <td className="px-5 py-4 text-right">
+                                                            {unit.training_hours ?? "-"}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
                                     </div>
-                                    {group.units.map((unit) => (
-                                        <div
-                                            key={unit.id}
-                                            className="grid grid-cols-[0.85fr,1.8fr,0.8fr,0.8fr] gap-4 border-t border-zinc-100 bg-white px-5 py-4 text-sm text-zinc-700"
-                                        >
-                                            <p className="font-semibold text-emerald-700">
-                                                {unit.code ?? "-"}
-                                            </p>
-                                            <p className="font-semibold text-zinc-900">
-                                                {unit.name}
-                                            </p>
-                                            <p className="text-right">
-                                                {unit.credit_factor ?? "-"}
-                                            </p>
-                                            <p className="text-right">
-                                                {unit.training_hours ?? "-"}
-                                            </p>
-                                        </div>
-                                    ))}
                                 </div>
                             </section>
                         ))
