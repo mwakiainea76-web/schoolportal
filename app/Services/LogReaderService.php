@@ -32,7 +32,7 @@ class LogReaderService
     {
         $path = $this->resolvePath($fileName);
         $content = $path ? $this->tail($path, max(50, min($lines, 1000))) : '';
-        $entries = $this->parseEntries($content);
+        $entries = $this->parseEntriesForFile($fileName, $content);
 
         if ($level) {
             $entries = $entries->filter(fn (array $entry) =>
@@ -87,55 +87,60 @@ class LogReaderService
 
     private function tail(string $path, int $lines): string
     {
-        $handle = fopen($path, 'rb');
-
-        if (! $handle) {
+        try {
+            $file = new \SplFileObject($path, 'rb');
+        } catch (\RuntimeException) {
             return '';
         }
 
-        $buffer = '';
-        $chunkSize = 8192;
-        $position = -1;
-        $lineCount = 0;
+        $file->seek(PHP_INT_MAX);
+        $lastLineIndex = $file->key();
 
-        fseek($handle, 0, SEEK_END);
-        $fileSize = ftell($handle);
-
-        while ($fileSize + $position > 0 && $lineCount <= $lines) {
-            $readSize = min($chunkSize, $fileSize + $position + 1);
-            $position -= $readSize;
-            fseek($handle, $position, SEEK_END);
-            $chunk = fread($handle, $readSize);
-            $buffer = $chunk . $buffer;
-            $lineCount = substr_count($buffer, "\n");
+        if ($lastLineIndex < 0) {
+            return '';
         }
 
-        fclose($handle);
+        $startLine = max(0, $lastLineIndex - $lines + 1);
+        $file->seek($startLine);
+        $buffer = [];
 
-        return collect(explode("\n", $buffer))
-            ->take(-$lines)
+        while (! $file->eof()) {
+            $buffer[] = rtrim((string) $file->current(), "\r\n");
+            $file->next();
+        }
+
+        return collect($buffer)
+            ->filter(fn (string $line) => $line !== '')
             ->implode("\n");
     }
 
-    private function parseEntries(string $content): Collection
+    private function parseEntriesForFile(string $fileName, string $content): Collection
+    {
+        $safeName = strtolower(basename($fileName));
+
+        if (str_starts_with($safeName, 'performance-') || str_starts_with($safeName, 'security-')) {
+            return $this->parseJsonLineEntries($content);
+        }
+
+        if ($safeName === 'laravel.log' || str_starts_with($safeName, 'laravel-')) {
+            return $this->parseLaravelEntries($content);
+        }
+
+        $jsonEntries = $this->parseJsonLineEntries($content);
+
+        if ($jsonEntries->isNotEmpty()) {
+            return $jsonEntries;
+        }
+
+        return $this->parseLaravelEntries($content);
+    }
+
+    private function parseLaravelEntries(string $content): Collection
     {
         $entries = collect();
         $current = null;
 
         foreach (preg_split('/\R/', $content) ?: [] as $line) {
-            $jsonEntry = $this->parseJsonEntry($line);
-
-            if ($jsonEntry !== null) {
-                if ($current) {
-                    $entries->push($this->normalizeEntryLevel($current));
-                    $current = null;
-                }
-
-                $entries->push($this->normalizeEntryLevel($jsonEntry));
-
-                continue;
-            }
-
             if (preg_match('/^\[(?<date>[^\]]+)\]\s+(?<env>[^.]+)\.(?<level>[A-Z]+):\s+(?<message>.*)$/', $line, $matches)) {
                 if ($current) {
                     $entries->push($this->normalizeEntryLevel($current));
@@ -165,6 +170,15 @@ class LogReaderService
         return $entries;
     }
 
+    private function parseJsonLineEntries(string $content): Collection
+    {
+        return collect(preg_split('/\R/', $content) ?: [])
+            ->map(fn (string $line) => $this->parseJsonEntry($line))
+            ->filter()
+            ->map(fn (array $entry) => $this->normalizeEntryLevel($entry))
+            ->values();
+    }
+
     private function parseJsonEntry(string $line): ?array
     {
         $trimmed = trim($line);
@@ -181,17 +195,36 @@ class LogReaderService
 
         $context = is_array($decoded['context'] ?? null) ? $decoded['context'] : [];
         $level = strtolower((string) ($context['level'] ?? $decoded['level_name'] ?? 'info'));
-        $message = (string) ($context['message'] ?? $decoded['message'] ?? 'Log entry');
-        $timestamp = (string) ($context['timestamp'] ?? $decoded['datetime'] ?? '');
+        $message = trim((string) ($context['message'] ?? ''));
+
+        if ($message === '') {
+            $message = trim((string) ($decoded['message'] ?? ''));
+        }
+
+        if ($message === '') {
+            $message = trim((string) ($context['event'] ?? ''));
+        }
+
+        if ($message === '') {
+            $message = 'Log entry';
+        }
+
+        $timestamp = trim((string) ($context['timestamp'] ?? ''));
+
+        if ($timestamp === '') {
+            $timestamp = trim((string) ($decoded['datetime'] ?? ''));
+        }
+
         $environment = (string) ($decoded['channel'] ?? $context['environment'] ?? 'log');
+        $prettyRaw = json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 
         return [
-            'timestamp' => $timestamp,
+            'timestamp' => $timestamp !== '' ? $timestamp : '-',
             'environment' => $environment,
             'message' => $message,
-            'raw' => $trimmed,
-            'original_level' => $level,
-            'level' => $level,
+            'raw' => is_string($prettyRaw) ? $prettyRaw : $trimmed,
+            'original_level' => $level !== '' ? $level : 'info',
+            'level' => $level !== '' ? $level : 'info',
         ];
     }
 
