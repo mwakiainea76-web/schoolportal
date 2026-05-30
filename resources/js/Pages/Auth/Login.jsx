@@ -21,11 +21,12 @@ export default function Login({ status, canResetPassword }) {
     });
     const [showPassword, setShowPassword] = useState(false);
     const [loginNotice, setLoginNotice] = useState("");
-    const [sessionRedirectNotice, setSessionRedirectNotice] = useState("");
+    const [activeSessionNotice, setActiveSessionNotice] = useState("");
+    const [hasActiveProfileSession, setHasActiveProfileSession] = useState(false);
 
     const sessionOwnerStorageKey = "auth.sessionOwner";
     const sessionHeartbeatStorageKey = "auth.sessionHeartbeat";
-    const sessionHeartbeatTtlMs = 120000;
+    const sessionHeartbeatTtlMs = 45000;
 
     useEffect(() => {
         const context = loadSecurityContext();
@@ -74,15 +75,10 @@ export default function Login({ status, canResetPassword }) {
             activeSessionOwner.email ||
             "another account";
 
-        setSessionRedirectNotice(
-            `This browser profile is already signed in as ${activeUserLabel}. Redirecting you to that session.`,
+        setHasActiveProfileSession(true);
+        setActiveSessionNotice(
+            `This browser profile is already signed in as ${activeUserLabel}. Log out from that session first or use a different browser profile.`,
         );
-
-        const timeoutId = window.setTimeout(() => {
-            window.location.assign(route("dashboard"));
-        }, 1200);
-
-        return () => window.clearTimeout(timeoutId);
     }, []);
 
     useEffect(() => {
@@ -107,8 +103,7 @@ export default function Login({ status, canResetPassword }) {
     const submit = (e) => {
         e.preventDefault();
 
-        if (sessionRedirectNotice) {
-            window.location.assign(route("dashboard"));
+        if (hasActiveProfileSession) {
             return;
         }
 
@@ -156,9 +151,9 @@ export default function Login({ status, canResetPassword }) {
                                     </div>
                                 )}
 
-                                {sessionRedirectNotice && (
+                                {activeSessionNotice && (
                                     <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                                        {sessionRedirectNotice}
+                                        {activeSessionNotice}
                                     </div>
                                 )}
 
@@ -234,13 +229,27 @@ export default function Login({ status, canResetPassword }) {
 
                                     <button
                                         type="submit"
-                                        disabled={processing}
+                                        disabled={processing || hasActiveProfileSession}
                                         className="w-full rounded-xl bg-emerald-600 py-3 text-base font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
                                     >
                                         {processing
                                             ? "Signing In..."
                                             : "Sign In"}
                                     </button>
+
+                                    {hasActiveProfileSession ? (
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                window.location.assign(
+                                                    route("dashboard"),
+                                                )
+                                            }
+                                            className="w-full rounded-xl border border-slate-300 bg-white py-3 text-base font-semibold text-slate-700 transition hover:bg-slate-50"
+                                        >
+                                            Open Current Session
+                                        </button>
+                                    ) : null}
 
                                     {loginNotice && (
                                         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">

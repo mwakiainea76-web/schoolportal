@@ -16,6 +16,7 @@ export default function AuthenticatedLayout({ header, children }) {
     const loginRoute = route("login");
     const sessionOwnerStorageKey = "auth.sessionOwner";
     const sessionHeartbeatStorageKey = "auth.sessionHeartbeat";
+    const sessionHeartbeatIntervalMs = 15000;
 
     const getTabStorageKey = () => `auth.activeTabs.${user?.id ?? "guest"}`;
     const getTabIdStorageKey = () => `auth.tabId.${user?.id ?? "guest"}`;
@@ -163,7 +164,7 @@ export default function AuthenticatedLayout({ header, children }) {
 
         const heartbeatInterval = window.setInterval(() => {
             writeSessionOwner();
-        }, 30000);
+        }, sessionHeartbeatIntervalMs);
 
         const handlePageHide = () => {
             removeCurrentTab({ logoutIfLast: true });
@@ -205,7 +206,7 @@ export default function AuthenticatedLayout({ header, children }) {
             );
             window.removeEventListener("storage", handleStorage);
         };
-    }, [loginRoute, user?.id]);
+    }, [loginRoute, sessionHeartbeatIntervalMs, user?.id]);
 
     return (
         <div className="flex min-h-screen bg-[#F8F9FA] text-zinc-900">

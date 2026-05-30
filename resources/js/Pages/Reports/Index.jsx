@@ -48,6 +48,13 @@ export default function ReportsIndex({
     const [collectionPerformance, setCollectionPerformance] = useState({});
     const [feePlanUsage, setFeePlanUsage] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [financeSectionLoading, setFinanceSectionLoading] = useState({});
+    const [loadedFinanceSections, setLoadedFinanceSections] = useState({
+        collection: false,
+        outstanding: false,
+        overdue: false,
+        usage: false,
+    });
     const [usageFilters, setUsageFilters] = useState({
         academic_session_id: "",
         year_of_study: "",
@@ -63,19 +70,21 @@ export default function ReportsIndex({
         activeSection === "all" || activeSection === "data-quality";
     const showSnapshots =
         activeSection === "all" || activeSection === "snapshots";
+    const financeOnlyPage = activeSection === "finance";
 
     useEffect(() => {
         loadReports();
     }, []);
 
     useEffect(() => {
-        if (!showFinance) {
+        if (!showFinance || !loadedFinanceSections.usage) {
             return;
         }
 
         loadFeePlanUsage();
     }, [
         showFinance,
+        loadedFinanceSections.usage,
         usageFilters.academic_session_id,
         usageFilters.year_of_study,
         usageFilters.session_number,
@@ -99,23 +108,34 @@ export default function ReportsIndex({
                 const financeData = await financeResponse.json();
                 setFinanceSummary(financeData);
 
-                const outstandingResponse = await fetch(
-                    route("reports.api.outstanding"),
-                );
-                const outstandingData = await outstandingResponse.json();
-                setOutstandingBalance(outstandingData);
+                if (!financeOnlyPage) {
+                    const outstandingResponse = await fetch(
+                        route("reports.api.outstanding"),
+                    );
+                    const outstandingData = await outstandingResponse.json();
+                    setOutstandingBalance(outstandingData);
 
-                const overdueResponse = await fetch(route("reports.api.overdue"));
-                const overdueData = await overdueResponse.json();
-                setOverdueByDepartment(overdueData);
+                    const overdueResponse = await fetch(
+                        route("reports.api.overdue"),
+                    );
+                    const overdueData = await overdueResponse.json();
+                    setOverdueByDepartment(overdueData);
 
-                const collectionResponse = await fetch(
-                    route("reports.api.collection"),
-                );
-                const collectionData = await collectionResponse.json();
-                setCollectionPerformance(collectionData);
+                    const collectionResponse = await fetch(
+                        route("reports.api.collection"),
+                    );
+                    const collectionData = await collectionResponse.json();
+                    setCollectionPerformance(collectionData);
 
-                await loadFeePlanUsage();
+                    setLoadedFinanceSections({
+                        collection: true,
+                        outstanding: true,
+                        overdue: true,
+                        usage: true,
+                    });
+
+                    await loadFeePlanUsage();
+                }
             }
 
             if (showAcademic) {
@@ -182,6 +202,53 @@ export default function ReportsIndex({
             setFeePlanUsage(usageData);
         } catch (error) {
             console.error("Error loading fee plan usage:", error);
+        }
+    };
+
+    const loadFinanceSection = async (section) => {
+        if (financeSectionLoading[section] || loadedFinanceSections[section]) {
+            return;
+        }
+
+        setFinanceSectionLoading((current) => ({
+            ...current,
+            [section]: true,
+        }));
+
+        try {
+            if (section === "collection") {
+                const response = await fetch(route("reports.api.collection"));
+                const data = await response.json();
+                setCollectionPerformance(data);
+            }
+
+            if (section === "outstanding") {
+                const response = await fetch(route("reports.api.outstanding"));
+                const data = await response.json();
+                setOutstandingBalance(data);
+            }
+
+            if (section === "overdue") {
+                const response = await fetch(route("reports.api.overdue"));
+                const data = await response.json();
+                setOverdueByDepartment(data);
+            }
+
+            if (section === "usage") {
+                await loadFeePlanUsage();
+            }
+
+            setLoadedFinanceSections((current) => ({
+                ...current,
+                [section]: true,
+            }));
+        } catch (error) {
+            console.error(`Error loading finance ${section}:`, error);
+        } finally {
+            setFinanceSectionLoading((current) => ({
+                ...current,
+                [section]: false,
+            }));
         }
     };
 
@@ -2387,6 +2454,7 @@ export default function ReportsIndex({
 
                 {showFinance && (
                     <>
+                {(!financeOnlyPage || loadedFinanceSections.collection) ? (
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
                     <div className="rounded-lg border border-zinc-100 bg-white p-6 shadow-sm">
                         <h3 className="text-sm font-medium text-zinc-500">
@@ -2427,7 +2495,16 @@ export default function ReportsIndex({
                         </p>
                     </div>
                 </div>
+                ) : (
+                    <LoadFinancePanel
+                        title="Collection Performance"
+                        description="Load invoiced, collected, outstanding, and collection-rate figures."
+                        loading={Boolean(financeSectionLoading.collection)}
+                        onLoad={() => loadFinanceSection("collection")}
+                    />
+                )}
 
+                {(!financeOnlyPage || loadedFinanceSections.outstanding) ? (
                 <div className="rounded-lg border border-zinc-100 bg-white p-6 shadow-sm">
                     <h2 className="mb-4 text-lg font-semibold text-zinc-700">
                         Outstanding Balance by Session
@@ -2477,7 +2554,16 @@ export default function ReportsIndex({
                         </table>
                     </div>
                 </div>
+                ) : (
+                    <LoadFinancePanel
+                        title="Outstanding Balance by Session"
+                        description="Load the session-by-session outstanding invoice breakdown."
+                        loading={Boolean(financeSectionLoading.outstanding)}
+                        onLoad={() => loadFinanceSection("outstanding")}
+                    />
+                )}
 
+                {(!financeOnlyPage || loadedFinanceSections.overdue) ? (
                 <div className="rounded-lg border border-zinc-100 bg-white p-6 shadow-sm">
                     <h2 className="mb-4 text-lg font-semibold text-zinc-700">
                         Overdue Amounts by Department
@@ -2525,7 +2611,16 @@ export default function ReportsIndex({
                         </table>
                     </div>
                 </div>
+                ) : (
+                    <LoadFinancePanel
+                        title="Overdue Amounts by Department"
+                        description="Load overdue totals grouped by department."
+                        loading={Boolean(financeSectionLoading.overdue)}
+                        onLoad={() => loadFinanceSection("overdue")}
+                    />
+                )}
 
+                {(!financeOnlyPage || loadedFinanceSections.usage) ? (
                 <div className="rounded-lg border border-zinc-100 bg-white p-6 shadow-sm">
                     <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                         <h2 className="text-lg font-semibold text-zinc-700">
@@ -2637,6 +2732,14 @@ export default function ReportsIndex({
                         </table>
                     </div>
                 </div>
+                ) : (
+                    <LoadFinancePanel
+                        title="Fee Plan Usage Statistics"
+                        description="Load fee-plan usage and activate the session and study-level filters."
+                        loading={Boolean(financeSectionLoading.usage)}
+                        onLoad={() => loadFinanceSection("usage")}
+                    />
+                )}
                     </>
                 )}
             </div>
@@ -2652,6 +2755,29 @@ function MetricCard({ label, value, helper = null, accent = "text-zinc-900" }) {
             {helper ? (
                 <p className="mt-2 text-xs text-zinc-500">{helper}</p>
             ) : null}
+        </div>
+    );
+}
+
+function LoadFinancePanel({ title, description, loading, onLoad }) {
+    return (
+        <div className="rounded-lg border border-zinc-100 bg-white p-6 shadow-sm">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                    <h2 className="text-lg font-semibold text-zinc-700">
+                        {title}
+                    </h2>
+                    <p className="mt-1 text-sm text-zinc-500">{description}</p>
+                </div>
+                <button
+                    type="button"
+                    onClick={onLoad}
+                    disabled={loading}
+                    className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                    {loading ? "Loading..." : "Load Data"}
+                </button>
+            </div>
         </div>
     );
 }
