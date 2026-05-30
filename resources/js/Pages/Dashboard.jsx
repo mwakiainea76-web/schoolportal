@@ -522,88 +522,74 @@ function StudentDashboard({ dashboard, fullName }) {
 
 function StaffDashboard({ dashboard }) {
     const [analytics, setAnalytics] = useState(dashboard.analytics ?? {});
-    const [analyticsLoading, setAnalyticsLoading] = useState(
-        !dashboard.analytics,
-    );
+    const [analyticsLoading, setAnalyticsLoading] = useState(false);
     const [analyticsError, setAnalyticsError] = useState("");
+    const [loadedSections, setLoadedSections] = useState(() => ({
+        executive: Boolean(dashboard.analytics?.executive),
+        finance: Boolean(dashboard.analytics?.finance),
+        academic: Boolean(dashboard.analytics?.academic),
+        admissions: Boolean(dashboard.analytics?.admissions),
+        hostel: Boolean(dashboard.analytics?.hostel),
+        data_quality: Boolean(dashboard.analytics?.data_quality),
+        snapshot_trends: Boolean(dashboard.analytics?.snapshot_trends),
+    }));
+    const [sectionLoading, setSectionLoading] = useState({});
+
+    const sectionRequests = {
+        executive: () => fetch(route("reports.api.executive-summary")),
+        finance: () => fetch(route("reports.api.finance-summary")),
+        academic: () => fetch(route("reports.api.academic-summary")),
+        admissions: () => fetch(route("reports.api.admissions-summary")),
+        hostel: () => fetch(route("reports.api.hostel-summary")),
+        data_quality: () => fetch(route("reports.api.data-quality-summary")),
+        snapshot_trends: () =>
+            fetch(route("reports.api.snapshot-trends", { days: 14 })),
+    };
 
     useEffect(() => {
         if (dashboard.analytics) {
             setAnalytics(dashboard.analytics);
-            setAnalyticsLoading(false);
+            setLoadedSections({
+                executive: Boolean(dashboard.analytics.executive),
+                finance: Boolean(dashboard.analytics.finance),
+                academic: Boolean(dashboard.analytics.academic),
+                admissions: Boolean(dashboard.analytics.admissions),
+                hostel: Boolean(dashboard.analytics.hostel),
+                data_quality: Boolean(dashboard.analytics.data_quality),
+                snapshot_trends: Boolean(dashboard.analytics.snapshot_trends),
+            });
             return;
         }
 
         let cancelled = false;
 
-        const loadAnalytics = async () => {
+        const loadExecutive = async () => {
             setAnalyticsLoading(true);
             setAnalyticsError("");
 
             try {
-                const [
-                    executiveResponse,
-                    financeResponse,
-                    academicResponse,
-                    admissionsResponse,
-                    hostelResponse,
-                    dataQualityResponse,
-                    snapshotResponse,
-                ] = await Promise.all([
-                    fetch(route("reports.api.executive-summary")),
-                    fetch(route("reports.api.finance-summary")),
-                    fetch(route("reports.api.academic-summary")),
-                    fetch(route("reports.api.admissions-summary")),
-                    fetch(route("reports.api.hostel-summary")),
-                    fetch(route("reports.api.data-quality-summary")),
-                    fetch(route("reports.api.snapshot-trends", { days: 14 })),
-                ]);
+                const executiveResponse = await sectionRequests.executive();
 
-                if (
-                    !executiveResponse.ok ||
-                    !financeResponse.ok ||
-                    !academicResponse.ok ||
-                    !admissionsResponse.ok ||
-                    !hostelResponse.ok ||
-                    !dataQualityResponse.ok ||
-                    !snapshotResponse.ok
-                ) {
+                if (!executiveResponse.ok) {
                     throw new Error(
-                        "One or more dashboard analytics requests failed.",
+                        "Executive analytics request failed.",
                     );
                 }
 
-                const [
-                    executive,
-                    finance,
-                    academic,
-                    admissions,
-                    hostel,
-                    dataQuality,
-                    snapshotTrends,
-                ] = await Promise.all([
-                    executiveResponse.json(),
-                    financeResponse.json(),
-                    academicResponse.json(),
-                    admissionsResponse.json(),
-                    hostelResponse.json(),
-                    dataQualityResponse.json(),
-                    snapshotResponse.json(),
-                ]);
+                const executive = await executiveResponse.json();
 
                 if (cancelled) {
                     return;
                 }
 
-                setAnalytics({
+                setAnalytics((current) => ({
+                    ...current,
                     executive,
-                    finance,
-                    academic,
-                    admissions,
-                    hostel,
-                    data_quality: dataQuality,
-                    snapshot_trends: snapshotTrends,
-                });
+                }));
+                setLoadedSections((current) => ({
+                    ...current,
+                    executive: true,
+                }));
             } catch (error) {
                 if (cancelled) {
                     return;
@@ -620,12 +606,53 @@ function StaffDashboard({ dashboard }) {
             }
         };
 
-        loadAnalytics();
+        loadExecutive();
 
         return () => {
             cancelled = true;
         };
     }, [dashboard.analytics]);
+
+    const loadSection = async (sectionKey) => {
+        if (sectionLoading[sectionKey] || loadedSections[sectionKey]) {
+            return;
+        }
+
+        setSectionLoading((current) => ({
+            ...current,
+            [sectionKey]: true,
+        }));
+        setAnalyticsError("");
+
+        try {
+            const response = await sectionRequests[sectionKey]();
+
+            if (!response.ok) {
+                throw new Error(`${sectionKey} analytics request failed.`);
+            }
+
+            const payload = await response.json();
+
+            setAnalytics((current) => ({
+                ...current,
+                [sectionKey]: payload,
+            }));
+            setLoadedSections((current) => ({
+                ...current,
+                [sectionKey]: true,
+            }));
+        } catch (error) {
+            console.error(`Failed to load ${sectionKey} analytics:`, error);
+            setAnalyticsError(
+                "Some analytics are taking longer than expected to load. Please try that section again.",
+            );
+        } finally {
+            setSectionLoading((current) => ({
+                ...current,
+                [sectionKey]: false,
+            }));
+        }
+    };
 
     const executive = analytics.executive ?? {};
     const finance = analytics.finance ?? {};
@@ -792,7 +819,7 @@ function StaffDashboard({ dashboard }) {
 
             {analyticsLoading ? (
                 <div className="mt-4 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800">
-                    Loading analytics in the background. Core navigation is ready.
+                    Loading executive analytics. Core navigation is ready.
                 </div>
             ) : null}
 
@@ -838,103 +865,176 @@ function StaffDashboard({ dashboard }) {
                     title="Finance Analytics"
                     description="Billing health, debt exposure, and finance exception signals."
                     cards={financeCards}
+                    loaded={loadedSections.finance}
+                    loading={Boolean(sectionLoading.finance)}
+                    onLoad={() => loadSection("finance")}
                 />
 
                 <DashboardSection
                     title="Academic Analytics"
                     description="Session registration, timetable coverage, and academic operational signals."
                     cards={academicCards}
+                    loaded={loadedSections.academic}
+                    loading={Boolean(sectionLoading.academic)}
+                    onLoad={() => loadSection("academic")}
                 />
 
                 <DashboardSection
                     title="Admissions Analytics"
                     description="Intake quality, onboarding completeness, and admissions risk indicators."
                     cards={admissionsCards}
+                    loaded={loadedSections.admissions}
+                    loading={Boolean(sectionLoading.admissions)}
+                    onLoad={() => loadSection("admissions")}
                 />
 
                 <DashboardSection
                     title="Hostel Analytics"
                     description="Occupancy, billing linkage, and accommodation exception indicators."
                     cards={hostelCards}
+                    loaded={loadedSections.hostel}
+                    loading={Boolean(sectionLoading.hostel)}
+                    onLoad={() => loadSection("hostel")}
                 />
 
                 <DashboardSection
                     title="Data Quality Signals"
                     description="Cross-system data integrity and operational health indicators."
                     cards={qualityCards}
+                    loaded={loadedSections.data_quality}
+                    loading={Boolean(sectionLoading.data_quality)}
+                    onLoad={() => loadSection("data_quality")}
                 />
 
-                <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-                    <DashboardListCard
-                        title="Students Not Registered"
-                        items={academic.exceptions?.students_not_registered ?? []}
-                        emptyText="No unregistered active students in the current sample."
-                        renderItem={(item) => ({
-                            key: item.student_id,
-                            title: item.student_name,
-                            subtitle: item.registration_number,
-                            meta: `Module ${item.current_module}`,
-                        })}
-                    />
+                {loadedSections.academic ||
+                loadedSections.admissions ||
+                loadedSections.hostel ? (
+                    <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+                        <DashboardListCard
+                            title="Students Not Registered"
+                            items={
+                                loadedSections.academic
+                                    ? academic.exceptions
+                                          ?.students_not_registered ?? []
+                                    : []
+                            }
+                            emptyText={
+                                loadedSections.academic
+                                    ? "No unregistered active students in the current sample."
+                                    : "Load Academic Analytics to view this list."
+                            }
+                            renderItem={(item) => ({
+                                key: item.student_id,
+                                title: item.student_name,
+                                subtitle: item.registration_number,
+                                meta: `Module ${item.current_module}`,
+                            })}
+                        />
 
-                    <DashboardListCard
-                        title="Admissions Exceptions"
-                        items={
-                            admissions.exceptions
-                                ?.students_missing_program_enrollment ?? []
-                        }
-                        emptyText="No missing program-enrollment cases found."
-                        renderItem={(item) => ({
-                            key: item.student_id,
-                            title: item.student_name,
-                            subtitle: item.registration_number,
-                            meta: item.admission_date ?? "",
-                        })}
-                    />
+                        <DashboardListCard
+                            title="Admissions Exceptions"
+                            items={
+                                loadedSections.admissions
+                                    ? admissions.exceptions
+                                          ?.students_missing_program_enrollment ??
+                                      []
+                                    : []
+                            }
+                            emptyText={
+                                loadedSections.admissions
+                                    ? "No missing program-enrollment cases found."
+                                    : "Load Admissions Analytics to view this list."
+                            }
+                            renderItem={(item) => ({
+                                key: item.student_id,
+                                title: item.student_name,
+                                subtitle: item.registration_number,
+                                meta: item.admission_date ?? "",
+                            })}
+                        />
 
-                    <DashboardListCard
-                        title="Hostel Billing Gaps"
-                        items={
-                            hostel.exceptions?.allocated_but_not_billed ?? []
-                        }
-                        emptyText="No hostel allocation billing gaps found."
-                        renderItem={(item) => ({
-                            key: item.allocation_id,
-                            title: item.student_name,
-                            subtitle: item.registration_number,
-                            meta: item.hostel_name,
-                        })}
-                    />
-                </div>
+                        <DashboardListCard
+                            title="Hostel Billing Gaps"
+                            items={
+                                loadedSections.hostel
+                                    ? hostel.exceptions
+                                          ?.allocated_but_not_billed ?? []
+                                    : []
+                            }
+                            emptyText={
+                                loadedSections.hostel
+                                    ? "No hostel allocation billing gaps found."
+                                    : "Load Hostel Analytics to view this list."
+                            }
+                            renderItem={(item) => ({
+                                key: item.allocation_id,
+                                title: item.student_name,
+                                subtitle: item.registration_number,
+                                meta: item.hostel_name,
+                            })}
+                        />
+                    </div>
+                ) : null}
 
-                <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-                    <SnapshotTrendCard
-                        title="Collections"
-                        points={snapshotTrends.finance?.total_collected ?? []}
-                        formatter={currency}
+                {loadedSections.snapshot_trends ? (
+                    <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+                        <SnapshotTrendCard
+                            title="Collections"
+                            points={snapshotTrends.finance?.total_collected ?? []}
+                            formatter={currency}
+                        />
+                        <SnapshotTrendCard
+                            title="Outstanding Balance"
+                            points={
+                                snapshotTrends.finance?.outstanding_balance ?? []
+                            }
+                            formatter={currency}
+                        />
+                        <SnapshotTrendCard
+                            title="Registration Rate"
+                            points={
+                                snapshotTrends.academic
+                                    ?.session_registration_rate ?? []
+                            }
+                            suffix="%"
+                        />
+                    </div>
+                ) : (
+                    <DashboardSection
+                        title="Snapshot Trends"
+                        description="Historical collections, outstanding balances, and registration trends."
+                        cards={[
+                            {
+                                label: "Collections",
+                                value: "Load Data",
+                            },
+                            {
+                                label: "Outstanding Balance",
+                                value: "Load Data",
+                            },
+                            {
+                                label: "Registration Rate",
+                                value: "Load Data",
+                            },
+                        ]}
+                        loaded={false}
+                        loading={Boolean(sectionLoading.snapshot_trends)}
+                        onLoad={() => loadSection("snapshot_trends")}
                     />
-                    <SnapshotTrendCard
-                        title="Outstanding Balance"
-                        points={
-                            snapshotTrends.finance?.outstanding_balance ?? []
-                        }
-                        formatter={currency}
-                    />
-                    <SnapshotTrendCard
-                        title="Registration Rate"
-                        points={
-                            snapshotTrends.academic?.session_registration_rate ??
-                            []
-                        }
-                        suffix="%"
-                    />
-                </div>
+                )}
             </div>
         </div>
     );
 }
 
-function DashboardSection({ title, description, cards }) {
+function DashboardSection({
+    title,
+    description,
+    cards,
+    loaded = true,
+    loading = false,
+    onLoad = null,
+}) {
     return (
         <div className="rounded-[1.75rem] border border-zinc-100 bg-white p-7 shadow-sm">
             <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
@@ -944,28 +1044,45 @@ function DashboardSection({ title, description, cards }) {
                     </h2>
                     <p className="text-sm text-zinc-500">{description}</p>
                 </div>
+
+                {!loaded && onLoad ? (
+                    <button
+                        type="button"
+                        onClick={onLoad}
+                        disabled={loading}
+                        className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                        {loading ? "Loading..." : "Load Data"}
+                    </button>
+                ) : null}
             </div>
 
-            <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-                {cards.map((card) => (
-                    <div
-                        key={card.label}
-                        className="rounded-2xl border border-zinc-100 bg-zinc-50 px-5 py-4"
-                    >
-                        <p className="text-sm font-medium text-zinc-500">
-                            {card.label}
-                        </p>
-                        <p className="mt-2 text-2xl font-bold tracking-tight text-zinc-900">
-                            {card.value}
-                        </p>
-                        {card.helper ? (
-                            <p className="mt-2 text-xs text-zinc-500">
-                                {card.helper}
+            {loaded ? (
+                <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+                    {cards.map((card) => (
+                        <div
+                            key={card.label}
+                            className="rounded-2xl border border-zinc-100 bg-zinc-50 px-5 py-4"
+                        >
+                            <p className="text-sm font-medium text-zinc-500">
+                                {card.label}
                             </p>
-                        ) : null}
-                    </div>
-                ))}
-            </div>
+                            <p className="mt-2 text-2xl font-bold tracking-tight text-zinc-900">
+                                {card.value}
+                            </p>
+                            {card.helper ? (
+                                <p className="mt-2 text-xs text-zinc-500">
+                                    {card.helper}
+                                </p>
+                            ) : null}
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <div className="mt-6 rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 px-5 py-6 text-sm text-zinc-500">
+                    This section stays unloaded until you click <span className="font-semibold text-zinc-700">Load Data</span>.
+                </div>
+            )}
         </div>
     );
 }
