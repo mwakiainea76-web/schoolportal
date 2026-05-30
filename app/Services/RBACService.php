@@ -2,6 +2,7 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
 class RbacService
 {
@@ -12,16 +13,32 @@ class RbacService
 
     public function permissions(): array
     {
-        return $this->user()
-            ? $this->user()->getAllPermissions()->pluck('name')->all()
-            : [];
+        $user = $this->user();
+
+        if (! $user) {
+            return [];
+        }
+
+        return Cache::remember(
+            "rbac.permissions.{$user->id}",
+            now()->addMinutes(5),
+            fn () => $user->getAllPermissions()->pluck('name')->all()
+        );
     }
 
     public function roles(): array
     {
-        return $this->user()
-            ? $this->user()->getRoleNames()->all()
-            : [];
+        $user = $this->user();
+
+        if (! $user) {
+            return [];
+        }
+
+        return Cache::remember(
+            "rbac.roles.{$user->id}",
+            now()->addMinutes(5),
+            fn () => $user->getRoleNames()->all()
+        );
     }
 
     public function can(string $permission): bool

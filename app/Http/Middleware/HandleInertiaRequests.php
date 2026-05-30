@@ -26,13 +26,12 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
-
         $rbac = app(RBACService::class);
         $user = $request->user();
 
         return array_merge(parent::share($request), [
             'auth' => [
-                'user' => $user
+                'user' => fn () => $user
                     ? [
                         'id' => $user->id,
                         'first_name' => $user->first_name,
@@ -40,9 +39,8 @@ class HandleInertiaRequests extends Middleware
                         'email' => $user->email,
                     ]
                     : null,
-
-                'roles' => $rbac->roles(),
-                'permissions' => $rbac->permissions(),
+                'roles' => fn () => $rbac->roles(),
+                'permissions' => fn () => $rbac->permissions(),
             ],
 
             'flash' => [

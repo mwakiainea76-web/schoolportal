@@ -47,23 +47,26 @@ class RecordRequestPerformance
             $memoryPeakKb = (int) round(memory_get_peak_usage(true) / 1024);
             $path = '/' . ltrim($request->path(), '/');
             $routeName = $request->route()?->getName();
-
-            AppRequestMetric::create([
-                'method' => $request->method(),
-                'path' => $path,
-                'route_name' => $routeName,
-                'status_code' => $response->getStatusCode(),
-                'duration_ms' => $durationMs,
-                'memory_peak_kb' => $memoryPeakKb,
-                'response_size_bytes' => $this->responseSize($response),
-                'is_api' => $request->is('api/*'),
-                'user_id' => $request->user()?->id,
-                'occurred_at' => now(),
-            ]);
-
             $statusCode = $response->getStatusCode();
+            $isApi = $request->is('api/*');
+            $isSlowOrError = $statusCode >= 400 || $durationMs >= (int) config('performance.slow_request_ms', 1000);
 
-            if ($statusCode >= 400 || $durationMs >= (int) config('performance.slow_request_ms', 1000)) {
+            if ($isApi || $isSlowOrError) {
+                AppRequestMetric::create([
+                    'method' => $request->method(),
+                    'path' => $path,
+                    'route_name' => $routeName,
+                    'status_code' => $statusCode,
+                    'duration_ms' => $durationMs,
+                    'memory_peak_kb' => $memoryPeakKb,
+                    'response_size_bytes' => $this->responseSize($response),
+                    'is_api' => $isApi,
+                    'user_id' => $request->user()?->id,
+                    'occurred_at' => now(),
+                ]);
+            }
+
+            if ($isSlowOrError) {
                 $responseSizeBytes = $this->responseSize($response);
                 $context = $statusCode >= 400
                     ? RequestLogContext::responseError($request, $statusCode, $durationMs)
