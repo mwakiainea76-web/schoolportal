@@ -16,6 +16,7 @@ class RecordRequestPerformance
     {
         $startedAt = microtime(true);
         $requestId = RequestLogContext::ensureRequestId($request);
+        $request->attributes->set('authenticated_user_id', $request->user()?->id);
 
         Log::shareContext([
             'request_id' => $requestId,

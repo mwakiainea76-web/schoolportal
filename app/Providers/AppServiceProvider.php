@@ -44,6 +44,13 @@ class AppServiceProvider extends ServiceProvider
             (int) config('performance.query_budget_ms', 200),
             function ($connection, QueryExecuted $event): void {
                 $request = request();
+
+                if ($request->attributes->get('query_budget_logged', false)) {
+                    return;
+                }
+
+                $request->attributes->set('query_budget_logged', true);
+
                 $context = RequestLogContext::request($request, [
                     'level' => 'WARNING',
                     'event' => 'slow_database_query_detected',
@@ -51,6 +58,7 @@ class AppServiceProvider extends ServiceProvider
                     'connection' => $connection->getName(),
                     'sql_template' => $event->sql,
                     'time_ms' => $event->time,
+                    'user_id' => $request->attributes->get('authenticated_user_id'),
                 ]);
 
                 Log::warning($context['event'], $context);

@@ -35,6 +35,10 @@ class RequestLogContext
 
     public static function request(Request $request, array $extra = []): array
     {
+        $userId = array_key_exists('user_id', $extra)
+            ? $extra['user_id']
+            : $request->attributes->get('authenticated_user_id');
+
         return array_filter(array_merge([
             'timestamp' => now()->utc()->toJSON(),
             'method' => $request->method(),
@@ -46,7 +50,7 @@ class RequestLogContext
                 (string) ($request->server('SERVER_PROTOCOL') ?: 'HTTP/1.1')
             ),
             'route' => $request->route()?->getName(),
-            'user_id' => $request->user()?->id,
+            'user_id' => $userId,
             'host' => $request->getHost(),
             'http_version' => (string) ($request->server('SERVER_PROTOCOL') ?: 'HTTP/1.1'),
             'http_referrer' => (string) $request->headers->get('referer', ''),

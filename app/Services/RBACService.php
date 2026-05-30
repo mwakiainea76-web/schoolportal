@@ -1,14 +1,24 @@
 <?php
 namespace App\Services;
 
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 
 class RbacService
 {
+    protected ?User $resolvedUser = null;
+
     public function user()
     {
-        return Auth::user();
+        if ($this->resolvedUser !== null) {
+            return $this->resolvedUser;
+        }
+
+        $user = Auth::user();
+        $this->resolvedUser = $user instanceof User ? $user : null;
+
+        return $this->resolvedUser;
     }
 
     public function permissions(): array
@@ -22,7 +32,20 @@ class RbacService
         return Cache::remember(
             "rbac.permissions.{$user->id}",
             now()->addMinutes(5),
-            fn () => $user->getAllPermissions()->pluck('name')->all()
+            function () use ($user) {
+                $user->loadMissing(['roles.permissions', 'permissions']);
+
+                $directPermissions = $user->permissions->pluck('name');
+                $rolePermissions = $user->roles
+                    ->flatMap(fn ($role) => $role->permissions->pluck('name'));
+
+                return $directPermissions
+                    ->merge($rolePermissions)
+                    ->filter()
+                    ->unique()
+                    ->values()
+                    ->all();
+            }
         );
     }
 
@@ -37,7 +60,16 @@ class RbacService
         return Cache::remember(
             "rbac.roles.{$user->id}",
             now()->addMinutes(5),
-            fn () => $user->getRoleNames()->all()
+            function () use ($user) {
+                $user->loadMissing('roles');
+
+                return $user->roles
+                    ->pluck('name')
+                    ->filter()
+                    ->unique()
+                    ->values()
+                    ->all();
+            }
         );
     }
 
