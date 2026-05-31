@@ -5,7 +5,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 
-class RbacService
+class RBACService
 {
     protected ?User $resolvedUser = null;
     protected ?array $resolvedPayload = null;

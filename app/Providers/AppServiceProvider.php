@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Telescope\TelescopeServiceProvider as LaravelTelescopeServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -29,6 +30,11 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(FeeComponentRepositoryInterface::class, EloquentFeeComponentRepository::class);
         $this->app->bind(FeePlanAssignmentRepositoryInterface::class, EloquentFeePlanAssignmentRepository::class);
         $this->app->bind(ProgramVersionRepositoryInterface::class, EloquentProgramVersionRepository::class);
+
+        if ($this->app->environment('local') && class_exists(LaravelTelescopeServiceProvider::class)) {
+            $this->app->register(\App\Providers\TelescopeServiceProvider::class);
+            $this->app->register(LaravelTelescopeServiceProvider::class);
+        }
     }
 
     /**
