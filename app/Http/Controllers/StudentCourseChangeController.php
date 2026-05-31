@@ -12,7 +12,6 @@ use App\Support\RbacCache;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -122,7 +121,6 @@ class StudentCourseChangeController extends Controller
 
             $oldRegistrationNumber = $student->registration_number;
             $newRegistrationNumber = $this->generateRegistrationNumber();
-            $temporaryPassword = Str::password(10);
             $generatedEmail = $this->generatedTransferEmail($newRegistrationNumber);
 
             $newUser = User::create([
@@ -142,7 +140,7 @@ class StudentCourseChangeController extends Controller
                 'is_active' => true,
                 'disability_type' => $oldUser->disability_type,
                 'medical_condition' => $oldUser->medical_condition,
-                'password' => Hash::make($temporaryPassword),
+                'password' => $oldUser->password,
             ]);
 
             $newUser->assignRole('student');
@@ -233,7 +231,6 @@ class StudentCourseChangeController extends Controller
                 'new_course' => $this->courseName($newMapping),
                 'username' => $newRegistrationNumber,
                 'email' => $generatedEmail,
-                'temporary_password' => $temporaryPassword,
             ];
         });
 
