@@ -3,14 +3,29 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 
-export default function Publish({ filters, selected_unit, submitted_marks, blocker, filter_options }) {
+export default function Publish({
+    filters,
+    selected_unit,
+    submitted_marks,
+    blocker,
+    filter_options,
+}) {
     const filterForm = useForm({
         program_version_unit_code: filters.program_version_unit_code || "",
-        assessment_type: filters.assessment_type || "theory",
-        assessment_number: filters.assessment_number || "1",
         academic_year: filters.academic_year || "",
         module: filters.module || "",
     });
+
+    // ── Pagination helpers ────────────────────────────────────────────────────
+    const marks = submitted_marks?.data ?? [];
+    const currentPage = submitted_marks?.current_page ?? 1;
+    const lastPage = submitted_marks?.last_page ?? 1;
+    const total = submitted_marks?.total ?? 0;
+
+    // filter_options may arrive as a PHP empty array (serialised as [])
+    // so guard every property access with nullish coalescing
+    const academicYears = filter_options?.academic_years ?? [];
+    const modules = filter_options?.modules ?? [];
 
     const loadAssessment = (e) => {
         e.preventDefault();
@@ -22,10 +37,21 @@ export default function Publish({ filters, selected_unit, submitted_marks, block
                 academic_year: filterForm.data.academic_year,
                 module: filterForm.data.module,
             },
+            { preserveState: true, preserveScroll: true },
+        );
+    };
+
+    const goToPage = (page) => {
+        router.get(
+            route("academic.marks.publish.index"),
             {
-                preserveState: true,
-                preserveScroll: true,
+                program_version_unit_code:
+                    filterForm.data.program_version_unit_code,
+                academic_year: filterForm.data.academic_year,
+                module: filterForm.data.module,
+                page,
             },
+            { preserveState: true, preserveScroll: true },
         );
     };
 
@@ -33,14 +59,13 @@ export default function Publish({ filters, selected_unit, submitted_marks, block
         router.post(
             route("academic.marks.publish.assessment"),
             {
-                program_version_unit_code: filterForm.data.program_version_unit_code,
+                program_version_unit_code:
+                    filterForm.data.program_version_unit_code,
                 academic_year: filterForm.data.academic_year,
                 module: filterForm.data.module,
                 action,
             },
-            {
-                preserveScroll: true,
-            },
+            { preserveScroll: true },
         );
     };
 
@@ -60,8 +85,8 @@ export default function Publish({ filters, selected_unit, submitted_marks, block
                         Publish Marks
                     </h1>
                     <p className="mt-2 max-w-3xl text-sm text-zinc-600">
-                        HOD review workspace for publishing or unpublishing marks
-                        by unit assessment or by individual student.
+                        HOD review workspace for publishing or unpublishing
+                        marks by unit assessment or by individual student.
                     </p>
                 </div>
             }
@@ -69,6 +94,7 @@ export default function Publish({ filters, selected_unit, submitted_marks, block
             <Head title="Publish Marks" />
 
             <div className="mx-auto max-w-6xl space-y-8">
+                {/* ── Filter Form ── */}
                 <form
                     onSubmit={loadAssessment}
                     className="space-y-6 rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm"
@@ -81,7 +107,9 @@ export default function Publish({ filters, selected_unit, submitted_marks, block
                             />
                             <input
                                 type="text"
-                                value={filterForm.data.program_version_unit_code}
+                                value={
+                                    filterForm.data.program_version_unit_code
+                                }
                                 onChange={(e) =>
                                     filterForm.setData(
                                         "program_version_unit_code",
@@ -100,7 +128,7 @@ export default function Publish({ filters, selected_unit, submitted_marks, block
                         </div>
 
                         <div>
-                            <InputLabel value="Academic Year" required />
+                            <InputLabel value="Academic Year" />
                             <select
                                 value={filterForm.data.academic_year}
                                 onChange={(e) =>
@@ -112,36 +140,27 @@ export default function Publish({ filters, selected_unit, submitted_marks, block
                                 className="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none transition focus:border-emerald-400"
                             >
                                 <option value="">All Years</option>
-                                {filter_options?.academic_years?.map((option) => (
-                                    <option
-                                        key={option.value}
-                                        value={option.value}
-                                    >
-                                        {option.label}
+                                {academicYears.map((opt) => (
+                                    <option key={opt.value} value={opt.value}>
+                                        {opt.label}
                                     </option>
                                 ))}
                             </select>
                         </div>
 
                         <div>
-                            <InputLabel value="Module" required />
+                            <InputLabel value="Module" />
                             <select
                                 value={filterForm.data.module}
                                 onChange={(e) =>
-                                    filterForm.setData(
-                                        "module",
-                                        e.target.value,
-                                    )
+                                    filterForm.setData("module", e.target.value)
                                 }
                                 className="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none transition focus:border-emerald-400"
                             >
                                 <option value="">All Modules</option>
-                                {filter_options?.modules?.map((option) => (
-                                    <option
-                                        key={option.value}
-                                        value={option.value}
-                                    >
-                                        {option.label}
+                                {modules.map((opt) => (
+                                    <option key={opt.value} value={opt.value}>
+                                        {opt.label}
                                     </option>
                                 ))}
                             </select>
@@ -152,7 +171,7 @@ export default function Publish({ filters, selected_unit, submitted_marks, block
                         <div className="text-sm text-zinc-500">
                             {selected_unit ? (
                                 <span className="font-semibold text-zinc-800">
-                                    {selected_unit.code} - {selected_unit.name}
+                                    {selected_unit.code} – {selected_unit.name}
                                 </span>
                             ) : (
                                 "Load a unit assessment to review submitted marks."
@@ -161,7 +180,9 @@ export default function Publish({ filters, selected_unit, submitted_marks, block
 
                         <button
                             type="submit"
-                            disabled={!filterForm.data.program_version_unit_code}
+                            disabled={
+                                !filterForm.data.program_version_unit_code
+                            }
                             className="rounded-xl bg-emerald-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                             Load Assessment
@@ -169,12 +190,14 @@ export default function Publish({ filters, selected_unit, submitted_marks, block
                     </div>
                 </form>
 
-                {blocker ? (
+                {/* ── Blocker ── */}
+                {blocker && (
                     <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
                         {blocker}
                     </div>
-                ) : null}
+                )}
 
+                {/* ── Marks Table ── */}
                 <div className="rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                         <div>
@@ -191,7 +214,7 @@ export default function Publish({ filters, selected_unit, submitted_marks, block
                             <button
                                 type="button"
                                 onClick={() => publishAssessment("publish")}
-                                disabled={!selected_unit || !submitted_marks.length}
+                                disabled={!selected_unit || !marks.length}
                                 className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
                             >
                                 Publish Unit
@@ -199,7 +222,7 @@ export default function Publish({ filters, selected_unit, submitted_marks, block
                             <button
                                 type="button"
                                 onClick={() => publishAssessment("unpublish")}
-                                disabled={!selected_unit || !submitted_marks.length}
+                                disabled={!selected_unit || !marks.length}
                                 className="rounded-xl border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-60"
                             >
                                 Unpublish Unit
@@ -212,26 +235,41 @@ export default function Publish({ filters, selected_unit, submitted_marks, block
                             <table className="w-full min-w-[60rem] border-collapse">
                                 <thead className="bg-zinc-50">
                                     <tr className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                                        <th className="px-4 py-3 text-left">Reg. No.</th>
-                                        <th className="px-4 py-3 text-left">Student</th>
-                                        <th className="px-4 py-3 text-left">Unit</th>
-                                        <th className="px-4 py-3 text-left">Marks</th>
-                                        <th className="px-4 py-3 text-left">Status</th>
-                                        <th className="px-4 py-3 text-right">Action</th>
+                                        <th className="px-4 py-3 text-left">
+                                            Reg. No.
+                                        </th>
+                                        <th className="px-4 py-3 text-left">
+                                            Student
+                                        </th>
+                                        <th className="px-4 py-3 text-left">
+                                            Unit
+                                        </th>
+                                        <th className="px-4 py-3 text-left">
+                                            Marks
+                                        </th>
+                                        <th className="px-4 py-3 text-left">
+                                            Status
+                                        </th>
+                                        <th className="px-4 py-3 text-right">
+                                            Action
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-zinc-100 bg-white">
-                                    {submitted_marks.length ? (
-                                        submitted_marks.map((mark) => (
-                                            <tr key={mark.id} className="text-sm">
+                                    {marks.length ? (
+                                        marks.map((mark) => (
+                                            <tr
+                                                key={mark.id}
+                                                className="text-sm"
+                                            >
                                                 <td className="px-4 py-3 font-medium text-zinc-900">
                                                     {mark.registration_number}
                                                 </td>
                                                 <td className="px-4 py-3 text-zinc-700">
-                                                    {mark.student_name || "-"}
+                                                    {mark.student_name || "–"}
                                                 </td>
                                                 <td className="px-4 py-3 text-zinc-700">
-                                                    {mark.unit_name || "-"}
+                                                    {mark.unit_name || "–"}
                                                 </td>
                                                 <td className="px-4 py-3 font-semibold text-zinc-900">
                                                     {mark.marks}
@@ -275,8 +313,8 @@ export default function Publish({ filters, selected_unit, submitted_marks, block
                                                 colSpan="6"
                                                 className="px-4 py-8 text-center text-sm text-zinc-500"
                                             >
-                                                No submitted marks found for this assessment
-                                                yet.
+                                                No submitted marks found for
+                                                this assessment yet.
                                             </td>
                                         </tr>
                                     )}
@@ -284,6 +322,82 @@ export default function Publish({ filters, selected_unit, submitted_marks, block
                             </table>
                         </div>
                     </div>
+
+                    {/* ── Pagination ── */}
+                    {lastPage > 1 && (
+                        <div className="mt-5 flex items-center justify-between gap-4">
+                            <p className="text-sm text-zinc-500">
+                                Showing{" "}
+                                <span className="font-medium text-zinc-800">
+                                    {(currentPage - 1) * 25 + 1}–
+                                    {Math.min(currentPage * 25, total)}
+                                </span>{" "}
+                                of{" "}
+                                <span className="font-medium text-zinc-800">
+                                    {total}
+                                </span>{" "}
+                                records
+                            </p>
+
+                            <div className="flex items-center gap-1">
+                                <button
+                                    onClick={() => goToPage(currentPage - 1)}
+                                    disabled={currentPage === 1}
+                                    className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40"
+                                >
+                                    ← Prev
+                                </button>
+
+                                {Array.from(
+                                    { length: lastPage },
+                                    (_, i) => i + 1,
+                                )
+                                    .filter(
+                                        (p) =>
+                                            p === 1 ||
+                                            p === lastPage ||
+                                            Math.abs(p - currentPage) <= 1,
+                                    )
+                                    .reduce((acc, p, idx, arr) => {
+                                        if (idx > 0 && p - arr[idx - 1] > 1) {
+                                            acc.push("ellipsis-" + p);
+                                        }
+                                        acc.push(p);
+                                        return acc;
+                                    }, [])
+                                    .map((p) =>
+                                        typeof p === "string" ? (
+                                            <span
+                                                key={p}
+                                                className="px-2 text-sm text-zinc-400"
+                                            >
+                                                …
+                                            </span>
+                                        ) : (
+                                            <button
+                                                key={p}
+                                                onClick={() => goToPage(p)}
+                                                className={`rounded-lg border px-3 py-1.5 text-sm font-medium transition ${
+                                                    p === currentPage
+                                                        ? "border-emerald-500 bg-emerald-600 text-white"
+                                                        : "border-zinc-200 text-zinc-700 hover:bg-zinc-50"
+                                                }`}
+                                            >
+                                                {p}
+                                            </button>
+                                        ),
+                                    )}
+
+                                <button
+                                    onClick={() => goToPage(currentPage + 1)}
+                                    disabled={currentPage === lastPage}
+                                    className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40"
+                                >
+                                    Next →
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </AuthenticatedLayout>

@@ -22,7 +22,8 @@ export default function Login({ status, canResetPassword }) {
     const [showPassword, setShowPassword] = useState(false);
     const [loginNotice, setLoginNotice] = useState("");
     const [activeSessionNotice, setActiveSessionNotice] = useState("");
-    const [hasActiveProfileSession, setHasActiveProfileSession] = useState(false);
+    const [hasActiveProfileSession, setHasActiveProfileSession] =
+        useState(false);
 
     const sessionOwnerStorageKey = "auth.sessionOwner";
     const sessionHeartbeatStorageKey = "auth.sessionHeartbeat";
@@ -151,12 +152,6 @@ export default function Login({ status, canResetPassword }) {
                                     </div>
                                 )}
 
-                                {activeSessionNotice && (
-                                    <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                                        {activeSessionNotice}
-                                    </div>
-                                )}
-
                                 <form onSubmit={submit} className="space-y-5">
                                     <div>
                                         <InputLabel value="Username" required />
@@ -217,9 +212,7 @@ export default function Login({ status, canResetPassword }) {
 
                                         {canResetPassword && (
                                             <Link
-                                                href={route(
-                                                    "password.request",
-                                                )}
+                                                href={route("password.request")}
                                                 className="text-sm font-semibold text-emerald-600 hover:text-emerald-700 hover:underline"
                                             >
                                                 Forgot Password?
@@ -229,27 +222,13 @@ export default function Login({ status, canResetPassword }) {
 
                                     <button
                                         type="submit"
-                                        disabled={processing || hasActiveProfileSession}
+                                        disabled={processing}
                                         className="w-full rounded-xl bg-emerald-600 py-3 text-base font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
                                     >
                                         {processing
                                             ? "Signing In..."
                                             : "Sign In"}
                                     </button>
-
-                                    {hasActiveProfileSession ? (
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                window.location.assign(
-                                                    route("dashboard"),
-                                                )
-                                            }
-                                            className="w-full rounded-xl border border-slate-300 bg-white py-3 text-base font-semibold text-slate-700 transition hover:bg-slate-50"
-                                        >
-                                            Open Current Session
-                                        </button>
-                                    ) : null}
 
                                     {loginNotice && (
                                         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">

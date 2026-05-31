@@ -5,11 +5,12 @@ namespace App\Http\Controllers;
 use App\Filters\StudentFilter;
 use App\Http\Requests\StoreStudentRequest;
 use App\Http\Requests\UpdateStudentRequest;
-use App\Models\ProgramVersionMapping;
 use App\Models\ProgramEnrollment;
+use App\Models\ProgramVersionMapping;
 use App\Models\Student;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -20,7 +21,7 @@ class StudentController extends Controller
     // STEP VALIDATION (shared by create & edit)
     // ----------------------------------------------------------------
 
-    public function validateStep(Request $request): \Illuminate\Http\JsonResponse
+    public function validateStep(Request $request): JsonResponse
     {
         $step = (int) $request->input('step');
 
@@ -216,7 +217,7 @@ class StudentController extends Controller
                 'login_id' => $registrationNumber,
             ]);
 
-            $programEnrollment = new ProgramEnrollment();
+            $programEnrollment = new ProgramEnrollment;
             $programEnrollment->student_id = $student->id;
             $programEnrollment->program_version_mapping_id = $request->course_curriculum_id;
             $programEnrollment->save();
@@ -393,4 +394,3 @@ class StudentController extends Controller
             ]);
     }
 }
-

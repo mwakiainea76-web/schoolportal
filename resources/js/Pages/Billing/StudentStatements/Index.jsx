@@ -1,14 +1,7 @@
 import { Head, Link } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import formatDate from "@/utils/date";
-import {
-    ArrowRight,
-    CalendarRange,
-    Coins,
-    FileText,
-    Receipt,
-    Wallet,
-} from "lucide-react";
+import { ArrowRight, FileText } from "lucide-react";
 
 const currency = (amount) =>
     `Ksh ${new Intl.NumberFormat("en-KE", {
@@ -25,99 +18,12 @@ const statusClasses = {
 
 export default function Index({ statements }) {
     const rows = statements?.data || [];
-    const totalBilled = rows.reduce(
-        (sum, statement) => sum + Number(statement.amount_due || 0),
-        0,
-    );
-    const totalPaid = rows.reduce(
-        (sum, statement) => sum + Number(statement.paid_amount || 0),
-        0,
-    );
-    const totalBalance = rows.reduce(
-        (sum, statement) => sum + Number(statement.balance_due || 0),
-        0,
-    );
 
     return (
         <AuthenticatedLayout>
             <Head title="My Fee Statements" />
 
             <div className="mx-auto w-full max-w-7xl space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                <section className="overflow-hidden rounded-[2rem] bg-[radial-gradient(circle_at_top_left,_rgba(52,211,153,0.26),_transparent_28%),linear-gradient(135deg,#102542_0%,#1b263b_55%,#243b53_100%)] px-6 py-8 text-white shadow-xl sm:px-8">
-                    <div className="grid gap-8 lg:grid-cols-[1.2fr,0.8fr] lg:items-end">
-                        <div>
-                            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-emerald-300">
-                                Student Finance
-                            </p>
-                            <h1 className="mt-3 max-w-3xl text-3xl font-bold tracking-tight sm:text-4xl">
-                                Fee statements that read like a real account summary
-                            </h1>
-                            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">
-                                Review each billed session, see how payments were
-                                applied, and open a printable statement with a
-                                running balance.
-                            </p>
-                            <Link
-                                href={route("student.dashboard")}
-                                className="mt-5 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/15"
-                            >
-                                Back to dashboard
-                            </Link>
-                        </div>
-
-                        <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
-                            <HeroStat
-                                icon={Receipt}
-                                label="Total billed"
-                                value={currency(totalBilled)}
-                            />
-                            <HeroStat
-                                icon={Wallet}
-                                label="Total paid"
-                                value={currency(totalPaid)}
-                            />
-                            <HeroStat
-                                icon={Coins}
-                                label="Outstanding"
-                                value={currency(totalBalance)}
-                            />
-                        </div>
-                    </div>
-                </section>
-
-                <section className="grid gap-4 md:grid-cols-3">
-                    <SummaryCard
-                        icon={FileText}
-                        label="Statements"
-                        value={rows.length}
-                        helper="Visible in this page"
-                        tone="bg-amber-50 text-amber-700"
-                    />
-                    <SummaryCard
-                        icon={CalendarRange}
-                        label="Invoices covered"
-                        value={rows.reduce(
-                            (sum, statement) =>
-                                sum + Number(statement.invoice_count || 0),
-                            0,
-                        )}
-                        helper="Across listed sessions"
-                        tone="bg-sky-50 text-sky-700"
-                    />
-                    <SummaryCard
-                        icon={Receipt}
-                        label="Ledger entries"
-                        value={rows.reduce(
-                            (sum, statement) =>
-                                sum +
-                                Number(statement.transaction_count || 0),
-                            0,
-                        )}
-                        helper="Charges, payments, credits"
-                        tone="bg-emerald-50 text-emerald-700"
-                    />
-                </section>
-
                 <section className="overflow-hidden rounded-[1.75rem] border border-zinc-100 bg-white shadow-sm">
                     <div className="border-b border-zinc-100 px-6 py-5">
                         <h2 className="text-lg font-semibold text-zinc-900">
@@ -140,7 +46,9 @@ export default function Index({ statements }) {
                                         <div className="space-y-4">
                                             <div className="flex flex-wrap items-center gap-3">
                                                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-500">
-                                                    {statement.statement_reference}
+                                                    {
+                                                        statement.statement_reference
+                                                    }
                                                 </p>
                                                 <span
                                                     className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${
@@ -160,14 +68,19 @@ export default function Index({ statements }) {
                                                         "Session not linked"}
                                                 </h3>
                                                 <p className="mt-1 text-sm text-zinc-500">
-                                                    {statement.invoice_count} invoice
-                                                    {statement.invoice_count === 1
+                                                    {statement.invoice_count}{" "}
+                                                    invoice
+                                                    {statement.invoice_count ===
+                                                    1
                                                         ? ""
                                                         : "s"}{" "}
                                                     and{" "}
-                                                    {statement.transaction_count}{" "}
+                                                    {
+                                                        statement.transaction_count
+                                                    }{" "}
                                                     ledger{" "}
-                                                    {statement.transaction_count === 1
+                                                    {statement.transaction_count ===
+                                                    1
                                                         ? "entry"
                                                         : "entries"}
                                                 </p>
@@ -200,11 +113,15 @@ export default function Index({ statements }) {
                                             <div className="grid w-full gap-3 rounded-[1.25rem] border border-zinc-100 bg-white p-4 lg:max-w-xs">
                                                 <MetaRow
                                                     label="Issue date"
-                                                    value={formatDate(statement.issue_date)}
+                                                    value={formatDate(
+                                                        statement.issue_date,
+                                                    )}
                                                 />
                                                 <MetaRow
                                                     label="Due date"
-                                                    value={formatDate(statement.due_date)}
+                                                    value={formatDate(
+                                                        statement.due_date,
+                                                    )}
                                                 />
                                             </div>
 

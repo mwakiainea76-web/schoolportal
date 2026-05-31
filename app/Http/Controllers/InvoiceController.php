@@ -7,7 +7,6 @@ use App\Models\Student;
 use App\Models\StudentInvoice;
 use App\Services\BillingService;
 use App\Services\BillingStatementService;
-use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -47,13 +46,8 @@ class InvoiceController extends Controller
         $query = StudentInvoice::with([
             'student',
             'student.user',
-            'enrollment.programEnrollment.programVersionMapping.program',
-            'enrollment.programEnrollment.programVersionMapping.programVersion',
             'enrollment.academicSession',
             'academicSession',
-            'items',
-            'adjustments',
-            'paymentAllocations',
         ])
             ->when($request->search, function ($q) use ($request) {
                 $search = $request->search;
@@ -82,7 +76,7 @@ class InvoiceController extends Controller
 
         $invoices->setCollection(
             $invoices->getCollection()->map(
-                fn (StudentInvoice $invoice) => $this->billingStatementService->decorateInvoice($invoice)
+                fn (StudentInvoice $invoice) => $this->billingStatementService->decorateInvoiceListing($invoice)
             )
         );
 
@@ -159,7 +153,22 @@ class InvoiceController extends Controller
 
         abort_unless($student, 403);
 
-        $invoices = StudentInvoice::query()
+        $perPage = 12;
+        $statementSessions = StudentInvoice::query()
+            ->selectRaw('academic_session_id, MAX(issue_date) as latest_issue_date, MAX(created_at) as latest_created_at')
+            ->where('student_id', $student->id)
+            ->groupBy('academic_session_id')
+            ->orderByDesc('latest_issue_date')
+            ->orderByDesc('latest_created_at')
+            ->paginate($perPage, ['academic_session_id'], 'page')
+            ->withQueryString();
+
+        $sessionIds = $statementSessions->getCollection()
+            ->pluck('academic_session_id')
+            ->filter()
+            ->values();
+
+        $statementRowsBySession = StudentInvoice::query()
             ->with([
                 'academicSession.academicYear',
                 'items',
@@ -168,31 +177,22 @@ class InvoiceController extends Controller
                 'ledgerTransactions',
             ])
             ->where('student_id', $student->id)
+            ->whereIn('academic_session_id', $sessionIds)
             ->latest('issue_date')
             ->latest('created_at')
-            ->get();
-
-        $statementRows = $invoices
+            ->get()
             ->groupBy('academic_session_id')
-            ->map(fn ($sessionInvoices) => $this->billingStatementService->buildStatementRow($sessionInvoices))
-            ->sortByDesc('issue_date')
-            ->values();
+            ->map(fn ($sessionInvoices) => $this->billingStatementService->buildStatementRow($sessionInvoices));
 
-        $page = LengthAwarePaginator::resolveCurrentPage();
-        $perPage = 12;
-        $paginatedStatements = new LengthAwarePaginator(
-            $statementRows->slice(($page - 1) * $perPage, $perPage)->values(),
-            $statementRows->count(),
-            $perPage,
-            $page,
-            [
-                'path' => $request->url(),
-                'query' => $request->query(),
-            ]
+        $statementSessions->setCollection(
+            $sessionIds
+                ->map(fn ($sessionId) => $statementRowsBySession->get($sessionId))
+                ->filter()
+                ->values()
         );
 
         return Inertia::render('Billing/StudentStatements/Index', [
-            'statements' => $paginatedStatements,
+            'statements' => $statementSessions,
         ]);
     }
 
@@ -202,14 +202,16 @@ class InvoiceController extends Controller
 
         abort_unless($student && $invoice->student_id === $student->id, 403);
 
+        // Only load what buildStudentStatement() actually reads from $invoice directly:
+        // student.user  → student.name, student.registration_number, student.admission_date
+        // academicSession → display_name (via $invoice->academicSession?->display_name)
+        // invoice_number, issue_date, due_date, academic_session_id, student_id
         $invoice->load([
             'student.user',
-            'academicSession.academicYear',
-            'items',
-            'adjustments',
-            'paymentAllocations.payment',
+            'academicSession:id,academic_year_id,session_number,label',
         ]);
 
+        // All financial data comes from sessionInvoices, not $invoice directly
         $statementInvoices = $this->sessionInvoicesQuery($invoice)
             ->with([
                 'items',

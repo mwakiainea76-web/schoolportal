@@ -1,5 +1,4 @@
 import { Head, router, useForm } from "@inertiajs/react";
-import { useEffect } from "react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
@@ -18,15 +17,6 @@ export default function Marksheet({
         year_of_study: filters.year_of_study || "",
         registration_number: filters.registration_number || "",
     });
-
-    useEffect(() => {
-        filterForm.setData({
-            program_version_unit_code: filters.program_version_unit_code || "",
-            session_number: filters.session_number || "",
-            year_of_study: filters.year_of_study || "",
-            registration_number: filters.registration_number || "",
-        });
-    }, [filters]);
 
     const loadMarksheet = (e) => {
         e.preventDefault();
@@ -100,7 +90,7 @@ export default function Marksheet({
                                     {performer.marks}
                                 </td>
                                 <td className="px-4 py-3 text-zinc-700">
-                                    Year {performer.year_of_study || "-"}
+                                    Year {performer.year_of_study || "–"}
                                 </td>
                             </tr>
                         ))
@@ -110,7 +100,8 @@ export default function Marksheet({
                                 colSpan="5"
                                 className="px-4 py-8 text-center text-zinc-500"
                             >
-                                No {assessmentType.toLowerCase()} marks available
+                                No {assessmentType.toLowerCase()} marks
+                                available
                             </td>
                         </tr>
                     )}
@@ -136,7 +127,7 @@ export default function Marksheet({
             <Head title="Unit Marksheet" />
 
             <div className="mx-auto max-w-7xl space-y-8">
-                {/* Filter Form */}
+                {/* ── Filter Form ── */}
                 <form
                     onSubmit={loadMarksheet}
                     className="space-y-6 rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm"
@@ -148,10 +139,7 @@ export default function Marksheet({
 
                     <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-5">
                         <div className="xl:col-span-2">
-                            <InputLabel
-                                value="Unit Code"
-                                required
-                            />
+                            <InputLabel value="Unit Code" required />
                             <input
                                 type="text"
                                 value={
@@ -168,8 +156,7 @@ export default function Marksheet({
                             />
                             <InputError
                                 message={
-                                    filterForm.errors
-                                        .program_version_unit_code
+                                    filterForm.errors.program_version_unit_code
                                 }
                                 className="mt-2"
                             />
@@ -178,7 +165,7 @@ export default function Marksheet({
                         <div>
                             <InputLabel value="Session Number" />
                             <select
-                                value={filterForm.data.session_number || ""}
+                                value={filterForm.data.session_number}
                                 onChange={(e) =>
                                     filterForm.setData(
                                         "session_number",
@@ -202,7 +189,7 @@ export default function Marksheet({
                         <div>
                             <InputLabel value="Year of Study" />
                             <select
-                                value={filterForm.data.year_of_study || ""}
+                                value={filterForm.data.year_of_study}
                                 onChange={(e) =>
                                     filterForm.setData(
                                         "year_of_study",
@@ -257,14 +244,14 @@ export default function Marksheet({
                     </div>
                 </form>
 
-                {/* Blocker Message */}
+                {/* ── Blocker ── */}
                 {blocker && (
                     <div className="rounded-3xl border border-red-200 bg-red-50 p-8 text-center">
                         <p className="text-sm text-red-800">{blocker}</p>
                     </div>
                 )}
 
-                {/* Unit Info */}
+                {/* ── Unit Info ── */}
                 {selected_unit && (
                     <div className="rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
                         <h2 className="text-xl font-semibold text-zinc-900">
@@ -276,10 +263,10 @@ export default function Marksheet({
                     </div>
                 )}
 
-                {/* Marksheet Results */}
+                {/* ── Marksheet Results ── */}
                 {selected_unit && !blocker && (
                     <div className="space-y-8">
-                        {/* Theory Section */}
+                        {/* Theory */}
                         <div className="rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
                             <div className="mb-6 flex items-center justify-between">
                                 <div>
@@ -295,17 +282,17 @@ export default function Marksheet({
                                         Average Score
                                     </p>
                                     <p className="mt-2 text-3xl font-semibold text-blue-600">
-                                        {marksheet_data.theory?.average || 0}
+                                        {marksheet_data.theory?.average ?? 0}
                                     </p>
                                 </div>
                             </div>
                             {performersTable(
-                                marksheet_data.theory?.top_performers || [],
+                                marksheet_data.theory?.top_performers ?? [],
                                 "Theory",
                             )}
                         </div>
 
-                        {/* Practical Section */}
+                        {/* Practical */}
                         <div className="rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
                             <div className="mb-6 flex items-center justify-between">
                                 <div>
@@ -321,12 +308,12 @@ export default function Marksheet({
                                         Average Score
                                     </p>
                                     <p className="mt-2 text-3xl font-semibold text-emerald-600">
-                                        {marksheet_data.practical?.average || 0}
+                                        {marksheet_data.practical?.average ?? 0}
                                     </p>
                                 </div>
                             </div>
                             {performersTable(
-                                marksheet_data.practical?.top_performers || [],
+                                marksheet_data.practical?.top_performers ?? [],
                                 "Practical",
                             )}
                         </div>

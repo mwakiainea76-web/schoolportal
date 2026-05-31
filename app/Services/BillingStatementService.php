@@ -8,6 +8,13 @@ use Illuminate\Support\Str;
 
 class BillingStatementService
 {
+    public function decorateInvoiceListing(StudentInvoice $invoice): StudentInvoice
+    {
+        $invoice->setAttribute('display_type_label', $this->invoiceTypeLabelFromStoredFields($invoice));
+
+        return $invoice;
+    }
+
     public function decorateInvoice(StudentInvoice $invoice): StudentInvoice
     {
         $invoice->loadMissing([
@@ -39,22 +46,17 @@ class BillingStatementService
     public function buildStatementRow(Collection $sessionInvoices): array
     {
         /** @var StudentInvoice $anchorInvoice */
-        $anchorInvoice = $sessionInvoices
-            ->sortByDesc(fn (StudentInvoice $invoice) => optional($invoice->issue_date)->toDateString() ?? '')
-            ->sortByDesc('id')
-            ->first();
+        $anchorInvoice = $sessionInvoices->sortByDesc('id')->first();
 
         $ledgerEntries = $this->collectLedgerEntries($sessionInvoices);
         $totals = $this->summarizeLedgerTotals($ledgerEntries);
-        $issueDate = $sessionInvoices->pluck('issue_date')->filter()->sort()->first();
-        $dueDate = $sessionInvoices->pluck('due_date')->filter()->sortDesc()->first();
 
         return [
             'id' => $anchorInvoice->id,
             'statement_reference' => $this->statementReference($anchorInvoice->academic_session_id),
             'session' => $anchorInvoice->academicSession?->display_name,
-            'issue_date' => optional($issueDate)->toDateString(),
-            'due_date' => optional($dueDate)->toDateString(),
+            'issue_date' => $sessionInvoices->pluck('issue_date')->filter()->sort()->first()?->toDateString(),
+            'due_date' => $sessionInvoices->pluck('due_date')->filter()->sortDesc()->first()?->toDateString(),
             'amount_due' => $totals['amount_due'],
             'paid_amount' => $totals['paid_amount'],
             'balance_due' => $totals['balance_due'],
@@ -193,12 +195,11 @@ class BillingStatementService
     protected function collectLedgerEntries(Collection $sessionInvoices): Collection
     {
         return $sessionInvoices
-            ->flatMap(fn (StudentInvoice $sessionInvoice) => $sessionInvoice->ledgerTransactions)
-            ->sortBy(fn ($entry) => sprintf(
-                '%s-%010d',
-                optional($entry->transaction_date)->toDateString() ?? '9999-12-31',
-                $entry->id
-            ))
+            ->flatMap(fn (StudentInvoice $invoice) => $invoice->ledgerTransactions)
+            ->sortBy([
+                fn ($a, $b) => ($a->transaction_date ?? '9999-12-31') <=> ($b->transaction_date ?? '9999-12-31'),
+                fn ($a, $b) => $a->id <=> $b->id,
+            ])
             ->values();
     }
 
@@ -279,6 +280,33 @@ class BillingStatementService
         }
 
         return $this->prefixedAdjustmentLabel($description);
+    }
+
+    protected function invoiceTypeLabelFromStoredFields(StudentInvoice $invoice): string
+    {
+        $notes = (string) ($invoice->notes ?? '');
+
+        if ($invoice->invoice_type === 'default_fees' || $notes === BillingService::NOTE_MANUAL_STANDARD) {
+            return 'STANDARD INVOICE';
+        }
+
+        if ($invoice->invoice_type === 'hostel' || $notes === BillingService::NOTE_HOSTEL) {
+            return 'HOSTEL INVOICE';
+        }
+
+        if ($notes === BillingService::NOTE_CARRY_FORWARD) {
+            return 'INVOICE ADJUSTMENT - OPENING BALANCE';
+        }
+
+        if ($notes === BillingService::NOTE_CORRECTED_REVERSAL) {
+            return 'INVOICE ADJUSTMENT';
+        }
+
+        if ($invoice->invoice_type === 'penalty' || $notes === BillingService::NOTE_MANUAL_PENALTY) {
+            return 'INVOICE ADJUSTMENT - PENALTY';
+        }
+
+        return 'INVOICE ADJUSTMENT';
     }
 
     protected function adjustmentTypeLabel(string $type, ?string $description = null): string

@@ -60,12 +60,7 @@ function StudentDashboard({ dashboard, fullName }) {
     ];
     const [showSessionRegistrationModal, setShowSessionRegistrationModal] =
         useState(false);
-    const {
-        post,
-        processing,
-        errors,
-        clearErrors,
-    } = useForm({});
+    const { post, processing, errors, clearErrors } = useForm({});
     const {
         data: unitRegistrationData,
         setData: setUnitRegistrationData,
@@ -147,12 +142,12 @@ function StudentDashboard({ dashboard, fullName }) {
                         </h1>
                         <p className="mt-3 max-w-xl text-sm text-slate-300">
                             Keep track of your program progress, current
-                            session, billing status, and learning units from
-                            one place.
+                            session, billing status, and learning units from one
+                            place.
                         </p>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-2">
                         <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur">
                             <p className="text-xs uppercase tracking-wide text-slate-300">
                                 Program
@@ -236,41 +231,46 @@ function StudentDashboard({ dashboard, fullName }) {
                         </Link>
                     </div>
 
-                        <div className="mt-6">
-                            {!dashboard.latest_session && dashboard.unit_registration?.blocker ? (
-                                <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm">
-                                    <p className="font-semibold text-amber-900">
-                                        📋 Register Your Session First
-                                    </p>
-                                    <p className="mt-2 text-amber-800">
-                                        You must register for the current active session before you can register units. Once session registration is complete, you'll be able to select your units here.
-                                    </p>
-                                </div>
-                            ) : null}
+                    <div className="mt-6">
+                        {!dashboard.latest_session &&
+                        dashboard.unit_registration?.blocker ? (
+                            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm">
+                                <p className="font-semibold text-amber-900">
+                                    📋 Register Your Session First
+                                </p>
+                                <p className="mt-2 text-amber-800">
+                                    You must register for the current active
+                                    session before you can register units. Once
+                                    session registration is complete, you'll be
+                                    able to select your units here.
+                                </p>
+                            </div>
+                        ) : null}
 
-                            {dashboard.module_units?.length ? (
-                                <form
-                                    onSubmit={submitUnitRegistration}
-                                    className={`space-y-4 ${!dashboard.latest_session ? 'mt-4' : ''}`}
-                                >
-                                    <div className="overflow-hidden rounded-2xl border border-zinc-100">
-                                        <div className="overflow-x-auto">
-                                            <table className="w-full min-w-[42rem] border-collapse">
-                                                <thead className="bg-zinc-50">
-                                                    <tr className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                                                        <th className="px-4 py-3 text-left">
-                                                            Select
-                                                        </th>
-                                                        <th className="px-4 py-3 text-left">
-                                                            Code
-                                                        </th>
-                                                        <th className="px-4 py-3 text-left">
-                                                            Unit
-                                                        </th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody className="divide-y divide-zinc-100 bg-white">
-                                                    {dashboard.module_units.map((unit) => (
+                        {dashboard.module_units?.length ? (
+                            <form
+                                onSubmit={submitUnitRegistration}
+                                className={`space-y-4 ${!dashboard.latest_session ? "mt-4" : ""}`}
+                            >
+                                <div className="overflow-hidden rounded-2xl border border-zinc-100">
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full min-w-[42rem] border-collapse">
+                                            <thead className="bg-zinc-50">
+                                                <tr className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                                                    <th className="px-4 py-3 text-left">
+                                                        Select
+                                                    </th>
+                                                    <th className="px-4 py-3 text-left">
+                                                        Code
+                                                    </th>
+                                                    <th className="px-4 py-3 text-left">
+                                                        Unit
+                                                    </th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-zinc-100 bg-white">
+                                                {dashboard.module_units.map(
+                                                    (unit) => (
                                                         <tr
                                                             key={unit.id}
                                                             className="text-sm text-zinc-700"
@@ -279,7 +279,9 @@ function StudentDashboard({ dashboard, fullName }) {
                                                                 <label className="flex cursor-pointer items-center">
                                                                     <Checkbox
                                                                         checked={unitRegistrationData.program_version_unit_ids.includes(
-                                                                            String(unit.id),
+                                                                            String(
+                                                                                unit.id,
+                                                                            ),
                                                                         )}
                                                                         onChange={() =>
                                                                             toggleUnitSelection(
@@ -297,7 +299,8 @@ function StudentDashboard({ dashboard, fullName }) {
                                                                 </label>
                                                             </td>
                                                             <td className="px-4 py-3 align-top font-semibold text-emerald-700">
-                                                                {unit.code ?? "-"}
+                                                                {unit.code ??
+                                                                    "-"}
                                                             </td>
                                                             <td className="px-4 py-3 align-top">
                                                                 <p className="font-semibold text-zinc-900">
@@ -305,7 +308,8 @@ function StudentDashboard({ dashboard, fullName }) {
                                                                 </p>
                                                                 <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-zinc-500">
                                                                     <span>
-                                                                        Credit Factor:{" "}
+                                                                        Credit
+                                                                        Factor:{" "}
                                                                         {unit.credit_factor ??
                                                                             "-"}
                                                                     </span>
@@ -317,58 +321,58 @@ function StudentDashboard({ dashboard, fullName }) {
                                                                 </div>
                                                             </td>
                                                         </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
-                                        </div>
+                                                    ),
+                                                )}
+                                            </tbody>
+                                        </table>
                                     </div>
-
-                                    {unitRegistrationErrors.unit_registration ? (
-                                        <p className="text-sm text-red-600">
-                                            {
-                                                unitRegistrationErrors.unit_registration
-                                            }
-                                        </p>
-                                    ) : null}
-
-                                    <div className="flex flex-col gap-3 rounded-2xl bg-zinc-50 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-                                        <div className="text-sm text-zinc-600">
-                                            {dashboard.unit_registration
-                                                ?.is_complete
-                                                ? "Units registered"
-                                                : "Register all units"}
-                                        </div>
-                                        <button
-                                            type="submit"
-                                            disabled={
-                                                unitRegistrationProcessing ||
-                                                !dashboard.unit_registration
-                                                    ?.can_register ||
-                                                !allModuleUnitsSelected ||
-                                                !dashboard.latest_session
-                                            }
-                                            className="inline-flex rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
-                                        >
-                                            {unitRegistrationProcessing
-                                                ? "Registering..."
-                                                : "Register Units"}
-                                        </button>
-                                    </div>
-                                </form>
-                            ) : (
-                                <div className="rounded-2xl bg-[#F8F9FA] px-4 py-4 text-sm text-zinc-500">
-                                    No units have been assigned to this module
-                                    yet.
                                 </div>
-                            )}
 
-                            <div className="mt-3 rounded-2xl bg-[#F8F9FA] px-4 py-3 text-xs text-zinc-500">
-                                {dashboard.all_units_count
-                                    ? `${dashboard.all_units_count} total unit(s) are mapped to your program version.`
-                                    : "Your full unit list will appear once units are mapped to your program version."}
+                                {unitRegistrationErrors.unit_registration ? (
+                                    <p className="text-sm text-red-600">
+                                        {
+                                            unitRegistrationErrors.unit_registration
+                                        }
+                                    </p>
+                                ) : null}
+
+                                <div className="flex flex-col gap-3 rounded-2xl bg-zinc-50 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+                                    <div className="text-sm text-zinc-600">
+                                        {dashboard.unit_registration
+                                            ?.is_complete
+                                            ? "Units registered"
+                                            : "Register all units"}
+                                    </div>
+                                    <button
+                                        type="submit"
+                                        disabled={
+                                            unitRegistrationProcessing ||
+                                            !dashboard.unit_registration
+                                                ?.can_register ||
+                                            !allModuleUnitsSelected ||
+                                            !dashboard.latest_session
+                                        }
+                                        className="inline-flex rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                        {unitRegistrationProcessing
+                                            ? "Registering..."
+                                            : "Register Units"}
+                                    </button>
+                                </div>
+                            </form>
+                        ) : (
+                            <div className="rounded-2xl bg-[#F8F9FA] px-4 py-4 text-sm text-zinc-500">
+                                No units have been assigned to this module yet.
                             </div>
+                        )}
+
+                        <div className="mt-3 rounded-2xl bg-[#F8F9FA] px-4 py-3 text-xs text-zinc-500">
+                            {dashboard.all_units_count
+                                ? `${dashboard.all_units_count} total unit(s) are mapped to your program version.`
+                                : "Your full unit list will appear once units are mapped to your program version."}
                         </div>
                     </div>
+                </div>
 
                 <div className="space-y-6">
                     <div className="rounded-[1.75rem] border border-zinc-100 bg-white p-7 shadow-sm">
@@ -383,18 +387,14 @@ function StudentDashboard({ dashboard, fullName }) {
 
                         <div className="mt-6 space-y-4 text-sm">
                             <div className="rounded-2xl bg-zinc-50 px-4 py-3">
-                                <p className="text-zinc-500">
-                                    Program Version
-                                </p>
+                                <p className="text-zinc-500">Program Version</p>
                                 <p className="mt-1 font-semibold text-zinc-900">
                                     {dashboard.program?.version ??
                                         "Not assigned"}
                                 </p>
                             </div>
                             <div className="rounded-2xl bg-zinc-50 px-4 py-3">
-                                <p className="text-zinc-500">
-                                    Current Session
-                                </p>
+                                <p className="text-zinc-500">Current Session</p>
                                 <p className="mt-1 font-semibold text-zinc-900">
                                     {dashboard.latest_session?.session ??
                                         "No session enrollment yet"}
@@ -430,9 +430,7 @@ function StudentDashboard({ dashboard, fullName }) {
                                 ) : null}
                             </div>
                             <div className="rounded-2xl bg-zinc-50 px-4 py-3">
-                                <p className="text-zinc-500">
-                                    Year of Study
-                                </p>
+                                <p className="text-zinc-500">Year of Study</p>
                                 <p className="mt-1 font-semibold text-zinc-900">
                                     {dashboard.latest_session?.year_of_study
                                         ? `Year ${dashboard.latest_session.year_of_study}`
@@ -571,9 +569,7 @@ function StaffDashboard({ dashboard }) {
                 const executiveResponse = await sectionRequests.executive();
 
                 if (!executiveResponse.ok) {
-                    throw new Error(
-                        "Executive analytics request failed.",
-                    );
+                    throw new Error("Executive analytics request failed.");
                 }
 
                 const executive = await executiveResponse.json();
@@ -700,7 +696,8 @@ function StaffDashboard({ dashboard }) {
         },
         {
             label: "Registered In Session",
-            value: executive.metrics?.students_registered_in_active_session ?? 0,
+            value:
+                executive.metrics?.students_registered_in_active_session ?? 0,
             helper: `${executive.metrics?.session_registration_rate ?? 0}% registration`,
         },
         {
@@ -791,7 +788,8 @@ function StaffDashboard({ dashboard }) {
         {
             label: "Missing Relationships",
             value:
-                dataQuality.metrics?.records_missing_required_relationships ?? 0,
+                dataQuality.metrics?.records_missing_required_relationships ??
+                0,
         },
         {
             label: "Orphaned Financial Records",
@@ -914,8 +912,8 @@ function StaffDashboard({ dashboard }) {
                             title="Students Not Registered"
                             items={
                                 loadedSections.academic
-                                    ? academic.exceptions
-                                          ?.students_not_registered ?? []
+                                    ? (academic.exceptions
+                                          ?.students_not_registered ?? [])
                                     : []
                             }
                             emptyText={
@@ -935,9 +933,9 @@ function StaffDashboard({ dashboard }) {
                             title="Admissions Exceptions"
                             items={
                                 loadedSections.admissions
-                                    ? admissions.exceptions
+                                    ? (admissions.exceptions
                                           ?.students_missing_program_enrollment ??
-                                      []
+                                      [])
                                     : []
                             }
                             emptyText={
@@ -957,8 +955,8 @@ function StaffDashboard({ dashboard }) {
                             title="Hostel Billing Gaps"
                             items={
                                 loadedSections.hostel
-                                    ? hostel.exceptions
-                                          ?.allocated_but_not_billed ?? []
+                                    ? (hostel.exceptions
+                                          ?.allocated_but_not_billed ?? [])
                                     : []
                             }
                             emptyText={
@@ -980,13 +978,16 @@ function StaffDashboard({ dashboard }) {
                     <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
                         <SnapshotTrendCard
                             title="Collections"
-                            points={snapshotTrends.finance?.total_collected ?? []}
+                            points={
+                                snapshotTrends.finance?.total_collected ?? []
+                            }
                             formatter={currency}
                         />
                         <SnapshotTrendCard
                             title="Outstanding Balance"
                             points={
-                                snapshotTrends.finance?.outstanding_balance ?? []
+                                snapshotTrends.finance?.outstanding_balance ??
+                                []
                             }
                             formatter={currency}
                         />
@@ -1080,7 +1081,11 @@ function DashboardSection({
                 </div>
             ) : (
                 <div className="mt-6 rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 px-5 py-6 text-sm text-zinc-500">
-                    This section stays unloaded until you click <span className="font-semibold text-zinc-700">Load Data</span>.
+                    This section stays unloaded until you click{" "}
+                    <span className="font-semibold text-zinc-700">
+                        Load Data
+                    </span>
+                    .
                 </div>
             )}
         </div>
@@ -1139,9 +1144,7 @@ function SnapshotTrendCard({
                             key={`${title}-${point.date}`}
                             className="flex items-center justify-between rounded-2xl bg-zinc-50 px-4 py-3 text-sm"
                         >
-                            <span className="text-zinc-500">
-                                {point.date}
-                            </span>
+                            <span className="text-zinc-500">{point.date}</span>
                             <span className="font-medium text-zinc-900">
                                 {formatter(point.value)}
                                 {suffix}
