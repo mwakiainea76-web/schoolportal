@@ -63,6 +63,8 @@ class RecordRequestPerformance
                     'response_size_bytes' => $this->responseSize($response),
                     'is_api' => $isApi,
                     'user_id' => $request->user()?->id,
+                    'error_status' => $statusCode >= 500 ? 'pending' : null,
+                    'error_status_updated_at' => $statusCode >= 500 ? now() : null,
                     'occurred_at' => now(),
                 ]);
             }
@@ -100,6 +102,24 @@ class RecordRequestPerformance
 
         $statusCode = RequestLogContext::statusFromException($exception);
         $durationMs = max(1, (int) round((microtime(true) - $startedAt) * 1000));
+        $path = '/' . ltrim($request->path(), '/');
+        $routeName = $request->route()?->getName();
+
+        AppRequestMetric::create([
+            'method' => $request->method(),
+            'path' => $path,
+            'route_name' => $routeName,
+            'status_code' => $statusCode,
+            'duration_ms' => $durationMs,
+            'memory_peak_kb' => (int) round(memory_get_peak_usage(true) / 1024),
+            'response_size_bytes' => null,
+            'is_api' => $request->is('api/*'),
+            'user_id' => $request->user()?->id,
+            'error_status' => $statusCode >= 500 ? 'pending' : null,
+            'error_status_updated_at' => $statusCode >= 500 ? now() : null,
+            'occurred_at' => now(),
+        ]);
+
         $context = RequestLogContext::exception(
             $request,
             $exception,

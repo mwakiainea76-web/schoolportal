@@ -19,6 +19,8 @@ class AppRequestMetric extends Model
         'response_size_bytes',
         'is_api',
         'user_id',
+        'error_status',
+        'error_status_updated_at',
         'occurred_at',
     ];
 
@@ -27,6 +29,7 @@ class AppRequestMetric extends Model
         'memory_peak_kb' => 'integer',
         'response_size_bytes' => 'integer',
         'is_api' => 'boolean',
+        'error_status_updated_at' => 'datetime',
         'occurred_at' => 'datetime',
     ];
 }

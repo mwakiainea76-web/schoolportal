@@ -100,6 +100,14 @@ Route::middleware(['auth', 'non_student'])->group(function () {
         ->name('settings.performance.index');
 
     Route::middleware('role:admin')
+        ->patch('/settings/performance/errors/{appRequestMetric}/status', [PerformanceDashboardController::class, 'updateErrorStatus'])
+        ->name('settings.performance.errors.update-status');
+
+    Route::middleware('role:admin')
+        ->patch('/settings/performance/endpoints/status', [PerformanceDashboardController::class, 'updateEndpointStatus'])
+        ->name('settings.performance.endpoints.update-status');
+
+    Route::middleware('role:admin')
         ->get('/settings/logs', [LogViewerController::class, 'index'])
         ->name('settings.logs.index');
 

@@ -68,17 +68,38 @@ function BarList({ items, labelKey, valueKey, emptyText }) {
 
 export default function PerformanceDashboard({
     range,
+    load_slow_endpoints,
     summary,
     status_breakdown,
     method_breakdown,
     traffic_trend,
     slow_endpoints,
+    slow_endpoints_count,
     recent_errors,
 }) {
+    const slowEndpointRows = slow_endpoints?.data ?? [];
+
     const setRange = (nextRange) => {
+        const params = { range: nextRange };
+
+        if (load_slow_endpoints) {
+            params.load_slow_endpoints = 1;
+        }
+
         router.get(
             route("settings.performance.index"),
-            { range: nextRange },
+            params,
+            { preserveScroll: true, preserveState: true },
+        );
+    };
+
+    const loadSlowEndpoints = () => {
+        router.get(
+            route("settings.performance.index"),
+            {
+                range,
+                load_slow_endpoints: 1,
+            },
             { preserveScroll: true, preserveState: true },
         );
     };
@@ -88,6 +109,30 @@ export default function PerformanceDashboard({
         { value: "24h", label: "24 hours" },
         { value: "7d", label: "7 days" },
     ];
+
+    const updateErrorStatus = (errorId, errorStatus) => {
+        router.patch(
+            route("settings.performance.errors.update-status", errorId),
+            { error_status: errorStatus },
+            { preserveScroll: true, preserveState: true },
+        );
+    };
+
+    const updateEndpointStatus = (endpoint, status) => {
+        router.patch(
+            route("settings.performance.endpoints.update-status"),
+            {
+                endpoint_key: endpoint.endpoint_key,
+                method: endpoint.method,
+                path: endpoint.path,
+                route_name: endpoint.route_name,
+                status,
+                range,
+                load_slow_endpoints: 1,
+            },
+            { preserveScroll: true, preserveState: true },
+        );
+    };
 
     const healthTone =
         summary.error_rate > 5
@@ -239,126 +284,337 @@ export default function PerformanceDashboard({
                 </div>
 
                 <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
-                    <div className="mb-5 flex items-center justify-between">
-                        <h2 className="text-lg font-semibold text-zinc-900">
-                            Slowest Endpoints
-                        </h2>
-                        <span className="text-xs font-medium text-zinc-500">
-                            Sorted by p95 latency
-                        </span>
-                    </div>
-                    <div className="overflow-hidden rounded-2xl border border-zinc-100">
-                        <div className="overflow-x-auto">
-                            <table className="w-full min-w-[58rem] border-collapse">
-                                <thead className="bg-zinc-50">
-                                    <tr className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                                        <th className="px-4 py-3 text-left">
-                                            Endpoint
-                                        </th>
-                                        <th className="px-4 py-3 text-left">
-                                            Hits
-                                        </th>
-                                        <th className="px-4 py-3 text-left">
-                                            Avg
-                                        </th>
-                                        <th className="px-4 py-3 text-left">
-                                            P95
-                                        </th>
-                                        <th className="px-4 py-3 text-left">
-                                            Max
-                                        </th>
-                                        <th className="px-4 py-3 text-left">
-                                            Errors
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-zinc-100 bg-white">
-                                    {slow_endpoints.length ? (
-                                        slow_endpoints.map((endpoint) => (
-                                            <tr
-                                                key={endpoint.endpoint}
-                                                className="text-sm"
-                                            >
-                                                <td className="max-w-0 px-4 py-3 font-medium text-zinc-900">
-                                                    <span className="block truncate">
-                                                        {endpoint.endpoint}
-                                                    </span>
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    {number(endpoint.requests)}
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    {ms(endpoint.average_ms)}
-                                                </td>
-                                                <td className="px-4 py-3 font-semibold text-zinc-900">
-                                                    {ms(endpoint.p95_ms)}
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    {ms(endpoint.max_ms)}
-                                                </td>
-                                                <td
-                                                    className={`px-4 py-3 ${
-                                                        endpoint.errors
-                                                            ? "text-red-600"
-                                                            : "text-zinc-500"
-                                                    }`}
-                                                >
-                                                    {number(endpoint.errors)}
-                                                </td>
-                                            </tr>
-                                        ))
-                                    ) : (
-                                        <tr>
-                                            <td
-                                                colSpan="6"
-                                                className="px-4 py-8 text-center text-sm text-zinc-500"
-                                            >
-                                                No endpoint data in this range.
-                                            </td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="grid gap-6 xl:grid-cols-[1.4fr,0.8fr]">
-                    <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
-                        <h2 className="mb-5 text-lg font-semibold text-zinc-900">
-                            Recent Server Errors
-                        </h2>
-                        <div className="space-y-3">
-                            {recent_errors.length ? (
-                                recent_errors.map((error) => (
-                                    <div
-                                        key={error.id}
-                                        className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm"
-                                    >
-                                        <div className="flex items-center justify-between gap-4">
+                    <h2 className="mb-5 text-lg font-semibold text-zinc-900">
+                        Recent Server Errors
+                    </h2>
+                    <div className="space-y-3">
+                        {recent_errors.length ? (
+                            recent_errors.map((error) => (
+                                <div
+                                    key={error.id}
+                                    className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm"
+                                >
+                                    <div className="flex items-center justify-between gap-4">
+                                        <div className="min-w-0">
                                             <p className="font-semibold text-red-800">
                                                 {error.status_code}{" "}
                                                 {error.method}{" "}
                                                 {error.route_name || error.path}
                                             </p>
-                                            <p className="text-xs text-red-600">
-                                                {ms(error.duration_ms)}
+                                            <p className="mt-1 text-xs uppercase tracking-wide text-red-600">
+                                                Status:{" "}
+                                                {error.error_status ===
+                                                "in_progress"
+                                                    ? "in progress"
+                                                    : error.error_status}
                                             </p>
                                         </div>
-                                        <p className="mt-1 text-xs text-red-600">
-                                            {error.occurred_at}
+                                        <p className="text-xs text-red-600">
+                                            {ms(error.duration_ms)}
                                         </p>
                                     </div>
-                                ))
-                            ) : (
-                                <div className="py-8 text-center text-sm text-zinc-500">
-                                    No server errors in this range.
+                                    <p className="mt-1 text-xs text-red-600">
+                                        {error.occurred_at}
+                                    </p>
+                                    <div className="mt-3 flex flex-wrap gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                updateErrorStatus(
+                                                    error.id,
+                                                    "pending",
+                                                )
+                                            }
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                                                error.error_status === "pending"
+                                                    ? "bg-amber-600 text-white"
+                                                    : "bg-white text-amber-700 ring-1 ring-inset ring-amber-200 hover:bg-amber-100"
+                                            }`}
+                                        >
+                                            Pending
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                updateErrorStatus(
+                                                    error.id,
+                                                    "in_progress",
+                                                )
+                                            }
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                                                error.error_status ===
+                                                "in_progress"
+                                                    ? "bg-sky-600 text-white"
+                                                    : "bg-white text-sky-700 ring-1 ring-inset ring-sky-200 hover:bg-sky-100"
+                                            }`}
+                                        >
+                                            In Progress
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                updateErrorStatus(
+                                                    error.id,
+                                                    "resolved",
+                                                )
+                                            }
+                                            className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-200 transition hover:bg-emerald-100"
+                                        >
+                                            Resolve
+                                        </button>
+                                    </div>
                                 </div>
-                            )}
-                        </div>
+                            ))
+                        ) : (
+                            <div className="py-8 text-center text-sm text-zinc-500">
+                                No server errors in this range.
+                            </div>
+                        )}
                     </div>
+                </div>
+
+                <div className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
+                    <div className="mb-5 flex items-center justify-between">
+                        <h2 className="text-lg font-semibold text-zinc-900">
+                            Slowest Endpoints
+                        </h2>
+                        <span className="text-xs font-medium text-zinc-500">
+                            {load_slow_endpoints
+                                ? `Showing ${slow_endpoints?.from ?? 0}-${slow_endpoints?.to ?? 0} of ${slow_endpoints?.total ?? 0}, sorted by p95 latency`
+                                : `${slow_endpoints_count ?? 0} endpoints were identified as slow. Click to view them`}
+                        </span>
+                    </div>
+                    {!load_slow_endpoints ? (
+                        <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 px-6 py-10 text-center">
+                            <p className="text-sm text-zinc-600">
+                                Slow endpoint aggregation can be expensive on
+                                busy ranges.
+                            </p>
+                            <button
+                                type="button"
+                                onClick={loadSlowEndpoints}
+                                className="mt-4 rounded-xl bg-zinc-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-zinc-800"
+                            >
+                                Load Slowest Endpoints
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="overflow-hidden rounded-2xl border border-zinc-100">
+                            <div className="overflow-x-auto">
+                                <table className="w-full min-w-[58rem] border-collapse">
+                                    <thead className="bg-zinc-50">
+                                        <tr className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                                            <th className="px-4 py-3 text-left">
+                                                Endpoint
+                                            </th>
+                                            <th className="px-4 py-3 text-left">
+                                                Hits
+                                            </th>
+                                            <th className="px-4 py-3 text-left">
+                                                Avg
+                                            </th>
+                                            <th className="px-4 py-3 text-left">
+                                                P95
+                                            </th>
+                                            <th className="px-4 py-3 text-left">
+                                                Max
+                                            </th>
+                                            <th className="px-4 py-3 text-left">
+                                                Errors
+                                            </th>
+                                            <th className="px-4 py-3 text-left">
+                                                Status
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-zinc-100 bg-white">
+                                        {slowEndpointRows.length ? (
+                                            slowEndpointRows.map((endpoint) => (
+                                                <tr
+                                                    key={endpoint.endpoint}
+                                                    className="text-sm"
+                                                >
+                                                    <td className="max-w-0 px-4 py-3 font-medium text-zinc-900">
+                                                        <span className="block truncate">
+                                                            {endpoint.endpoint}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        {number(
+                                                            endpoint.requests,
+                                                        )}
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        {ms(
+                                                            endpoint.average_ms,
+                                                        )}
+                                                    </td>
+                                                    <td className="px-4 py-3 font-semibold text-zinc-900">
+                                                        {ms(endpoint.p95_ms)}
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        {ms(endpoint.max_ms)}
+                                                    </td>
+                                                    <td
+                                                        className={`px-4 py-3 ${
+                                                            endpoint.errors
+                                                                ? "text-red-600"
+                                                                : "text-zinc-500"
+                                                        }`}
+                                                    >
+                                                        {number(
+                                                            endpoint.errors,
+                                                        )}
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        <div className="flex flex-wrap gap-2">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    updateEndpointStatus(
+                                                                        endpoint,
+                                                                        "pending",
+                                                                    )
+                                                                }
+                                                                className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                                                                    endpoint.status ===
+                                                                    "pending"
+                                                                        ? "bg-amber-600 text-white"
+                                                                        : "bg-white text-amber-700 ring-1 ring-inset ring-amber-200 hover:bg-amber-100"
+                                                                }`}
+                                                            >
+                                                                Pending
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    updateEndpointStatus(
+                                                                        endpoint,
+                                                                        "in_progress",
+                                                                    )
+                                                                }
+                                                                className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                                                                    endpoint.status ===
+                                                                    "in_progress"
+                                                                        ? "bg-sky-600 text-white"
+                                                                        : "bg-white text-sky-700 ring-1 ring-inset ring-sky-200 hover:bg-sky-100"
+                                                                }`}
+                                                            >
+                                                                In Progress
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    updateEndpointStatus(
+                                                                        endpoint,
+                                                                        "resolved",
+                                                                    )
+                                                                }
+                                                                className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                                                                    endpoint.status ===
+                                                                    "resolved"
+                                                                        ? "bg-emerald-600 text-white"
+                                                                        : "bg-white text-emerald-700 ring-1 ring-inset ring-emerald-200 hover:bg-emerald-100"
+                                                                }`}
+                                                            >
+                                                                Resolve
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        ) : (
+                                            <tr>
+                                                <td
+                                                    colSpan="7"
+                                                    className="px-4 py-8 text-center text-sm text-zinc-500"
+                                                >
+                                                    No endpoint data in this
+                                                    range.
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <Pagination
+                                pagination={slow_endpoints}
+                                pageName="endpoint_page"
+                            />
+                        </div>
+                    )}
                 </div>
             </div>
         </AuthenticatedLayout>
+    );
+}
+
+function Pagination({ pagination, pageName }) {
+    if (!pagination || Number(pagination.last_page ?? 1) <= 1) {
+        return null;
+    }
+
+    const current = Number(pagination.current_page ?? 1);
+    const last = Number(pagination.last_page ?? 1);
+    const start = Math.max(1, current - 2);
+    const end = Math.min(last, current + 2);
+    const pages = Array.from(
+        { length: end - start + 1 },
+        (_, index) => start + index,
+    );
+
+    const goToPage = (page) => {
+        const params = new URLSearchParams(window.location.search);
+        params.set(pageName, page);
+
+        router.get(
+            `${window.location.pathname}?${params.toString()}`,
+            {},
+            {
+                preserveScroll: true,
+                preserveState: true,
+                replace: true,
+            },
+        );
+    };
+
+    return (
+        <div className="flex flex-col gap-3 border-t border-zinc-100 bg-zinc-50 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-zinc-500">
+                Page {current} of {last}
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+                <button
+                    type="button"
+                    disabled={current <= 1}
+                    onClick={() => goToPage(current - 1)}
+                    className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                    Previous
+                </button>
+                {pages.map((page) => (
+                    <button
+                        type="button"
+                        key={page}
+                        onClick={() => goToPage(page)}
+                        className={`rounded-lg px-3 py-2 text-sm transition ${
+                            page === current
+                                ? "bg-zinc-900 text-white"
+                                : "border border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-100"
+                        }`}
+                    >
+                        {page}
+                    </button>
+                ))}
+                <button
+                    type="button"
+                    disabled={current >= last}
+                    onClick={() => goToPage(current + 1)}
+                    className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                    Next
+                </button>
+            </div>
+        </div>
     );
 }
