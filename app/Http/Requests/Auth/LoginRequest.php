@@ -16,6 +16,7 @@ use Illuminate\Validation\ValidationException;
 class LoginRequest extends FormRequest
 {
     private const LOGIN_THROTTLE_SECONDS = 300;
+    private const LOGIN_ATTEMPT_THRESHOLD = 5;
 
     /**
      * Determine if the user is authorized to make this request.
@@ -118,7 +119,7 @@ class LoginRequest extends FormRequest
                 'device_id' => $this->input('device_id'),
             ]);
 
-            if ($failedAttempts >= 3 && ! $securityMonitoring->recentRiskAlreadyLogged('login.risk_detected', [
+            if ($failedAttempts >= self::LOGIN_ATTEMPT_THRESHOLD && ! $securityMonitoring->recentRiskAlreadyLogged('login.risk_detected', [
                 'login_identifier' => $login,
                 'ip_address' => $this->ip(),
                 'device_id' => $this->input('device_id'),
@@ -135,21 +136,19 @@ class LoginRequest extends FormRequest
                     $user?->email,
                 );
 
-                if ($failedAttempts >= 8) {
-                    $securityMonitoring->createAutomaticBlock(
-                        $this,
-                        'Repeated incorrect login attempts detected.',
-                        $user,
-                        $login,
-                        $user?->email,
-                        $riskEvent,
-                        30,
-                        'critical',
-                        [
-                            'failed_attempts_last_15_minutes' => $failedAttempts,
-                        ],
-                    );
-                }
+                $securityMonitoring->createAutomaticBlock(
+                    $this,
+                    'Repeated incorrect login attempts detected.',
+                    $user,
+                    $login,
+                    $user?->email,
+                    $riskEvent,
+                    30,
+                    'critical',
+                    [
+                        'failed_attempts_last_15_minutes' => $failedAttempts,
+                    ],
+                );
             }
 
             throw ValidationException::withMessages([
@@ -168,7 +167,7 @@ class LoginRequest extends FormRequest
      */
     public function ensureIsNotRateLimited(): void
     {
-        if (! RateLimiter::tooManyAttempts($this->throttleKey(), 5)) {
+        if (! RateLimiter::tooManyAttempts($this->throttleKey(), self::LOGIN_ATTEMPT_THRESHOLD)) {
             return;
         }
 
@@ -188,7 +187,7 @@ class LoginRequest extends FormRequest
         $seconds = RateLimiter::availableIn($this->throttleKey());
 
         throw ValidationException::withMessages([
-            'login' => 'Too many failed login attempts. Please wait 5 minutes before trying again.',
+            'login' => 'Too many failed login attempts. You have been rate limited. Please wait 5 minutes before trying again.',
         ]);
     }
 

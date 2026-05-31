@@ -115,6 +115,10 @@ Route::middleware(['auth', 'non_student'])->group(function () {
         ->name('settings.logs.index');
 
     Route::middleware('role:admin')
+        ->post('/settings/logs/clear', [LogViewerController::class, 'clear'])
+        ->name('settings.logs.clear');
+
+    Route::middleware('role:admin')
         ->get('/settings/user-monitor', [UserMonitorController::class, 'index'])
         ->name('settings.user-monitor.index');
 

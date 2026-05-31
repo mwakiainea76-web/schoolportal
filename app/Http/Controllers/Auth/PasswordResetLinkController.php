@@ -15,6 +15,9 @@ use Inertia\Response;
 
 class PasswordResetLinkController extends Controller
 {
+    private const PASSWORD_RESET_THROTTLE_SECONDS = 900;
+    private const PASSWORD_RESET_BLOCK_THRESHOLD = 5;
+
     public function __construct(
         protected SecurityMonitoringService $securityMonitoring,
     ) {
@@ -67,23 +70,37 @@ class PasswordResetLinkController extends Controller
 
         $throttleKey = Str::transliterate($email.'|'.$request->ip().'|'.trim((string) $request->input('device_id')));
 
-        if (RateLimiter::tooManyAttempts($throttleKey, 4)) {
+        if (RateLimiter::tooManyAttempts($throttleKey, self::PASSWORD_RESET_BLOCK_THRESHOLD)) {
             $seconds = RateLimiter::availableIn($throttleKey);
+            $riskContext = [
+                'retry_after_seconds' => $seconds,
+                'attempts_threshold' => self::PASSWORD_RESET_BLOCK_THRESHOLD,
+            ];
 
-            $this->securityMonitoring->recordEvent(
+            $event = $this->securityMonitoring->recordEvent(
                 'password_reset.rate_limited',
                 $request,
                 $user,
-                'warning',
-                [
-                    'retry_after_seconds' => $seconds,
-                ],
+                'critical',
+                $riskContext,
                 $user?->login_id,
                 $email,
             );
 
+            $this->securityMonitoring->createAutomaticBlock(
+                $request,
+                'Password reset attempt threshold exceeded.',
+                $user,
+                $user?->login_id,
+                $email,
+                $event,
+                30,
+                'critical',
+                $riskContext,
+            );
+
             throw ValidationException::withMessages([
-                'email' => ["Too many reset attempts. Try again in {$seconds} seconds."],
+                'email' => ['Attempt exceeded. Visit admin for password reset.'],
             ]);
         }
 
@@ -91,7 +108,7 @@ class PasswordResetLinkController extends Controller
             $request->only('email')
         );
 
-        RateLimiter::hit($throttleKey, 900);
+        RateLimiter::hit($throttleKey, self::PASSWORD_RESET_THROTTLE_SECONDS);
 
         $this->securityMonitoring->recordEvent(
             $status == Password::RESET_LINK_SENT
@@ -113,7 +130,7 @@ class PasswordResetLinkController extends Controller
             'device_id' => $request->input('device_id'),
         ]);
 
-        if ($resetAttempts >= 3 && ! $this->securityMonitoring->recentRiskAlreadyLogged('password_reset.risk_detected', [
+        if ($resetAttempts >= self::PASSWORD_RESET_BLOCK_THRESHOLD && ! $this->securityMonitoring->recentRiskAlreadyLogged('password_reset.risk_detected', [
             'email' => $email,
             'ip_address' => $request->ip(),
             'device_id' => $request->input('device_id'),
@@ -130,21 +147,23 @@ class PasswordResetLinkController extends Controller
                 $email,
             );
 
-            if ($resetAttempts >= 6) {
-                $this->securityMonitoring->createAutomaticBlock(
-                    $request,
-                    'Repeated forgot-password attempts detected.',
-                    $user,
-                    $user?->login_id,
-                    $email,
-                    $event,
-                    30,
-                    'critical',
-                    [
-                        'attempts_last_15_minutes' => $resetAttempts,
-                    ],
-                );
-            }
+            $this->securityMonitoring->createAutomaticBlock(
+                $request,
+                'Repeated forgot-password attempts detected.',
+                $user,
+                $user?->login_id,
+                $email,
+                $event,
+                30,
+                'critical',
+                [
+                    'attempts_last_15_minutes' => $resetAttempts,
+                ],
+            );
+
+            throw ValidationException::withMessages([
+                'email' => ['Attempt exceeded. Visit admin for password reset.'],
+            ]);
         }
 
         if ($status == Password::RESET_LINK_SENT) {

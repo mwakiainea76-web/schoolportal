@@ -47,6 +47,28 @@ export default function LogViewer({ files, filters, log }) {
         });
     };
 
+    const clearSelectedFile = () => {
+        if (!form.data.file) {
+            return;
+        }
+
+        const confirmed = window.confirm(
+            `Clear all contents of ${form.data.file}? This keeps the file but removes its current log entries.`,
+        );
+
+        if (!confirmed) {
+            return;
+        }
+
+        router.post(
+            route("settings.logs.clear"),
+            { file: form.data.file },
+            {
+                preserveScroll: true,
+            },
+        );
+    };
+
     return (
         <AuthenticatedLayout
             header={
@@ -219,10 +241,19 @@ export default function LogViewer({ files, filters, log }) {
                         <h2 className="text-lg font-semibold text-zinc-900">
                             Recent Entries
                         </h2>
-                        <span className="text-sm text-zinc-500">
-                            Showing {pagination.from ?? 0}-{pagination.to ?? 0} of{" "}
-                            {pagination.total ?? 0} entries
-                        </span>
+                        <div className="flex items-center gap-4">
+                            <span className="text-sm text-zinc-500">
+                                Showing {pagination.from ?? 0}-{pagination.to ?? 0} of{" "}
+                                {pagination.total ?? 0} entries
+                            </span>
+                            <button
+                                type="button"
+                                onClick={clearSelectedFile}
+                                className="rounded-xl bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700"
+                            >
+                                Clear File
+                            </button>
+                        </div>
                     </div>
 
                     {entries.length ? (

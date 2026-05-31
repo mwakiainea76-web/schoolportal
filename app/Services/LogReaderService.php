@@ -71,6 +71,19 @@ class LogReaderService
         ];
     }
 
+    public function clear(string $fileName): bool
+    {
+        $path = $this->resolvePath($fileName);
+
+        if (! $path) {
+            return false;
+        }
+
+        File::put($path, '');
+
+        return true;
+    }
+
     private function resolvePath(string $fileName): ?string
     {
         $safeName = basename($fileName ?: 'laravel.log');

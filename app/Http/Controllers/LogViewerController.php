@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\LogReaderService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -34,5 +35,20 @@ class LogViewerController extends Controller
                 $perPage
             ),
         ]);
+    }
+
+    public function clear(Request $request, LogReaderService $reader): RedirectResponse
+    {
+        $validated = $request->validate([
+            'file' => ['required', 'string'],
+        ]);
+
+        if (! $reader->clear($validated['file'])) {
+            return back()->with('error', 'Unable to clear the selected log file.');
+        }
+
+        return redirect()
+            ->route('settings.logs.index', ['file' => $validated['file']])
+            ->with('success', 'Log file cleared successfully.');
     }
 }
