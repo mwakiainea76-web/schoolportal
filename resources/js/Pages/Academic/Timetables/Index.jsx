@@ -1,22 +1,22 @@
 import { Head, Link, router } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
-import Table from "@/Components/Table/Table";
-import Thead from "@/Components/Table/Thead";
-import THdata from "@/Components/Table/THdata";
-import Tbody from "@/Components/Table/Tbody";
-import Trow from "@/Components/Table/Trow";
-import Tdata from "@/Components/Table/Tdata";
+import SearchSelect from "@/Components/SearchSelect";
 
 export default function Index({
-    timetables,
     weekly_board,
+    weekly_grid,
+    lesson_columns,
     filters,
+    session_options,
     departments,
     trainers,
-    lecture_rooms,
-    program_version_units,
+    program_options,
+    module_options,
     days,
     current_department_id,
+    is_hod,
+    should_load_timetable,
+    current_session_note,
 }) {
     const applyFilters = (nextFilters) => {
         router.get(route("academic.timetables.index"), nextFilters, {
@@ -28,13 +28,19 @@ export default function Index({
     const onFilterChange = (field, value) => {
         const nextFilters = {
             ...filters,
+            lecture_room_id: "",
             [field]: value,
         };
 
         if (field === "department_id") {
             nextFilters.trainer_staff_id = "";
             nextFilters.program_version_unit_id = "";
-            nextFilters.lecture_room_id = "";
+            nextFilters.program_version_mapping_id = "";
+            nextFilters.module_number = "";
+        }
+
+        if (field === "program_version_mapping_id") {
+            nextFilters.module_number = "";
         }
 
         applyFilters(nextFilters);
@@ -42,23 +48,37 @@ export default function Index({
 
     const resetFilters = () => {
         applyFilters({
-            department_id: current_department_id || "",
+            academic_session_id:
+                session_options.find((session) => session.is_active)?.id || "",
+            department_id: is_hod ? current_department_id || "" : "",
             trainer_staff_id: "",
-            lecture_room_id: "",
-            program_version_unit_id: "",
+            program_version_mapping_id: "",
+            module_number: "",
             day_of_week: "",
         });
     };
 
-    const handleDelete = (id) => {
-        if (!confirm("Remove this timetable session?")) {
-            return;
-        }
+    const baseFiltersReady = is_hod
+        ? Boolean(current_department_id)
+        : Boolean(
+              filters.department_id &&
+                  filters.program_version_mapping_id &&
+                  filters.module_number,
+          );
 
-        router.delete(route("academic.timetables.destroy", id), {
-            preserveScroll: true,
-        });
-    };
+    const trainerFiltersReady = is_hod
+        ? Boolean(current_department_id)
+        : Boolean(filters.academic_session_id && filters.department_id);
+
+    const adminLoadPathReady = is_hod
+        ? Boolean(current_department_id)
+        : Boolean(
+              filters.academic_session_id &&
+                  filters.department_id &&
+                  (filters.trainer_staff_id ||
+                      (filters.program_version_mapping_id &&
+                          filters.module_number)),
+          );
 
     const boardSessions = weekly_board.flatMap((day) => day.sessions);
     const totalSessions = boardSessions.length;
@@ -68,6 +88,13 @@ export default function Index({
     const totalUnits = new Set(
         boardSessions.flatMap((item) => item.program_version_unit_ids || []),
     ).size;
+    const handleDownloadPdf = () => {
+        window.print();
+    };
+
+    const filterGridClassName = is_hod
+        ? "grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+        : "grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6";
 
     return (
         <AuthenticatedLayout
@@ -92,9 +119,13 @@ export default function Index({
                             Manage Rooms
                         </Link>
                         <Link
-                            href={route("academic.timetables.create", {
-                                department_id: filters.department_id,
-                            })}
+                            href={
+                                is_hod
+                                    ? route("academic.timetables.hod.create")
+                                    : route("academic.timetables.create", {
+                                          department_id: filters.department_id,
+                                      })
+                            }
                             className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-emerald-700"
                         >
                             Add Timetable Sessions
@@ -104,6 +135,42 @@ export default function Index({
             }
         >
             <Head title="Department Timetable" />
+            <style>{`
+                @media print {
+                    body * {
+                        visibility: hidden;
+                    }
+
+                    #timetable-print-area,
+                    #timetable-print-area * {
+                        visibility: visible;
+                    }
+
+                    #timetable-print-area {
+                        position: absolute;
+                        left: 0;
+                        top: 0;
+                        width: 100%;
+                        padding: 0;
+                        margin: 0;
+                    }
+
+                    #timetable-print-area table {
+                        width: 100%;
+                        border-collapse: collapse;
+                    }
+
+                    #timetable-print-area th,
+                    #timetable-print-area td {
+                        break-inside: avoid;
+                        page-break-inside: avoid;
+                    }
+
+                    .print-hide {
+                        display: none !important;
+                    }
+                }
+            `}</style>
 
             <div className="space-y-8">
                 <section className="grid gap-4 md:grid-cols-3">
@@ -146,95 +213,158 @@ export default function Index({
                 </section>
 
                 <section className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
-                    <div className="grid gap-4 lg:grid-cols-5">
+                    <div className={filterGridClassName}>
                         <div>
                             <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
-                                Department
+                                Academic Session
                             </label>
                             <select
-                                value={filters.department_id}
-                                onChange={(e) =>
-                                    onFilterChange("department_id", e.target.value)
-                                }
-                                className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none transition focus:border-emerald-400"
-                            >
-                                <option value="">All departments</option>
-                                {departments.map((department) => (
-                                    <option
-                                        key={department.id}
-                                        value={department.id}
-                                    >
-                                        {department.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <div>
-                            <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
-                                Trainer
-                            </label>
-                            <select
-                                value={filters.trainer_staff_id}
+                                value={filters.academic_session_id}
                                 onChange={(e) =>
                                     onFilterChange(
-                                        "trainer_staff_id",
+                                        "academic_session_id",
                                         e.target.value,
                                     )
                                 }
+                                disabled={!session_options.length}
                                 className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none transition focus:border-emerald-400"
                             >
-                                <option value="">All trainers</option>
-                                {trainers.map((trainer) => (
-                                    <option key={trainer.id} value={trainer.id}>
-                                        {trainer.name}
+                                {session_options.length ? (
+                                    session_options.map((session) => (
+                                        <option key={session.id} value={session.id}>
+                                            {session.name}
+                                            {session.is_active ? " (Current)" : ""}
+                                        </option>
+                                    ))
+                                ) : (
+                                    <option value="">
+                                        Run migration to enable sessions
+                                    </option>
+                                )}
+                            </select>
+                        </div>
+
+                        {!is_hod ? (
+                            <div>
+                                <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                                    Department
+                                </label>
+                                <select
+                                    value={filters.department_id}
+                                    onChange={(e) =>
+                                        onFilterChange("department_id", e.target.value)
+                                    }
+                                    className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none transition focus:border-emerald-400"
+                                >
+                                    <option value="">All departments</option>
+                                    {departments.map((department) => (
+                                        <option
+                                            key={department.id}
+                                            value={department.id}
+                                        >
+                                            {department.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        ) : null}
+
+                        <div>
+                            <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                                Versioned Course
+                            </label>
+                            {is_hod ? (
+                                <select
+                                    value={filters.program_version_mapping_id}
+                                    onChange={(e) =>
+                                        onFilterChange(
+                                            "program_version_mapping_id",
+                                            e.target.value,
+                                        )
+                                    }
+                                    className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none transition focus:border-emerald-400"
+                                >
+                                    <option value="">All versioned courses</option>
+                                    {program_options.map((program) => (
+                                        <option key={program.id} value={program.id}>
+                                            {program.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            ) : (
+                                <SearchSelect
+                                    key={
+                                        filters.department_id || "no-department"
+                                    }
+                                    routeName="academic.timetables.programs.search"
+                                    routeParams={{
+                                        department_id: filters.department_id,
+                                        limit: 4,
+                                    }}
+                                    defaultOptions={program_options}
+                                    value={filters.program_version_mapping_id}
+                                    placeholder={
+                                        filters.department_id
+                                            ? "Search versioned course..."
+                                            : "Select department first..."
+                                    }
+                                    onChange={(item) =>
+                                        onFilterChange(
+                                            "program_version_mapping_id",
+                                            item.id,
+                                        )
+                                    }
+                                    disabled={!filters.department_id}
+                                />
+                            )}
+                        </div>
+
+                        <div>
+                            <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                                Module
+                            </label>
+                            <select
+                                value={filters.module_number}
+                                onChange={(e) =>
+                                    onFilterChange("module_number", e.target.value)
+                                }
+                                disabled={!filters.program_version_mapping_id}
+                                className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none transition focus:border-emerald-400 disabled:cursor-not-allowed disabled:bg-zinc-100"
+                            >
+                                <option value="">Select module</option>
+                                {module_options.map((module) => (
+                                    <option key={module.id} value={module.id}>
+                                        {module.name}
                                     </option>
                                 ))}
                             </select>
                         </div>
 
-                        <div>
-                            <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
-                                Lecture Room
-                            </label>
-                            <select
-                                value={filters.lecture_room_id}
-                                onChange={(e) =>
-                                    onFilterChange("lecture_room_id", e.target.value)
-                                }
-                                className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none transition focus:border-emerald-400"
-                            >
-                                <option value="">All rooms</option>
-                                {lecture_rooms.map((room) => (
-                                    <option key={room.id} value={room.id}>
-                                        {room.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <div>
-                            <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
-                                Curriculum Unit
-                            </label>
-                            <select
-                                value={filters.program_version_unit_id}
-                                onChange={(e) =>
-                                    onFilterChange(
-                                        "program_version_unit_id",
-                                        e.target.value,
-                                    )
-                                }
-                                className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none transition focus:border-emerald-400"
-                            >
-                                <option value="">All units</option>
-                                {program_version_units.map((unit) => (
-                                    <option key={unit.id} value={unit.id}>
-                                        {unit.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
+                        {!is_hod ? (
+                            <div>
+                                <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                                    Trainer
+                                </label>
+                                <select
+                                    value={filters.trainer_staff_id}
+                                    onChange={(e) =>
+                                        onFilterChange(
+                                            "trainer_staff_id",
+                                            e.target.value,
+                                        )
+                                    }
+                                    disabled={!trainerFiltersReady}
+                                    className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none transition focus:border-emerald-400 disabled:cursor-not-allowed disabled:bg-zinc-100"
+                                >
+                                    <option value="">All trainers</option>
+                                    {trainers.map((trainer) => (
+                                        <option key={trainer.id} value={trainer.id}>
+                                            {trainer.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        ) : null}
 
                         <div>
                             <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
@@ -245,7 +375,8 @@ export default function Index({
                                 onChange={(e) =>
                                     onFilterChange("day_of_week", e.target.value)
                                 }
-                                className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none transition focus:border-emerald-400"
+                                disabled={!adminLoadPathReady}
+                                className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none transition focus:border-emerald-400 disabled:cursor-not-allowed disabled:bg-zinc-100"
                             >
                                 <option value="">All days</option>
                                 {days.map((day) => (
@@ -256,6 +387,21 @@ export default function Index({
                             </select>
                         </div>
                     </div>
+
+                    {!is_hod ? (
+                        <p className="mt-4 text-sm text-amber-700">
+                            Choose an academic session and department first.
+                            Then either select a trainer to view an individual
+                            timetable, or select a versioned course and module
+                            to view a class timetable.
+                        </p>
+                    ) : null}
+
+                    {current_session_note ? (
+                        <p className="mt-4 text-sm text-zinc-500">
+                            {current_session_note}
+                        </p>
+                    ) : null}
 
                     <div className="mt-4 flex justify-end">
                         <button
@@ -268,157 +414,136 @@ export default function Index({
                     </div>
                 </section>
 
-                <section className="grid gap-4 xl:grid-cols-7">
-                    {weekly_board.map((day) => (
-                        <div
-                            key={day.day}
-                            className="rounded-3xl border border-zinc-200 bg-white p-4 shadow-sm"
-                        >
-                            <div className="mb-4 flex items-center justify-between">
-                                <h2 className="text-sm font-semibold text-zinc-900">
-                                    {day.label}
+                <section
+                    id="timetable-print-area"
+                    className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm"
+                >
+                    {should_load_timetable ? (
+                        <>
+                            <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+                                <h2 className="text-lg font-semibold text-zinc-900">
+                                    Weekly Lesson Grid
                                 </h2>
-                                <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-600">
-                                    {day.sessions.length}
-                                </span>
-                            </div>
-
-                            <div className="space-y-3">
-                                {day.sessions.length ? (
-                                    day.sessions.map((session) => (
-                                        <div
-                                            key={session.id}
-                                            className="rounded-2xl border border-zinc-100 bg-zinc-50 p-3"
-                                        >
-                                            <p className="text-sm font-semibold text-zinc-900">
-                                                {session.time_range}
-                                            </p>
-                                            <p className="mt-2 text-sm text-zinc-800">
-                                                {session.lecture_room_code}{" "}
-                                                {session.lecture_room_name}
-                                            </p>
-                                            <p className="mt-1 text-xs text-zinc-500">
-                                                {session.merged_units.length} unit
-                                                {session.merged_units.length === 1
-                                                    ? ""
-                                                    : "s"}{" "}
-                                                merged
-                                            </p>
-                                            <p className="mt-2 text-xs font-medium uppercase tracking-[0.16em] text-emerald-700">
-                                                {session.trainer_name}
-                                            </p>
-                                            <div className="mt-2 space-y-1">
-                                                {session.merged_units
-                                                    .slice(0, 2)
-                                                    .map((unit) => (
-                                                        <p
-                                                            key={unit.id}
-                                                            className="text-[11px] text-zinc-500"
-                                                        >
-                                                            {unit.display_name}
-                                                        </p>
-                                                    ))}
-                                                {session.merged_units.length > 2 ? (
-                                                    <p className="text-[11px] font-medium text-zinc-500">
-                                                        +{session.merged_units.length - 2} more
-                                                    </p>
-                                                ) : null}
-                                            </div>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <div className="rounded-2xl border border-dashed border-zinc-200 px-4 py-6 text-center text-sm text-zinc-400">
-                                        No sessions planned.
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    ))}
-                </section>
-
-                <section className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
-                    <Table pagination={timetables}>
-                        <Thead>
-                            <THdata>Day</THdata>
-                            <THdata>Time</THdata>
-                            <THdata>Lecture Room</THdata>
-                            <THdata>Merged Units</THdata>
-                            <THdata>Trainer</THdata>
-                            <THdata>Department</THdata>
-                            <THdata className="text-center">Actions</THdata>
-                        </Thead>
-                        <Tbody>
-                            {timetables.data.length ? (
-                                timetables.data.map((entry) => (
-                                    <Trow key={entry.id}>
-                                        <Tdata>{entry.day_label}</Tdata>
-                                        <Tdata>{entry.time_range}</Tdata>
-                                        <Tdata>
-                                            {entry.lecture_room_code}{" "}
-                                            {entry.lecture_room_name}
-                                        </Tdata>
-                                        <Tdata>
-                                            <div className="space-y-2">
-                                                {entry.merged_units.map((unit) => (
-                                                    <div key={unit.id}>
-                                                        <p className="font-medium text-zinc-900">
-                                                            {unit.code} {unit.name}
-                                                        </p>
-                                                        <p className="text-xs text-zinc-500">
-                                                            {unit.program_version_name} /{" "}
-                                                            {unit.program_name} / Module{" "}
-                                                            {unit.module_taught}
-                                                        </p>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </Tdata>
-                                        <Tdata>
-                                            <div className="space-y-1">
-                                                <p>{entry.trainer_name}</p>
-                                                <p className="text-xs text-zinc-500">
-                                                    {entry.trainer_staff_number}
-                                                </p>
-                                            </div>
-                                        </Tdata>
-                                        <Tdata>{entry.department_name}</Tdata>
-                                        <Tdata>
-                                            <div className="flex items-center justify-center gap-4">
-                                                <Link
-                                                    href={route(
-                                                        "academic.timetables.edit",
-                                                        entry.id,
-                                                    )}
-                                                    className="text-sm font-medium text-emerald-700 hover:underline"
-                                                >
-                                                    Edit
-                                                </Link>
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        handleDelete(entry.id)
-                                                    }
-                                                    className="text-sm font-medium text-red-600 hover:underline"
-                                                >
-                                                    Delete
-                                                </button>
-                                            </div>
-                                        </Tdata>
-                                    </Trow>
-                                ))
-                            ) : (
-                                <Trow>
-                                    <Tdata
-                                        colSpan="7"
-                                        className="py-12 text-center text-zinc-400"
+                                <div className="flex flex-col gap-3 lg:items-end">
+                                    <p className="text-sm text-zinc-500">
+                                        Lesson columns show the time from and to.
+                                        Each slot includes the room and assigned
+                                        trainer helper.
+                                    </p>
+                                    <button
+                                        type="button"
+                                        onClick={handleDownloadPdf}
+                                        className="print-hide inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700"
                                     >
-                                        No timetable sessions found for the
-                                        current filters.
-                                    </Tdata>
-                                </Trow>
-                            )}
-                        </Tbody>
-                    </Table>
+                                        Download Timetable PDF
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="overflow-x-auto">
+                                <table className="min-w-full border-separate border-spacing-0">
+                                    <thead>
+                                        <tr>
+                                            <th className="sticky left-0 z-10 min-w-32 rounded-tl-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                                                Day
+                                            </th>
+                                            {lesson_columns.length ? (
+                                                lesson_columns.map((lesson, index) => (
+                                                    <th
+                                                        key={lesson.key}
+                                                        className={`min-w-64 border border-zinc-200 bg-zinc-50 px-4 py-3 text-left ${
+                                                            index === lesson_columns.length - 1
+                                                                ? "rounded-tr-2xl"
+                                                                : ""
+                                                        }`}
+                                                    >
+                                                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                                                            Lesson {index + 1}
+                                                        </p>
+                                                        <p className="mt-1 text-sm font-semibold text-zinc-900">
+                                                            {lesson.label}
+                                                        </p>
+                                                        <p className="mt-1 text-xs text-zinc-500">
+                                                            Time from {lesson.start_time} to{" "}
+                                                            {lesson.end_time}
+                                                        </p>
+                                                    </th>
+                                                ))
+                                            ) : (
+                                                <th className="rounded-tr-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-left text-sm text-zinc-500">
+                                                    No lesson columns yet
+                                                </th>
+                                            )}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {weekly_grid.map((dayRow) => (
+                                            <tr key={dayRow.day}>
+                                                <td className="sticky left-0 z-10 min-w-32 border border-zinc-200 bg-white px-4 py-4 align-top">
+                                                    <p className="text-sm font-semibold text-zinc-900">
+                                                        {dayRow.label}
+                                                    </p>
+                                                </td>
+                                                {lesson_columns.length ? (
+                                                    dayRow.lessons.map((lessonCell) => (
+                                                        <td
+                                                            key={lessonCell.key}
+                                                            className="min-w-64 border border-zinc-200 bg-white p-3 align-top"
+                                                        >
+                                                            {lessonCell.sessions.length ? (
+                                                                <div className="space-y-3">
+                                                                    {lessonCell.sessions.map((session) => (
+                                                                        <div
+                                                                            key={session.id}
+                                                                            className="rounded-2xl border border-zinc-100 bg-zinc-50 p-3"
+                                                                        >
+                                                                            <p className="text-sm font-semibold text-zinc-900">
+                                                                                {session.merged_units
+                                                                                    .map((unit) => unit.code)
+                                                                                    .filter(Boolean)
+                                                                                    .join(", ") || session.unit_code}
+                                                                            </p>
+                                                                            <p className="mt-1 text-xs text-zinc-500">
+                                                                                Trainer:{" "}
+                                                                                {session.trainer_name}
+                                                                            </p>
+                                                                            <p className="mt-1 text-xs text-zinc-500">
+                                                                                Venue:{" "}
+                                                                                {session.lecture_room_code}{" "}
+                                                                                {session.lecture_room_name}
+                                                                            </p>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            ) : (
+                                                                <div className="rounded-2xl border border-dashed border-zinc-200 px-3 py-6 text-center text-sm text-zinc-400">
+                                                                    No lesson assigned.
+                                                                </div>
+                                                            )}
+                                                        </td>
+                                                    ))
+                                                ) : (
+                                                    <td className="border border-zinc-200 px-4 py-6 text-sm text-zinc-400">
+                                                        No sessions planned.
+                                                    </td>
+                                                )}
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </>
+                    ) : (
+                        <div className="rounded-2xl border border-dashed border-zinc-200 px-6 py-12 text-center">
+                            <p className="text-lg font-semibold text-zinc-900">
+                                Timetable Grid Awaits Filters
+                            </p>
+                            <p className="mt-2 text-sm text-zinc-500">
+                                Select a department, then a versioned course,
+                                then a module to load the timetable grid.
+                            </p>
+                        </div>
+                    )}
                 </section>
             </div>
         </AuthenticatedLayout>

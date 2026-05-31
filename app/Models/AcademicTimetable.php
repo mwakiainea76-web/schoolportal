@@ -14,6 +14,7 @@ class AcademicTimetable extends Model
 
     protected $fillable = [
         'department_id',
+        'academic_session_id',
         'program_version_unit_id',
         'trainer_staff_id',
         'lecture_room_id',
@@ -27,6 +28,11 @@ class AcademicTimetable extends Model
     public function department()
     {
         return $this->belongsTo(Department::class);
+    }
+
+    public function academicSession()
+    {
+        return $this->belongsTo(AcademicSession::class, 'academic_session_id');
     }
 
     public function programVersionUnit()

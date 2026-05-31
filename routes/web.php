@@ -288,8 +288,12 @@ Route::middleware(['auth', 'non_student'])->group(function () {
 
     Route::prefix('academic/timetables')->name('academic.timetables.')->group(function () {
         Route::get('/', [AcademicTimetableController::class, 'index'])->name('index');
+        Route::get('/programs/search', [AcademicTimetableController::class, 'searchProgramMappings'])->name('programs.search');
         Route::get('/create', [AcademicTimetableController::class, 'create'])->name('create');
         Route::post('/', [AcademicTimetableController::class, 'store'])->name('store');
+        Route::middleware('role:hod')->get('/create/hod', [AcademicTimetableController::class, 'createHod'])->name('hod.create');
+        Route::middleware('role:hod')->get('/hod/programs/search', [AcademicTimetableController::class, 'searchHodPrograms'])->name('hod.programs.search');
+        Route::middleware('role:hod')->post('/hod', [AcademicTimetableController::class, 'storeHod'])->name('hod.store');
         Route::get('/{timetable}/edit', [AcademicTimetableController::class, 'edit'])->name('edit');
         Route::put('/{timetable}', [AcademicTimetableController::class, 'update'])->name('update');
         Route::delete('/{timetable}', [AcademicTimetableController::class, 'destroy'])->name('destroy');

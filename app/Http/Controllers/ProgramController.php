@@ -107,9 +107,40 @@ class ProgramController extends Controller
 
     public function search(Request $request)
     {
-        return response()->json(
-            $this->service->search($request->q)
-        );
+        $limit = min(max((int) $request->integer('limit', 10), 1), 25);
+        $departmentId = $request->integer('department_id') ?: null;
+        $query = trim((string) $request->query('q', ''));
+        $versionedOnly = $request->boolean('versioned_only');
+        $plainName = $request->boolean('plain_name');
+
+        $programs = Program::query()
+            ->with('certificationLevel:id,name')
+            ->when($departmentId, fn ($builder) => $builder->where('department_id', $departmentId))
+            ->when($versionedOnly, function ($builder) {
+                $builder->whereHas('programVersionMappings', function ($mappingQuery) {
+                    $mappingQuery
+                        ->where('is_active', true)
+                        ->whereHas('programVersion', fn ($programVersionQuery) => $programVersionQuery->where('is_active', true))
+                        ->whereHas('programVersionUnits');
+                });
+            })
+            ->when($query !== '', function ($builder) use ($query) {
+                $builder->where(function ($searchQuery) use ($query) {
+                    $searchQuery
+                        ->where('name', 'like', "%{$query}%")
+                        ->orWhere('code', 'like', "%{$query}%");
+                });
+            })
+            ->orderBy('name')
+            ->limit($limit)
+            ->get(['id', 'name', 'code', 'certification_level_id'])
+            ->map(fn (Program $program) => [
+                'id' => (string) $program->id,
+                'name' => $plainName ? $program->name : $program->display_name,
+            ])
+            ->values();
+
+        return response()->json($programs);
     }
 }
 

@@ -2,11 +2,15 @@
 
 namespace App\Http\Requests;
 
+use App\Models\AcademicSession;
 use App\Models\AcademicTimetable;
 use App\Models\ProgramVersionUnit;
 use App\Models\Staff;
 use App\Models\LectureRoom;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Schema;
 
 class StoreAcademicTimetableRequest extends FormRequest
 {
@@ -33,100 +37,154 @@ class StoreAcademicTimetableRequest extends FormRequest
     public function withValidator($validator): void
     {
         $validator->after(function ($validator) {
-            if ($validator->errors()->isNotEmpty()) {
-                return;
-            }
-
-            $departmentId = (int) $this->integer('department_id');
-            $trainerId = (int) $this->integer('trainer_staff_id');
-            $lectureRoomId = (int) $this->integer('lecture_room_id');
-            $programVersionUnitIds = collect($this->input('program_version_unit_ids', []))
-                ->map(fn ($id) => (int) $id)
-                ->filter()
-                ->values();
-
-            $trainer = Staff::query()->find($trainerId);
-            if (! $trainer || (int) $trainer->department_id !== $departmentId) {
-                $validator->errors()->add('trainer_staff_id', 'Selected trainer must belong to the chosen department.');
-            }
-
-            $lectureRoom = LectureRoom::query()->find($lectureRoomId);
-            if (! $lectureRoom || (int) $lectureRoom->department_id !== $departmentId) {
-                $validator->errors()->add('lecture_room_id', 'Selected lecture room must belong to the chosen department.');
-            }
-
-            $programVersionUnits = ProgramVersionUnit::query()
-                ->with('programVersionMapping.program:id,department_id')
-                ->whereIn('id', $programVersionUnitIds)
-                ->get()
-                ->keyBy('id');
-
-            foreach ($programVersionUnitIds as $programVersionUnitId) {
-                $programVersionUnit = $programVersionUnits->get($programVersionUnitId);
-                if (! $programVersionUnit || (int) $programVersionUnit->programVersionMapping?->program?->department_id !== $departmentId) {
-                    $validator->errors()->add('program_version_unit_ids', 'Every selected curriculum unit must belong to the chosen department.');
-                    break;
-                }
-            }
-
-            $seenSessions = [];
-
-            foreach ($this->input('sessions', []) as $index => $session) {
-                $row = $index + 1;
-                $day = $session['day_of_week'] ?? null;
-                $start = $session['start_time'] ?? null;
-                $end = $session['end_time'] ?? null;
-
-                if (! $day || ! $start || ! $end) {
-                    continue;
-                }
-
-                if ($end <= $start) {
-                    $validator->errors()->add("sessions.$index.end_time", "Session {$row} end time must be later than start time.");
-                    continue;
-                }
-
-                $signature = "{$day}|{$start}|{$end}";
-                if (in_array($signature, $seenSessions, true)) {
-                    $validator->errors()->add("sessions.$index.start_time", "Session {$row} duplicates another session in this submission.");
-                }
-                $seenSessions[] = $signature;
-
-                $trainerOverlap = AcademicTimetable::query()
-                    ->where('trainer_staff_id', $trainerId)
-                    ->where('day_of_week', $day)
-                    ->where('start_time', '<', $end)
-                    ->where('end_time', '>', $start)
-                    ->exists();
-
-                if ($trainerOverlap) {
-                    $validator->errors()->add("sessions.$index.start_time", "Session {$row} overlaps with another timetable slot already assigned to this trainer.");
-                }
-
-                $roomOverlap = AcademicTimetable::query()
-                    ->where('lecture_room_id', $lectureRoomId)
-                    ->where('day_of_week', $day)
-                    ->where('start_time', '<', $end)
-                    ->where('end_time', '>', $start)
-                    ->exists();
-
-                if ($roomOverlap) {
-                    $validator->errors()->add("sessions.$index.start_time", "Session {$row} overlaps with another timetable slot already assigned to this lecture room.");
-                }
-
-                $unitOverlap = AcademicTimetable::query()
-                    ->whereHas('programVersionUnits', function ($query) use ($programVersionUnitIds) {
-                        $query->whereIn('program_version_units.id', $programVersionUnitIds);
-                    })
-                    ->where('day_of_week', $day)
-                    ->where('start_time', '<', $end)
-                    ->where('end_time', '>', $start)
-                    ->exists();
-
-                if ($unitOverlap) {
-                    $validator->errors()->add("sessions.$index.start_time", "Session {$row} overlaps with another timetable slot already assigned to one of the selected curriculum units.");
-                }
-            }
+            $this->validateBaseTimetableSubmission($validator);
         });
+    }
+
+    protected function validateBaseTimetableSubmission($validator): void
+    {
+        if ($validator->errors()->isNotEmpty()) {
+            return;
+        }
+
+        $departmentId = (int) $this->integer('department_id');
+        $trainerId = (int) $this->integer('trainer_staff_id');
+        $lectureRoomId = (int) $this->integer('lecture_room_id');
+        $academicSessionId = $this->resolveCurrentAcademicSessionId();
+        $programVersionUnitIds = collect($this->input('program_version_unit_ids', []))
+            ->map(fn ($id) => (int) $id)
+            ->filter()
+            ->values();
+
+        if (! $academicSessionId) {
+            $validator->errors()->add('department_id', 'No active academic session is available for timetable allocation.');
+
+            return;
+        }
+
+        $trainer = Staff::query()->find($trainerId);
+        if (! $trainer || (int) $trainer->department_id !== $departmentId) {
+            $validator->errors()->add('trainer_staff_id', 'Selected trainer must belong to the chosen department.');
+        }
+
+        $lectureRoom = LectureRoom::query()->find($lectureRoomId);
+        if (! $lectureRoom || (int) $lectureRoom->department_id !== $departmentId) {
+            $validator->errors()->add('lecture_room_id', 'Selected lecture room must belong to the chosen department.');
+        }
+
+        $programVersionUnits = ProgramVersionUnit::query()
+            ->with('programVersionMapping.program:id,department_id')
+            ->whereIn('id', $programVersionUnitIds)
+            ->get()
+            ->keyBy('id');
+
+        foreach ($programVersionUnitIds as $programVersionUnitId) {
+            $programVersionUnit = $programVersionUnits->get($programVersionUnitId);
+            if (! $programVersionUnit || (int) $programVersionUnit->programVersionMapping?->program?->department_id !== $departmentId) {
+                $validator->errors()->add('program_version_unit_ids', 'Every selected curriculum unit must belong to the chosen department.');
+                break;
+            }
+        }
+
+        $submittedSessions = $this->submittedSessions();
+        $existingConflicts = $this->relevantTimetableConflicts($academicSessionId, $submittedSessions);
+        $seenSessions = [];
+
+        foreach ($submittedSessions as $session) {
+            $row = $session['row'];
+            $signature = $session['signature'];
+
+            if ($session['end'] <= $session['start']) {
+                $validator->errors()->add("sessions.{$session['index']}.end_time", "Session {$row} end time must be later than start time.");
+                continue;
+            }
+
+            if (in_array($signature, $seenSessions, true)) {
+                $validator->errors()->add("sessions.{$session['index']}.start_time", "Session {$row} duplicates another session in this submission.");
+            }
+            $seenSessions[] = $signature;
+
+            $overlappingSessions = $this->overlappingConflictsFor($existingConflicts, $session);
+
+            if ($overlappingSessions->contains(fn (AcademicTimetable $timetable) => (int) $timetable->trainer_staff_id === $trainerId)) {
+                $validator->errors()->add("sessions.{$session['index']}.start_time", "Session {$row} overlaps with another timetable slot already assigned to this trainer.");
+            }
+
+            if ($overlappingSessions->contains(fn (AcademicTimetable $timetable) => (int) $timetable->lecture_room_id === $lectureRoomId)) {
+                $validator->errors()->add("sessions.{$session['index']}.start_time", "Session {$row} overlaps with another timetable slot already assigned to this lecture room.");
+            }
+
+            if ($overlappingSessions->contains(function (AcademicTimetable $timetable) use ($programVersionUnitIds) {
+                return $timetable->programVersionUnits
+                    ->pluck('id')
+                    ->map(fn ($id) => (int) $id)
+                    ->intersect($programVersionUnitIds)
+                    ->isNotEmpty();
+            })) {
+                $validator->errors()->add("sessions.{$session['index']}.start_time", "Session {$row} overlaps with another timetable slot already assigned to one of the selected curriculum units.");
+            }
+        }
+    }
+
+    protected function resolveCurrentAcademicSessionId(): ?int
+    {
+        if (! Schema::hasColumn('academic_timetables', 'academic_session_id')) {
+            return null;
+        }
+
+        return AcademicSession::query()
+            ->active()
+            ->orderByDesc('id')
+            ->value('id');
+    }
+
+    protected function submittedSessions(): Collection
+    {
+        return collect($this->input('sessions', []))
+            ->map(fn ($session, $index) => [
+                'index' => $index,
+                'row' => $index + 1,
+                'day' => $session['day_of_week'] ?? null,
+                'start' => $session['start_time'] ?? null,
+                'end' => $session['end_time'] ?? null,
+                'signature' => ($session['day_of_week'] ?? '').'|'.($session['start_time'] ?? '').'|'.($session['end_time'] ?? ''),
+            ])
+            ->filter(fn ($session) => $session['day'] && $session['start'] && $session['end'])
+            ->values();
+    }
+
+    protected function relevantTimetableConflicts(int $academicSessionId, Collection $submittedSessions): EloquentCollection
+    {
+        if ($submittedSessions->isEmpty()) {
+            return new EloquentCollection();
+        }
+
+        $days = $submittedSessions->pluck('day')->unique()->values();
+        $latestEnd = $submittedSessions->max('end');
+
+        return AcademicTimetable::query()
+            ->select([
+                'id',
+                'department_id',
+                'trainer_staff_id',
+                'lecture_room_id',
+                'day_of_week',
+                'start_time',
+                'end_time',
+            ])
+            ->with('programVersionUnits:id,program_version_mapping_id,module_taught')
+            ->where('academic_session_id', $academicSessionId)
+            ->whereIn('day_of_week', $days)
+            ->where('start_time', '<', $latestEnd)
+            ->get();
+    }
+
+    protected function overlappingConflictsFor(EloquentCollection $existingConflicts, array $session): EloquentCollection
+    {
+        return $existingConflicts
+            ->filter(fn (AcademicTimetable $timetable) => $timetable->day_of_week === $session['day'])
+            ->filter(fn (AcademicTimetable $timetable) => (string) $timetable->start_time < $session['end'])
+            ->filter(fn (AcademicTimetable $timetable) => (string) $timetable->end_time > $session['start'])
+            ->values();
     }
 }

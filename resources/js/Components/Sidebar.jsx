@@ -54,7 +54,34 @@ export default function Sidebar({
               ]
             : []),
     ];
+    const timetableQuickLinks = [
+        ...(hasRole("hod")
+            ? [
+                  {
+                      label: "Create Timetable",
+                      routeName: "academic.timetables.hod.create",
+                      fallback: "/academic/timetables/create/hod",
+                  },
+                  {
+                      label: "View Timetable",
+                      routeName: "academic.timetables.index",
+                      fallback: "/academic/timetables",
+                  },
+              ]
+            : []),
+    ];
     const quickSections = [
+        ...(timetableQuickLinks.length
+            ? [
+                  {
+                      key: "timetable-workspace",
+                      label: "Timetable Workspace",
+                      icon: "academic",
+                      basePath: "/academic/timetables",
+                      children: timetableQuickLinks,
+                  },
+              ]
+            : []),
         ...(!hasRole("student") && marksQuickLinks.length
             ? [
                   {
