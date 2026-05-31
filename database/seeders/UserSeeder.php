@@ -23,6 +23,10 @@ class UserSeeder extends Seeder
             'name' => 'admin',
             'guard_name' => 'web',
         ]);
+        Role::firstOrCreate([
+            'name' => 'trainer',
+            'guard_name' => 'web',
+        ]);
 
         /*
         |--------------------------------------------------------------------------

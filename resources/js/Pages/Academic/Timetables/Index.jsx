@@ -15,6 +15,7 @@ export default function Index({
     days,
     current_department_id,
     is_hod,
+    is_trainer,
     should_load_timetable,
     current_session_note,
 }) {
@@ -43,6 +44,12 @@ export default function Index({
             nextFilters.module_number = "";
         }
 
+        if (is_trainer) {
+            nextFilters.academic_session_id = filters.academic_session_id;
+            nextFilters.department_id = current_department_id || "";
+            nextFilters.trainer_staff_id = filters.trainer_staff_id;
+        }
+
         applyFilters(nextFilters);
     };
 
@@ -50,15 +57,15 @@ export default function Index({
         applyFilters({
             academic_session_id:
                 session_options.find((session) => session.is_active)?.id || "",
-            department_id: is_hod ? current_department_id || "" : "",
-            trainer_staff_id: "",
+            department_id: is_hod || is_trainer ? current_department_id || "" : "",
+            trainer_staff_id: is_trainer ? filters.trainer_staff_id : "",
             program_version_mapping_id: "",
             module_number: "",
             day_of_week: "",
         });
     };
 
-    const baseFiltersReady = is_hod
+    const baseFiltersReady = is_hod || is_trainer
         ? Boolean(current_department_id)
         : Boolean(
               filters.department_id &&
@@ -66,11 +73,11 @@ export default function Index({
                   filters.module_number,
           );
 
-    const trainerFiltersReady = is_hod
+    const trainerFiltersReady = is_hod || is_trainer
         ? Boolean(current_department_id)
         : Boolean(filters.academic_session_id && filters.department_id);
 
-    const adminLoadPathReady = is_hod
+    const adminLoadPathReady = is_hod || is_trainer
         ? Boolean(current_department_id)
         : Boolean(
               filters.academic_session_id &&
@@ -94,6 +101,8 @@ export default function Index({
 
     const filterGridClassName = is_hod
         ? "grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+        : is_trainer
+          ? "grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
         : "grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6";
 
     return (
@@ -112,24 +121,28 @@ export default function Index({
                         </p>
                     </div>
                     <div className="flex flex-col gap-3 sm:flex-row">
-                        <Link
-                            href={route("lecture-rooms.index")}
-                            className="inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-white px-5 py-3 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
-                        >
-                            Manage Rooms
-                        </Link>
-                        <Link
-                            href={
-                                is_hod
-                                    ? route("academic.timetables.hod.create")
-                                    : route("academic.timetables.create", {
-                                          department_id: filters.department_id,
-                                      })
-                            }
-                            className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-emerald-700"
-                        >
-                            Add Timetable Sessions
-                        </Link>
+                        {!is_trainer ? (
+                            <Link
+                                href={route("lecture-rooms.index")}
+                                className="inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-white px-5 py-3 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
+                            >
+                                Manage Rooms
+                            </Link>
+                        ) : null}
+                        {!is_trainer ? (
+                            <Link
+                                href={
+                                    is_hod
+                                        ? route("academic.timetables.hod.create")
+                                        : route("academic.timetables.create", {
+                                              department_id: filters.department_id,
+                                          })
+                                }
+                                className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-emerald-700"
+                            >
+                                Add Timetable Sessions
+                            </Link>
+                        ) : null}
                     </div>
                 </div>
             }
@@ -214,7 +227,8 @@ export default function Index({
 
                 <section className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
                     <div className={filterGridClassName}>
-                        <div>
+                        {!is_trainer ? (
+                            <div>
                             <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
                                 Academic Session
                             </label>
@@ -242,9 +256,10 @@ export default function Index({
                                     </option>
                                 )}
                             </select>
-                        </div>
+                            </div>
+                        ) : null}
 
-                        {!is_hod ? (
+                        {!is_hod && !is_trainer ? (
                             <div>
                                 <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
                                     Department
@@ -273,7 +288,7 @@ export default function Index({
                             <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
                                 Versioned Course
                             </label>
-                            {is_hod ? (
+                            {is_hod || is_trainer ? (
                                 <select
                                     value={filters.program_version_mapping_id}
                                     onChange={(e) =>
@@ -340,7 +355,7 @@ export default function Index({
                             </select>
                         </div>
 
-                        {!is_hod ? (
+                        {!is_hod && !is_trainer ? (
                             <div>
                                 <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
                                     Trainer
@@ -388,12 +403,18 @@ export default function Index({
                         </div>
                     </div>
 
-                    {!is_hod ? (
+                    {!is_hod && !is_trainer ? (
                         <p className="mt-4 text-sm text-amber-700">
                             Choose an academic session and department first.
                             Then either select a trainer to view an individual
                             timetable, or select a versioned course and module
                             to view a class timetable.
+                        </p>
+                    ) : null}
+
+                    {is_trainer ? (
+                        <p className="mt-4 text-sm text-zinc-600">
+                            This timetable is already locked to your current department, your trainer profile, and the current running session. Use versioned course, module, and day to narrow your view.
                         </p>
                     ) : null}
 

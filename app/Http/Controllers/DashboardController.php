@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AcademicTimetable;
 use App\Models\AcademicSession;
 use App\Models\AcademicYear;
 use App\Models\Department;
@@ -9,11 +10,13 @@ use App\Models\Program;
 use App\Models\ProgramVersion;
 use App\Models\ProgramVersionUnit;
 use App\Models\StudentInvoice;
+use App\Models\StudentMark;
 use App\Models\StudentUnitRegistration;
 use App\Services\FeeAssignmentService;
 use App\Services\StudentAcademicContextService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -32,7 +35,11 @@ class DashboardController extends Controller
             return redirect()->route('student.dashboard');
         }
 
-        return redirect()->route('staff.dashboard');
+        if ($user?->hasRole('trainer') && ! $user?->hasRole('admin') && ! $user?->hasRole('hod')) {
+            return redirect()->route('trainer.dashboard');
+        }
+
+        return redirect()->route('admin.dashboard');
     }
 
     public function studentDashboard(Request $request): Response
@@ -118,7 +125,7 @@ class DashboardController extends Controller
             ->sortBy('due_date')
             ->first();
 
-        return Inertia::render('Dashboard', [
+        return Inertia::render('Dashboard/StudentDashboard', [
             'dashboard' => [
                 'type' => 'student',
                 'student' => $student ? [
@@ -179,31 +186,87 @@ class DashboardController extends Controller
         ]);
     }
 
-    public function staffDashboard(): Response
+    public function staffDashboard(Request $request): Response
     {
-        return Inertia::render('Dashboard', [
-            'dashboard' => [
-                'type' => 'staff',
-                'stats' => [
-                    [
-                        'label' => 'Programs',
-                        'value' => Program::query()->count(),
-                    ],
-                    [
-                        'label' => 'Program Versions',
-                        'value' => ProgramVersion::query()->count(),
-                    ],
-                    [
-                        'label' => 'Departments',
-                        'value' => Department::query()->count(),
-                    ],
-                    [
-                        'label' => 'Academic Years',
-                        'value' => AcademicYear::query()->count(),
-                    ],
-                ],
-                'analytics' => null,
-            ],
+        return Inertia::render('Dashboard/AdminDashboard', [
+            'dashboard' => $this->staffDashboardPayload($request),
         ]);
+    }
+
+    public function trainerDashboard(Request $request): Response
+    {
+        return Inertia::render('Dashboard/TrainerDashboard', [
+            'dashboard' => $this->staffDashboardPayload($request),
+        ]);
+    }
+
+    protected function staffDashboardPayload(Request $request): array
+    {
+        $user = $request->user();
+        $staff = $user?->staff?->loadMissing('department:id,name');
+        $activeSession = AcademicSession::query()
+            ->with('academicYear:id,label,academic_year')
+            ->active()
+            ->orderByDesc('id')
+            ->first();
+        $roleNames = $user?->getRoleNames()?->values()->all() ?? [];
+        $isTrainer = (bool) $user?->hasRole('trainer');
+        $canScopeTimetablesBySession = Schema::hasColumn('academic_timetables', 'academic_session_id');
+
+        $currentTimetableCount = $isTrainer && $staff
+            ? AcademicTimetable::query()
+                ->when($canScopeTimetablesBySession && $activeSession, fn ($query) => $query->where('academic_session_id', $activeSession->id))
+                ->where('trainer_staff_id', $staff->id)
+                ->count()
+            : 0;
+
+        $recordedMarksCount = $isTrainer && $staff && $activeSession
+            ? StudentMark::query()
+                ->where('recorded_by_staff_id', $staff->id)
+                ->where('academic_session_id', $activeSession->id)
+                ->count()
+            : 0;
+
+        return [
+            'type' => 'staff',
+            'staff_profile' => [
+                'name' => trim(($user?->first_name ?? '').' '.($user?->last_name ?? '')),
+                'staff_number' => $staff?->staff_number,
+                'designation' => $staff?->designation,
+                'department_name' => $staff?->department?->name,
+                'roles' => $roleNames,
+            ],
+            'trainer_workspace' => [
+                'active_session' => $activeSession ? [
+                    'id' => (string) $activeSession->id,
+                    'name' => $activeSession->display_name,
+                ] : null,
+                'department_id' => $staff?->department_id ? (string) $staff->department_id : '',
+                'trainer_staff_id' => $staff?->id ? (string) $staff->id : '',
+                'timetable_sessions_count' => $currentTimetableCount,
+                'marks_recorded_count' => $recordedMarksCount,
+                'can_view_timetable' => $isTrainer && (bool) ($staff?->id && $staff?->department_id),
+                'can_grade_students' => $isTrainer && (bool) $staff?->id,
+            ],
+            'stats' => [
+                [
+                    'label' => 'Programs',
+                    'value' => Program::query()->count(),
+                ],
+                [
+                    'label' => 'Program Versions',
+                    'value' => ProgramVersion::query()->count(),
+                ],
+                [
+                    'label' => 'Departments',
+                    'value' => Department::query()->count(),
+                ],
+                [
+                    'label' => 'Academic Years',
+                    'value' => AcademicYear::query()->count(),
+                ],
+            ],
+            'analytics' => null,
+        ];
     }
 }

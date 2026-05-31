@@ -18,11 +18,19 @@ export default function Sidebar({
     const { can, hasRole } = useRbac();
     const dashboardRouteName = hasRole("student")
         ? "student.dashboard"
-        : "staff.dashboard";
+        : hasRole("trainer") && !hasRole("admin") && !hasRole("hod")
+          ? "trainer.dashboard"
+          : "admin.dashboard";
     const dashboardFallback = hasRole("student")
         ? "/student/dashboard"
-        : "/staff/dashboard";
-    const dashboardLabel = hasRole("student") ? "Student Dashboard" : "Staff Dashboard";
+        : hasRole("trainer") && !hasRole("admin") && !hasRole("hod")
+          ? "/trainer/dashboard"
+          : "/admin/dashboard";
+    const dashboardLabel = hasRole("student")
+        ? "Student Dashboard"
+        : hasRole("trainer") && !hasRole("admin") && !hasRole("hod")
+          ? "Trainer Dashboard"
+          : "Admin Dashboard";
     const navItems = hasRole("student") ? STUDENT_NAV_ITEMS : STAFF_NAV_ITEMS;
     const visibleNav = filterNav(navItems, can);
     const marksQuickLinks = [
@@ -44,7 +52,16 @@ export default function Sidebar({
                   },
               ]
             : []),
-        ...((hasRole("admin") || hasRole("hod"))
+        ...(hasRole("trainer")
+            ? [
+                  {
+                      label: "Grade Students",
+                      routeName: "academic.marks.index",
+                      fallback: "/academic/marks",
+                  },
+              ]
+            : []),
+        ...(hasRole("trainer")
             ? [
                   {
                       label: "Unit Marksheet",
@@ -64,6 +81,15 @@ export default function Sidebar({
                   },
                   {
                       label: "View Timetable",
+                      routeName: "academic.timetables.index",
+                      fallback: "/academic/timetables",
+                  },
+              ]
+            : []),
+        ...(hasRole("trainer")
+            ? [
+                  {
+                      label: "My Timetable",
                       routeName: "academic.timetables.index",
                       fallback: "/academic/timetables",
                   },

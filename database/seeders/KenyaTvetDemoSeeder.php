@@ -42,19 +42,19 @@ class KenyaTvetDemoSeeder extends Seeder
     public function run(): void
     {
         DB::transaction(function () {
-            $roles = $this->seedRoles();
+            $roles = app(DemoRoleSeeder::class)->seed();
             $examBodies = $this->seedExamBodies();
             $levels = $this->seedCertificationLevels($examBodies);
             $departments = $this->seedDepartments();
-            $users = $this->seedUsersAndStaff($roles);
-            $calendar = $this->seedAcademicCalendar();
+            $users = app(DemoStaffSeeder::class)->seed($roles);
+            $calendar = app(DemoAcademicCalendarSeeder::class)->seed();
             $versions = $this->seedProgramVersions($users['admin']);
             $programs = $this->seedPrograms($departments, $levels);
             $mappings = $this->seedProgramMappings($programs, $versions, $users['admin']);
             $this->seedUnitsAndMappings($mappings);
             $lectureRooms = $this->seedLectureRooms($departments);
             $this->seedHostels();
-            $this->seedTimetableData($users, $lectureRooms, $mappings);
+            app(DemoTimetableSeeder::class)->seed($users, $lectureRooms, $mappings, $calendar['active_session']);
             $students = $this->seedStudents($roles['student'], $mappings);
             $feePlans = $this->seedFeePlans($users['bursar_user'], $users['bursar_staff']);
             $this->seedLegacyFeeAssignments($feePlans, $mappings, $calendar['active_year'], $users['bursar_staff']);

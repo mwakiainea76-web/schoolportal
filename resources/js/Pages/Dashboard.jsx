@@ -5,6 +5,7 @@ import Checkbox from "@/Components/Checkbox";
 import Modal from "@/Components/Modal";
 import formatDate from "@/utils/date";
 import {
+    ClipboardPenLine,
     BookMarked,
     BookOpen,
     CalendarDays,
@@ -12,6 +13,7 @@ import {
     GraduationCap,
     ShieldCheck,
     Wallet,
+    Presentation,
 } from "lucide-react";
 
 const currency = (amount) =>
@@ -657,6 +659,8 @@ function StaffDashboard({ dashboard }) {
     const hostel = analytics.hostel ?? {};
     const dataQuality = analytics.data_quality ?? {};
     const snapshotTrends = analytics.snapshot_trends ?? {};
+    const trainerWorkspace = dashboard.trainer_workspace ?? {};
+    const staffProfile = dashboard.staff_profile ?? {};
 
     const cards = [
         {
@@ -805,6 +809,43 @@ function StaffDashboard({ dashboard }) {
         },
     ];
 
+    const trainerQuickActions = [
+        trainerWorkspace.can_view_timetable
+            ? {
+                  label: "My Timetable",
+                  helper: trainerWorkspace.active_session?.name
+                      ? `Current view opens in ${trainerWorkspace.active_session.name}`
+                      : "Open your personal teaching schedule",
+                  href: route("academic.timetables.index", {
+                      academic_session_id:
+                          trainerWorkspace.active_session?.id || "",
+                      department_id: trainerWorkspace.department_id || "",
+                      trainer_staff_id: trainerWorkspace.trainer_staff_id || "",
+                  }),
+                  icon: Presentation,
+                  tone: "from-emerald-500 to-teal-500",
+              }
+            : null,
+        trainerWorkspace.can_grade_students
+            ? {
+                  label: "Grade Students",
+                  helper: "Open marks entry to load a unit and record assessments.",
+                  href: route("academic.marks.index"),
+                  icon: ClipboardPenLine,
+                  tone: "from-sky-500 to-cyan-500",
+              }
+            : null,
+        trainerWorkspace.can_grade_students
+            ? {
+                  label: "Unit Marksheet",
+                  helper: "Review submitted unit performance and top performers.",
+                  href: route("academic.marks.marksheet.index"),
+                  icon: BookOpen,
+                  tone: "from-amber-500 to-orange-500",
+              }
+            : null,
+    ].filter(Boolean);
+
     return (
         <div className="animate-in fade-in slide-in-from-bottom-2 duration-700">
             <h1 className="text-3xl font-bold tracking-tight text-zinc-900">
@@ -851,6 +892,69 @@ function StaffDashboard({ dashboard }) {
                     );
                 })}
             </div>
+
+            {trainerQuickActions.length ? (
+                <div className="mt-10 rounded-[1.75rem] border border-zinc-100 bg-white p-7 shadow-sm">
+                    <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
+                        <div>
+                            <h2 className="text-xl font-semibold text-zinc-900">
+                                Trainer Workspace
+                            </h2>
+                            <p className="text-sm text-zinc-500">
+                                Personal tools for{" "}
+                                {staffProfile.designation || "teaching staff"}
+                                {staffProfile.department_name
+                                    ? ` in ${staffProfile.department_name}`
+                                    : ""}
+                                .
+                            </p>
+                        </div>
+                        <div className="rounded-2xl bg-zinc-50 px-4 py-3 text-sm text-zinc-600">
+                            <span className="font-semibold text-zinc-900">
+                                {trainerWorkspace.timetable_sessions_count || 0}
+                            </span>{" "}
+                            timetable session(s) in the current view and{" "}
+                            <span className="font-semibold text-zinc-900">
+                                {trainerWorkspace.marks_recorded_count || 0}
+                            </span>{" "}
+                            recorded mark(s)
+                            {trainerWorkspace.active_session?.name
+                                ? ` for ${trainerWorkspace.active_session.name}`
+                                : ""}
+                            .
+                        </div>
+                    </div>
+
+                    <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                        {trainerQuickActions.map((action) => {
+                            const Icon = action.icon;
+
+                            return (
+                                <Link
+                                    key={action.label}
+                                    href={action.href}
+                                    className="group rounded-[1.5rem] border border-zinc-100 bg-zinc-50 p-5 transition hover:border-emerald-200 hover:bg-white hover:shadow-sm"
+                                >
+                                    <div
+                                        className={`inline-flex rounded-2xl bg-gradient-to-br ${action.tone} p-3 text-white shadow-lg`}
+                                    >
+                                        <Icon className="h-5 w-5" />
+                                    </div>
+                                    <p className="mt-5 text-lg font-semibold text-zinc-900">
+                                        {action.label}
+                                    </p>
+                                    <p className="mt-2 text-sm text-zinc-500">
+                                        {action.helper}
+                                    </p>
+                                    <p className="mt-4 text-sm font-medium text-emerald-700 transition group-hover:text-emerald-800">
+                                        Open workspace
+                                    </p>
+                                </Link>
+                            );
+                        })}
+                    </div>
+                </div>
+            ) : null}
 
             <div className="mt-10 space-y-8">
                 <DashboardSection

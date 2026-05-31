@@ -64,9 +64,17 @@ Route::middleware(['auth', 'verified', 'role:student'])->group(function () {
         ->name('student.fee-statements.show');
 });
 
+Route::get('/admin/dashboard', [DashboardController::class, 'staffDashboard'])
+    ->middleware(['auth', 'verified', 'non_student'])
+    ->name('admin.dashboard');
+
 Route::get('/staff/dashboard', [DashboardController::class, 'staffDashboard'])
     ->middleware(['auth', 'verified', 'non_student'])
     ->name('staff.dashboard');
+
+Route::get('/trainer/dashboard', [DashboardController::class, 'trainerDashboard'])
+    ->middleware(['auth', 'verified', 'role:trainer'])
+    ->name('trainer.dashboard');
 
 /*
 |--------------------------------------------------------------------------
@@ -299,17 +307,19 @@ Route::middleware(['auth', 'non_student'])->group(function () {
         Route::delete('/{timetable}', [AcademicTimetableController::class, 'destroy'])->name('destroy');
     });
 
-    Route::middleware('role:admin|hod')->prefix('academic/marks')->name('academic.marks.')->group(function () {
+    Route::middleware('role:admin|hod|trainer')->prefix('academic/marks')->name('academic.marks.')->group(function () {
         Route::get('/', [StudentMarkController::class, 'index'])->name('index');
         Route::post('/', [StudentMarkController::class, 'store'])->name('store');
-        Route::get('/publish', [StudentMarkController::class, 'publishIndex'])
-            ->name('publish.index');
-        Route::post('/publish', [StudentMarkController::class, 'publishAssessment'])
-            ->name('publish.assessment');
-        Route::post('/{studentMark}/publish-toggle', [StudentMarkController::class, 'togglePublish'])
-            ->name('publish.toggle');
         Route::get('/marksheet', [StudentMarkController::class, 'marksheetIndex'])
             ->name('marksheet.index');
+        Route::middleware('role:admin|hod')->group(function () {
+            Route::get('/publish', [StudentMarkController::class, 'publishIndex'])
+                ->name('publish.index');
+            Route::post('/publish', [StudentMarkController::class, 'publishAssessment'])
+                ->name('publish.assessment');
+            Route::post('/{studentMark}/publish-toggle', [StudentMarkController::class, 'togglePublish'])
+                ->name('publish.toggle');
+        });
     });
 
     Route::prefix('lecture-rooms')->name('lecture-rooms.')->group(function () {

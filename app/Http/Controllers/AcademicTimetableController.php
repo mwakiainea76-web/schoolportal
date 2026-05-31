@@ -32,20 +32,25 @@ class AcademicTimetableController extends Controller
     {
         $currentDepartmentId = $request->user()?->staff?->department_id;
         $isHod = (bool) $request->user()?->hasRole('hod');
+        $isTrainer = (bool) $request->user()?->hasRole('trainer');
+        $isTrainerOnly = $isTrainer && ! $isHod && ! $request->user()?->hasRole('admin');
+        $currentTrainerStaffId = $request->user()?->staff?->id;
         $supportsAcademicSessions = $this->supportsAcademicSessionScoping();
         $currentSession = $supportsAcademicSessions ? $this->currentAcademicSession() : null;
         $selectedAcademicSessionId = $supportsAcademicSessions && $request->filled('academic_session_id')
             ? $request->integer('academic_session_id')
             : $currentSession?->id;
-        $selectedDepartmentId = $isHod
+        $selectedDepartmentId = ($isHod || $isTrainerOnly)
             ? $currentDepartmentId
             : ($request->filled('department_id') ? $request->integer('department_id') : null);
-        $selectedTrainerStaffId = $request->integer('trainer_staff_id') ?: null;
+        $selectedTrainerStaffId = $isTrainerOnly
+            ? $currentTrainerStaffId
+            : ($request->integer('trainer_staff_id') ?: null);
         $selectedProgramVersionMappingId = $request->integer('program_version_mapping_id') ?: null;
         $selectedModuleNumber = $request->integer('module_number') ?: null;
         $adminClassFiltersReady = (bool) ($selectedDepartmentId && $selectedProgramVersionMappingId && $selectedModuleNumber);
         $adminTrainerFiltersReady = (bool) ($selectedDepartmentId && $selectedTrainerStaffId);
-        $shouldLoadTimetable = $isHod
+        $shouldLoadTimetable = ($isHod || $isTrainerOnly)
             ? (bool) ($selectedDepartmentId && $selectedAcademicSessionId)
             : (bool) ($selectedAcademicSessionId && ($adminClassFiltersReady || $adminTrainerFiltersReady));
 
@@ -158,6 +163,7 @@ class AcademicTimetableController extends Controller
             'days' => $this->dayOptions(),
             'current_department_id' => $currentDepartmentId ? (string) $currentDepartmentId : '',
             'is_hod' => $isHod,
+            'is_trainer' => $isTrainerOnly,
             'should_load_timetable' => $shouldLoadTimetable,
             'current_session_note' => ! $supportsAcademicSessions
                 ? 'Timetable session scoping is not available yet in this database. Run the latest migration to enable academic-session filtering.'

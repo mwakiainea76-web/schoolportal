@@ -14,6 +14,10 @@ return new class extends Migration
                 ->constrained('departments', 'id')
                 ->cascadeOnUpdate()
                 ->cascadeOnDelete();
+            $table->foreignId('academic_session_id')
+                ->nullable()
+                ->constrained('academic_sessions')
+                ->nullOnDelete();
             $table->foreignId('program_version_unit_id')
                 ->constrained('program_version_units', 'id')
                 ->cascadeOnUpdate()
@@ -43,6 +47,7 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
+            $table->index(['academic_session_id', 'department_id'], 'academic_timetables_session_department_index');
             $table->index(['department_id', 'day_of_week']);
             $table->index(['trainer_staff_id', 'day_of_week', 'start_time']);
             $table->index(['program_version_unit_id', 'day_of_week', 'start_time']);
