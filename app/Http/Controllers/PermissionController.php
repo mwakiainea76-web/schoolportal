@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\RbacCache;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -51,6 +52,7 @@ class PermissionController extends Controller
         ]);
 
         Permission::create(['name' => $request->name]);
+        RbacCache::forgetAllUsers();
 
         return back()->with('success', 'Permission created');
     }
@@ -71,6 +73,7 @@ class PermissionController extends Controller
         $permission->update([
             'name' => $request->name,
         ]);
+        RbacCache::forgetAllUsers();
 
         return redirect()
             ->route('permissions.edit', $permission->id)
@@ -80,6 +83,7 @@ class PermissionController extends Controller
     public function destroy(Permission $permission)
     {
         $permission->delete();
+        RbacCache::forgetAllUsers();
 
         return back()->with('success', 'Permission deleted');
     }
@@ -116,6 +120,7 @@ class PermissionController extends Controller
         $role = Role::findOrFail($request->role_id);
 
         $role->syncPermissions($request->permissions ?? []);
+        RbacCache::forgetForRole($role);
 
         return back()->with('success', 'Role permissions updated');
     }

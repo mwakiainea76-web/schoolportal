@@ -8,6 +8,7 @@ use App\Models\ProgramEnrollment;
 use App\Models\ProgramVersionMapping;
 use App\Models\Student;
 use App\Models\User;
+use App\Support\RbacCache;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -145,6 +146,7 @@ class StudentCourseChangeController extends Controller
             ]);
 
             $newUser->assignRole('student');
+            RbacCache::forgetForUser($newUser);
 
             if ($oldUser->nextofkin) {
                 $newUser->nextofkin()->create([

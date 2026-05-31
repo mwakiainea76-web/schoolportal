@@ -9,6 +9,7 @@ use App\Models\ProgramEnrollment;
 use App\Models\ProgramVersionMapping;
 use App\Models\Student;
 use App\Models\User;
+use App\Support\RbacCache;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -186,6 +187,7 @@ class StudentController extends Controller
             ]);
 
             $user->assignRole('student');
+            RbacCache::forgetForUser($user);
 
             // Generate unique registration number (retry up to 5 times on collision)
             $registrationNumber = null;

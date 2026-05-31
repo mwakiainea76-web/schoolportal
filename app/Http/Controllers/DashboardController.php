@@ -12,6 +12,7 @@ use App\Models\ProgramVersionUnit;
 use App\Models\StudentInvoice;
 use App\Models\StudentMark;
 use App\Models\StudentUnitRegistration;
+use App\Models\User;
 use App\Services\FeeAssignmentService;
 use App\Services\StudentAcademicContextService;
 use Illuminate\Http\RedirectResponse;
@@ -29,17 +30,7 @@ class DashboardController extends Controller
 
     public function redirect(Request $request): RedirectResponse
     {
-        $user = $request->user();
-
-        if ($user?->hasRole('student')) {
-            return redirect()->route('student.dashboard');
-        }
-
-        if ($user?->hasRole('trainer') && ! $user?->hasRole('admin') && ! $user?->hasRole('hod')) {
-            return redirect()->route('trainer.dashboard');
-        }
-
-        return redirect()->route('admin.dashboard');
+        return redirect()->route($this->dashboardRouteFor($request->user()));
     }
 
     public function studentDashboard(Request $request): Response
@@ -268,5 +259,25 @@ class DashboardController extends Controller
             ],
             'analytics' => null,
         ];
+    }
+
+    private function dashboardRouteFor(?User $user): string
+    {
+        if (! $user) {
+            return 'admin.dashboard';
+        }
+
+        $user->loadMissing('roles:id,name');
+        $roles = $user->roles->pluck('name');
+
+        if ($roles->contains('student')) {
+            return 'student.dashboard';
+        }
+
+        if ($roles->contains('trainer') && ! $roles->contains('admin') && ! $roles->contains('hod')) {
+            return 'trainer.dashboard';
+        }
+
+        return 'admin.dashboard';
     }
 }

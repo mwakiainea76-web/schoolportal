@@ -28,6 +28,7 @@ class HandleInertiaRequests extends Middleware
     {
         $rbac = app(RBACService::class);
         $user = $request->user();
+        $authPayload = fn () => $rbac->payload();
 
         return array_merge(parent::share($request), [
             'auth' => [
@@ -39,8 +40,8 @@ class HandleInertiaRequests extends Middleware
                         'email' => $user->email,
                     ]
                     : null,
-                'roles' => fn () => $rbac->roles(),
-                'permissions' => fn () => $rbac->permissions(),
+                'roles' => fn () => $authPayload()['roles'],
+                'permissions' => fn () => $authPayload()['permissions'],
             ],
 
             'flash' => [

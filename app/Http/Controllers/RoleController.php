@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\RbacCache;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -52,6 +53,7 @@ class RoleController extends Controller
 
         // assign permissions (Spatie expects array of names or ids)
         $role->syncPermissions($request->permissions ?? []);
+        RbacCache::forgetForRole($role);
 
         return redirect()
             ->route('roles.index')
@@ -87,6 +89,7 @@ class RoleController extends Controller
 
         // FULL SYNC (remove old + assign new)
         $role->syncPermissions($request->permissions ?? []);
+        RbacCache::forgetForRole($role);
 
         return redirect()
             ->route('roles.index')
@@ -98,6 +101,7 @@ class RoleController extends Controller
      */
     public function destroy(Role $role)
     {
+        RbacCache::forgetForRole($role);
         $role->delete();
 
         return redirect()
@@ -144,6 +148,7 @@ class RoleController extends Controller
         $role = Role::findOrFail($request->role_id);
 
         $role->syncPermissions($request->permissions);
+        RbacCache::forgetForRole($role);
 
         return back()->with('success', 'Permissions assigned successfully');
     }

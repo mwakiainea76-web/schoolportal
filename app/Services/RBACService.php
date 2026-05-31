@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Cache;
 class RbacService
 {
     protected ?User $resolvedUser = null;
+    protected ?array $resolvedPayload = null;
 
     public function user()
     {
@@ -23,54 +24,12 @@ class RbacService
 
     public function permissions(): array
     {
-        $user = $this->user();
-
-        if (! $user) {
-            return [];
-        }
-
-        return Cache::remember(
-            "rbac.permissions.{$user->id}",
-            now()->addMinutes(5),
-            function () use ($user) {
-                $user->loadMissing(['roles.permissions', 'permissions']);
-
-                $directPermissions = $user->permissions->pluck('name');
-                $rolePermissions = $user->roles
-                    ->flatMap(fn ($role) => $role->permissions->pluck('name'));
-
-                return $directPermissions
-                    ->merge($rolePermissions)
-                    ->filter()
-                    ->unique()
-                    ->values()
-                    ->all();
-            }
-        );
+        return $this->payload()['permissions'];
     }
 
     public function roles(): array
     {
-        $user = $this->user();
-
-        if (! $user) {
-            return [];
-        }
-
-        return Cache::remember(
-            "rbac.roles.{$user->id}",
-            now()->addMinutes(5),
-            function () use ($user) {
-                $user->loadMissing('roles');
-
-                return $user->roles
-                    ->pluck('name')
-                    ->filter()
-                    ->unique()
-                    ->values()
-                    ->all();
-            }
-        );
+        return $this->payload()['roles'];
     }
 
     public function can(string $permission): bool
@@ -80,6 +39,53 @@ class RbacService
 
     public function hasRole(string $role): bool
     {
-        return $this->user()?->hasRole($role) ?? false;
+        return in_array(strtolower($role), array_map('strtolower', $this->roles()), true);
+    }
+
+    public function payload(): array
+    {
+        if ($this->resolvedPayload !== null) {
+            return $this->resolvedPayload;
+        }
+
+        $user = $this->user();
+
+        if (! $user) {
+            return $this->resolvedPayload = [
+                'roles' => [],
+                'permissions' => [],
+            ];
+        }
+
+        return $this->resolvedPayload = Cache::remember(
+            "rbac.payload.{$user->id}",
+            now()->addMinutes(5),
+            function () use ($user) {
+                $user->loadMissing(['roles.permissions:id,name', 'permissions:id,name']);
+
+                $roles = $user->roles
+                    ->pluck('name')
+                    ->filter()
+                    ->unique()
+                    ->values()
+                    ->all();
+
+                $directPermissions = $user->permissions->pluck('name');
+                $rolePermissions = $user->roles
+                    ->flatMap(fn ($role) => $role->permissions->pluck('name'));
+
+                $permissions = $directPermissions
+                    ->merge($rolePermissions)
+                    ->filter()
+                    ->unique()
+                    ->values()
+                    ->all();
+
+                return [
+                    'roles' => $roles,
+                    'permissions' => $permissions,
+                ];
+            }
+        );
     }
 }

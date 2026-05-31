@@ -8,6 +8,7 @@ use App\Http\Requests\UpdateStaffRequest;
 use App\Models\Department;
 use App\Models\Staff;
 use App\Models\User;
+use App\Support\RbacCache;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -165,6 +166,7 @@ class StaffController extends Controller
             ]);
 
             $user->assignRole($request->role_name);
+            RbacCache::forgetForUser($user);
 
             // Generate a unique staff number (retry up to 5 times on collision)
             $staffNumber = null;
@@ -252,6 +254,7 @@ class StaffController extends Controller
             ]);
 
             $staff->user->syncRoles([$request->role_name]);
+            RbacCache::forgetForUser($staff->user);
 
             $staff->update([
                 'department_id' => $request->department_id,

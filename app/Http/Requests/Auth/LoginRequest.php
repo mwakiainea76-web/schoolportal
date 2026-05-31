@@ -8,6 +8,7 @@ use Illuminate\Auth\Events\Lockout;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -51,10 +52,17 @@ class LoginRequest extends FormRequest
         $login = trim($this->string('login')->toString());
         $password = $this->string('password')->toString();
         $securityMonitoring = app(SecurityMonitoringService::class);
+        $normalizedLogin = Str::lower($login);
 
         $user = User::query()
-            ->whereRaw('LOWER(TRIM(login_id)) = ?', [Str::lower($login)])
+            ->where('login_id', $login)
             ->first();
+
+        if (! $user) {
+            $user = User::query()
+                ->whereRaw('LOWER(TRIM(login_id)) = ?', [$normalizedLogin])
+                ->first();
+        }
 
         if ($block = $securityMonitoring->findMatchingActiveBlock($this, $user, $login, $user?->email)) {
             $securityMonitoring->recordEvent(
@@ -91,7 +99,7 @@ class LoginRequest extends FormRequest
             ]);
         }
 
-        if (! $user || ! Auth::attempt(['email' => $user->email, 'password' => $password], $this->boolean('remember'))) {
+        if (! $user || ! Hash::check($password, $user->password)) {
             RateLimiter::hit($this->throttleKey(), self::LOGIN_THROTTLE_SECONDS);
 
             $securityMonitoring->recordEvent(
@@ -149,6 +157,7 @@ class LoginRequest extends FormRequest
             ]);
         }
 
+        Auth::login($user, $this->boolean('remember'));
         RateLimiter::clear($this->throttleKey());
     }
 

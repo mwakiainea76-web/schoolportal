@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Models\User;
 use App\Services\SecurityMonitoringService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -53,7 +54,7 @@ class AuthenticatedSessionController extends Controller
             $user?->email,
         );
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        return redirect()->intended(route($this->dashboardRouteFor($user), absolute: false));
     }
 
     /**
@@ -80,5 +81,25 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerateToken();
 
         return redirect('/');
+    }
+
+    private function dashboardRouteFor(?User $user): string
+    {
+        if (! $user) {
+            return 'dashboard';
+        }
+
+        $user->loadMissing('roles:id,name');
+        $roles = $user->roles->pluck('name');
+
+        if ($roles->contains('student')) {
+            return 'student.dashboard';
+        }
+
+        if ($roles->contains('trainer') && ! $roles->contains('admin') && ! $roles->contains('hod')) {
+            return 'trainer.dashboard';
+        }
+
+        return 'admin.dashboard';
     }
 }
