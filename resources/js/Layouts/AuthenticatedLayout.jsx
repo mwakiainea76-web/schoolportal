@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { usePage, router } from "@inertiajs/react";
 import Sidebar from "@/Components/Sidebar";
 
@@ -11,6 +11,9 @@ export default function AuthenticatedLayout({ header, children }) {
     const [open, setOpen] = useState(false);
     const [collapsed, setCollapsed] = useState(false);
     const [mobileOpen, setMobileOpen] = useState(false);
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
+    const isLoggingOutRef = useRef(false);
+    const logoutSyncSentRef = useRef(false);
 
     const logoutRoute = route("logout");
     const loginRoute = route("login");
@@ -45,6 +48,11 @@ export default function AuthenticatedLayout({ header, children }) {
         document.querySelector('meta[name="csrf-token"]')?.content ?? "";
 
     const notifyLogout = () => {
+        if (logoutSyncSentRef.current) {
+            return;
+        }
+
+        logoutSyncSentRef.current = true;
         window.localStorage.removeItem(sessionOwnerStorageKey);
         window.localStorage.removeItem(sessionHeartbeatStorageKey);
         window.localStorage.setItem(
@@ -99,16 +107,34 @@ export default function AuthenticatedLayout({ header, children }) {
         writeActiveTabs(storageKey, remainingTabs);
         window.sessionStorage.removeItem(tabIdStorageKey);
 
-        if (logoutIfLast && remainingTabs.length === 0) {
+        if (
+            logoutIfLast &&
+            remainingTabs.length === 0 &&
+            !isLoggingOutRef.current
+        ) {
             notifyLogout();
             submitBackgroundLogout();
         }
     };
 
     const logout = () => {
+        if (isLoggingOutRef.current) {
+            return;
+        }
+
+        isLoggingOutRef.current = true;
+        setIsLoggingOut(true);
         removeCurrentTab();
         notifyLogout();
-        router.post(logoutRoute);
+        router.post(
+            logoutRoute,
+            {},
+            {
+                onFinish: () => {
+                    setIsLoggingOut(false);
+                },
+            },
+        );
     };
 
     const writeSessionOwner = () => {
@@ -283,6 +309,7 @@ export default function AuthenticatedLayout({ header, children }) {
                                     <div className="p-1">
                                         <button
                                             onClick={logout}
+                                            disabled={isLoggingOut}
                                             className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition"
                                         >
                                             <svg
@@ -298,7 +325,9 @@ export default function AuthenticatedLayout({ header, children }) {
                                                     d="M17 16l4-4m0 0l-4-4m4 4H7"
                                                 />
                                             </svg>
-                                            Logout
+                                            {isLoggingOut
+                                                ? "Logging out..."
+                                                : "Logout"}
                                         </button>
                                     </div>
                                 </div>

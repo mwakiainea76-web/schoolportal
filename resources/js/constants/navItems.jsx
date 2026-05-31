@@ -388,6 +388,12 @@ export const STAFF_NAV_ITEMS = [
                         permission: "roles.view",
                     },
                     {
+                        routeName: "settings.user-monitor.index",
+                        fallback: "/settings/user-monitor",
+                        label: "User Monitor",
+                        permission: "roles.view",
+                    },
+                    {
                         routeName: "settings.security.index",
                         fallback: "/settings/security",
                         label: "Security Monitor",

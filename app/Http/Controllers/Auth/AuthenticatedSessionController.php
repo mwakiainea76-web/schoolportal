@@ -52,6 +52,7 @@ class AuthenticatedSessionController extends Controller
             ],
             $user?->login_id,
             $user?->email,
+            false,
         );
 
         return redirect()->intended(route($this->dashboardRouteFor($user), absolute: false));
@@ -62,15 +63,18 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
-        if ($request->user()) {
+        $user = $request->user();
+
+        if ($user) {
             $this->securityMonitoring->recordEvent(
                 'logout',
                 $request,
-                $request->user(),
+                $user,
                 'info',
                 [],
-                $request->user()?->login_id,
-                $request->user()?->email,
+                $user->login_id,
+                $user->email,
+                false,
             );
         }
 

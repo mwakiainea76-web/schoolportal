@@ -17,6 +17,7 @@ use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LectureRoomController;
 use App\Http\Controllers\LedgerTransactionController;
 use App\Http\Controllers\LogViewerController;
+use App\Http\Controllers\OnlineUsersController;
 use App\Http\Controllers\PerformanceDashboardController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProfileController;
@@ -33,6 +34,7 @@ use App\Http\Controllers\StudentController;
 use App\Http\Controllers\StudentCourseChangeController;
 use App\Http\Controllers\StudentMarkController;
 use App\Http\Controllers\UnitController;
+use App\Http\Controllers\UserMonitorController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -92,6 +94,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::get('/online-users', [OnlineUsersController::class, 'index'])->name('online-users.index');
 });
 
 Route::middleware(['auth', 'non_student'])->group(function () {
@@ -110,6 +113,10 @@ Route::middleware(['auth', 'non_student'])->group(function () {
     Route::middleware('role:admin')
         ->get('/settings/logs', [LogViewerController::class, 'index'])
         ->name('settings.logs.index');
+
+    Route::middleware('role:admin')
+        ->get('/settings/user-monitor', [UserMonitorController::class, 'index'])
+        ->name('settings.user-monitor.index');
 
     Route::middleware('role:admin')
         ->get('/settings/security', [SecurityMonitoringController::class, 'index'])

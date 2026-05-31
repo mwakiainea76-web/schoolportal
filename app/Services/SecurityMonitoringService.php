@@ -31,6 +31,7 @@ class SecurityMonitoringService
         array $context = [],
         ?string $loginIdentifier = null,
         ?string $email = null,
+        bool $writeLog = true,
     ): SecurityEvent {
         $requestContext = $this->contextFromRequest($request);
 
@@ -65,7 +66,9 @@ class SecurityMonitoringService
             'context' => $context,
         ]);
 
-        Log::channel('security')->log($this->logLevel($riskLevel), $eventType, $logContext);
+        if ($writeLog) {
+            Log::channel('security')->log($this->logLevel($riskLevel), $eventType, $logContext);
+        }
 
         return $event;
     }
