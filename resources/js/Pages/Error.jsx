@@ -1,4 +1,4 @@
-import { Head, Link, usePage } from "@inertiajs/react";
+import { Head, Link } from "@inertiajs/react";
 
 const errorMeta = {
     403: {
@@ -20,10 +20,8 @@ const errorMeta = {
 };
 
 export default function Error({ status }) {
-    const { url } = usePage();
     const details = errorMeta[status] ?? errorMeta[500];
     const showLoginAgain = Number(status) >= 500;
-    const loginAgainHref = `/login?reset_session=1&redirect=${encodeURIComponent(url || "/")}`;
 
     return (
         <>
@@ -60,7 +58,7 @@ export default function Error({ status }) {
                                     <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                                         {showLoginAgain && (
                                             <Link
-                                                href={loginAgainHref}
+                                                href="/login"
                                                 className="inline-flex items-center justify-center rounded-xl bg-emerald-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-400"
                                             >
                                                 Login again

@@ -14,9 +14,7 @@ class RedirectStudentsFromAdmin
         $user = $request->user();
 
         if ($this->isStudent($user)) {
-            return redirect()
-                ->route('student.dashboard')
-                ->with('error', 'You are not allowed to access staff and admin routes.');
+            abort(403, 'You are not allowed to access staff and admin routes.');
         }
 
         return $next($request);
