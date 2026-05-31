@@ -23,11 +23,27 @@ class AuthenticatedSessionController extends Controller
     /**
      * Display the login view.
      */
-    public function create(): Response
+    public function create(Request $request): Response|RedirectResponse
     {
+        $redirect = $this->sanitizeRedirect($request->query('redirect'));
+
+        if ($request->boolean('reset_session')) {
+            $user = $request->user();
+
+            if ($user) {
+                Auth::guard('web')->logout();
+            }
+
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        } elseif (Auth::check()) {
+            return redirect()->route($this->dashboardRouteFor($request->user()));
+        }
+
         return Inertia::render('Auth/Login', [
             'canResetPassword' => Route::has('password.request'),
             'status' => session('status'),
+            'redirect' => $redirect,
         ]);
     }
 
@@ -36,6 +52,12 @@ class AuthenticatedSessionController extends Controller
      */
     public function store(LoginRequest $request): RedirectResponse
     {
+        $redirect = $this->sanitizeRedirect($request->string('redirect')->toString());
+
+        if ($redirect !== null) {
+            $request->session()->put('url.intended', $redirect);
+        }
+
         $request->authenticate();
 
         $request->session()->regenerate();
@@ -105,5 +127,22 @@ class AuthenticatedSessionController extends Controller
         }
 
         return 'admin.dashboard';
+    }
+
+    private function sanitizeRedirect(?string $redirect): ?string
+    {
+        if (! is_string($redirect) || $redirect === '') {
+            return null;
+        }
+
+        if (! str_starts_with($redirect, '/') || str_starts_with($redirect, '//')) {
+            return null;
+        }
+
+        if (str_starts_with($redirect, '/login') || str_starts_with($redirect, '/logout')) {
+            return null;
+        }
+
+        return $redirect;
     }
 }

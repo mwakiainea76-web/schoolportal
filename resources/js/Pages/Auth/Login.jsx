@@ -11,13 +11,14 @@ const campusPhoto =
     "https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=1200&q=80";
 const schoolLogo = "/images/school%20logo.png";
 
-export default function Login({ status, canResetPassword }) {
+export default function Login({ status, canResetPassword, redirect = "" }) {
     const { data, setData, post, processing, errors, reset } = useForm({
         login: "",
         password: "",
         remember: false,
         device_id: "",
         location_hint: "",
+        redirect,
     });
     const [showPassword, setShowPassword] = useState(false);
     const [loginNotice, setLoginNotice] = useState("");
@@ -34,6 +35,10 @@ export default function Login({ status, canResetPassword }) {
         setData("device_id", context.device_id);
         setData("location_hint", context.location_hint);
     }, [setData]);
+
+    useEffect(() => {
+        setData("redirect", redirect || "");
+    }, [redirect, setData]);
 
     useEffect(() => {
         const readActiveSessionOwner = () => {
