@@ -13,12 +13,14 @@ return new class extends Migration
             $table->timestamp('error_status_updated_at')->nullable()->after('error_status');
 
             $table->index(['error_status', 'occurred_at']);
+            $table->index(['occurred_at', 'status_code', 'error_status']);
         });
     }
 
     public function down(): void
     {
         Schema::table('app_request_metrics', function (Blueprint $table) {
+            $table->dropIndex(['occurred_at', 'status_code', 'error_status']);
             $table->dropIndex(['error_status', 'occurred_at']);
             $table->dropColumn(['error_status', 'error_status_updated_at']);
         });

@@ -41,6 +41,10 @@ return new class extends Migration
 
             $table->timestamps();
             $table->softDeletes();
+
+            $table->index('user_id');
+            $table->index('department_id');
+            $table->index('staff_status');
         });
     }
 

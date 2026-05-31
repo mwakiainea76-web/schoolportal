@@ -32,6 +32,8 @@ return new class extends Migration
             $table->timestamps();
 
             $table->unique(['program_enrollment_id', 'academic_session_id'], 'academic_session_enrollments_unique_session');
+            $table->index(['program_enrollment_id', 'id']);
+            $table->index(['academic_session_id', 'status']);
         });
     }
 

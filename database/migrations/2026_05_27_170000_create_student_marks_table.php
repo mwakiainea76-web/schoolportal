@@ -41,6 +41,9 @@ return new class extends Migration
                 ],
                 'student_marks_unique_assessment'
             );
+            $table->index(['academic_session_id', 'recorded_by_staff_id']);
+            $table->index(['program_version_unit_id', 'academic_session_id']);
+            $table->index('academic_session_enrollment_id');
         });
     }
 

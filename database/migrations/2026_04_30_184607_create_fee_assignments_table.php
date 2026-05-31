@@ -51,6 +51,7 @@ return new class extends Migration
             $table->index('valid_to');
             $table->index(['academic_year_id', 'program_version_mapping_id']);
             $table->index(['program_version_mapping_id', 'year_of_study', 'session_number', 'academic_year_id', 'is_active']);
+            $table->index(['approval_status', 'valid_to']);
             $table->softDeletes();
             $table->timestamps();
         });

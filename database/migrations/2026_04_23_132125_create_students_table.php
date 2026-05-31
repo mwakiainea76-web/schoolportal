@@ -31,6 +31,9 @@ return new class extends Migration
 
             $table->timestamps();
             $table->softDeletes();
+
+            $table->index('user_id');
+            $table->index('student_status');
         });
 
     }

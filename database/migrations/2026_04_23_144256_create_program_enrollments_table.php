@@ -24,6 +24,9 @@ return new class extends Migration
                     ->cascadeOnDelete();
                 $table->softDeletes();
                 $table->timestamps();
+
+                $table->index(['student_id', 'id']);
+                $table->index('program_version_mapping_id');
             });
         }
     }

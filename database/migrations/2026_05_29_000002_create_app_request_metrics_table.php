@@ -25,6 +25,8 @@ return new class extends Migration
             $table->index(['is_api', 'occurred_at']);
             $table->index(['status_code', 'occurred_at']);
             $table->index(['route_name', 'occurred_at']);
+            $table->index(['method', 'route_name', 'occurred_at']);
+            $table->index(['method', 'path', 'occurred_at']);
         });
     }
 

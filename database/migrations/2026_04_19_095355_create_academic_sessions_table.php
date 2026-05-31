@@ -27,6 +27,8 @@ return new class extends Migration
             $table->softDeletes();
 
             $table->unique(['academic_year_id', 'session_number'], 'academic_sessions_year_session_number_unique');
+            $table->index(['is_active', 'start_date', 'id']);
+            $table->index(['academic_year_id', 'is_active']);
         });
     }
 

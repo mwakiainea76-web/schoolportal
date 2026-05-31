@@ -35,6 +35,8 @@ return new class extends Migration
                 $table->rememberToken();
                 $table->timestamps();
                 $table->softDeletes();
+
+                $table->index('is_active');
             });
         }
 
@@ -54,6 +56,8 @@ return new class extends Migration
                 $table->text('user_agent')->nullable();
                 $table->longText('payload');
                 $table->integer('last_activity')->index();
+
+                $table->index(['last_activity', 'user_id']);
             });
         }
     }

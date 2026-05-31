@@ -57,6 +57,7 @@ return new class extends Migration
             $table->index(['email', 'is_active']);
             $table->index(['ip_address', 'is_active']);
             $table->index(['device_id', 'is_active']);
+            $table->index(['is_active', 'ends_at']);
         });
     }
 

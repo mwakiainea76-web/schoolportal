@@ -24,6 +24,9 @@ return new class extends Migration
                 ->cascadeOnUpdate();
 
             $table->timestamps();
+
+            $table->index(['program_version_mapping_id', 'module_taught', 'id']);
+            $table->index('unit_id');
         });
     }
 

@@ -58,6 +58,10 @@ return new class extends Migration
                 $table->index('status');
                 $table->index('due_date');
                 $table->index('student_id');
+                $table->index(['enrollment_id', 'invoice_type', 'id']);
+                $table->index(['student_id', 'status', 'issue_date', 'id']);
+                $table->index(['student_id', 'academic_session_id', 'invoice_type', 'status']);
+                $table->index(['academic_session_id', 'invoice_type', 'status']);
             });
         }
 
@@ -108,6 +112,9 @@ return new class extends Migration
                 $table->timestamps();
                 $table->index('payment_date');
                 $table->index('status');
+                $table->index(['student_id', 'payment_date', 'id']);
+                $table->index(['status', 'payment_date']);
+                $table->index('student_invoice_id');
             });
         }
 
@@ -127,6 +134,7 @@ return new class extends Migration
                 $table->timestamps();
 
                 $table->index(['payment_id', 'student_invoice_id']);
+                $table->index(['student_invoice_id', 'payment_id']);
             });
         }
 
@@ -148,6 +156,7 @@ return new class extends Migration
                     ->cascadeOnUpdate();
                 $table->timestamps();
                 $table->index('type');
+                $table->index(['student_invoice_id', 'applied_at']);
             });
         }
 
@@ -182,6 +191,8 @@ return new class extends Migration
                 $table->index('type');
                 $table->index('transaction_date');
                 $table->index('reference');
+                $table->index(['academic_session_id', 'type', 'transaction_date']);
+                $table->index('student_invoice_id');
             });
 
             Schema::table('ledger_transactions', function (Blueprint $table) {
