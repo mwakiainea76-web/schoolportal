@@ -4,11 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\AcademicTimetable;
 use App\Models\AcademicSession;
-use App\Models\AcademicYear;
-use App\Models\Department;
-use App\Models\Program;
-use App\Models\ProgramVersion;
 use App\Models\ProgramVersionUnit;
+use App\Models\Staff;
 use App\Models\StudentInvoice;
 use App\Models\StudentMark;
 use App\Models\StudentUnitRegistration;
@@ -17,7 +14,7 @@ use App\Services\FeeAssignmentService;
 use App\Services\StudentAcademicContextService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -194,19 +191,26 @@ class DashboardController extends Controller
     protected function staffDashboardPayload(Request $request): array
     {
         $user = $request->user();
-        $staff = $user?->staff?->loadMissing('department:id,name');
-        $activeSession = AcademicSession::query()
-            ->with('academicYear:id,label,academic_year')
-            ->active()
-            ->orderByDesc('id')
-            ->first();
-        $roleNames = $user?->getRoleNames()?->values()->all() ?? [];
-        $isTrainer = (bool) $user?->hasRole('trainer');
-        $canScopeTimetablesBySession = Schema::hasColumn('academic_timetables', 'academic_session_id');
+        $user?->loadMissing([
+            'roles:id,name',
+        ]);
+
+        $staff = $user ? $this->staffSummaryForUser($user->id) : null;
+        $roleNames = $user?->roles
+            ?->pluck('name')
+            ->filter()
+            ->values()
+            ->all() ?? [];
+        $isTrainer = in_array('trainer', $roleNames, true);
+        $shouldLoadInstitutionStats = in_array($request->route()?->getName(), [
+            'admin.dashboard',
+            'staff.dashboard',
+        ], true);
+        $activeSession = $this->activeSessionSummary();
 
         $currentTimetableCount = $isTrainer && $staff
             ? AcademicTimetable::query()
-                ->when($canScopeTimetablesBySession && $activeSession, fn ($query) => $query->where('academic_session_id', $activeSession->id))
+                ->when($activeSession, fn ($query) => $query->where('academic_session_id', $activeSession['id']))
                 ->where('trainer_staff_id', $staff->id)
                 ->count()
             : 0;
@@ -214,7 +218,7 @@ class DashboardController extends Controller
         $recordedMarksCount = $isTrainer && $staff && $activeSession
             ? StudentMark::query()
                 ->where('recorded_by_staff_id', $staff->id)
-                ->where('academic_session_id', $activeSession->id)
+                ->where('academic_session_id', $activeSession['id'])
                 ->count()
             : 0;
 
@@ -224,14 +228,11 @@ class DashboardController extends Controller
                 'name' => trim(($user?->first_name ?? '').' '.($user?->last_name ?? '')),
                 'staff_number' => $staff?->staff_number,
                 'designation' => $staff?->designation,
-                'department_name' => $staff?->department?->name,
+                'department_name' => $staff?->department_name,
                 'roles' => $roleNames,
             ],
             'trainer_workspace' => [
-                'active_session' => $activeSession ? [
-                    'id' => (string) $activeSession->id,
-                    'name' => $activeSession->display_name,
-                ] : null,
+                'active_session' => $activeSession,
                 'department_id' => $staff?->department_id ? (string) $staff->department_id : '',
                 'trainer_staff_id' => $staff?->id ? (string) $staff->id : '',
                 'timetable_sessions_count' => $currentTimetableCount,
@@ -239,25 +240,90 @@ class DashboardController extends Controller
                 'can_view_timetable' => $isTrainer && (bool) ($staff?->id && $staff?->department_id),
                 'can_grade_students' => $isTrainer && (bool) $staff?->id,
             ],
-            'stats' => [
-                [
-                    'label' => 'Programs',
-                    'value' => Program::query()->count(),
-                ],
-                [
-                    'label' => 'Program Versions',
-                    'value' => ProgramVersion::query()->count(),
-                ],
-                [
-                    'label' => 'Departments',
-                    'value' => Department::query()->count(),
-                ],
-                [
-                    'label' => 'Academic Years',
-                    'value' => AcademicYear::query()->count(),
-                ],
-            ],
+            'stats' => $shouldLoadInstitutionStats ? $this->institutionStats() : [],
             'analytics' => null,
+        ];
+    }
+
+    protected function activeSessionSummary(): ?array
+    {
+        $session = AcademicSession::query()
+            ->leftJoin('academic_years', function ($join) {
+                $join->on('academic_years.id', '=', 'academic_sessions.academic_year_id')
+                    ->whereNull('academic_years.deleted_at');
+            })
+            ->where('academic_sessions.is_active', true)
+            ->whereNull('academic_sessions.deleted_at')
+            ->orderByDesc('academic_sessions.id')
+            ->first([
+                'academic_sessions.id',
+                'academic_sessions.session_number',
+                'academic_sessions.session_No',
+                'academic_years.label as academic_year_label',
+                'academic_years.academic_year as academic_year_name',
+            ]);
+
+        if (! $session) {
+            return null;
+        }
+
+        $sessionNumber = $session->session_number ?? $session->session_No;
+        $yearLabel = $session->academic_year_label ?: $session->academic_year_name;
+        $name = $yearLabel
+            ? "{$yearLabel} - Session {$sessionNumber}"
+            : "Session {$sessionNumber}";
+
+        return [
+            'id' => (string) $session->id,
+            'name' => $name,
+        ];
+    }
+
+    protected function staffSummaryForUser(int $userId): ?object
+    {
+        return Staff::query()
+            ->leftJoin('departments', function ($join) {
+                $join->on('departments.id', '=', 'staffs.department_id')
+                    ->whereNull('departments.deleted_at');
+            })
+            ->where('staffs.user_id', $userId)
+            ->whereNull('staffs.deleted_at')
+            ->first([
+                'staffs.id',
+                'staffs.department_id',
+                'staffs.staff_number',
+                'staffs.designation',
+                'departments.name as department_name',
+            ]);
+    }
+
+    protected function institutionStats(): array
+    {
+        $stats = DB::selectOne(<<<'SQL'
+            select
+                (select count(*) from programs where deleted_at is null) as programs_count,
+                (select count(*) from program_versions where deleted_at is null) as program_versions_count,
+                (select count(*) from departments where deleted_at is null) as departments_count,
+                (select count(*) from academic_years where deleted_at is null) as academic_years_count
+        SQL);
+
+        return [
+            [
+                'label' => 'Programs',
+                'value' => (int) ($stats->programs_count ?? 0),
+            ],
+            [
+                'label' => 'Program Versions',
+                'value' => (int) ($stats->program_versions_count ?? 0),
+            ],
+            [
+                'label' => 'Departments',
+                'value' => (int) ($stats->departments_count ?? 0),
+            ],
+            [
+                'label' => 'Academic Years',
+                'value' => (int) ($stats->academic_years_count ?? 0),
+            ],
         ];
     }
 

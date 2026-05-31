@@ -513,12 +513,28 @@ class StudentMarkController extends Controller
         }
 
         return ProgramVersionUnit::query()
-            ->with([
-                'unit:id,code,name',
-                'programVersionMapping.program:id,name',
-                'programVersionMapping.programVersion:id,name',
+            ->select([
+                'program_version_units.*',
+                'units.code as resolved_unit_code',
+                'units.name as resolved_unit_name',
+                'programs.name as resolved_program_name',
+                'program_versions.name as resolved_version_name',
             ])
-            ->whereHas('unit', fn ($q) => $q->where('code', $unitCode))
+            ->join('units', 'units.id', '=', 'program_version_units.unit_id')
+            ->join(
+                'program_version_mappings',
+                'program_version_mappings.id',
+                '=',
+                'program_version_units.program_version_mapping_id'
+            )
+            ->join('programs', 'programs.id', '=', 'program_version_mappings.program_id')
+            ->join(
+                'program_versions',
+                'program_versions.id',
+                '=',
+                'program_version_mappings.program_version_id'
+            )
+            ->where('units.code', $unitCode)
             ->orderBy('id')
             ->first();
     }
@@ -535,11 +551,11 @@ class StudentMarkController extends Controller
 
         return [
             'id' => $unit->id,
-            'code' => $unit->unit?->code,
-            'name' => $unit->unit?->name,
+            'code' => $unit->resolved_unit_code ?? $unit->unit?->code,
+            'name' => $unit->resolved_unit_name ?? $unit->unit?->name,
             'module' => $unit->module_taught,
-            'program' => $unit->programVersionMapping?->program?->name,
-            'version' => $unit->programVersionMapping?->programVersion?->name,
+            'program' => $unit->resolved_program_name ?? $unit->programVersionMapping?->program?->name,
+            'version' => $unit->resolved_version_name ?? $unit->programVersionMapping?->programVersion?->name,
         ];
     }
 

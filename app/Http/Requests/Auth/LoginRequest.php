@@ -16,6 +16,7 @@ use Illuminate\Validation\ValidationException;
 class LoginRequest extends FormRequest
 {
     private const LOGIN_THROTTLE_SECONDS = 300;
+
     private const LOGIN_ATTEMPT_THRESHOLD = 5;
 
     /**
@@ -152,9 +153,11 @@ class LoginRequest extends FormRequest
             }
 
             throw ValidationException::withMessages([
-                'login' => 'Invalid credentials. Please check your username and password, then try again.',
+                'login' => 'Please check your username and password, then try again.',
             ]);
         }
+
+        $user->loadMissing('roles:id,name');
 
         Auth::login($user, $this->boolean('remember'));
         RateLimiter::clear($this->throttleKey());

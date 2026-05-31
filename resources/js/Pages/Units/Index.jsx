@@ -194,3 +194,5 @@ export default function UnitsIndex({ units }) {
         </AuthenticatedLayout>
     );
 }
+
+UnitsIndex.layout = (page) => <AuthenticatedLayout children={page} />;

@@ -139,7 +139,8 @@ class RecordRequestPerformance
         return $request->is('up')
             || $request->is('build/*')
             || $request->is('favicon.ico')
-            || $request->is('settings/performance*');
+            || $request->is('settings/performance*')
+            || $request->is('api/reports/*');
     }
 
     private function responseSize(Response $response): ?int

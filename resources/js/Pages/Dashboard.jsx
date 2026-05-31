@@ -522,7 +522,6 @@ function StudentDashboard({ dashboard, fullName }) {
 
 function StaffDashboard({ dashboard }) {
     const [analytics, setAnalytics] = useState(dashboard.analytics ?? {});
-    const [analyticsLoading, setAnalyticsLoading] = useState(false);
     const [analyticsError, setAnalyticsError] = useState("");
     const [loadedSections, setLoadedSections] = useState(() => ({
         executive: Boolean(dashboard.analytics?.executive),
@@ -547,68 +546,16 @@ function StaffDashboard({ dashboard }) {
     };
 
     useEffect(() => {
-        if (dashboard.analytics) {
-            setAnalytics(dashboard.analytics);
-            setLoadedSections({
-                executive: Boolean(dashboard.analytics.executive),
-                finance: Boolean(dashboard.analytics.finance),
-                academic: Boolean(dashboard.analytics.academic),
-                admissions: Boolean(dashboard.analytics.admissions),
-                hostel: Boolean(dashboard.analytics.hostel),
-                data_quality: Boolean(dashboard.analytics.data_quality),
-                snapshot_trends: Boolean(dashboard.analytics.snapshot_trends),
-            });
-            return;
-        }
-
-        let cancelled = false;
-
-        const loadExecutive = async () => {
-            setAnalyticsLoading(true);
-            setAnalyticsError("");
-
-            try {
-                const executiveResponse = await sectionRequests.executive();
-
-                if (!executiveResponse.ok) {
-                    throw new Error("Executive analytics request failed.");
-                }
-
-                const executive = await executiveResponse.json();
-
-                if (cancelled) {
-                    return;
-                }
-
-                setAnalytics((current) => ({
-                    ...current,
-                    executive,
-                }));
-                setLoadedSections((current) => ({
-                    ...current,
-                    executive: true,
-                }));
-            } catch (error) {
-                if (cancelled) {
-                    return;
-                }
-
-                console.error("Failed to load dashboard analytics:", error);
-                setAnalyticsError(
-                    "Analytics are taking longer than expected to load. You can still use the portal while we keep trying.",
-                );
-            } finally {
-                if (!cancelled) {
-                    setAnalyticsLoading(false);
-                }
-            }
-        };
-
-        loadExecutive();
-
-        return () => {
-            cancelled = true;
-        };
+        setAnalytics(dashboard.analytics ?? {});
+        setLoadedSections({
+            executive: Boolean(dashboard.analytics?.executive),
+            finance: Boolean(dashboard.analytics?.finance),
+            academic: Boolean(dashboard.analytics?.academic),
+            admissions: Boolean(dashboard.analytics?.admissions),
+            hostel: Boolean(dashboard.analytics?.hostel),
+            data_quality: Boolean(dashboard.analytics?.data_quality),
+            snapshot_trends: Boolean(dashboard.analytics?.snapshot_trends),
+        });
     }, [dashboard.analytics]);
 
     const loadSection = async (sectionKey) => {
@@ -856,12 +803,6 @@ function StaffDashboard({ dashboard }) {
                 from one place.
             </p>
 
-            {analyticsLoading ? (
-                <div className="mt-4 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800">
-                    Loading executive analytics. Core navigation is ready.
-                </div>
-            ) : null}
-
             {analyticsError ? (
                 <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
                     {analyticsError}
@@ -959,8 +900,15 @@ function StaffDashboard({ dashboard }) {
             <div className="mt-10 space-y-8">
                 <DashboardSection
                     title="Executive Analytics"
-                    description={`Active session: ${executive.active_session?.label ?? "No active session"}`}
+                    description={
+                        loadedSections.executive
+                            ? `Active session: ${executive.active_session?.label ?? "No active session"}`
+                            : "Institution-wide student, finance, and hostel signals."
+                    }
                     cards={executiveCards}
+                    loaded={loadedSections.executive}
+                    loading={Boolean(sectionLoading.executive)}
+                    onLoad={() => loadSection("executive")}
                 />
 
                 <DashboardSection

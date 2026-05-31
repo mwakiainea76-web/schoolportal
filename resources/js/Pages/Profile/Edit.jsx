@@ -37,3 +37,5 @@ export default function Edit({ mustVerifyEmail, status }) {
         </AuthenticatedLayout>
     );
 }
+
+Edit.layout = (page) => <AuthenticatedLayout children={page} />;
