@@ -12,33 +12,33 @@ class DemoStaffSeeder extends Seeder
 {
     public function seed(array $roles): array
     {
-        $admin = User::firstOrCreate(
+        $admin = User::updateOrCreate(
             ['email' => 'admin@tvetdemo.ke'],
-            $this->userData('Martin', 'Njoroge', '0701001001', '1988-06-14', 'Nairobi', 'Westlands, Nairobi', 'male', 'Catholic', 'Password@123')
+            $this->userData('Martin', 'Njoroge', 'TVET/STAFF/001', '0701001001', '1988-06-14', 'Nairobi', 'Westlands, Nairobi', 'male', 'Catholic', 'Password@123')
         );
         $admin->syncRoles([$roles['admin']->name]);
 
-        $registrarUser = User::firstOrCreate(
+        $registrarUser = User::updateOrCreate(
             ['email' => 'registrar@tvetdemo.ke'],
-            $this->userData('Linet', 'Wambui', '0701001002', '1991-02-11', 'Kiambu', 'Ruiru, Kiambu', 'female', 'Christian', 'Password@123')
+            $this->userData('Linet', 'Wambui', 'TVET/STAFF/002', '0701001002', '1991-02-11', 'Kiambu', 'Ruiru, Kiambu', 'female', 'Christian', 'Password@123')
         );
         $registrarUser->syncRoles([$roles['registrar']->name]);
 
-        $bursarUser = User::firstOrCreate(
+        $bursarUser = User::updateOrCreate(
             ['email' => 'bursar@tvetdemo.ke'],
-            $this->userData('Peter', 'Mutiso', '0701001003', '1986-09-03', 'Machakos', 'Machakos Town', 'male', 'Christian', 'Password@123')
+            $this->userData('Peter', 'Mutiso', 'TVET/STAFF/003', '0701001003', '1986-09-03', 'Machakos', 'Machakos Town', 'male', 'Christian', 'Password@123')
         );
         $bursarUser->syncRoles([$roles['bursar']->name]);
 
-        $hodUser = User::firstOrCreate(
+        $hodUser = User::updateOrCreate(
             ['email' => 'hod.ict@tvetdemo.ke'],
-            $this->userData('Mercy', 'Achieng', '0701001004', '1989-12-21', 'Kisumu', 'Milimani, Kisumu', 'female', 'Christian', 'Password@123')
+            $this->userData('Mercy', 'Achieng', 'TVET/STAFF/004', '0701001004', '1989-12-21', 'Kisumu', 'Milimani, Kisumu', 'female', 'Christian', 'Password@123')
         );
         $hodUser->syncRoles([$roles['hod']->name]);
 
-        $trainerUser = User::firstOrCreate(
+        $trainerUser = User::updateOrCreate(
             ['email' => 'trainer.ict@tvetdemo.ke'],
-            $this->userData('Brian', 'Otieno', '0701001005', '1992-04-10', 'Kisumu', 'Migosi, Kisumu', 'male', 'Christian', 'Password@123')
+            $this->userData('Brian', 'Otieno', 'TVET/STAFF/005', '0701001005', '1992-04-10', 'Kisumu', 'Migosi, Kisumu', 'male', 'Christian', 'Password@123')
         );
         $trainerUser->syncRoles([$roles['trainer']->name]);
 
@@ -153,12 +153,6 @@ class DemoStaffSeeder extends Seeder
             ]
         );
 
-        $admin->forceFill(['login_id' => 'TVET/STAFF/001'])->save();
-        $registrarUser->forceFill(['login_id' => 'TVET/STAFF/002'])->save();
-        $bursarUser->forceFill(['login_id' => 'TVET/STAFF/003'])->save();
-        $hodUser->forceFill(['login_id' => 'TVET/STAFF/004'])->save();
-        $trainerUser->forceFill(['login_id' => 'TVET/STAFF/005'])->save();
-
         return [
             'admin' => $admin,
             'bursar_user' => $bursarUser,
@@ -176,6 +170,7 @@ class DemoStaffSeeder extends Seeder
     protected function userData(
         string $firstName,
         string $lastName,
+        string $loginId,
         string $phoneNumber,
         string $dateOfBirth,
         string $county,
@@ -188,7 +183,7 @@ class DemoStaffSeeder extends Seeder
             'first_name' => $firstName,
             'last_name' => $lastName,
             'other_name' => '',
-            'login_id' => '',
+            'login_id' => $loginId,
             'phone_number' => $phoneNumber,
             'date_of_birth' => $dateOfBirth,
             'county' => $county,
