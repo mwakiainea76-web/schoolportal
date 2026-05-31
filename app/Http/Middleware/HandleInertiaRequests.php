@@ -28,9 +28,7 @@ class HandleInertiaRequests extends Middleware
     {
         $rbac = app(RBACService::class);
         $user = $request->user();
-        $routeName = $request->route()?->getName();
         $authPayload = fn () => $rbac->payload();
-        $uiPermissions = fn () => $rbac->uiPermissions($routeName);
 
         return array_merge(parent::share($request), [
             'auth' => [
@@ -43,12 +41,7 @@ class HandleInertiaRequests extends Middleware
                     ]
                     : null,
                 'roles' => fn () => $authPayload()['roles'],
-                'permissions' => $uiPermissions,
-                'abilities' => fn () => [
-                    'can_manage_units' => in_array('units.view', $uiPermissions(), true),
-                    'can_manage_program_versions' => in_array('program-versions.view', $uiPermissions(), true),
-                    'can_view_reports' => in_array('students.view', $uiPermissions(), true),
-                ],
+                'permissions' => fn () => $authPayload()['permissions'],
             ],
 
             'flash' => [
