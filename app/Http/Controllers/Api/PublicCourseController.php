@@ -30,7 +30,7 @@ class PublicCourseController extends Controller
                 $certificationLevel = $program?->certificationLevel?->name;
 
                 return [
-                    'id' => $mapping->programVersion?->id,
+                    'program_version_id' => $mapping->programVersion?->id,
                     'code' => $program?->code,
                     'course_name' => $program?->name,
                     'certification_level' => $certificationLevel,
@@ -40,16 +40,6 @@ class PublicCourseController extends Controller
             })
             ->values();
 
-        return ApiResponse::success([
-            'data' => [
-                'active_program_version' => $activeProgramVersion ? [
-                    'id' => $activeProgramVersion->id,
-                    'name' => $activeProgramVersion->name,
-                    'start_date' => optional($activeProgramVersion->start_date)->toDateString(),
-                    'end_date' => optional($activeProgramVersion->end_date)->toDateString(),
-                ] : null,
-                'courses' => $courses,
-            ],
-        ]);
+        return ApiResponse::success(['courses' => $courses]);
     }
 }
