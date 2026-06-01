@@ -30,7 +30,7 @@ class PublicCourseController extends Controller
                 $certificationLevel = $program?->certificationLevel?->name;
 
                 return [
-                    'program_version_id' => $mapping->programVersion?->id,
+
                     'code' => $program?->code,
                     'course_name' => $program?->name,
                     'certification_level' => $certificationLevel,
@@ -40,6 +40,7 @@ class PublicCourseController extends Controller
             })
             ->values();
 
-        return ApiResponse::success(['courses' => $courses]);
+        return ApiResponse::success(
+            data: ['courses' => $courses]);
     }
 }
