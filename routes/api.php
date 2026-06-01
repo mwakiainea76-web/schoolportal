@@ -3,8 +3,12 @@
 use App\Http\Controllers\Api\FeeManagement\FeeAssignmentController;
 use App\Http\Controllers\Api\FeeManagement\FeeComponentController;
 use App\Http\Controllers\Api\FeeManagement\FeePlanController;
+use App\Http\Controllers\Api\PublicCourseController;
 use App\Http\Controllers\ReportingController;
 use Illuminate\Support\Facades\Route;
+
+Route::get('/public/courses', [PublicCourseController::class, 'index']);
+Route::get('/public/courses-offered', [PublicCourseController::class, 'index']);
 
 Route::middleware('auth')->group(function () {
     Route::prefix('fee-plans')->group(function () {

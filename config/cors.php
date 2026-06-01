@@ -1,9 +1,12 @@
 <?php
 
-$allowedOrigins = array_values(array_filter(array_map(
+$parseOrigins = static fn (string $value): array => array_values(array_filter(array_map(
     'trim',
-    explode(',', (string) env('CORS_ALLOWED_ORIGINS', ''))
+    explode(',', $value)
 )));
+
+$allowedOrigins = $parseOrigins((string) env('CORS_ALLOWED_ORIGINS', ''));
+$publicAllowedOrigins = $parseOrigins((string) env('PUBLIC_API_ALLOWED_ORIGINS', ''));
 
 return [
     'paths' => ['api/*', 'sanctum/csrf-cookie'],
@@ -11,6 +14,8 @@ return [
     'allowed_methods' => ['*'],
 
     'allowed_origins' => $allowedOrigins,
+
+    'public_allowed_origins' => $publicAllowedOrigins,
 
     'allowed_origins_patterns' => [],
 

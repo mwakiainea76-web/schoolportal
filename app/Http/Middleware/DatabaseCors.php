@@ -20,7 +20,7 @@ class DatabaseCors
             return $next($request);
         }
 
-        if (! $this->isAllowed($origin)) {
+        if (! $this->isAllowed($request, $origin)) {
             return response('', 403);
         }
 
@@ -31,14 +31,18 @@ class DatabaseCors
         return $this->withCorsHeaders($next($request), $request, $origin);
     }
 
-    private function isAllowed(string $origin): bool
+    private function isAllowed(Request $request, string $origin): bool
     {
-        return in_array($origin, $this->allowedOrigins(), true);
+        return in_array($origin, $this->allowedOrigins($request), true);
     }
 
-    private function allowedOrigins(): array
+    private function allowedOrigins(Request $request): array
     {
-        $allowedOrigins = config('cors.allowed_origins', []);
+        $configKey = $request->is('api/public/*')
+            ? 'cors.public_allowed_origins'
+            : 'cors.allowed_origins';
+
+        $allowedOrigins = config($configKey, []);
 
         if (is_string($allowedOrigins)) {
             $allowedOrigins = explode(',', $allowedOrigins);
