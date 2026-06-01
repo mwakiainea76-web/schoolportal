@@ -36,10 +36,35 @@ export default function ReportsIndex({
     pageTitle = "Reports Dashboard",
     pageDescription = "A consolidated analytics workspace.",
 }) {
+    const emptyExecutiveSummary = {
+        active_session: null,
+        metrics: {
+            total_students: 0,
+            active_students: 0,
+            new_admissions_this_month: 0,
+            students_registered_in_active_session: 0,
+            eligible_students_for_active_session: 0,
+            session_registration_rate: 0,
+            hostel_occupancy_rate: 0,
+            occupied_beds: 0,
+            active_beds: 0,
+            total_invoiced: 0,
+            total_collected: 0,
+            outstanding_balance: 0,
+            overdue_balance: 0,
+        },
+        breakdowns: {
+            top_programs: [],
+            student_statuses: [],
+        },
+    };
+
     const [academicSummary, setAcademicSummary] = useState(null);
     const [admissionsSummary, setAdmissionsSummary] = useState(null);
     const [dataQualitySummary, setDataQualitySummary] = useState(null);
-    const [executiveSummary, setExecutiveSummary] = useState(null);
+    const [executiveSummary, setExecutiveSummary] =
+        useState(emptyExecutiveSummary);
+    const [executiveError, setExecutiveError] = useState(null);
     const [financeSummary, setFinanceSummary] = useState(null);
     const [hostelSummary, setHostelSummary] = useState(null);
     const [snapshotTrends, setSnapshotTrends] = useState(null);
@@ -97,8 +122,27 @@ export default function ReportsIndex({
                 const executiveResponse = await fetch(
                     route("reports.api.executive-summary"),
                 );
+
+                if (!executiveResponse.ok) {
+                    throw new Error(
+                        `Executive summary request failed with status ${executiveResponse.status}.`,
+                    );
+                }
+
                 const executiveData = await executiveResponse.json();
-                setExecutiveSummary(executiveData);
+                setExecutiveSummary({
+                    ...emptyExecutiveSummary,
+                    ...executiveData,
+                    metrics: {
+                        ...emptyExecutiveSummary.metrics,
+                        ...(executiveData.metrics ?? {}),
+                    },
+                    breakdowns: {
+                        ...emptyExecutiveSummary.breakdowns,
+                        ...(executiveData.breakdowns ?? {}),
+                    },
+                });
+                setExecutiveError(null);
             }
 
             if (showFinance) {
@@ -179,6 +223,13 @@ export default function ReportsIndex({
             }
         } catch (error) {
             console.error("Error loading reports:", error);
+            if (showExecutive) {
+                setExecutiveSummary(emptyExecutiveSummary);
+                setExecutiveError(
+                    error?.message ||
+                        "Unable to load executive analytics right now.",
+                );
+            }
         } finally {
             setLoading(false);
         }
@@ -320,7 +371,7 @@ export default function ReportsIndex({
                     </div>
                 </div>
 
-                {showExecutive && executiveSummary && (
+                {showExecutive && (
                     <>
                         <div className="rounded-lg border border-zinc-100 bg-white p-6 shadow-sm">
                             <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
@@ -340,6 +391,12 @@ export default function ReportsIndex({
                                     </span>
                                 </div>
                             </div>
+
+                            {executiveError ? (
+                                <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                                    {executiveError}
+                                </div>
+                            ) : null}
 
                             <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
                                 <MetricCard
