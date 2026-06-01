@@ -30,11 +30,10 @@ class PublicCourseController extends Controller
                 $certificationLevel = $program?->certificationLevel?->name;
 
                 return [
-                    'id' => $program?->id,
+                    'id' => $mapping->programVersion?->id,
                     'code' => $program?->code,
                     'course_name' => $program?->name,
                     'certification_level' => $certificationLevel,
-                    'display_name' => trim(($program?->name ?? '').' - '.($certificationLevel ?? ''), ' -'),
                     'program_version_name' => $mapping->programVersion?->name,
                     'duration_in_months' => $program?->duration_in_months,
                 ];
