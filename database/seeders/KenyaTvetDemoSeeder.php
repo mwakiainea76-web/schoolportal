@@ -239,6 +239,8 @@ class KenyaTvetDemoSeeder extends Seeder
                 [
                     'exam_body_id' => $examBodies['cdacc']->id,
                     'entry_grade' => 'D',
+                    'modules' => 3,
+                    'duration_in_months' => 12,
                     'name' => 'Artisan Certificate Level 4',
                     'description' => 'Level 4 artisan training aligned to Kenyan TVET CBC pathways.',
                 ]
@@ -248,6 +250,8 @@ class KenyaTvetDemoSeeder extends Seeder
                 [
                     'exam_body_id' => $examBodies['cdacc']->id,
                     'entry_grade' => 'D+',
+                    'modules' => 5,
+                    'duration_in_months' => 20,
                     'name' => 'Craft Certificate Level 5',
                     'description' => 'Level 5 craft certificate for technical and vocational training.',
                 ]
@@ -257,6 +261,8 @@ class KenyaTvetDemoSeeder extends Seeder
                 [
                     'exam_body_id' => $examBodies['knec']->id,
                     'entry_grade' => 'C-',
+                    'modules' => 6,
+                    'duration_in_months' => 24,
                     'name' => 'Diploma Level 6',
                     'description' => 'Diploma level occupational training for Kenyan TVET institutions.',
                 ]
@@ -427,7 +433,7 @@ class KenyaTvetDemoSeeder extends Seeder
                     'name' => 'ICT Technician Level 4',
                     'description' => 'Foundational ICT support, networking, and computer maintenance.',
                     'initials' => 'ICT4',
-                    'duration_in_months' => 12,
+                    'duration_in_months' => $levels['artisan4']->duration_in_months,
                     'certification_level_id' => $levels['artisan4']->id,
                     'department_id' => $departments['ict']->id,
                 ]
@@ -438,7 +444,7 @@ class KenyaTvetDemoSeeder extends Seeder
                     'name' => 'Electrical Installation Technician Level 4',
                     'description' => 'Domestic and industrial electrical installation training.',
                     'initials' => 'EIT4',
-                    'duration_in_months' => 12,
+                    'duration_in_months' => $levels['artisan4']->duration_in_months,
                     'certification_level_id' => $levels['artisan4']->id,
                     'department_id' => $departments['electrical']->id,
                 ]
@@ -449,7 +455,7 @@ class KenyaTvetDemoSeeder extends Seeder
                     'name' => 'Plumbing Technician Level 4',
                     'description' => 'Water systems, drainage, and sanitation plumbing skills.',
                     'initials' => 'PLB4',
-                    'duration_in_months' => 12,
+                    'duration_in_months' => $levels['artisan4']->duration_in_months,
                     'certification_level_id' => $levels['artisan4']->id,
                     'department_id' => $departments['building']->id,
                 ]
@@ -460,7 +466,7 @@ class KenyaTvetDemoSeeder extends Seeder
                     'name' => 'Food and Beverage Production Level 5',
                     'description' => 'Kitchen operations, bakery, service, and hospitality production.',
                     'initials' => 'FBP5',
-                    'duration_in_months' => 18,
+                    'duration_in_months' => $levels['craft5']->duration_in_months,
                     'certification_level_id' => $levels['craft5']->id,
                     'department_id' => $departments['hospitality']->id,
                 ]
@@ -471,7 +477,7 @@ class KenyaTvetDemoSeeder extends Seeder
                     'name' => 'Supply Chain Management Level 6',
                     'description' => 'Procurement, stores, inventory, and logistics operations.',
                     'initials' => 'SCM6',
-                    'duration_in_months' => 24,
+                    'duration_in_months' => $levels['diploma6']->duration_in_months,
                     'certification_level_id' => $levels['diploma6']->id,
                     'department_id' => $departments['business']->id,
                 ]

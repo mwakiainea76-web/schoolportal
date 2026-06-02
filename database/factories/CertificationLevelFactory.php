@@ -17,12 +17,16 @@ class CertificationLevelFactory extends Factory
      */
     public function definition(): array
     {
+        $modules = $this->faker->numberBetween(1, 6);
+
         return [
             'exam_body_id' => \App\Models\ExamBody::factory(),
             'code' => $this->faker->unique()->lexify('CL???'),
             'name' => $this->faker->word,
             'description' => $this->faker->sentence,
             'entry_grade' => $this->faker->randomElement(['A', 'B', 'C', 'D', 'E']),
+            'modules' => $modules,
+            'duration_in_months' => $modules * 4,
         ];
     }
 }

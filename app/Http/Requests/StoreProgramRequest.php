@@ -28,10 +28,8 @@ class StoreProgramRequest extends FormRequest
             ],
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'duration_in_months' => 'required|integer|min:1|max:20',
             'certification_level_id' => 'required|exists:certification_levels,id',
             'department_id' => 'required|exists:departments,id',
         ];
     }
 }
-

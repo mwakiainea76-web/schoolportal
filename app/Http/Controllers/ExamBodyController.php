@@ -25,13 +25,17 @@ class ExamBodyController extends Controller
                 $query,
                 $request->only(['search', 'sort', 'direction'])
             ))
-            ->latest()
-            ->paginate(10)
-            ->withQueryString();
+            ->with(['certificationLevels' => fn ($query) => $query->orderBy('name')])
+            ->orderBy('name')
+            ->get();
+
+        $selectedExamBodyId = $request->integer('exam_body_id')
+            ?: $examBodies->first()?->id;
 
         return inertia('ExamBodies/Workspace', [
             'activeTab' => 'exam-bodies',
             'examBodies' => $examBodies,
+            'selectedExamBodyId' => $selectedExamBodyId,
             'filters' => [
                 'search' => $request->search,
                 'sort' => $request->sort,
@@ -50,7 +54,7 @@ class ExamBodyController extends Controller
         $this->service->create($request->validated());
 
         return redirect()
-            ->route('exam.bodies.create')
+            ->route('exam.bodies.index')
             ->with('success', 'Exam body created successfully');
     }
 
@@ -73,7 +77,7 @@ class ExamBodyController extends Controller
         $this->service->update($exam_body, $request->validated());
 
         return redirect()
-            ->route('exam.bodies.edit', $exam_body->id)
+            ->route('exam.bodies.index', ['exam_body_id' => $exam_body->id])
             ->with('success', 'Exam body updated successfully');
     }
 

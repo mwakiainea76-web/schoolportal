@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\CertificationLevel;
 use App\Models\Program;
 use App\Models\Unit;
 
@@ -9,12 +10,14 @@ class ProgramService
 {
     public function create(array $data): Program
     {
+        $certificationLevel = CertificationLevel::findOrFail($data['certification_level_id']);
+
         return Program::create([
             'code' => $data['code'],
             'name' => $data['name'],
             'description' => $data['description'] ?? null,
             'initials' => $data['initials'],
-            'duration_in_months' => $data['duration_in_months'],
+            'duration_in_months' => $certificationLevel->duration_in_months,
             'certification_level_id' => $data['certification_level_id'],
             'department_id' => $data['department_id'],
         ]);
@@ -22,12 +25,14 @@ class ProgramService
 
     public function update(Program $course, array $data): Program
     {
+        $certificationLevel = CertificationLevel::findOrFail($data['certification_level_id']);
+
         $course->update([
             'code' => $data['code'],
             'name' => $data['name'],
             'description' => $data['description'] ?? null,
             'initials' => $data['initials'],
-            'duration_in_months' => $data['duration_in_months'],
+            'duration_in_months' => $certificationLevel->duration_in_months,
             'certification_level_id' => $data['certification_level_id'],
             'department_id' => $data['department_id'],
         ]);
@@ -73,4 +78,3 @@ class ProgramService
             ]);
     }
 }
-

@@ -14,14 +14,42 @@ class RoleController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Role::with('permissions')->orderBy('name');
+        $roles = Role::withCount('permissions')
+            ->orderBy('name')
+            ->get();
+        $selectedRoleId = $request->integer('role_id') ?: null;
+        $selectedPermissions = $selectedRoleId
+            ? Role::find($selectedRoleId)?->permissions()
+                ->select('permissions.id', 'permissions.name')
+                ->orderBy('permissions.name')
+                ->get() ?? collect()
+            : collect();
 
-        if ($request->search) {
-            $query->where('name', 'like', '%'.$request->search.'%');
+        $permissionsQuery = Permission::query();
+        if (! empty($request->search)) {
+            $permissionsQuery->where('name', 'like', '%'.$request->search.'%');
         }
 
+        $allowedSorts = ['name', 'created_at'];
+        $sort = in_array($request->sort, $allowedSorts, true)
+            ? $request->sort
+            : 'name';
+        $direction = $request->direction === 'desc' ? 'desc' : 'asc';
+
+        $permissionsQuery->orderBy($sort, $direction);
+
         return inertia('Roles/Index', [
-            'roles' => $query->paginate(10),
+            'roles' => $roles,
+            'permissions' => $permissionsQuery
+                ->paginate(10)
+                ->withQueryString(),
+            'selectedRoleId' => $selectedRoleId,
+            'selectedPermissions' => $selectedPermissions,
+            'filters' => [
+                'search' => $request->search,
+                'sort' => $sort,
+                'direction' => $direction,
+            ],
         ]);
     }
 
@@ -56,7 +84,7 @@ class RoleController extends Controller
         RbacCache::forgetForRole($role);
 
         return redirect()
-            ->route('roles.index')
+            ->route('roles.index', ['role_id' => $role->id])
             ->with('success', 'Role created successfully');
     }
 
@@ -87,12 +115,13 @@ class RoleController extends Controller
             'name' => $request->name,
         ]);
 
-        // FULL SYNC (remove old + assign new)
-        $role->syncPermissions($request->permissions ?? []);
+        if ($request->has('permissions')) {
+            $role->syncPermissions($request->permissions ?? []);
+        }
         RbacCache::forgetForRole($role);
 
         return redirect()
-            ->route('roles.index')
+            ->route('roles.index', ['role_id' => $role->id])
             ->with('success', 'Role updated successfully');
     }
 
@@ -147,7 +176,7 @@ class RoleController extends Controller
 
         $role = Role::findOrFail($request->role_id);
 
-        $role->syncPermissions($request->permissions);
+        $role->syncPermissions($request->permissions ?? []);
         RbacCache::forgetForRole($role);
 
         return back()->with('success', 'Permissions assigned successfully');

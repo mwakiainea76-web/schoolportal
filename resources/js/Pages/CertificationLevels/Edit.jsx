@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Head, Link, useForm } from "@inertiajs/react";
 import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
@@ -10,6 +10,13 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 const Edit = ({ certification_level, exam_bodies, selectedExamBody }) => {
     const cert = certification_level || null;
     const hasExamBodies = exam_bodies.length > 0;
+    const examBodyOptions = useMemo(
+        () => exam_bodies.map((body) => ({
+            ...body,
+            name: body.code ? `${body.code} - ${body.name}` : body.name,
+        })),
+        [exam_bodies],
+    );
 
     const { data, setData, put, processing, errors } = useForm({
         code: certification_level?.code ?? "",
@@ -17,6 +24,7 @@ const Edit = ({ certification_level, exam_bodies, selectedExamBody }) => {
         name: certification_level?.name ?? "",
         description: certification_level?.description ?? "",
         entry_grade: certification_level?.entry_grade ?? "",
+        modules: certification_level?.modules ?? 1,
     });
 
     const submit = (e) => {
@@ -48,30 +56,6 @@ const Edit = ({ certification_level, exam_bodies, selectedExamBody }) => {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 xl:grid-cols-3">
                             <div>
-                                <InputLabel
-                                    htmlFor="exam_body_id"
-                                    value="Exam Body"
-                                />
-                                <SearchSelect
-                                    routeName="exam-bodies.search"
-                                    defaultOptions={exam_bodies}
-                                    value={data.exam_body_id}
-                                    placeholder="Search Exam Body..."
-                                    disabled={!hasExamBodies}
-                                    onChange={(body) =>
-                                        setData("exam_body_id", body.id)
-                                    }
-                                    error={errors.exam_body_id}
-                                />
-                                {!hasExamBodies ? (
-                                    <p className="mt-1 text-xs text-amber-600">
-                                        Create an exam body first to continue.
-                                    </p>
-                                ) : null}
-                                <InputError message={errors.exam_body_id} />
-                            </div>
-
-                            <div>
                                 <InputLabel value="Certification Code" />
                                 <TextInput
                                     error={errors.code}
@@ -96,6 +80,37 @@ const Edit = ({ certification_level, exam_bodies, selectedExamBody }) => {
                             </div>
 
                             <div>
+                                <InputLabel
+                                    htmlFor="exam_body_id"
+                                    value="Exam Body"
+                                />
+                                <SearchSelect
+                                    routeName="exam-bodies.search"
+                                    defaultOptions={examBodyOptions}
+                                    value={data.exam_body_id}
+                                    selectedLabel={
+                                        selectedExamBody
+                                            ? `${selectedExamBody.code} - ${selectedExamBody.name}`
+                                            : examBodyOptions.find(
+                                                (body) => String(body.id) === String(data.exam_body_id),
+                                            )?.name
+                                    }
+                                    placeholder="Search Exam Body..."
+                                    disabled={!hasExamBodies}
+                                    onChange={(body) =>
+                                        setData("exam_body_id", body.id)
+                                    }
+                                    error={errors.exam_body_id}
+                                />
+                                {!hasExamBodies ? (
+                                    <p className="mt-1 text-xs text-amber-600">
+                                        Create an exam body first to continue.
+                                    </p>
+                                ) : null}
+                                <InputError message={errors.exam_body_id} />
+                            </div>
+
+                            <div>
                                 <InputLabel value="Entry Grade" />
                                 <TextInput
                                     error={errors.entry_grade}
@@ -105,6 +120,23 @@ const Edit = ({ certification_level, exam_bodies, selectedExamBody }) => {
                                     }
                                 />
                                 <InputError message={errors.entry_grade} />
+                            </div>
+
+                            <div>
+                                <InputLabel value="Modules" />
+                                <TextInput
+                                    type="number"
+                                    min="1"
+                                    error={errors.modules}
+                                    value={data.modules}
+                                    onChange={(e) =>
+                                        setData("modules", e.target.value)
+                                    }
+                                />
+                                <p className="mt-1 text-xs text-zinc-500">
+                                    Duration: {Math.max(parseInt(data.modules || 1, 10), 1) * 4} months
+                                </p>
+                                <InputError message={errors.modules} />
                             </div>
                         </div>
 

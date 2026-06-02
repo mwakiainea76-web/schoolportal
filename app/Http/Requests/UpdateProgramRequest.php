@@ -25,10 +25,8 @@ class UpdateProgramRequest extends FormRequest
             'initials' => 'required|string|max:255',
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'duration_in_months' => 'nullable|integer|min:1|max:65535',
             'certification_level_id' => 'required|exists:certification_levels,id',
             'department_id' => 'required|exists:departments,id',
         ];
     }
 }
-

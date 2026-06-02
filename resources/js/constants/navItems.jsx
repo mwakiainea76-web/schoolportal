@@ -345,21 +345,9 @@ export const STAFF_NAV_ITEMS = [
             {
                 key: "access-control",
                 label: "Access Control",
-                icon: "roles",
-                children: [
-                    {
-                        routeName: "roles.index",
-                        fallback: "/roles",
-                        label: "Roles",
-                        permission: "roles.view",
-                    },
-                    {
-                        routeName: "permissions.index",
-                        fallback: "/permissions",
-                        label: "Permissions",
-                        permission: "permissions.view",
-                    },
-                ],
+                routeName: "roles.index",
+                fallback: "/roles",
+                activeRouteNames: ["permissions.index"],
             },
         ],
     },

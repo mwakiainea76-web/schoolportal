@@ -1,4 +1,5 @@
 import { Head, Link, useForm } from "@inertiajs/react";
+import { useMemo } from "react";
 import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import TextInput from "@/Components/TextInput";
@@ -12,6 +13,13 @@ export default function AddCertificationLevel({
     selectedExamBody,
 }) {
     const hasExamBodies = examBodies.length > 0;
+    const examBodyOptions = useMemo(
+        () => examBodies.map((body) => ({
+            ...body,
+            name: body.code ? `${body.code} - ${body.name}` : body.name,
+        })),
+        [examBodies],
+    );
 
     const { data, setData, post, processing, errors, reset } = useForm({
         code: "",
@@ -19,6 +27,7 @@ export default function AddCertificationLevel({
         name: "",
         description: "",
         entry_grade: "",
+        modules: 1,
     });
 
     const submit = (e) => {
@@ -30,6 +39,7 @@ export default function AddCertificationLevel({
                 setData("name", "");
                 setData("description", "");
                 setData("entry_grade", "");
+                setData("modules", 1);
             },
         });
     };
@@ -62,33 +72,6 @@ export default function AddCertificationLevel({
                             </div>
                         ) : null}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 xl:grid-cols-3">
-                            <div>
-                                <InputLabel
-                                    htmlFor="exam_body_id"
-                                    value="Exam Body "
-                                />
-
-                                <SearchSelect
-                                    routeName="exam-bodies.search"
-                                    defaultOptions={examBodies}
-                                    placeholder="Search Exam Body..."
-                                    disabled={!hasExamBodies}
-                                    onChange={(body) =>
-                                        setData("exam_body_id", body.id)
-                                    }
-                                />
-                                {!hasExamBodies ? (
-                                    <p className="mt-1 text-xs text-amber-600">
-                                        Create an exam body first to continue.
-                                    </p>
-                                ) : null}
-
-                                <InputError
-                                    message={errors.exam_body_id}
-                                    className="mt-2"
-                                />
-                            </div>
-
                             <div>
                                 <InputLabel
                                     htmlFor="code"
@@ -144,6 +127,42 @@ export default function AddCertificationLevel({
 
                             <div>
                                 <InputLabel
+                                    htmlFor="exam_body_id"
+                                    value="Exam Body"
+                                />
+
+                                <SearchSelect
+                                    routeName="exam-bodies.search"
+                                    defaultOptions={examBodyOptions}
+                                    value={data.exam_body_id}
+                                    selectedLabel={
+                                        selectedExamBody
+                                            ? `${selectedExamBody.code} - ${selectedExamBody.name}`
+                                            : examBodyOptions.find(
+                                                (body) => String(body.id) === String(data.exam_body_id),
+                                            )?.name
+                                    }
+                                    placeholder="Search Exam Body..."
+                                    disabled={!hasExamBodies}
+                                    onChange={(body) =>
+                                        setData("exam_body_id", body.id)
+                                    }
+                                    error={errors.exam_body_id}
+                                />
+                                {!hasExamBodies ? (
+                                    <p className="mt-1 text-xs text-amber-600">
+                                        Create an exam body first to continue.
+                                    </p>
+                                ) : null}
+
+                                <InputError
+                                    message={errors.exam_body_id}
+                                    className="mt-2"
+                                />
+                            </div>
+
+                            <div>
+                                <InputLabel
                                     htmlFor="entry_grade"
                                     value="Entry Grade"
                                 />
@@ -165,6 +184,35 @@ export default function AddCertificationLevel({
                                 {/* Fixed: was showing errors.name instead of errors.entry_grade */}
                                 <InputError
                                     message={errors.entry_grade}
+                                    className="mt-2"
+                                />
+                            </div>
+
+                            <div>
+                                <InputLabel
+                                    htmlFor="modules"
+                                    value="Modules"
+                                />
+                                <TextInput
+                                    id="modules"
+                                    type="number"
+                                    name="modules"
+                                    className={`mt-1 block w-full ${
+                                        errors.modules
+                                            ? "border-red-400"
+                                            : "border-zinc-200"
+                                    }`}
+                                    min="1"
+                                    value={data.modules}
+                                    onChange={(e) =>
+                                        setData("modules", e.target.value)
+                                    }
+                                />
+                                <p className="mt-1 text-xs text-zinc-500">
+                                    Duration: {Math.max(parseInt(data.modules || 1, 10), 1) * 4} months
+                                </p>
+                                <InputError
+                                    message={errors.modules}
                                     className="mt-2"
                                 />
                             </div>

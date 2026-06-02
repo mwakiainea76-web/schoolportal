@@ -19,8 +19,8 @@ class PublicCourseController extends Controller
             ->active()
             ->whereHas('programVersion', fn ($query) => $query->active())
             ->with([
-                'program:id,code,name,duration_in_months,certification_level_id',
-                'program.certificationLevel:id,name',
+                'program:id,code,name,certification_level_id',
+                'program.certificationLevel:id,name,duration_in_months',
                 'programVersion:id,name',
             ])
             ->orderBy('program_id')
@@ -35,7 +35,7 @@ class PublicCourseController extends Controller
                     'course_name' => $program?->name,
                     'certification_level' => $certificationLevel,
                     'program_version_name' => $mapping->programVersion?->name,
-                    'duration_in_months' => $program?->duration_in_months,
+                    'duration_in_months' => $program?->certificationLevel?->duration_in_months,
                 ];
             })
             ->values();

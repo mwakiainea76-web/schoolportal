@@ -1,6 +1,5 @@
 import React from "react";
 import { Head } from "@inertiajs/react";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import Table from "@/Components/Table/Table";
 import Thead from "@/Components/Table/Thead";
 import THdata from "@/Components/Table/THdata";
@@ -11,7 +10,7 @@ import formatDate from "@/utils/date";
 
 export default function Index({ courseEnrollments }) {
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Program Enrollments" />
 
             <div className="max-w-6xl mx-auto w-full">
@@ -61,6 +60,6 @@ export default function Index({ courseEnrollments }) {
                     </Tbody>
                 </Table>
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 }

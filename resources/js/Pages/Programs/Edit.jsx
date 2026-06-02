@@ -23,7 +23,6 @@ const Edit = ({ program, certification_levels, departments }) => {
         code: "",
         name: "",
         description: "",
-        duration_in_months: "",
         certification_level_id: "",
         department_id: "",
         initials: "",
@@ -37,7 +36,6 @@ const Edit = ({ program, certification_levels, departments }) => {
                 code: "",
                 name: "",
                 description: "",
-                duration_in_months: "",
                 certification_level_id: "",
                 department_id: "",
                 initials: "",
@@ -49,7 +47,6 @@ const Edit = ({ program, certification_levels, departments }) => {
             code: program.code ?? "",
             name: program.name ?? "",
             description: program.description ?? "",
-            duration_in_months: program.duration_in_months ?? "",
             certification_level_id: program.certification_level_id ?? "",
             department_id: program.department_id ?? "",
             initials: program.initials ?? "",
@@ -202,31 +199,6 @@ const Edit = ({ program, certification_levels, departments }) => {
                                 />
                             </div>
 
-                            {/* DURATION */}
-                            <div>
-                                <InputLabel
-                                    htmlFor="duration_in_months"
-                                    value="Duration (months)"
-                                />
-                                <TextInput
-                                    id="duration_in_months"
-                                    type="number"
-                                    name="duration_in_months"
-                                    className="mt-1 block w-full"
-                                    placeholder="e.g. 6"
-                                    min="1"
-                                    value={data.duration_in_months}
-                                    onChange={(e) =>
-                                        setData(
-                                            "duration_in_months",
-                                            e.target.value,
-                                        )
-                                    }
-                                />
-                                <InputError
-                                    message={errors.duration_in_months}
-                                />
-                            </div>
                         </div>
 
                         {/* DESCRIPTION */}
@@ -266,4 +238,3 @@ const Edit = ({ program, certification_levels, departments }) => {
 };
 
 export default Edit;
-

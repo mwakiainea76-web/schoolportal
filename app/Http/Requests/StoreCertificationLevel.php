@@ -20,6 +20,7 @@ class StoreCertificationLevel extends FormRequest
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'entry_grade' => 'required|string|max:255',
+            'modules' => 'required|integer|min:1|max:100',
             'exam_body_id' => 'required|exists:exam_bodies,id',
         ];
     }

@@ -21,24 +21,30 @@ class CertificationLevelController extends Controller
 
     public function index(Request $request, CertificationLevelFilter $filter)
     {
+        $examBodies = ExamBody::query()
+            ->with(['certificationLevels' => fn ($query) => $query->orderBy('name')])
+            ->orderBy('name')
+            ->get();
+
         $certificationLevels = CertificationLevel::query()
             ->tap(fn ($query) => $filter->apply(
                 $query,
                 $request->only(['search', 'sort', 'direction', 'exam_body_id'])
             ))
             ->with('examBody')
-            ->latest()
-            ->paginate(10)
-            ->withQueryString();
+            ->orderBy('name')
+            ->get();
 
         $selectedExamBody = $request->filled('exam_body_id')
             ? ExamBody::select('id', 'name', 'code')->find($request->integer('exam_body_id'))
-            : null;
+            : $examBodies->first();
 
         return inertia('ExamBodies/Workspace', [
             'activeTab' => 'certification-levels',
+            'examBodies' => $examBodies,
             'certificationLevels' => $certificationLevels,
             'selectedExamBody' => $selectedExamBody,
+            'selectedExamBodyId' => $selectedExamBody?->id,
             'filters' => [
                 'search' => $request->search,
                 'sort' => $request->sort,
@@ -66,14 +72,16 @@ class CertificationLevelController extends Controller
         $this->service->create($request->validated());
 
         return redirect()
-            ->route('certification-levels.create')
+            ->route('certification-levels.index', [
+                'exam_body_id' => $request->integer('exam_body_id'),
+            ])
             ->with('success', 'Certification level created successfully.');
     }
 
     public function edit(CertificationLevel $certification_level)
     {
         return inertia('CertificationLevels/Edit', [
-            'exam_bodies' => ExamBody::select('id', 'name')->limit(20)->get(),
+            'exam_bodies' => ExamBody::select('id', 'name', 'code')->limit(20)->get(),
             'certification_level' => $certification_level,
             'selectedExamBody' => $certification_level->examBody()
                 ->select('id', 'name', 'code')
@@ -86,7 +94,9 @@ class CertificationLevelController extends Controller
         $this->service->update($certification_level, $request->validated());
 
         return redirect()
-            ->route('certification-levels.edit', $certification_level->id)
+            ->route('certification-levels.index', [
+                'exam_body_id' => $certification_level->exam_body_id,
+            ])
             ->with('success', 'Certification level updated successfully.');
     }
 
@@ -96,12 +106,16 @@ class CertificationLevelController extends Controller
 
         if (! $result['status']) {
             return redirect()
-                ->route('certification-levels.index')
+                ->route('certification-levels.index', [
+                    'exam_body_id' => $certification_level->exam_body_id,
+                ])
                 ->with('error', $result['message']);
         }
 
         return redirect()
-            ->route('certification-levels.index')
+            ->route('certification-levels.index', [
+                'exam_body_id' => $certification_level->exam_body_id,
+            ])
             ->with('success', $result['message']);
     }
 

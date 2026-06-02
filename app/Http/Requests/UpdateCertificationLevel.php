@@ -41,6 +41,13 @@ class UpdateCertificationLevel extends FormRequest
                 'max:255',
             ],
 
+            'modules' => [
+                'required',
+                'integer',
+                'min:1',
+                'max:100',
+            ],
+
             'exam_body_id' => [
                 'required',
                 'exists:exam_bodies,id',

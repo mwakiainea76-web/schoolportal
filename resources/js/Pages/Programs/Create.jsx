@@ -21,7 +21,6 @@ export default function CreateProgram({ certification_levels, departments }) {
         code: "",
         name: "",
         description: "",
-        duration_in_months: "",
         initials: "",
         certification_level_id: "",
         department_id: "",
@@ -35,7 +34,6 @@ export default function CreateProgram({ certification_levels, departments }) {
                 setData("code", "");
                 setData("name", "");
                 setData("description", "");
-                setData("duration_in_months", "");
                 setData("initials", "");
             },
         });
@@ -178,32 +176,6 @@ export default function CreateProgram({ certification_levels, departments }) {
                                     className="mt-2"
                                 />
                             </div>
-                            {/* DURATION */}
-                            <div>
-                                <InputLabel
-                                    htmlFor="duration_in_months"
-                                    value="Duration (months)"
-                                />
-                                <TextInput
-                                    id="duration_in_months"
-                                    type="number"
-                                    name="duration_in_months"
-                                    className="mt-1 block w-full"
-                                    placeholder="e.g. 6"
-                                    min="1"
-                                    value={data.duration_in_months}
-                                    onChange={(e) =>
-                                        setData(
-                                            "duration_in_months",
-                                            e.target.value,
-                                        )
-                                    }
-                                />
-                                <InputError
-                                    message={errors.duration_in_months}
-                                    className="mt-2"
-                                />
-                            </div>
                         </div>
 
                          {/* DESCRIPTION */}
@@ -257,5 +229,4 @@ export default function CreateProgram({ certification_levels, departments }) {
         </AuthenticatedLayout>
     );
 }
-
 

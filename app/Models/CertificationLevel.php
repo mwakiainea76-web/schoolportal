@@ -16,6 +16,8 @@ class CertificationLevel extends Model
         'name',
         'description',
         'entry_grade',
+        'modules',
+        'duration_in_months',
     ];
 
     public function examBody()
@@ -30,4 +32,3 @@ class CertificationLevel extends Model
 
     //
 }
-

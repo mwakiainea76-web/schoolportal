@@ -19,6 +19,8 @@ return new class extends Migration
                 ->cascadeOnDelete()
                 ->cascadeOnUpdate();
             $table->string('entry_grade');
+            $table->unsignedSmallInteger('modules');
+            $table->unsignedSmallInteger('duration_in_months');
             $table->text('description')->nullable();
             $table->string('code')->unique();
             $table->string('name')->index();

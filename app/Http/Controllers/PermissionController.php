@@ -15,13 +15,24 @@ class PermissionController extends Controller
 
     public function index(Request $request)
     {
+        $roles = Role::withCount('permissions')
+            ->orderBy('name')
+            ->get();
+        $selectedRoleId = $request->integer('role_id') ?: null;
+        $selectedPermissions = $selectedRoleId
+            ? Role::find($selectedRoleId)?->permissions()
+                ->select('permissions.id', 'permissions.name')
+                ->orderBy('permissions.name')
+                ->get() ?? collect()
+            : collect();
+
         $query = Permission::query();
         if (! empty($request->search)) {
-            $query->where('name', 'ilike', '%'.$request->search.'%'); // PostgreSQL safe
+            $query->where('name', 'like', '%'.$request->search.'%');
         }
 
         $allowedSorts = ['name', 'created_at'];
-        $sort = in_array($request->sort, $allowedSorts)
+        $sort = in_array($request->sort, $allowedSorts, true)
             ? $request->sort
             : 'name';
 
@@ -29,14 +40,18 @@ class PermissionController extends Controller
 
         $query->orderBy($sort, $direction);
 
-        return inertia('Permissions/Index', [
+        return inertia('Roles/Index', [
+            'roles' => $roles,
             'permissions' => $query
                 ->paginate(10)
                 ->withQueryString(),
-
-            'sort' => $sort,
-            'direction' => $direction,
-            'search' => $request->search,
+            'selectedRoleId' => $selectedRoleId,
+            'selectedPermissions' => $selectedPermissions,
+            'filters' => [
+                'search' => $request->search,
+                'sort' => $sort,
+                'direction' => $direction,
+            ],
         ]);
     }
 
@@ -75,9 +90,7 @@ class PermissionController extends Controller
         ]);
         RbacCache::forgetAllUsers();
 
-        return redirect()
-            ->route('permissions.edit', $permission->id)
-            ->with('success', 'Permission updated successfully');
+        return back()->with('success', 'Permission updated successfully');
     }
 
     public function destroy(Permission $permission)
@@ -107,7 +120,7 @@ class PermissionController extends Controller
         $permissions = Permission::query()
             ->select('id', 'name')
             ->when($q, function ($query) use ($q) {
-                $query->where('name', 'ilike', "%{$q}%");
+                $query->where('name', 'like', "%{$q}%");
             })
             ->orderBy('name')
             ->get();
