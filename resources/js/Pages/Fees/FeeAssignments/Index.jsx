@@ -10,7 +10,6 @@ import Trow from "@/Components/Table/Trow";
 import Tdata from "@/Components/Table/Tdata";
 import SearchSelect from "@/Components/SearchSelect";
 import formatDate from "@/utils/date";
-import Modal from "@/Components/Modal";
 
 export default function FeeAssignmentsIndex({ assignments, filters }) {
     const [sortField, setSortField] = useState(
@@ -86,7 +85,6 @@ export default function FeeAssignmentsIndex({ assignments, filters }) {
 
         return [courseName, certificationName].filter(Boolean).join(" - ");
     };
-    const [showModal, setShowModal] = useState(false);
     return (
         <AuthenticatedLayout>
             <Head title="Fee Assignments" />

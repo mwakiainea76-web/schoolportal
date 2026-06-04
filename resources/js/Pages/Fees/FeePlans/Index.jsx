@@ -10,13 +10,9 @@ import Trow from "@/Components/Table/Trow";
 import Tdata from "@/Components/Table/Tdata";
 
 import formatDate from "@/utils/date";
-import Modal from "@/Components/Modal";
-import Create from "../FeePlanItems/Create";
 
 export default function FeePlans({ feePlans }) {
     const [sortField, setSortField] = useState(feePlans.sort || "created_at");
-    const [plan, setPlan] = useState(null);
-    const [showModal, setShowModal] = useState(false);
     const [sortDirection, setSortDirection] = useState(
         feePlans.direction || "desc",
     );
@@ -28,9 +24,6 @@ export default function FeePlans({ feePlans }) {
         approval_status: feePlans.approval_status || "",
     });
 
-    const onClose = () => {
-        setShowModal(false);
-    };
     const applyFilters = (extra = {}) => {
         router.get(
             route("fees.plans.index"),
@@ -356,9 +349,6 @@ export default function FeePlans({ feePlans }) {
                     </Table>
                 </div>
             </div>
-            <Modal onClose={onClose} show={showModal}>
-                <Create plan={plan} setShowModal={setShowModal} />
-            </Modal>
         </AuthenticatedLayout>
     );
 }

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Head, router, Link } from "@inertiajs/react";
+import { Head, router } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import Table from "@/Components/Table/Table";
 import Thead from "@/Components/Table/Thead";
@@ -9,10 +9,7 @@ import Trow from "@/Components/Table/Trow";
 import Tdata from "@/Components/Table/Tdata";
 import SearchSelect from "@/Components/SearchSelect";
 import Modal from "@/Components/Modal";
-import Create from "./Create";
 import EditModal from "./EditModal";
-import InputLabel from "@/Components/InputLabel";
-import InputError from "@/Components/InputError";
 
 export default function Index({
     feePlans,
@@ -25,8 +22,6 @@ export default function Index({
     const [sortDirection, setSortDirection] = useState(direction || "desc");
 
     const [search, setSearch] = useState("");
-    const [showModal, setShowModal] = useState(false);
-    const [selectedFeePlan, setSelectedFeePlan] = useState(feePlan || null);
     const [editingItem, setEditingItem] = useState(null);
     const [showEditModal, setShowEditModal] = useState(false);
 
@@ -191,21 +186,6 @@ export default function Index({
                     </Tbody>
                 </Table>
             </div>
-
-            {/* Create Modal */}
-            {showModal && (
-                <Modal
-                    show={showModal}
-                    onClose={() => setShowModal(false)}
-                    align="top"
-                >
-                    <Create
-                        feePlanOptions={feePlanOptions}
-                        plan={selectedFeePlan}
-                        setShowModal={setShowModal}
-                    />
-                </Modal>
-            )}
 
             {/* Edit Modal */}
             {showEditModal && editingItem && (

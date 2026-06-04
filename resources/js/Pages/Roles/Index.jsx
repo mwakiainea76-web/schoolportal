@@ -86,13 +86,6 @@ export default function RolesIndex({
         });
     };
 
-    const openCreateRole = () => {
-        setEditingRole(emptyRole);
-        roleForm.reset();
-        roleForm.clearErrors();
-        setRoleModalOpen(true);
-    };
-
     const openEditRole = (role) => {
         setEditingRole(role);
         roleForm.setData({
@@ -133,13 +126,6 @@ export default function RolesIndex({
         router.delete(route("roles.destroy", role.id), {
             preserveScroll: true,
         });
-    };
-
-    const openCreatePermission = () => {
-        setEditingPermission(emptyPermission);
-        permissionForm.reset();
-        permissionForm.clearErrors();
-        setPermissionModalOpen(true);
     };
 
     const openEditPermission = (permission) => {
