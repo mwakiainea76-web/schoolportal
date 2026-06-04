@@ -143,7 +143,7 @@ function StudentDashboard({ dashboard, fullName }) {
                             Welcome back, {fullName}.
                         </h1>
                         <p className="mt-3 max-w-xl text-sm text-slate-300">
-                            Keep track of your program progress, current
+                            Keep track of your course progress, current
                             session, billing status, and learning units from one
                             place.
                         </p>
@@ -152,7 +152,7 @@ function StudentDashboard({ dashboard, fullName }) {
                     <div className="grid grid-cols-2 gap-4 sm:grid-cols-2">
                         <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur">
                             <p className="text-xs uppercase tracking-wide text-slate-300">
-                                Program
+                                Course
                             </p>
                             <p className="mt-2 text-sm font-semibold">
                                 {dashboard.program?.name ?? "Not assigned"}
@@ -370,8 +370,8 @@ function StudentDashboard({ dashboard, fullName }) {
 
                         <div className="mt-3 rounded-2xl bg-[#F8F9FA] px-4 py-3 text-xs text-zinc-500">
                             {dashboard.all_units_count
-                                ? `${dashboard.all_units_count} total unit(s) are mapped to your program version.`
-                                : "Your full unit list will appear once units are mapped to your program version."}
+                                ? `${dashboard.all_units_count} total unit(s) are mapped to your course version.`
+                                : "Your full unit list will appear once units are mapped to your course version."}
                         </div>
                     </div>
                 </div>
@@ -389,7 +389,7 @@ function StudentDashboard({ dashboard, fullName }) {
 
                         <div className="mt-6 space-y-4 text-sm">
                             <div className="rounded-2xl bg-zinc-50 px-4 py-3">
-                                <p className="text-zinc-500">Program Version</p>
+                                <p className="text-zinc-500">Course Version</p>
                                 <p className="mt-1 font-semibold text-zinc-900">
                                     {dashboard.program?.version ??
                                         "Not assigned"}
@@ -611,13 +611,13 @@ function StaffDashboard({ dashboard }) {
 
     const cards = [
         {
-            label: "Programs",
+            label: "Courses",
             value: dashboard.stats?.[0]?.value ?? 0,
             icon: BookMarked,
             tone: "bg-emerald-50 text-emerald-600",
         },
         {
-            label: "Program Versions",
+            label: "Course Versions",
             value: dashboard.stats?.[1]?.value ?? 0,
             icon: GraduationCap,
             tone: "bg-sky-50 text-sky-600",
@@ -705,7 +705,7 @@ function StaffDashboard({ dashboard }) {
             value: admissions.metrics?.inactive_accounts ?? 0,
         },
         {
-            label: "Missing Program Enrollment",
+            label: "Missing Course Enrollment",
             value:
                 admissions.metrics?.students_missing_program_enrollment_count ??
                 0,
@@ -799,7 +799,7 @@ function StaffDashboard({ dashboard }) {
                 Academic Overview
             </h1>
             <p className="mt-1 text-zinc-500">
-                Manage programs, program versions, and institutional scheduling
+                Manage courses, course versions, and institutional scheduling
                 from one place.
             </p>
 

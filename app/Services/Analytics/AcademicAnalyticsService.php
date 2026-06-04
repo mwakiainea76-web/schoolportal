@@ -6,7 +6,7 @@ use App\Models\AcademicSession;
 use App\Models\AcademicSessionEnrollment;
 use App\Models\AcademicTimetable;
 use App\Models\LectureRoom;
-use App\Models\ProgramVersionUnit;
+use App\Models\CourseVersionUnit;
 use App\Models\Student;
 use App\Services\Analytics\Concerns\BuildsAnalyticsFilters;
 use Illuminate\Support\Facades\DB;
@@ -29,18 +29,18 @@ class AcademicAnalyticsService
             ->where('student_status', 'active')
             ->whereExists(function ($query) {
                 $query->selectRaw('1')
-                    ->from('program_enrollments')
-                    ->whereColumn('program_enrollments.student_id', 'students.id')
-                    ->whereNull('program_enrollments.deleted_at');
+                    ->from('course_enrollments')
+                    ->whereColumn('course_enrollments.student_id', 'students.id')
+                    ->whereNull('course_enrollments.deleted_at');
             })
             ->count();
 
         $registeredStudents = $activeSession
             ? DB::table('academic_session_enrollments')
-                ->join('program_enrollments', 'program_enrollments.id', '=', 'academic_session_enrollments.program_enrollment_id')
-                ->join('students', 'students.id', '=', 'program_enrollments.student_id')
+                ->join('course_enrollments', 'course_enrollments.id', '=', 'academic_session_enrollments.course_enrollment_id')
+                ->join('students', 'students.id', '=', 'course_enrollments.student_id')
                 ->whereNull('academic_session_enrollments.deleted_at')
-                ->whereNull('program_enrollments.deleted_at')
+                ->whereNull('course_enrollments.deleted_at')
                 ->whereNull('students.deleted_at')
                 ->where('students.student_status', 'active')
                 ->where('academic_session_enrollments.academic_session_id', $activeSession->id)
@@ -60,16 +60,16 @@ class AcademicAnalyticsService
                 ->where('students.student_status', 'active')
                 ->whereExists(function ($query) {
                     $query->selectRaw('1')
-                        ->from('program_enrollments')
-                        ->whereColumn('program_enrollments.student_id', 'students.id')
-                        ->whereNull('program_enrollments.deleted_at');
+                        ->from('course_enrollments')
+                        ->whereColumn('course_enrollments.student_id', 'students.id')
+                        ->whereNull('course_enrollments.deleted_at');
                 })
                 ->whereNotExists(function ($query) use ($activeSession) {
                     $query->selectRaw('1')
-                        ->from('program_enrollments')
-                        ->join('academic_session_enrollments', 'academic_session_enrollments.program_enrollment_id', '=', 'program_enrollments.id')
-                        ->whereColumn('program_enrollments.student_id', 'students.id')
-                        ->whereNull('program_enrollments.deleted_at')
+                        ->from('course_enrollments')
+                        ->join('academic_session_enrollments', 'academic_session_enrollments.course_enrollment_id', '=', 'course_enrollments.id')
+                        ->whereColumn('course_enrollments.student_id', 'students.id')
+                        ->whereNull('course_enrollments.deleted_at')
                         ->whereNull('academic_session_enrollments.deleted_at')
                         ->where('academic_session_enrollments.academic_session_id', $activeSession->id);
                 })
@@ -103,10 +103,10 @@ class AcademicAnalyticsService
 
         $studentCountsByYear = AcademicSessionEnrollment::query()
             ->select('year_of_study')
-            ->selectRaw('COUNT(DISTINCT program_enrollments.student_id) as total')
-            ->join('program_enrollments', 'program_enrollments.id', '=', 'academic_session_enrollments.program_enrollment_id')
+            ->selectRaw('COUNT(DISTINCT course_enrollments.student_id) as total')
+            ->join('course_enrollments', 'course_enrollments.id', '=', 'academic_session_enrollments.course_enrollment_id')
             ->whereNull('academic_session_enrollments.deleted_at')
-            ->whereNull('program_enrollments.deleted_at')
+            ->whereNull('course_enrollments.deleted_at')
             ->when($activeSession, fn ($query) => $query->where('academic_session_enrollments.academic_session_id', $activeSession->id))
             ->groupBy('year_of_study')
             ->orderBy('year_of_study')
@@ -117,10 +117,10 @@ class AcademicAnalyticsService
             ])
             ->all();
 
-        $mappedUnitsCount = ProgramVersionUnit::query()->count();
-        $unitsWithTimetableCount = DB::table('academic_timetable_program_version_unit')
+        $mappedUnitsCount = CourseVersionUnit::query()->count();
+        $unitsWithTimetableCount = DB::table('academic_timetable_course_version_unit')
             ->distinct()
-            ->count('program_version_unit_id');
+            ->count('course_version_unit_id');
         $timetableCompletionRate = $mappedUnitsCount > 0
             ? round(($unitsWithTimetableCount / $mappedUnitsCount) * 100, 2)
             : 0.0;
@@ -163,28 +163,28 @@ class AcademicAnalyticsService
             ])
             ->all();
 
-        $unitsWithoutTimetable = ProgramVersionUnit::query()
-            ->leftJoin('academic_timetable_program_version_unit', 'academic_timetable_program_version_unit.program_version_unit_id', '=', 'program_version_units.id')
-            ->join('units', 'units.id', '=', 'program_version_units.unit_id')
-            ->join('program_version_mappings', 'program_version_mappings.id', '=', 'program_version_units.program_version_mapping_id')
-            ->join('programs', 'programs.id', '=', 'program_version_mappings.program_id')
-            ->join('program_versions', 'program_versions.id', '=', 'program_version_mappings.program_version_id')
-            ->whereNull('academic_timetable_program_version_unit.program_version_unit_id')
+        $unitsWithoutTimetable = CourseVersionUnit::query()
+            ->leftJoin('academic_timetable_course_version_unit', 'academic_timetable_course_version_unit.course_version_unit_id', '=', 'course_version_units.id')
+            ->join('units', 'units.id', '=', 'course_version_units.unit_id')
+            ->join('course_version_mappings', 'course_version_mappings.id', '=', 'course_version_units.course_version_mapping_id')
+            ->join('courses', 'courses.id', '=', 'course_version_mappings.course_id')
+            ->join('course_versions', 'course_versions.id', '=', 'course_version_mappings.course_version_id')
+            ->whereNull('academic_timetable_course_version_unit.course_version_unit_id')
             ->select(
-                'program_version_units.id',
-                'program_version_units.module_taught',
+                'course_version_units.id',
+                'course_version_units.module_taught',
                 'units.code as unit_code',
                 'units.name as unit_name',
-                'programs.name as program_name',
-                'program_versions.name as version_name'
+                'courses.name as course_name',
+                'course_versions.name as version_name'
             )
-            ->orderBy('programs.name')
-            ->orderBy('program_version_units.module_taught')
+            ->orderBy('courses.name')
+            ->orderBy('course_version_units.module_taught')
             ->limit(10)
             ->get()
             ->map(fn ($row) => [
-                'program_version_unit_id' => (int) $row->id,
-                'program_name' => $row->program_name,
+                'course_version_unit_id' => (int) $row->id,
+                'course_name' => $row->course_name,
                 'version_name' => $row->version_name,
                 'module_taught' => (int) $row->module_taught,
                 'unit_code' => $row->unit_code,

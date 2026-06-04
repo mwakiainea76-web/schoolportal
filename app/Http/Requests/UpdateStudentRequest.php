@@ -32,10 +32,18 @@ class UpdateStudentRequest extends FormRequest
 
             // Academic
             'previous_school' => ['required', 'string', 'max:255'],
+            'course_id' => ['nullable', 'exists:courses,id'],
+            'exam_body_id' => ['nullable', 'exists:exam_bodies,id'],
+            'course_version_id' => ['nullable', 'exists:course_versions,id'],
             'current_module' => ['required', 'string'],
+            'study_mode' => ['nullable', Rule::in(['full_time', 'part_time', 'online', 'distance'])],
             'fee_discount_percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'student_status' => ['nullable', Rule::in(['active', 'suspended', 'graduated', 'dropped'])],
-            'course_curriculum_id' => ['nullable', 'exists:program_version_mappings,id'],
+            'course_curriculum_id' => [
+                'nullable',
+                Rule::exists('course_version_mappings', 'id')
+                    ->where('course_version_id', $this->input('course_version_id')),
+            ],
 
             // Medical
             'is_pwd' => ['boolean'],

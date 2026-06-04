@@ -9,8 +9,8 @@ use App\Http\Requests\UpdateAcademicTimetableRequest;
 use App\Models\AcademicTimetable;
 use App\Models\Department;
 use App\Models\LectureRoom;
-use App\Models\ProgramVersionMapping;
-use App\Models\ProgramVersionUnit;
+use App\Models\CourseVersionMapping;
+use App\Models\CourseVersionUnit;
 use App\Models\Staff;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -46,9 +46,9 @@ class AcademicTimetableController extends Controller
         $selectedTrainerStaffId = $isTrainerOnly
             ? $currentTrainerStaffId
             : ($request->integer('trainer_staff_id') ?: null);
-        $selectedProgramVersionMappingId = $request->integer('program_version_mapping_id') ?: null;
+        $selectedCourseVersionMappingId = $request->integer('course_version_mapping_id') ?: null;
         $selectedModuleNumber = $request->integer('module_number') ?: null;
-        $adminClassFiltersReady = (bool) ($selectedDepartmentId && $selectedProgramVersionMappingId && $selectedModuleNumber);
+        $adminClassFiltersReady = (bool) ($selectedDepartmentId && $selectedCourseVersionMappingId && $selectedModuleNumber);
         $adminTrainerFiltersReady = (bool) ($selectedDepartmentId && $selectedTrainerStaffId);
         $shouldLoadTimetable = ($isHod || $isTrainerOnly)
             ? (bool) ($selectedDepartmentId && $selectedAcademicSessionId)
@@ -68,22 +68,22 @@ class AcademicTimetableController extends Controller
             $query->where('trainer_staff_id', $selectedTrainerStaffId);
         }
 
-        if ($shouldLoadTimetable && $request->filled('program_version_unit_id')) {
-            $programVersionUnitId = $request->integer('program_version_unit_id');
-            $query->whereHas('programVersionUnits', function ($builder) use ($programVersionUnitId) {
-                $builder->where('program_version_units.id', $programVersionUnitId);
+        if ($shouldLoadTimetable && $request->filled('course_version_unit_id')) {
+            $courseVersionUnitId = $request->integer('course_version_unit_id');
+            $query->whereHas('courseVersionUnits', function ($builder) use ($courseVersionUnitId) {
+                $builder->where('course_version_units.id', $courseVersionUnitId);
             });
         }
 
-        if ($shouldLoadTimetable && $selectedProgramVersionMappingId) {
-            $query->whereHas('programVersionUnits', function ($builder) use ($selectedProgramVersionMappingId) {
-                $builder->where('program_version_units.program_version_mapping_id', $selectedProgramVersionMappingId);
+        if ($shouldLoadTimetable && $selectedCourseVersionMappingId) {
+            $query->whereHas('courseVersionUnits', function ($builder) use ($selectedCourseVersionMappingId) {
+                $builder->where('course_version_units.course_version_mapping_id', $selectedCourseVersionMappingId);
             });
         }
 
         if ($shouldLoadTimetable && $selectedModuleNumber) {
-            $query->whereHas('programVersionUnits', function ($builder) use ($selectedModuleNumber) {
-                $builder->where('program_version_units.module_taught', $selectedModuleNumber);
+            $query->whereHas('courseVersionUnits', function ($builder) use ($selectedModuleNumber) {
+                $builder->where('course_version_units.module_taught', $selectedModuleNumber);
             });
         }
 
@@ -147,18 +147,18 @@ class AcademicTimetableController extends Controller
                 'academic_session_id' => $supportsAcademicSessions && $selectedAcademicSessionId ? (string) $selectedAcademicSessionId : '',
                 'department_id' => $selectedDepartmentId ? (string) $selectedDepartmentId : '',
                 'trainer_staff_id' => $selectedTrainerStaffId ? (string) $selectedTrainerStaffId : '',
-                'program_version_unit_id' => $request->filled('program_version_unit_id') ? (string) $request->integer('program_version_unit_id') : '',
-                'program_version_mapping_id' => $selectedProgramVersionMappingId ? (string) $selectedProgramVersionMappingId : '',
+                'course_version_unit_id' => $request->filled('course_version_unit_id') ? (string) $request->integer('course_version_unit_id') : '',
+                'course_version_mapping_id' => $selectedCourseVersionMappingId ? (string) $selectedCourseVersionMappingId : '',
                 'module_number' => $selectedModuleNumber ? (string) $selectedModuleNumber : '',
                 'day_of_week' => $request->string('day_of_week')->toString(),
             ],
             'session_options' => $supportsAcademicSessions ? $this->sessionOptions() : [],
             'departments' => $this->departmentOptions(),
             'trainers' => $this->trainerOptions($selectedDepartmentId),
-            'program_version_units' => $this->programVersionUnitOptions($selectedDepartmentId),
-            'program_options' => $selectedDepartmentId ? $this->hodProgramOptions((int) $selectedDepartmentId, $selectedProgramVersionMappingId) : [],
-            'module_options' => ($selectedDepartmentId && $selectedProgramVersionMappingId)
-                ? $this->hodModuleOptions((int) $selectedDepartmentId, $selectedProgramVersionMappingId)
+            'course_version_units' => $this->courseVersionUnitOptions($selectedDepartmentId),
+            'course_options' => $selectedDepartmentId ? $this->hodcourseOptions((int) $selectedDepartmentId, $selectedCourseVersionMappingId) : [],
+            'module_options' => ($selectedDepartmentId && $selectedCourseVersionMappingId)
+                ? $this->hodModuleOptions((int) $selectedDepartmentId, $selectedCourseVersionMappingId)
                 : [],
             'days' => $this->dayOptions(),
             'current_department_id' => $currentDepartmentId ? (string) $currentDepartmentId : '',
@@ -184,7 +184,7 @@ class AcademicTimetableController extends Controller
             'departments' => $this->departmentOptions(),
             'trainers' => $this->trainerOptions(),
             'lecture_rooms' => $this->lectureRoomOptions(),
-            'program_version_units' => $this->programVersionUnitOptions(),
+            'course_version_units' => $this->courseVersionUnitOptions(),
             'days' => $this->dayOptions(),
             'current_department_id' => $currentDepartmentId ? (string) $currentDepartmentId : '',
             'selected_department_id' => $selectedDepartmentId ? (string) $selectedDepartmentId : '',
@@ -215,7 +215,7 @@ class AcademicTimetableController extends Controller
         $department = $request->user()?->staff?->department;
         abort_unless($department, 403, 'Your staff profile is not linked to a department.');
 
-        $selectedProgramVersionMappingId = $request->integer('program_version_mapping_id') ?: null;
+        $selectedCourseVersionMappingId = $request->integer('course_version_mapping_id') ?: null;
         $selectedModuleNumber = $request->integer('module_number') ?: null;
 
         return inertia('Academic/Timetables/CreateHod', [
@@ -223,18 +223,18 @@ class AcademicTimetableController extends Controller
                 'id' => (string) $department->id,
                 'name' => $department->name,
             ],
-            'program_options' => $this->hodProgramOptions((int) $department->id, $selectedProgramVersionMappingId),
-            'modules' => $this->hodModuleOptions((int) $department->id, $selectedProgramVersionMappingId),
+            'course_options' => $this->hodcourseOptions((int) $department->id, $selectedCourseVersionMappingId),
+            'modules' => $this->hodModuleOptions((int) $department->id, $selectedCourseVersionMappingId),
             'available_units' => $this->hodAvailableUnitOptions(
                 (int) $department->id,
-                $selectedProgramVersionMappingId,
+                $selectedCourseVersionMappingId,
                 $selectedModuleNumber
             ),
             'trainers' => $this->trainerOptions((int) $department->id),
             'lecture_rooms' => $this->lectureRoomOptions((int) $department->id),
             'days' => $this->dayOptions(),
             'filters' => [
-                'program_version_mapping_id' => $selectedProgramVersionMappingId ? (string) $selectedProgramVersionMappingId : '',
+                'course_version_mapping_id' => $selectedCourseVersionMappingId ? (string) $selectedCourseVersionMappingId : '',
                 'module_number' => $selectedModuleNumber ? (string) $selectedModuleNumber : '',
             ],
         ]);
@@ -253,12 +253,12 @@ class AcademicTimetableController extends Controller
         $this->persistTimetableSessions($validated, $actorStaffId, $currentSession->id);
 
         return to_route('academic.timetables.hod.create', [
-            'program_version_mapping_id' => $validated['program_version_mapping_id'],
+            'course_version_mapping_id' => $validated['course_version_mapping_id'],
             'module_number' => $validated['module_number'],
         ])->with('success', 'Timetable sessions created successfully.');
     }
 
-    public function searchHodPrograms(Request $request)
+    public function searchHodcourses(Request $request)
     {
         abort_unless($request->user()?->hasRole('hod'), 403);
 
@@ -269,37 +269,37 @@ class AcademicTimetableController extends Controller
         $query = trim((string) $request->query('q', ''));
 
         return response()->json(
-            ProgramVersionMapping::query()
+            CourseVersionMapping::query()
                 ->with([
-                    'program:id,name,department_id',
-                    'programVersion:id,name,is_active',
+                    'course:id,name,department_id',
+                    'courseVersion:id,name,is_active',
                 ])
                 ->where('is_active', true)
-                ->whereHas('program', fn ($programQuery) => $programQuery->where('department_id', $departmentId))
-                ->whereHas('programVersion', fn ($programVersionQuery) => $programVersionQuery->where('is_active', true))
-                ->whereHas('programVersionUnits')
+                ->whereHas('course', fn ($courseQuery) => $courseQuery->where('department_id', $departmentId))
+                ->whereHas('courseVersion', fn ($courseVersionQuery) => $courseVersionQuery->where('is_active', true))
+                ->whereHas('courseVersionUnits')
                 ->when($query !== '', function ($builder) use ($query) {
                     $builder->where(function ($mappingQuery) use ($query) {
                         $mappingQuery
-                            ->whereHas('program', fn ($programQuery) => $programQuery
+                            ->whereHas('course', fn ($courseQuery) => $courseQuery
                                 ->where('name', 'like', "%{$query}%")
                                 ->orWhere('code', 'like', "%{$query}%"))
-                            ->orWhereHas('programVersion', fn ($programVersionQuery) => $programVersionQuery
+                            ->orWhereHas('courseVersion', fn ($courseVersionQuery) => $courseVersionQuery
                                 ->where('name', 'like', "%{$query}%"));
                     });
                 })
-                ->latest('program_version_mappings.id')
+                ->latest('course_version_mappings.id')
                 ->limit($limit)
-                ->get(['id', 'program_id', 'program_version_id'])
-                ->map(fn (ProgramVersionMapping $mapping) => [
+                ->get(['id', 'course_id', 'course_version_id'])
+                ->map(fn (CourseVersionMapping $mapping) => [
                     'id' => (string) $mapping->id,
-                    'name' => trim(($mapping->programVersion?->name ?? '').' - '.($mapping->program?->name ?? ''), ' -'),
+                    'name' => trim(($mapping->courseVersion?->name ?? '').' - '.($mapping->course?->name ?? ''), ' -'),
                 ])
                 ->values()
         );
     }
 
-    public function searchProgramMappings(Request $request)
+    public function searchcourseMappings(Request $request)
     {
         $departmentId = $request->integer('department_id')
             ?: (int) ($request->user()?->hasRole('hod') ? ($request->user()?->staff?->department_id ?? 0) : 0);
@@ -310,31 +310,31 @@ class AcademicTimetableController extends Controller
         $query = trim((string) $request->query('q', ''));
 
         return response()->json(
-            ProgramVersionMapping::query()
+            CourseVersionMapping::query()
                 ->with([
-                    'program:id,name,department_id',
-                    'programVersion:id,name,is_active',
+                    'course:id,name,department_id',
+                    'courseVersion:id,name,is_active',
                 ])
                 ->where('is_active', true)
-                ->whereHas('program', fn ($programQuery) => $programQuery->where('department_id', $departmentId))
-                ->whereHas('programVersion', fn ($programVersionQuery) => $programVersionQuery->where('is_active', true))
-                ->whereHas('programVersionUnits')
+                ->whereHas('course', fn ($courseQuery) => $courseQuery->where('department_id', $departmentId))
+                ->whereHas('courseVersion', fn ($courseVersionQuery) => $courseVersionQuery->where('is_active', true))
+                ->whereHas('courseVersionUnits')
                 ->when($query !== '', function ($builder) use ($query) {
                     $builder->where(function ($mappingQuery) use ($query) {
                         $mappingQuery
-                            ->whereHas('program', fn ($programQuery) => $programQuery
+                            ->whereHas('course', fn ($courseQuery) => $courseQuery
                                 ->where('name', 'like', "%{$query}%")
                                 ->orWhere('code', 'like', "%{$query}%"))
-                            ->orWhereHas('programVersion', fn ($programVersionQuery) => $programVersionQuery
+                            ->orWhereHas('courseVersion', fn ($courseVersionQuery) => $courseVersionQuery
                                 ->where('name', 'like', "%{$query}%"));
                     });
                 })
-                ->latest('program_version_mappings.id')
+                ->latest('course_version_mappings.id')
                 ->limit($limit)
-                ->get(['id', 'program_id', 'program_version_id'])
-                ->map(fn (ProgramVersionMapping $mapping) => [
+                ->get(['id', 'course_id', 'course_version_id'])
+                ->map(fn (CourseVersionMapping $mapping) => [
                     'id' => (string) $mapping->id,
-                    'name' => trim(($mapping->programVersion?->name ?? '').' - '.($mapping->program?->name ?? ''), ' -'),
+                    'name' => trim(($mapping->courseVersion?->name ?? '').' - '.($mapping->course?->name ?? ''), ' -'),
                 ])
                 ->values()
         );
@@ -346,12 +346,12 @@ class AcademicTimetableController extends Controller
             'department:id,name',
             'trainer.user:id,first_name,last_name',
             'lectureRoom:id,name,code,department_id',
-            'programVersionUnit.unit:id,name,code',
-            'programVersionUnits.unit:id,name,code',
-            'programVersionUnits.programVersionMapping.program:id,name,department_id',
-            'programVersionUnits.programVersionMapping.programVersion:id,name',
-            'programVersionUnit.programVersionMapping.program:id,name,department_id',
-            'programVersionUnit.programVersionMapping.programVersion:id,name',
+            'courseVersionUnit.unit:id,name,code',
+            'courseVersionUnits.unit:id,name,code',
+            'courseVersionUnits.courseVersionMapping.course:id,name,department_id',
+            'courseVersionUnits.courseVersionMapping.courseVersion:id,name',
+            'courseVersionUnit.courseVersionMapping.course:id,name,department_id',
+            'courseVersionUnit.courseVersionMapping.courseVersion:id,name',
         ]);
 
         return inertia('Academic/Timetables/Edit', [
@@ -359,7 +359,7 @@ class AcademicTimetableController extends Controller
             'departments' => $this->departmentOptions(),
             'trainers' => $this->trainerOptions(),
             'lecture_rooms' => $this->lectureRoomOptions(),
-            'program_version_units' => $this->programVersionUnitOptions(),
+            'course_version_units' => $this->courseVersionUnitOptions(),
             'days' => $this->dayOptions(),
         ]);
     }
@@ -370,7 +370,7 @@ class AcademicTimetableController extends Controller
 
         $timetable->update([
             'department_id' => $validated['department_id'],
-            'program_version_unit_id' => $validated['program_version_unit_ids'][0],
+            'course_version_unit_id' => $validated['course_version_unit_ids'][0],
             'trainer_staff_id' => $validated['trainer_staff_id'],
             'lecture_room_id' => $validated['lecture_room_id'],
             'day_of_week' => $validated['day_of_week'],
@@ -378,7 +378,7 @@ class AcademicTimetableController extends Controller
             'end_time' => $validated['end_time'],
             'updated_by' => $request->user()?->staff?->id,
         ]);
-        $timetable->programVersionUnits()->sync($validated['program_version_unit_ids']);
+        $timetable->courseVersionUnits()->sync($validated['course_version_unit_ids']);
 
         return to_route('academic.timetables.index', [
             'department_id' => $validated['department_id'],
@@ -402,12 +402,12 @@ class AcademicTimetableController extends Controller
             'department:id,name',
             'trainer.user:id,first_name,last_name',
             'lectureRoom:id,name,code,department_id',
-            'programVersionUnit.unit:id,name,code',
-            'programVersionUnits.unit:id,name,code',
-            'programVersionUnits.programVersionMapping.program:id,name,department_id',
-            'programVersionUnits.programVersionMapping.programVersion:id,name',
-            'programVersionUnit.programVersionMapping.program:id,name,department_id',
-            'programVersionUnit.programVersionMapping.programVersion:id,name',
+            'courseVersionUnit.unit:id,name,code',
+            'courseVersionUnits.unit:id,name,code',
+            'courseVersionUnits.courseVersionMapping.course:id,name,department_id',
+            'courseVersionUnits.courseVersionMapping.courseVersion:id,name',
+            'courseVersionUnit.courseVersionMapping.course:id,name,department_id',
+            'courseVersionUnit.courseVersionMapping.courseVersion:id,name',
         ]);
     }
 
@@ -419,8 +419,8 @@ class AcademicTimetableController extends Controller
             'department_name' => $entry->department?->name,
             'academic_session_id' => $entry->academic_session_id ? (string) $entry->academic_session_id : '',
             'academic_session_name' => $entry->academicSession?->display_name,
-            'program_version_unit_id' => (string) $entry->program_version_unit_id,
-            'program_version_unit_ids' => $entry->programVersionUnits->pluck('id')->map(fn ($id) => (string) $id)->values()->all(),
+            'course_version_unit_id' => (string) $entry->course_version_unit_id,
+            'course_version_unit_ids' => $entry->courseVersionUnits->pluck('id')->map(fn ($id) => (string) $id)->values()->all(),
             'trainer_staff_id' => (string) $entry->trainer_staff_id,
             'trainer_name' => trim(($entry->trainer?->user?->last_name ?? '').' '.($entry->trainer?->user?->first_name ?? '')),
             'trainer_staff_number' => $entry->trainer?->staff_number,
@@ -432,22 +432,22 @@ class AcademicTimetableController extends Controller
             'start_time' => substr((string) $entry->start_time, 0, 5),
             'end_time' => substr((string) $entry->end_time, 0, 5),
             'time_range' => substr((string) $entry->start_time, 0, 5).' - '.substr((string) $entry->end_time, 0, 5),
-            'unit_name' => $entry->programVersionUnit?->unit?->name,
-            'unit_code' => $entry->programVersionUnit?->unit?->code,
-            'module_taught' => $entry->programVersionUnit?->module_taught,
-            'program_name' => $entry->programVersionUnit?->programVersionMapping?->program?->name,
-            'program_version_name' => $entry->programVersionUnit?->programVersionMapping?->programVersion?->name,
-            'merged_units' => $entry->programVersionUnits
-                ->map(fn (ProgramVersionUnit $unit) => [
+            'unit_name' => $entry->courseVersionUnit?->unit?->name,
+            'unit_code' => $entry->courseVersionUnit?->unit?->code,
+            'module_taught' => $entry->courseVersionUnit?->module_taught,
+            'course_name' => $entry->courseVersionUnit?->courseVersionMapping?->course?->name,
+            'course_version_name' => $entry->courseVersionUnit?->courseVersionMapping?->courseVersion?->name,
+            'merged_units' => $entry->courseVersionUnits
+                ->map(fn (CourseVersionUnit $unit) => [
                     'id' => (string) $unit->id,
                     'name' => $unit->unit?->name,
                     'code' => $unit->unit?->code,
-                    'program_name' => $unit->programVersionMapping?->program?->name,
-                    'program_version_name' => $unit->programVersionMapping?->programVersion?->name,
+                    'course_name' => $unit->courseVersionMapping?->course?->name,
+                    'course_version_name' => $unit->courseVersionMapping?->courseVersion?->name,
                     'module_taught' => $unit->module_taught,
-                    'display_name' => ($unit->programVersionMapping?->programVersion?->name ?? '').
+                    'display_name' => ($unit->courseVersionMapping?->courseVersion?->name ?? '').
                         ' / '.
-                        ($unit->programVersionMapping?->program?->name ?? '').
+                        ($unit->courseVersionMapping?->course?->name ?? '').
                         ' / Module '.
                         ($unit->module_taught ?? '').
                         ' / '.
@@ -458,15 +458,15 @@ class AcademicTimetableController extends Controller
                 ->values()
                 ->all(),
             'curriculum_unit_name' => trim(
-                ($entry->programVersionUnit?->programVersionMapping?->programVersion?->name ?? '').
+                ($entry->courseVersionUnit?->courseVersionMapping?->courseVersion?->name ?? '').
                 ' / '.
-                ($entry->programVersionUnit?->programVersionMapping?->program?->name ?? '').
+                ($entry->courseVersionUnit?->courseVersionMapping?->course?->name ?? '').
                 ' / Module '.
-                ($entry->programVersionUnit?->module_taught ?? '').
+                ($entry->courseVersionUnit?->module_taught ?? '').
                 ' / '.
-                ($entry->programVersionUnit?->unit?->code ?? '').
+                ($entry->courseVersionUnit?->unit?->code ?? '').
                 ' - '.
-                ($entry->programVersionUnit?->unit?->name ?? '')
+                ($entry->courseVersionUnit?->unit?->name ?? '')
             ),
         ];
     }
@@ -501,30 +501,30 @@ class AcademicTimetableController extends Controller
             ->all();
     }
 
-    protected function programVersionUnitOptions(?int $departmentId = null): array
+    protected function courseVersionUnitOptions(?int $departmentId = null): array
     {
-        return ProgramVersionUnit::query()
+        return CourseVersionUnit::query()
             ->with([
                 'unit:id,name,code',
-                'programVersionMapping.program:id,name,department_id',
-                'programVersionMapping.programVersion:id,name',
+                'courseVersionMapping.course:id,name,department_id',
+                'courseVersionMapping.courseVersion:id,name',
             ])
             ->when($departmentId, function ($query, $departmentId) {
-                $query->whereHas('programVersionMapping.program', fn ($programQuery) => $programQuery->where('department_id', $departmentId));
+                $query->whereHas('courseVersionMapping.course', fn ($courseQuery) => $courseQuery->where('department_id', $departmentId));
             })
             ->get()
-            ->map(fn (ProgramVersionUnit $unit) => [
+            ->map(fn (CourseVersionUnit $unit) => [
                 'id' => (string) $unit->id,
-                'name' => ($unit->programVersionMapping?->programVersion?->name ?? 'No Version').
+                'name' => ($unit->courseVersionMapping?->courseVersion?->name ?? 'No Version').
                     ' / '.
-                    ($unit->programVersionMapping?->program?->name ?? 'No Program').
+                    ($unit->courseVersionMapping?->course?->name ?? 'No Course').
                     ' / Module '.
                     ($unit->module_taught ?? '').
                     ' / '.
                     ($unit->unit?->code ?? '').
                     ' - '.
                     ($unit->unit?->name ?? 'No Unit'),
-                'department_id' => (string) ($unit->programVersionMapping?->program?->department_id ?? ''),
+                'department_id' => (string) ($unit->courseVersionMapping?->course?->department_id ?? ''),
             ])
             ->sortBy('name')
             ->values()
@@ -567,70 +567,70 @@ class AcademicTimetableController extends Controller
         return "CASE day_of_week {$cases} ELSE 99 END";
     }
 
-    protected function hodProgramOptions(int $departmentId, ?int $selectedProgramVersionMappingId = null): array
+    protected function hodcourseOptions(int $departmentId, ?int $selectedCourseVersionMappingId = null): array
     {
-        $defaultPrograms = ProgramVersionMapping::query()
+        $defaultcourses = CourseVersionMapping::query()
             ->with([
-                'program:id,name,department_id',
-                'programVersion:id,name,is_active',
+                'course:id,name,department_id',
+                'courseVersion:id,name,is_active',
             ])
             ->where('is_active', true)
-            ->whereHas('program', fn ($programQuery) => $programQuery->where('department_id', $departmentId))
-            ->whereHas('programVersion', fn ($programVersionQuery) => $programVersionQuery->where('is_active', true))
-            ->whereHas('programVersionUnits')
-            ->latest('program_version_mappings.id')
+            ->whereHas('course', fn ($courseQuery) => $courseQuery->where('department_id', $departmentId))
+            ->whereHas('courseVersion', fn ($courseVersionQuery) => $courseVersionQuery->where('is_active', true))
+            ->whereHas('courseVersionUnits')
+            ->latest('course_version_mappings.id')
             ->limit(4)
-            ->get(['id', 'program_id', 'program_version_id']);
+            ->get(['id', 'course_id', 'course_version_id']);
 
         if (
-            $selectedProgramVersionMappingId
-            && ! $defaultPrograms->contains(fn (ProgramVersionMapping $mapping) => (int) $mapping->id === $selectedProgramVersionMappingId)
+            $selectedCourseVersionMappingId
+            && ! $defaultcourses->contains(fn (CourseVersionMapping $mapping) => (int) $mapping->id === $selectedCourseVersionMappingId)
         ) {
-            $selectedProgram = ProgramVersionMapping::query()
+            $selectedcourse = CourseVersionMapping::query()
                 ->with([
-                    'program:id,name,department_id',
-                    'programVersion:id,name,is_active',
+                    'course:id,name,department_id',
+                    'courseVersion:id,name,is_active',
                 ])
                 ->where('is_active', true)
-                ->whereHas('program', fn ($programQuery) => $programQuery->where('department_id', $departmentId))
-                ->whereHas('programVersion', fn ($programVersionQuery) => $programVersionQuery->where('is_active', true))
-                ->whereHas('programVersionUnits')
-                ->where('id', $selectedProgramVersionMappingId)
-                ->first(['id', 'program_id', 'program_version_id']);
+                ->whereHas('course', fn ($courseQuery) => $courseQuery->where('department_id', $departmentId))
+                ->whereHas('courseVersion', fn ($courseVersionQuery) => $courseVersionQuery->where('is_active', true))
+                ->whereHas('courseVersionUnits')
+                ->where('id', $selectedCourseVersionMappingId)
+                ->first(['id', 'course_id', 'course_version_id']);
 
-            if ($selectedProgram) {
-                $defaultPrograms->prepend($selectedProgram);
+            if ($selectedcourse) {
+                $defaultcourses->prepend($selectedcourse);
             }
         }
 
-        return $defaultPrograms
+        return $defaultcourses
             ->unique('id')
-            ->map(fn (ProgramVersionMapping $mapping) => [
+            ->map(fn (CourseVersionMapping $mapping) => [
                 'id' => (string) $mapping->id,
-                'name' => trim(($mapping->programVersion?->name ?? '').' - '.($mapping->program?->name ?? ''), ' -'),
+                'name' => trim(($mapping->courseVersion?->name ?? '').' - '.($mapping->course?->name ?? ''), ' -'),
             ])
             ->values()
             ->all();
     }
 
-    protected function hodModuleOptions(int $departmentId, ?int $programVersionMappingId): array
+    protected function hodModuleOptions(int $departmentId, ?int $courseVersionMappingId): array
     {
-        if (! $programVersionMappingId) {
+        if (! $courseVersionMappingId) {
             return [];
         }
 
-        return ProgramVersionUnit::query()
-            ->select('program_version_units.module_taught')
-            ->join('program_version_mappings', 'program_version_mappings.id', '=', 'program_version_units.program_version_mapping_id')
-            ->join('programs', 'programs.id', '=', 'program_version_mappings.program_id')
-            ->join('program_versions', 'program_versions.id', '=', 'program_version_mappings.program_version_id')
-            ->where('programs.department_id', $departmentId)
-            ->where('program_version_mappings.id', $programVersionMappingId)
-            ->where('program_version_mappings.is_active', true)
-            ->where('program_versions.is_active', true)
+        return CourseVersionUnit::query()
+            ->select('course_version_units.module_taught')
+            ->join('course_version_mappings', 'course_version_mappings.id', '=', 'course_version_units.course_version_mapping_id')
+            ->join('courses', 'courses.id', '=', 'course_version_mappings.course_id')
+            ->join('course_versions', 'course_versions.id', '=', 'course_version_mappings.course_version_id')
+            ->where('courses.department_id', $departmentId)
+            ->where('course_version_mappings.id', $courseVersionMappingId)
+            ->where('course_version_mappings.is_active', true)
+            ->where('course_versions.is_active', true)
             ->distinct()
-            ->orderBy('program_version_units.module_taught')
-            ->pluck('program_version_units.module_taught')
+            ->orderBy('course_version_units.module_taught')
+            ->pluck('course_version_units.module_taught')
             ->filter()
             ->map(fn ($moduleNumber) => [
                 'id' => (string) (int) $moduleNumber,
@@ -642,10 +642,10 @@ class AcademicTimetableController extends Controller
 
     protected function hodAvailableUnitOptions(
         int $departmentId,
-        ?int $programVersionMappingId,
+        ?int $courseVersionMappingId,
         ?int $moduleNumber
     ): array {
-        if (! $programVersionMappingId || ! $moduleNumber) {
+        if (! $courseVersionMappingId || ! $moduleNumber) {
             return [];
         }
 
@@ -653,11 +653,11 @@ class AcademicTimetableController extends Controller
             ? $this->currentAcademicSession()?->id
             : null;
 
-        return ProgramVersionUnit::query()
+        return CourseVersionUnit::query()
             ->with([
                 'unit:id,name,code',
-                'programVersionMapping.program:id,name,department_id',
-                'programVersionMapping.programVersion:id,name,is_active',
+                'courseVersionMapping.course:id,name,department_id',
+                'courseVersionMapping.courseVersion:id,name,is_active',
             ])
             ->whereDoesntHave('timetableSessions', function ($query) use ($currentSessionId) {
                 if ($currentSessionId) {
@@ -665,19 +665,19 @@ class AcademicTimetableController extends Controller
                 }
             })
             ->where('module_taught', $moduleNumber)
-            ->whereHas('programVersionMapping', function ($query) use ($departmentId, $programVersionMappingId) {
+            ->whereHas('courseVersionMapping', function ($query) use ($departmentId, $courseVersionMappingId) {
                 $query
                     ->where('is_active', true)
-                    ->where('id', $programVersionMappingId)
-                    ->whereHas('program', fn ($programQuery) => $programQuery->where('department_id', $departmentId))
-                    ->whereHas('programVersion', fn ($programVersionQuery) => $programVersionQuery->where('is_active', true));
+                    ->where('id', $courseVersionMappingId)
+                    ->whereHas('course', fn ($courseQuery) => $courseQuery->where('department_id', $departmentId))
+                    ->whereHas('courseVersion', fn ($courseVersionQuery) => $courseVersionQuery->where('is_active', true));
             })
             ->get()
-            ->map(fn (ProgramVersionUnit $unit) => [
+            ->map(fn (CourseVersionUnit $unit) => [
                 'id' => (string) $unit->id,
-                'name' => ($unit->programVersionMapping?->programVersion?->name ?? 'No Version').
+                'name' => ($unit->courseVersionMapping?->courseVersion?->name ?? 'No Version').
                     ' / '.
-                    ($unit->programVersionMapping?->program?->name ?? 'No Program').
+                    ($unit->courseVersionMapping?->course?->name ?? 'No Course').
                     ' / Module '.
                     ($unit->module_taught ?? '').
                     ' / '.
@@ -693,16 +693,16 @@ class AcademicTimetableController extends Controller
     protected function persistTimetableSessions(array $validated, ?int $actorStaffId, int $academicSessionId): void
     {
         DB::transaction(function () use ($validated, $actorStaffId, $academicSessionId) {
-            $programVersionUnitIds = collect($validated['program_version_unit_ids'])
+            $courseVersionUnitIds = collect($validated['course_version_unit_ids'])
                 ->map(fn ($id) => (int) $id)
                 ->values();
-            $primaryProgramVersionUnitId = $programVersionUnitIds->first();
+            $primaryCourseVersionUnitId = $courseVersionUnitIds->first();
 
             foreach ($validated['sessions'] as $session) {
                 $timetable = AcademicTimetable::create([
                     'department_id' => $validated['department_id'],
                     'academic_session_id' => $academicSessionId,
-                    'program_version_unit_id' => $primaryProgramVersionUnitId,
+                    'course_version_unit_id' => $primaryCourseVersionUnitId,
                     'trainer_staff_id' => $validated['trainer_staff_id'],
                     'lecture_room_id' => $validated['lecture_room_id'],
                     'day_of_week' => $session['day_of_week'],
@@ -712,7 +712,7 @@ class AcademicTimetableController extends Controller
                     'updated_by' => $actorStaffId,
                 ]);
 
-                $timetable->programVersionUnits()->sync($programVersionUnitIds->all());
+                $timetable->courseVersionUnits()->sync($courseVersionUnitIds->all());
             }
         });
     }

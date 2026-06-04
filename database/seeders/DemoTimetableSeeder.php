@@ -4,7 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\AcademicSession;
 use App\Models\AcademicTimetable;
-use App\Models\ProgramVersionUnit;
+use App\Models\CourseVersionUnit;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Schema;
 
@@ -18,13 +18,13 @@ class DemoTimetableSeeder extends Seeder
             return;
         }
 
-        $ictMainUnit = ProgramVersionUnit::query()
-            ->where('program_version_mapping_id', $mappings['ict_l4']->id)
+        $ictMainUnit = CourseVersionUnit::query()
+            ->where('course_version_mapping_id', $mappings['ict_l4']->id)
             ->whereHas('unit', fn ($query) => $query->where('code', 'ICT101'))
             ->first();
 
-        $ictSharedTheoryUnit = ProgramVersionUnit::query()
-            ->where('program_version_mapping_id', $mappings['ict_l4']->id)
+        $ictSharedTheoryUnit = CourseVersionUnit::query()
+            ->where('course_version_mapping_id', $mappings['ict_l4']->id)
             ->whereHas('unit', fn ($query) => $query->where('code', 'COM101'))
             ->first();
 
@@ -47,7 +47,7 @@ class DemoTimetableSeeder extends Seeder
             ),
             $this->timetableDefaults($ictMainUnit->id, $ictTrainer->id, $sessionId)
         );
-        $mondaySession->programVersionUnits()->syncWithoutDetaching([
+        $mondaySession->courseVersionUnits()->syncWithoutDetaching([
             $ictMainUnit->id,
             $ictSharedTheoryUnit->id,
         ]);
@@ -64,7 +64,7 @@ class DemoTimetableSeeder extends Seeder
             ),
             $this->timetableDefaults($ictMainUnit->id, $ictTrainer->id, $sessionId)
         );
-        $wednesdaySession->programVersionUnits()->syncWithoutDetaching([
+        $wednesdaySession->courseVersionUnits()->syncWithoutDetaching([
             $ictMainUnit->id,
         ]);
     }
@@ -94,10 +94,10 @@ class DemoTimetableSeeder extends Seeder
         return $identity;
     }
 
-    protected function timetableDefaults(int $programVersionUnitId, int $actorStaffId, ?int $academicSessionId): array
+    protected function timetableDefaults(int $courseVersionUnitId, int $actorStaffId, ?int $academicSessionId): array
     {
         $defaults = [
-            'program_version_unit_id' => $programVersionUnitId,
+            'course_version_unit_id' => $courseVersionUnitId,
             'created_by' => $actorStaffId,
             'updated_by' => $actorStaffId,
         ];

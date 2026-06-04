@@ -85,42 +85,42 @@ const CertificationLevelsCreate = lazy(
 const CertificationLevelsEdit = lazy(
     () => import("../Pages/CertificationLevels/Edit"),
 );
-const ProgramsIndex = lazy(() => import("../Pages/Programs/Index"));
-const ProgramsCreate = lazy(() => import("../Pages/Programs/Create"));
-const ProgramsEdit = lazy(() => import("../Pages/Programs/Edit"));
-const ProgramEnrollmentsIndex = lazy(
-    () => import("../Pages/ProgramEnrollments/Index"),
+const CoursesIndex = lazy(() => import("../Pages/Courses/Index"));
+const CoursesCreate = lazy(() => import("../Pages/Courses/Create"));
+const CoursesEdit = lazy(() => import("../Pages/Courses/Edit"));
+const CourseEnrollmentsIndex = lazy(
+    () => import("../Pages/CourseEnrollments/Index"),
 );
-const ProgramVersionsIndex = lazy(
-    () => import("../Pages/ProgramVersions/Index"),
+const CourseVersionsIndex = lazy(
+    () => import("../Pages/CourseVersions/Index"),
 );
-const ProgramVersionsCreate = lazy(
-    () => import("../Pages/ProgramVersions/Create"),
+const CourseVersionsCreate = lazy(
+    () => import("../Pages/CourseVersions/Create"),
 );
-const ProgramVersionsEdit = lazy(() => import("../Pages/ProgramVersions/Edit"));
-const ProgramVersionMappingsIndex = lazy(
-    () => import("../Pages/ProgramVersionMappings/Index"),
+const CourseVersionsEdit = lazy(() => import("../Pages/CourseVersions/Edit"));
+const CourseVersionMappingsIndex = lazy(
+    () => import("../Pages/CourseVersionMappings/Index"),
 );
-const ProgramVersionMappingsCreate = lazy(
-    () => import("../Pages/ProgramVersionMappings/Create"),
+const CourseVersionMappingsCreate = lazy(
+    () => import("../Pages/CourseVersionMappings/Create"),
 );
-const ProgramVersionMappingsEdit = lazy(
-    () => import("../Pages/ProgramVersionMappings/Edit"),
+const CourseVersionMappingsEdit = lazy(
+    () => import("../Pages/CourseVersionMappings/Edit"),
 );
 const UnitsIndex = lazy(() => import("../Pages/Units/Index"));
 const UnitsCreate = lazy(() => import("../Pages/Units/Create"));
 const UnitsEdit = lazy(() => import("../Pages/Units/Edit"));
-const ProgramVersionUnitsIndex = lazy(
-    () => import("../Pages/ProgramVersionUnits/Index"),
+const CourseVersionUnitsIndex = lazy(
+    () => import("../Pages/CourseVersionUnits/Index"),
 );
-const ProgramVersionUnitsCreate = lazy(
-    () => import("../Pages/ProgramVersionUnits/Create"),
+const CourseVersionUnitsCreate = lazy(
+    () => import("../Pages/CourseVersionUnits/Create"),
 );
-const ProgramVersionUnitsEdit = lazy(
-    () => import("../Pages/ProgramVersionUnits/Edit"),
+const CourseVersionUnitsEdit = lazy(
+    () => import("../Pages/CourseVersionUnits/Edit"),
 );
-const ProgramVersionUnitsStudentIndex = lazy(
-    () => import("../Pages/ProgramVersionUnits/StudentIndex"),
+const CourseVersionUnitsStudentIndex = lazy(
+    () => import("../Pages/CourseVersionUnits/StudentIndex"),
 );
 const LectureRoomsIndex = lazy(() => import("../Pages/LectureRooms/Index"));
 const LectureRoomsCreate = lazy(() => import("../Pages/LectureRooms/Create"));
@@ -229,14 +229,14 @@ const pagePropAliases = {
         list: "certification_levels",
         item: "certification_level",
     },
-    "/api/programs": { list: "programs", item: "program" },
-    "/api/program-versions": { list: "curriculums", item: "curriculum" },
-    "/api/program-version-mappings": {
-        list: "programVersionMappings",
-        item: "programVersionMapping",
+    "/api/courses": { list: "courses", item: "Course" },
+    "/api/course-versions": { list: "curriculums", item: "curriculum" },
+    "/api/course-version-mappings": {
+        list: "courseVersionMappings",
+        item: "courseVersionMapping",
     },
     "/api/units": { list: "units", item: "unit" },
-    "/api/program-version-units": {
+    "/api/course-version-units": {
         list: "curriculum_units",
         item: "curriculum_unit",
     },

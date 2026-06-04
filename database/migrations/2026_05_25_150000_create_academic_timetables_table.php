@@ -18,8 +18,8 @@ return new class extends Migration
                 ->nullable()
                 ->constrained('academic_sessions')
                 ->nullOnDelete();
-            $table->foreignId('program_version_unit_id')
-                ->constrained('program_version_units', 'id')
+            $table->foreignId('course_version_unit_id')
+                ->constrained('course_version_units', 'id')
                 ->cascadeOnUpdate()
                 ->cascadeOnDelete();
             $table->foreignId('trainer_staff_id')
@@ -50,29 +50,29 @@ return new class extends Migration
             $table->index(['academic_session_id', 'department_id'], 'academic_timetables_session_department_index');
             $table->index(['department_id', 'day_of_week']);
             $table->index(['trainer_staff_id', 'day_of_week', 'start_time']);
-            $table->index(['program_version_unit_id', 'day_of_week', 'start_time']);
+            $table->index(['course_version_unit_id', 'day_of_week', 'start_time']);
             $table->index(['lecture_room_id', 'day_of_week', 'start_time']);
         });
 
-        Schema::create('academic_timetable_program_version_unit', function (Blueprint $table) {
+        Schema::create('academic_timetable_course_version_unit', function (Blueprint $table) {
             $table->id();
             $table->foreignId('academic_timetable_id')
                 ->constrained('academic_timetables', 'id')
                 ->cascadeOnUpdate()
                 ->cascadeOnDelete();
-            $table->foreignId('program_version_unit_id')
-                ->constrained('program_version_units', 'id')
+            $table->foreignId('course_version_unit_id')
+                ->constrained('course_version_units', 'id')
                 ->cascadeOnUpdate()
                 ->cascadeOnDelete();
             $table->timestamps();
 
-            $table->unique(['academic_timetable_id', 'program_version_unit_id'], 'academic_timetable_unit_unique');
+            $table->unique(['academic_timetable_id', 'course_version_unit_id'], 'academic_timetable_unit_unique');
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('academic_timetable_program_version_unit');
+        Schema::dropIfExists('academic_timetable_course_version_unit');
         Schema::dropIfExists('academic_timetables');
     }
 };

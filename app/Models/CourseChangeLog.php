@@ -12,10 +12,10 @@ class CourseChangeLog extends Model
 
     protected $fillable = [
         'student_id',
-        'old_program_enrollment_id',
-        'new_program_enrollment_id',
-        'old_program_version_mapping_id',
-        'new_program_version_mapping_id',
+        'old_course_enrollment_id',
+        'new_course_enrollment_id',
+        'old_course_version_mapping_id',
+        'new_course_version_mapping_id',
         'old_registration_number',
         'new_registration_number',
         'old_user_id',
@@ -34,14 +34,14 @@ class CourseChangeLog extends Model
         return $this->belongsTo(Student::class);
     }
 
-    public function oldProgramVersionMapping(): BelongsTo
+    public function oldCourseVersionMapping(): BelongsTo
     {
-        return $this->belongsTo(ProgramVersionMapping::class, 'old_program_version_mapping_id');
+        return $this->belongsTo(CourseVersionMapping::class, 'old_course_version_mapping_id');
     }
 
-    public function newProgramVersionMapping(): BelongsTo
+    public function newCourseVersionMapping(): BelongsTo
     {
-        return $this->belongsTo(ProgramVersionMapping::class, 'new_program_version_mapping_id');
+        return $this->belongsTo(CourseVersionMapping::class, 'new_course_version_mapping_id');
     }
 
     public function processedBy(): BelongsTo

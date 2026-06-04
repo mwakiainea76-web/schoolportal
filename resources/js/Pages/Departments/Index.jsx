@@ -60,13 +60,6 @@ export default function DepartmentsIndex({ departments }) {
             <Head title="Departments" />
 
             <div className=" mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
-                <Link
-                    className="mb-4 px-4 py-1 bg-slate-400 text-white rounded hover:bg-slate-700 inline-block"
-                    href={route("departments.create")}
-                >
-                    Add Department
-                </Link>
-
                 <form
                     className="w-full relative flex gap-x-7"
                     onSubmit={submit}
@@ -109,6 +102,7 @@ export default function DepartmentsIndex({ departments }) {
                         >
                             Created {renderArrow("created_at")}
                         </THdata>
+                        <THdata>HOD</THdata>
                         <THdata>Actions</THdata>
                     </Thead>
                     <Tbody>
@@ -120,6 +114,7 @@ export default function DepartmentsIndex({ departments }) {
                                     <Tdata>
                                         {formatDate(department.created_at)}
                                     </Tdata>
+                                    <Tdata>{department.hod?.name ?? "-"}</Tdata>
                                     <Tdata>
                                         <div className="flex items-center justify-center gap-x-10">
                                             <Link

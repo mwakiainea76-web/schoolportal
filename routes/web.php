@@ -21,11 +21,11 @@ use App\Http\Controllers\OnlineUsersController;
 use App\Http\Controllers\PerformanceDashboardController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\ProgramController;
-use App\Http\Controllers\ProgramEnrollmentController;
-use App\Http\Controllers\ProgramVersionController;
-use App\Http\Controllers\ProgramVersionMappingController;
-use App\Http\Controllers\ProgramVersionUnitController;
+use App\Http\Controllers\CourseController;
+use App\Http\Controllers\CourseEnrollmentController;
+use App\Http\Controllers\CourseVersionController;
+use App\Http\Controllers\CourseVersionMappingController;
+use App\Http\Controllers\CourseVersionUnitController;
 use App\Http\Controllers\ReportingController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SecurityMonitoringController;
@@ -56,8 +56,8 @@ Route::middleware(['auth', 'verified', 'role:student'])->group(function () {
         ->name('student.dashboard.register-session');
     Route::post('/student/dashboard/register-units', [AcademicSessionEnrollmentController::class, 'registerCurrentStudentUnits'])
         ->name('student.dashboard.register-units');
-    Route::get('/student/program-units', [ProgramVersionUnitController::class, 'studentIndex'])
-        ->name('student.program-units.index');
+    Route::get('/student/course-units', [CourseVersionUnitController::class, 'studentIndex'])
+        ->name('student.course-units.index');
     Route::get('/student/results', [StudentMarkController::class, 'studentResultsIndex'])
         ->name('student.results.index');
     Route::get('/student/fee-statements', [InvoiceController::class, 'studentStatementsIndex'])
@@ -143,8 +143,6 @@ Route::middleware(['auth', 'non_student'])->group(function () {
         Route::get('/', [ExamBodyController::class, 'index'])->name('index');
         Route::get('/create', [ExamBodyController::class, 'create'])->name('create');
         Route::post('/', [ExamBodyController::class, 'store'])->name('store');
-        Route::get('/search', [ExamBodyController::class, 'search'])->name('search');
-
         Route::get('/{exam_body}/edit', [ExamBodyController::class, 'edit'])->name('edit');
         Route::put('/{exam_body}', [ExamBodyController::class, 'update'])->name('update');
         Route::delete('/{exam_body}', [ExamBodyController::class, 'destroy'])->name('destroy');
@@ -166,7 +164,6 @@ Route::middleware(['auth', 'non_student'])->group(function () {
         Route::put('/{certification_level}', [CertificationLevelController::class, 'update'])->name('update');
         Route::delete('/{certification_level}', [CertificationLevelController::class, 'destroy'])->name('destroy');
 
-        Route::get('/search', [CertificationLevelController::class, 'search'])->name('search');
     });
 
     /*
@@ -183,25 +180,24 @@ Route::middleware(['auth', 'non_student'])->group(function () {
         Route::put('/{department}', [DepartmentController::class, 'update'])->name('update');
         Route::delete('/{department}', [DepartmentController::class, 'destroy'])->name('destroy');
 
-        Route::get('/search', [DepartmentController::class, 'search'])->name('search');
     });
 
     /*
     |--------------------------------------------------------------------------
-    | PROGRAMS
+    | courseS
     |--------------------------------------------------------------------------
     */
-    Route::prefix('programs')->name('programs.')->group(function () {
-        Route::get('/', [ProgramController::class, 'index'])->name('index');
-        Route::get('/create', [ProgramController::class, 'create'])->name('create');
-        Route::post('/', [ProgramController::class, 'store'])->name('store');
-        Route::get('/enrollments', [ProgramEnrollmentController::class, 'index'])->name('enrollments.index');
+    Route::prefix('courses')->name('courses.')->group(function () {
+        Route::get('/', [courseController::class, 'index'])->name('index');
+        Route::get('/create', [courseController::class, 'create'])->name('create');
+        Route::post('/', [courseController::class, 'store'])->name('store');
+        Route::get('/enrollments', [CourseEnrollmentController::class, 'index'])->name('enrollments.index');
 
-        Route::get('/{program}/edit', [ProgramController::class, 'edit'])->name('edit');
-        Route::put('/{program}', [ProgramController::class, 'update'])->name('update');
-        Route::delete('/{program}', [ProgramController::class, 'destroy'])->name('destroy');
+        Route::get('/{course}/edit', [courseController::class, 'edit'])->name('edit');
+        Route::put('/{course}', [courseController::class, 'update'])->name('update');
+        Route::delete('/{course}', [courseController::class, 'destroy'])->name('destroy');
 
-        Route::get('/search', [ProgramController::class, 'search'])->name('search');
+        Route::get('/search', [courseController::class, 'search'])->name('search');
     });
 
     /*
@@ -209,34 +205,30 @@ Route::middleware(['auth', 'non_student'])->group(function () {
     | CURRICULUM
     |--------------------------------------------------------------------------
     */
-    Route::prefix('program-versions')->name('program-versions.')->group(function () {
-        Route::get('/', [ProgramVersionController::class, 'index'])->name('index');
-        Route::get('/create', [ProgramVersionController::class, 'create'])->name('create');
-        Route::post('/', [ProgramVersionController::class, 'store'])->name('store');
+    Route::prefix('course-versions')->name('course-versions.')->group(function () {
+        Route::get('/', [CourseVersionController::class, 'index'])->name('index');
+        Route::get('/create', [CourseVersionController::class, 'create'])->name('create');
+        Route::post('/', [CourseVersionController::class, 'store'])->name('store');
 
-        Route::get('/{curriculum}/edit', [ProgramVersionController::class, 'edit'])->name('edit');
-        Route::put('/{curriculum}', [ProgramVersionController::class, 'update'])->name('update');
-        Route::delete('/{curriculum}', [ProgramVersionController::class, 'destroy'])->name('destroy');
+        Route::get('/{curriculum}/edit', [CourseVersionController::class, 'edit'])->name('edit');
+        Route::put('/{curriculum}', [CourseVersionController::class, 'update'])->name('update');
+        Route::delete('/{curriculum}', [CourseVersionController::class, 'destroy'])->name('destroy');
 
-        Route::get('/search', [ProgramVersionController::class, 'search'])->name('search');
     });
 
     /*
     |--------------------------------------------------------------------------
-    | PROGRAM VERSION MAPPINGS
+    | course VERSION MAPPINGS
     |--------------------------------------------------------------------------
     */
-    Route::prefix('programs/program-versions')->name('programs.program-version-mappings.')->group(function () {
-        Route::get('/', [ProgramVersionMappingController::class, 'index'])->name('index');
-        Route::get('/create', [ProgramVersionMappingController::class, 'create'])->name('create');
-        Route::post('/', [ProgramVersionMappingController::class, 'store'])->name('store');
+    Route::prefix('courses/course-versions')->name('courses.course-version-mappings.')->group(function () {
+        Route::get('/', [CourseVersionMappingController::class, 'index'])->name('index');
+        Route::get('/create', [CourseVersionMappingController::class, 'create'])->name('create');
+        Route::post('/', [CourseVersionMappingController::class, 'store'])->name('store');
 
-        Route::get('/search', [ProgramVersionMappingController::class, 'search'])->name('search');
-        Route::get('/program-search', [ProgramVersionMappingController::class, 'programSearch'])->name('program-search');
-
-        Route::get('/{programVersionMapping}/edit', [ProgramVersionMappingController::class, 'edit'])->name('edit');
-        Route::put('/{programVersionMapping}', [ProgramVersionMappingController::class, 'update'])->name('update');
-        Route::delete('/{programVersionMapping}', [ProgramVersionMappingController::class, 'destroy'])->name('destroy');
+        Route::get('/{courseVersionMapping}/edit', [CourseVersionMappingController::class, 'edit'])->name('edit');
+        Route::put('/{courseVersionMapping}', [CourseVersionMappingController::class, 'update'])->name('update');
+        Route::delete('/{courseVersionMapping}', [CourseVersionMappingController::class, 'destroy'])->name('destroy');
     });
 
     /*
@@ -258,18 +250,18 @@ Route::middleware(['auth', 'non_student'])->group(function () {
         Route::get('/search', [UnitController::class, 'search'])->name('search');
     });
 
-    Route::prefix('units/program-versions')->name('units.program-version-units.')->group(function () {
-        Route::get('/', [ProgramVersionUnitController::class, 'index'])->name('index');
-        Route::get('/create', [ProgramVersionUnitController::class, 'create'])->name('create');
-        Route::post('/', [ProgramVersionUnitController::class, 'store'])->name('store');
+    Route::prefix('units/course-versions')->name('units.course-version-units.')->group(function () {
+        Route::get('/', [CourseVersionUnitController::class, 'index'])->name('index');
+        Route::get('/create', [CourseVersionUnitController::class, 'create'])->name('create');
+        Route::post('/', [CourseVersionUnitController::class, 'store'])->name('store');
 
-        Route::get('/edit', [ProgramVersionUnitController::class, 'edit'])->name('editpage');
-        Route::get('/{curriculum_unit?}/edit', [ProgramVersionUnitController::class, 'edit'])->name('edit');
+        Route::get('/edit', [CourseVersionUnitController::class, 'edit'])->name('editpage');
+        Route::get('/{curriculum_unit?}/edit', [CourseVersionUnitController::class, 'edit'])->name('edit');
 
-        Route::put('/{curriculum_unit}', [ProgramVersionUnitController::class, 'update'])->name('update');
-        Route::delete('/{curriculum_unit}', [ProgramVersionUnitController::class, 'destroy'])->name('destroy');
+        Route::put('/{curriculum_unit}', [CourseVersionUnitController::class, 'update'])->name('update');
+        Route::delete('/{curriculum_unit}', [CourseVersionUnitController::class, 'destroy'])->name('destroy');
 
-        Route::get('/search', [ProgramVersionUnitController::class, 'search'])->name('search');
+        Route::get('/search', [CourseVersionUnitController::class, 'search'])->name('search');
     });
 
     /*
@@ -315,11 +307,11 @@ Route::middleware(['auth', 'non_student'])->group(function () {
 
     Route::prefix('academic/timetables')->name('academic.timetables.')->group(function () {
         Route::get('/', [AcademicTimetableController::class, 'index'])->name('index');
-        Route::get('/programs/search', [AcademicTimetableController::class, 'searchProgramMappings'])->name('programs.search');
+        Route::get('/courses/search', [AcademicTimetableController::class, 'searchCourseMappings'])->name('courses.search');
         Route::get('/create', [AcademicTimetableController::class, 'create'])->name('create');
         Route::post('/', [AcademicTimetableController::class, 'store'])->name('store');
         Route::middleware('role:hod')->get('/create/hod', [AcademicTimetableController::class, 'createHod'])->name('hod.create');
-        Route::middleware('role:hod')->get('/hod/programs/search', [AcademicTimetableController::class, 'searchHodPrograms'])->name('hod.programs.search');
+        Route::middleware('role:hod')->get('/hod/courses/search', [AcademicTimetableController::class, 'searchHodCourses'])->name('hod.courses.search');
         Route::middleware('role:hod')->post('/hod', [AcademicTimetableController::class, 'storeHod'])->name('hod.store');
         Route::get('/{timetable}/edit', [AcademicTimetableController::class, 'edit'])->name('edit');
         Route::put('/{timetable}', [AcademicTimetableController::class, 'update'])->name('update');
@@ -410,7 +402,7 @@ Route::middleware(['auth', 'non_student'])->group(function () {
         // BULK
         Route::get('/bulk', [FeeAssignmentController::class, 'bulk'])->name('bulk');
         Route::get('/bulk/certification-levels', [FeeAssignmentController::class, 'bulkCertificationLevels'])->name('bulk.certification-levels');
-        Route::get('/bulk/program-versions', [FeeAssignmentController::class, 'bulkProgramVersions'])->name('bulk.curriculums');
+        Route::get('/bulk/course-versions', [FeeAssignmentController::class, 'bulkCourseVersions'])->name('bulk.curriculums');
         Route::post('/bulk/assign', [FeeAssignmentController::class, 'bulkAssign'])->name('bulk.assign');
         Route::post('/bulk/replace', [FeeAssignmentController::class, 'bulkReplace'])->name('bulk.replace');
         Route::post('/bulk/preview', [FeeAssignmentController::class, 'bulkPreview'])->name('bulk.preview');
@@ -494,6 +486,8 @@ Route::middleware(['auth', 'non_student'])->group(function () {
         Route::get('/', [StudentController::class, 'index'])->name('index');
         Route::get('/create', [StudentController::class, 'create'])->name('create');
         Route::post('/', [StudentController::class, 'store'])->name('store');
+        Route::get('/courses/{course}/curricula', [StudentController::class, 'courseCurricula'])->name('course-curricula');
+        Route::get('/cycles/{courseVersion}/courses', [StudentController::class, 'cycleCourses'])->name('cycle-courses');
         Route::middleware('role:admin')->group(function () {
             Route::get('/course-change', [StudentCourseChangeController::class, 'index'])->name('course-change.index');
             Route::post('/course-change', [StudentCourseChangeController::class, 'store'])->name('course-change.store');

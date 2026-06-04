@@ -60,9 +60,6 @@ export default function Index({ allocations, filters, hostels, sessions }) {
                         <Link href={route("hostels.index")} className="rounded bg-slate-600 px-4 py-2 text-white hover:bg-slate-700">
                             Manage Hostels
                         </Link>
-                        <Link href={route("hostel-allocations.create")} className="rounded bg-emerald-600 px-4 py-2 text-white hover:bg-emerald-700">
-                            Allocate Bed
-                        </Link>
                     </div>
                 </div>
 

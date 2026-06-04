@@ -37,12 +37,12 @@ export default function Show({ invoice, sessionSummary }) {
         invoice.student?.user?.last_name ?? ""
     }`.trim();
 
-    const program =
-        invoice.enrollment?.program_enrollment?.program_version_mapping?.program
+    const course =
+        invoice.enrollment?.course_enrollment?.course_version_mapping?.course
             ?.name ?? "Not linked";
-    const programVersion =
-        invoice.enrollment?.program_enrollment?.program_version_mapping
-            ?.program_version?.name ?? "Not linked";
+    const courseVersion =
+        invoice.enrollment?.course_enrollment?.course_version_mapping
+            ?.course_version?.name ?? "Not linked";
     const session =
         invoice.enrollment?.academic_session?.display_name ??
         invoice.academic_session?.display_name ??
@@ -110,7 +110,7 @@ export default function Show({ invoice, sessionSummary }) {
                             </h2>
                             <p className="mt-2 text-sm text-slate-300">
                                 {invoice.student?.registration_number ?? "N/A"} |{" "}
-                                {program} | {programVersion}
+                                {course} | {courseVersion}
                             </p>
                             <p className="mt-2 text-sm text-slate-300">
                                 {session}
@@ -198,10 +198,10 @@ export default function Show({ invoice, sessionSummary }) {
                                 label="Registration Number"
                                 value={invoice.student?.registration_number ?? "N/A"}
                             />
-                            <InfoCard label="Program" value={program} />
+                            <InfoCard label="Course" value={course} />
                             <InfoCard
-                                label="Program Version"
-                                value={programVersion}
+                                label="Course Version"
+                                value={courseVersion}
                             />
                             <InfoCard label="Session" value={session} />
                             <InfoCard

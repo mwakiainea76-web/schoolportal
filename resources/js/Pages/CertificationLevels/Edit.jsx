@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React from "react";
 import { Head, Link, useForm } from "@inertiajs/react";
 import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
@@ -9,14 +9,7 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 
 const Edit = ({ certification_level, exam_bodies, selectedExamBody }) => {
     const cert = certification_level || null;
-    const hasExamBodies = exam_bodies.length > 0;
-    const examBodyOptions = useMemo(
-        () => exam_bodies.map((body) => ({
-            ...body,
-            name: body.code ? `${body.code} - ${body.name}` : body.name,
-        })),
-        [exam_bodies],
-    );
+    const hasExamBodies = true;
 
     const { data, setData, put, processing, errors } = useForm({
         code: certification_level?.code ?? "",
@@ -86,14 +79,12 @@ const Edit = ({ certification_level, exam_bodies, selectedExamBody }) => {
                                 />
                                 <SearchSelect
                                     routeName="exam-bodies.search"
-                                    defaultOptions={examBodyOptions}
+                                    defaultOptions={[]}
                                     value={data.exam_body_id}
                                     selectedLabel={
                                         selectedExamBody
                                             ? `${selectedExamBody.code} - ${selectedExamBody.name}`
-                                            : examBodyOptions.find(
-                                                (body) => String(body.id) === String(data.exam_body_id),
-                                            )?.name
+                                            : null
                                     }
                                     placeholder="Search Exam Body..."
                                     disabled={!hasExamBodies}
@@ -104,7 +95,7 @@ const Edit = ({ certification_level, exam_bodies, selectedExamBody }) => {
                                 />
                                 {!hasExamBodies ? (
                                     <p className="mt-1 text-xs text-amber-600">
-                                        Create an exam body first to continue.
+                                        Type to search exam bodies.
                                     </p>
                                 ) : null}
                                 <InputError message={errors.exam_body_id} />

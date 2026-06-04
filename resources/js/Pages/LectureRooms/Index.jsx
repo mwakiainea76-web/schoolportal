@@ -35,22 +35,16 @@ export default function Index({ lecture_rooms, departments, filters }) {
             <Head title="Lecture Rooms" />
 
             <div className="mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
-                <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div className="mb-4">
                     <div>
                         <h1 className="text-3xl font-semibold text-zinc-900">
                             Lecture Rooms
                         </h1>
                         <p className="mt-2 text-sm text-zinc-500">
                             Manage halls and classrooms used in the timetable,
-                            including merged classes shared across programs.
+                            including merged classes shared across courses.
                         </p>
                     </div>
-                    <Link
-                        className="inline-block rounded bg-slate-400 px-4 py-2 text-white hover:bg-slate-700"
-                        href={route("lecture-rooms.create")}
-                    >
-                        Add Lecture Room
-                    </Link>
                 </div>
 
                 <form className="mb-6 grid gap-4 lg:grid-cols-[1fr_220px_120px]" onSubmit={submit}>

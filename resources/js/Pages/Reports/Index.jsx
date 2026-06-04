@@ -465,7 +465,7 @@ export default function ReportsIndex({
                         <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
                             <div className="rounded-lg border border-zinc-100 bg-white p-6 shadow-sm">
                                 <h2 className="mb-4 text-lg font-semibold text-zinc-700">
-                                    Top Programs By Enrollment
+                                    Top Courses By Enrollment
                                 </h2>
                                 <div className="space-y-4">
                                     {executiveSummary.breakdowns.top_programs
@@ -489,7 +489,7 @@ export default function ReportsIndex({
                                         )
                                     ) : (
                                         <p className="text-sm text-zinc-500">
-                                            No program enrollment data available.
+                                            No course enrollment data available.
                                         </p>
                                     )}
                                 </div>
@@ -1320,7 +1320,7 @@ export default function ReportsIndex({
                                     accent="text-red-600"
                                 />
                                 <MetricCard
-                                    label="Missing Program Enrollment"
+                                    label="Missing Course Enrollment"
                                     value={
                                         admissionsSummary.metrics
                                             .students_missing_program_enrollment_count
@@ -1466,7 +1466,7 @@ export default function ReportsIndex({
 
                             <div className="rounded-lg border border-zinc-100 bg-white p-6 shadow-sm">
                                 <h2 className="mb-4 text-lg font-semibold text-zinc-700">
-                                    Top Programs
+                                    Top Courses
                                 </h2>
                                 <div className="space-y-3">
                                     {admissionsSummary.breakdowns
@@ -1488,7 +1488,7 @@ export default function ReportsIndex({
                                         )
                                     ) : (
                                         <p className="text-sm text-zinc-500">
-                                            No program data available.
+                                            No course data available.
                                         </p>
                                     )}
                                 </div>
@@ -1528,7 +1528,7 @@ export default function ReportsIndex({
                         <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
                             <div className="rounded-lg border border-zinc-100 bg-white p-6 shadow-sm">
                                 <h2 className="mb-4 text-lg font-semibold text-zinc-700">
-                                    Missing Program Enrollment
+                                    Missing Course Enrollment
                                 </h2>
                                 <div className="space-y-4">
                                     {admissionsSummary.exceptions
@@ -1557,7 +1557,7 @@ export default function ReportsIndex({
                                         )
                                     ) : (
                                         <p className="text-sm text-zinc-500">
-                                            No missing program enrollment cases found.
+                                            No missing course enrollment cases found.
                                         </p>
                                     )}
                                 </div>
@@ -2171,7 +2171,7 @@ export default function ReportsIndex({
                                     accent="text-red-600"
                                 />
                                 <MetricCard
-                                    label="Multi-Active Program Mappings"
+                                    label="Multi-Active Course Mappings"
                                     value={
                                         dataQualitySummary.metrics
                                             .multi_active_program_mapping_count
@@ -2250,7 +2250,7 @@ export default function ReportsIndex({
                         <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
                             <div className="rounded-lg border border-zinc-100 bg-white p-6 shadow-sm">
                                 <h2 className="mb-4 text-lg font-semibold text-zinc-700">
-                                    Students Without Program Enrollment
+                                    Students Without Course Enrollment
                                 </h2>
                                 <div className="space-y-4">
                                     {dataQualitySummary.exceptions
@@ -2273,7 +2273,7 @@ export default function ReportsIndex({
                                         )
                                     ) : (
                                         <p className="text-sm text-zinc-500">
-                                            No missing program-enrollment cases found.
+                                            No missing course-enrollment cases found.
                                         </p>
                                     )}
                                 </div>
@@ -2407,7 +2407,7 @@ export default function ReportsIndex({
 
                             <div className="rounded-lg border border-zinc-100 bg-white p-6 shadow-sm">
                                 <h2 className="mb-4 text-lg font-semibold text-zinc-700">
-                                    Multi-Active Program Mappings
+                                    Multi-Active Course Mappings
                                 </h2>
                                 <div className="space-y-4">
                                     {dataQualitySummary.exceptions
@@ -2430,7 +2430,7 @@ export default function ReportsIndex({
                                         )
                                     ) : (
                                         <p className="text-sm text-zinc-500">
-                                            No multi-active program mapping cases found.
+                                            No multi-active course mapping cases found.
                                         </p>
                                     )}
                                 </div>
@@ -2751,7 +2751,7 @@ export default function ReportsIndex({
                                         Assignment Count
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
-                                        ProgramVersion Count
+                                        CourseVersion Count
                                     </th>
                                 </tr>
                             </thead>

@@ -3,12 +3,12 @@
 use App\Http\Controllers\Api\FeeManagement\FeeAssignmentController;
 use App\Http\Controllers\Api\FeeManagement\FeeComponentController;
 use App\Http\Controllers\Api\FeeManagement\FeePlanController;
+use App\Http\Controllers\Api\AcademicLookupController;
 use App\Http\Controllers\Api\PublicCourseController;
 use App\Http\Controllers\ReportingController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/public/courses', [PublicCourseController::class, 'index']);
-
 
 Route::middleware('auth')->group(function () {
     Route::prefix('fee-plans')->group(function () {
@@ -30,12 +30,26 @@ Route::middleware('auth')->group(function () {
         Route::get('/{id}/reuse-preview', [FeePlanController::class, 'reusePreview']);
     });
 
-    Route::get('/curricula/{id}/assignments', [FeeAssignmentController::class, 'curriculumAssignments']);
-    Route::get('/program-versions/{id}/assignments', [FeeAssignmentController::class, 'curriculumAssignments']);
+    Route::get('/course-versions/{id}/assignments', [FeeAssignmentController::class, 'curriculumAssignments']);
+    Route::get('/course-versions/{id}/assignments', [FeeAssignmentController::class, 'curriculumAssignments']);
     Route::patch('/assignments/{id}/cancel', [FeeAssignmentController::class, 'cancel']);
     Route::get('/academic-years/{id}/sessions/{sid}/unassigned-curricula', [FeeAssignmentController::class, 'unassignedCurricula']);
-    Route::get('/academic-years/{id}/sessions/{sid}/unassigned-program-versions', [FeeAssignmentController::class, 'unassignedCurricula']);
+    Route::get('/academic-years/{id}/sessions/{sid}/unassigned-course-versions', [FeeAssignmentController::class, 'unassignedCurricula']);
 });
+
+Route::middleware(['web', 'auth', 'non_student'])
+    ->prefix('lookups')
+    ->name('api.lookups.')
+    ->group(function () {
+        Route::get('/departments', [AcademicLookupController::class, 'departments'])->name('departments');
+        Route::get('/courses', [AcademicLookupController::class, 'courses'])->name('courses');
+        Route::get('/course-versions', [AcademicLookupController::class, 'courseVersions'])->name('course-versions');
+        Route::get('/course-version-mappings', [AcademicLookupController::class, 'courseVersionMappings'])->name('course-version-mappings');
+        Route::get('/units', [AcademicLookupController::class, 'units'])->name('units');
+        Route::get('/exam-bodies', [AcademicLookupController::class, 'examBodies'])->name('exam-bodies');
+        Route::get('/certification-levels', [AcademicLookupController::class, 'certificationLevels'])->name('certification-levels');
+        Route::get('/staffs', [AcademicLookupController::class, 'staffs'])->name('staffs');
+    });
 
 Route::middleware(['web', 'auth', 'non_student'])
     ->prefix('reports')

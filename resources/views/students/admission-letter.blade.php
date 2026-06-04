@@ -226,17 +226,17 @@
             </article>
 
             <article class="card">
-                <h2>Programme Details</h2>
+                <h2>Course Details</h2>
                 <div class="grid">
-                    <div class="label">Programme</div>
+                    <div class="label">Course</div>
                     <div>{{ $program?->name ?? 'Not assigned' }}</div>
                     <div class="label">Version</div>
-                    <div>{{ $programVersion?->name ?? 'Not assigned' }}</div>
+                    <div>{{ $courseVersion?->name ?? 'Not assigned' }}</div>
                     <div class="label">Department</div>
                     <div>{{ $department?->name ?? 'Not assigned' }}</div>
                     <div class="label">Level</div>
                     <div>{{ $certificationLevel?->name ?? 'Not assigned' }}</div>
-                    <div class="label">Programme Code</div>
+                    <div class="label">Course Code</div>
                     <div>{{ $program?->code ?? 'Not assigned' }}</div>
                 </div>
             </article>
@@ -254,7 +254,7 @@
         <section class="body">
             <p>
                 Kindly keep this letter for your records. You will use the student portal to view your academic sessions,
-                programme units, and billing information.
+                course units, and billing information.
             </p>
             <p>
                 If you need help accessing your portal, please contact the admissions or ICT office for assistance.

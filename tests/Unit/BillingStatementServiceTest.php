@@ -10,10 +10,10 @@ use App\Models\InvoiceItem;
 use App\Models\LedgerTransaction;
 use App\Models\Payment;
 use App\Models\PaymentAllocation;
-use App\Models\Program;
-use App\Models\ProgramEnrollment;
-use App\Models\ProgramVersion;
-use App\Models\ProgramVersionMapping;
+use App\Models\Course;
+use App\Models\CourseEnrollment;
+use App\Models\CourseVersion;
+use App\Models\CourseVersionMapping;
 use App\Models\Student;
 use App\Models\StudentInvoice;
 use App\Models\User;
@@ -75,9 +75,9 @@ class BillingStatementServiceTest extends TestCase
         $service = new BillingStatementService();
         $student = $this->makeStudent();
         $session = $this->makeSession();
-        $programEnrollment = $this->makeProgramEnrollment();
+        $courseEnrollment = $this->makeCourseEnrollment();
         $enrollment = new AcademicSessionEnrollment();
-        $enrollment->setRelation('programEnrollment', $programEnrollment);
+        $enrollment->setRelation('courseEnrollment', $courseEnrollment);
 
         $invoice = $this->makeInvoice(
             id: 21,
@@ -104,7 +104,7 @@ class BillingStatementServiceTest extends TestCase
             ],
         );
 
-        $statement = $service->buildStudentStatement($invoice, new EloquentCollection([$invoice]), $programEnrollment);
+        $statement = $service->buildStudentStatement($invoice, new EloquentCollection([$invoice]), $courseEnrollment);
 
         $this->assertSame('STATEMENT-7', $statement['statement_reference']);
         $this->assertSame('Alice Example', $statement['student']['name']);
@@ -290,17 +290,17 @@ class BillingStatementServiceTest extends TestCase
         return $session;
     }
 
-    private function makeProgramEnrollment(): ProgramEnrollment
+    private function makeCourseEnrollment(): CourseEnrollment
     {
-        $program = new Program(['name' => 'Business Management']);
-        $programVersion = new ProgramVersion(['name' => 'May 2026 Cohort']);
-        $mapping = new ProgramVersionMapping();
+        $program = new Course(['name' => 'Business Management']);
+        $courseVersion = new CourseVersion(['name' => 'May 2026 Cohort']);
+        $mapping = new CourseVersionMapping();
         $mapping->setRelation('program', $program);
-        $mapping->setRelation('programVersion', $programVersion);
+        $mapping->setRelation('courseVersion', $courseVersion);
 
-        $programEnrollment = new ProgramEnrollment();
-        $programEnrollment->setRelation('programVersionMapping', $mapping);
+        $courseEnrollment = new CourseEnrollment();
+        $courseEnrollment->setRelation('courseVersionMapping', $mapping);
 
-        return $programEnrollment;
+        return $courseEnrollment;
     }
 }

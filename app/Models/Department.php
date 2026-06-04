@@ -16,16 +16,22 @@ class Department extends Model
         'code',
         'name',
         'description',
+        'hod_staff_id',
     ];
 
     public function courses()
     {
-        return $this->hasMany(Program::class, 'department_id');
+        return $this->hasMany(Course::class, 'department_id');
     }
 
     public function staffs()
     {
         return $this->hasMany(Staff::class, 'department_id');
+    }
+
+    public function hod()
+    {
+        return $this->belongsTo(Staff::class, 'hod_staff_id');
     }
 
     public function academicTimetables()
@@ -38,4 +44,3 @@ class Department extends Model
         return $this->hasMany(LectureRoom::class, 'department_id');
     }
 }
-

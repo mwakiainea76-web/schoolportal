@@ -31,7 +31,7 @@ const STUDY_SLOTS = [
 
 export default function CreateHod({
     department,
-    program_options,
+    course_options,
     modules,
     available_units,
     trainers,
@@ -41,11 +41,11 @@ export default function CreateHod({
 }) {
     const { data, setData, post, processing, errors } = useForm({
         department_id: department.id,
-        program_version_mapping_id: filters.program_version_mapping_id || "",
+        course_version_mapping_id: filters.course_version_mapping_id || "",
         module_number: filters.module_number || "",
         trainer_staff_id: "",
         lecture_room_id: "",
-        program_version_unit_ids: [],
+        course_version_unit_ids: [],
         sessions: [
             {
                 day_of_week: "monday",
@@ -60,7 +60,7 @@ export default function CreateHod({
             .filter(([key, value]) =>
                 Boolean(value) &&
                 (key.startsWith("sessions.") ||
-                    key === "program_version_unit_ids" ||
+                    key === "course_version_unit_ids" ||
                     key === "trainer_staff_id" ||
                     key === "lecture_room_id"),
             )
@@ -72,16 +72,16 @@ export default function CreateHod({
     }, [errors]);
 
     const updateScopedFilters = (nextValues) => {
-        const nextProgramVersionMappingId =
-            nextValues.program_version_mapping_id ??
-            data.program_version_mapping_id;
+        const nextCourseVersionMappingId =
+            nextValues.course_version_mapping_id ??
+            data.course_version_mapping_id;
         const nextModuleNumber = nextValues.module_number ?? data.module_number;
 
         router.get(
             route("academic.timetables.hod.create"),
             {
-                program_version_mapping_id:
-                    nextProgramVersionMappingId || "",
+                course_version_mapping_id:
+                    nextCourseVersionMappingId || "",
                 module_number: nextModuleNumber || "",
             },
             {
@@ -125,16 +125,16 @@ export default function CreateHod({
 
     const toggleUnit = (unitId, checked) => {
         if (checked) {
-            setData("program_version_unit_ids", [
-                ...data.program_version_unit_ids,
+            setData("course_version_unit_ids", [
+                ...data.course_version_unit_ids,
                 unitId,
             ]);
             return;
         }
 
         setData(
-            "program_version_unit_ids",
-            data.program_version_unit_ids.filter((id) => id !== unitId),
+            "course_version_unit_ids",
+            data.course_version_unit_ids.filter((id) => id !== unitId),
         );
     };
 
@@ -154,7 +154,7 @@ export default function CreateHod({
                     </h1>
                     <p className="mt-2 max-w-3xl text-sm text-zinc-600">
                         Your department is detected automatically. Choose one
-                        active program version, narrow to a module, then assign
+                        active course version, narrow to a module, then assign
                         equivalent units together into one trainer, room, and
                         weekly slot.
                     </p>
@@ -179,33 +179,33 @@ export default function CreateHod({
 
                     <div className="grid gap-6 sm:grid-cols-2">
                         <div>
-                            <InputLabel value="Program Name" required />
+                            <InputLabel value="Course Name" required />
                             <SearchSelect
-                                routeName="academic.timetables.hod.programs.search"
+                                routeName="academic.timetables.hod.courses.search"
                                 routeParams={{
                                     limit: 4,
                                 }}
-                                defaultOptions={program_options}
-                                value={data.program_version_mapping_id}
+                                defaultOptions={course_options}
+                                value={data.course_version_mapping_id}
                                 placeholder="Search versioned course..."
                                 onChange={(item) => {
                                     setData(
-                                        "program_version_mapping_id",
+                                        "course_version_mapping_id",
                                         item.id,
                                     );
                                     setData("module_number", "");
                                     setData("trainer_staff_id", "");
                                     setData("lecture_room_id", "");
-                                    setData("program_version_unit_ids", []);
+                                    setData("course_version_unit_ids", []);
                                     updateScopedFilters({
-                                        program_version_mapping_id: item.id,
+                                        course_version_mapping_id: item.id,
                                         module_number: "",
                                     });
                                 }}
-                                error={errors.program_version_mapping_id}
+                                error={errors.course_version_mapping_id}
                             />
                             <InputError
-                                message={errors.program_version_mapping_id}
+                                message={errors.course_version_mapping_id}
                                 className="mt-2"
                             />
                         </div>
@@ -219,14 +219,14 @@ export default function CreateHod({
                                     setData("module_number", value);
                                     setData("trainer_staff_id", "");
                                     setData("lecture_room_id", "");
-                                    setData("program_version_unit_ids", []);
+                                    setData("course_version_unit_ids", []);
                                     updateScopedFilters({
-                                        program_version_mapping_id:
-                                            data.program_version_mapping_id,
+                                        course_version_mapping_id:
+                                            data.course_version_mapping_id,
                                         module_number: value,
                                     });
                                 }}
-                                disabled={!data.program_version_mapping_id}
+                                disabled={!data.course_version_mapping_id}
                                 className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-emerald-400 disabled:cursor-not-allowed disabled:bg-zinc-100"
                             >
                                 <option value="">Select module...</option>
@@ -249,14 +249,14 @@ export default function CreateHod({
                                 Curriculum Units in This Class
                             </h2>
                             <p className="text-sm text-zinc-500">
-                                Choose every program version unit that shares the
+                                Choose every course version unit that shares the
                                 same content and can be merged into one teaching
                                 room and slot.
                             </p>
                         </div>
 
                         <InputError
-                            message={errors.program_version_unit_ids}
+                            message={errors.course_version_unit_ids}
                             className="mt-1"
                         />
 
@@ -264,7 +264,7 @@ export default function CreateHod({
                             {available_units.length ? (
                                 available_units.map((unit) => {
                                     const checked =
-                                        data.program_version_unit_ids.includes(
+                                        data.course_version_unit_ids.includes(
                                             unit.id,
                                         );
 
@@ -294,9 +294,9 @@ export default function CreateHod({
                                 })
                             ) : (
                                 <p className="text-sm text-zinc-400">
-                                    {data.program_version_mapping_id &&
+                                    {data.course_version_mapping_id &&
                                     data.module_number
-                                        ? "No unassigned curriculum units are available for this program and module."
+                                        ? "No unassigned curriculum units are available for this course and module."
                                         : "Choose a versioned course and module to load curriculum units."}
                                 </p>
                             )}
@@ -315,7 +315,7 @@ export default function CreateHod({
                                     setData("trainer_staff_id", item.id)
                                 }
                                 error={errors.trainer_staff_id}
-                                disabled={!data.program_version_unit_ids.length}
+                                disabled={!data.course_version_unit_ids.length}
                             />
                             <InputError
                                 message={errors.trainer_staff_id}
@@ -334,7 +334,7 @@ export default function CreateHod({
                                     setData("lecture_room_id", item.id)
                                 }
                                 error={errors.lecture_room_id}
-                                disabled={!data.program_version_unit_ids.length}
+                                disabled={!data.course_version_unit_ids.length}
                             />
                             <InputError
                                 message={errors.lecture_room_id}

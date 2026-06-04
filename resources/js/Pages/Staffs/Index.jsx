@@ -38,16 +38,6 @@ export default function StaffIndex({ staffs }) {
             <Head title="Staff Management" />
 
             <div className="mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
-                {/* ACTION BAR */}
-                <div className="flex items-center justify-between mb-4">
-                    <Link
-                        href={route("staffs.create")}
-                        className="px-4 py-1 bg-slate-400 text-white rounded hover:bg-slate-700"
-                    >
-                        Add Staff
-                    </Link>
-                </div>
-
                 {/* SEARCH */}
                 <form className="w-full flex gap-x-7 mb-4" onSubmit={submit}>
                     <TextInput

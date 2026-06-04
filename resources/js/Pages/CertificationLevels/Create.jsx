@@ -1,5 +1,4 @@
 import { Head, Link, useForm } from "@inertiajs/react";
-import { useMemo } from "react";
 import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import TextInput from "@/Components/TextInput";
@@ -12,14 +11,7 @@ export default function AddCertificationLevel({
     selectedExamBodyId,
     selectedExamBody,
 }) {
-    const hasExamBodies = examBodies.length > 0;
-    const examBodyOptions = useMemo(
-        () => examBodies.map((body) => ({
-            ...body,
-            name: body.code ? `${body.code} - ${body.name}` : body.name,
-        })),
-        [examBodies],
-    );
+    const hasExamBodies = true;
 
     const { data, setData, post, processing, errors, reset } = useForm({
         code: "",
@@ -133,14 +125,12 @@ export default function AddCertificationLevel({
 
                                 <SearchSelect
                                     routeName="exam-bodies.search"
-                                    defaultOptions={examBodyOptions}
+                                    defaultOptions={[]}
                                     value={data.exam_body_id}
                                     selectedLabel={
                                         selectedExamBody
                                             ? `${selectedExamBody.code} - ${selectedExamBody.name}`
-                                            : examBodyOptions.find(
-                                                (body) => String(body.id) === String(data.exam_body_id),
-                                            )?.name
+                                            : null
                                     }
                                     placeholder="Search Exam Body..."
                                     disabled={!hasExamBodies}
@@ -151,7 +141,7 @@ export default function AddCertificationLevel({
                                 />
                                 {!hasExamBodies ? (
                                     <p className="mt-1 text-xs text-amber-600">
-                                        Create an exam body first to continue.
+                                        Type to search exam bodies.
                                     </p>
                                 ) : null}
 

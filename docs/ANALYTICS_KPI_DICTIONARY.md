@@ -53,7 +53,7 @@ All analytics code should follow these definitions unless a later approved revis
 ### students_registered_in_active_session
 
 - Meaning: Count of students with an academic session enrollment linked to the currently active academic session.
-- Source tables: `academic_session_enrollments`, `academic_sessions`, `program_enrollments`, `students`
+- Source tables: `academic_session_enrollments`, `academic_sessions`, `course_enrollments`, `students`
 - Formula: distinct student count for enrollments in active session
 - Time field: active session context
 - Default exclusions: soft-deleted enrollments, soft-deleted students
@@ -112,7 +112,7 @@ All analytics code should follow these definitions unless a later approved revis
 ### session_registration_rate
 
 - Meaning: Ratio of eligible active students who are registered in the active academic session.
-- Source tables: `students`, `program_enrollments`, `academic_session_enrollments`, `academic_sessions`
+- Source tables: `students`, `course_enrollments`, `academic_session_enrollments`, `academic_sessions`
 - Formula: `registered_students / eligible_students`
 - Time field: active session context
 - Default exclusions: soft-deleted students, inactive or dropped students unless policy changes
@@ -174,7 +174,7 @@ All analytics code should follow these definitions unless a later approved revis
 ### students_not_registered_for_active_session
 
 - Meaning: Count of eligible students missing an enrollment in the active academic session.
-- Source tables: `students`, `program_enrollments`, `academic_sessions`, `academic_session_enrollments`
+- Source tables: `students`, `course_enrollments`, `academic_sessions`, `academic_session_enrollments`
 - Formula: eligible active students minus registered active-session students
 - Time field: active session context
 - Default exclusions: soft-deleted rows
@@ -186,7 +186,7 @@ All analytics code should follow these definitions unless a later approved revis
 ### timetable_completion_rate
 
 - Meaning: Share of expected unit delivery that has timetable coverage.
-- Source tables: `program_version_units`, `academic_timetables`
+- Source tables: `course_version_units`, `academic_timetables`
 - Formula: timetabled mapped units divided by expected mapped units for active scope
 - Time field: session or timetable period
 - Default exclusions: soft-deleted rows
@@ -212,7 +212,7 @@ All analytics code should follow these definitions unless a later approved revis
 ### students_missing_program_enrollment
 
 - Meaning: Count of students without a linked program enrollment.
-- Source tables: `students`, `program_enrollments`
+- Source tables: `students`, `course_enrollments`
 - Formula: students with no related program enrollment
 - Time field: real-time state
 - Default exclusions: soft-deleted rows

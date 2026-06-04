@@ -3,7 +3,7 @@
 namespace App\Services\Analytics;
 
 use App\Models\AcademicSession;
-use App\Models\ProgramEnrollment;
+use App\Models\CourseEnrollment;
 use App\Models\Student;
 use App\Services\Analytics\Concerns\BuildsAnalyticsFilters;
 use Carbon\Carbon;
@@ -70,18 +70,18 @@ class ExecutiveAnalyticsService
                        and student_status = 'active'
                        and exists (
                            select 1
-                           from program_enrollments
-                           where program_enrollments.student_id = students.id
-                             and program_enrollments.deleted_at is null
+                           from course_enrollments
+                           where course_enrollments.student_id = students.id
+                             and course_enrollments.deleted_at is null
                        )) as eligible_students,
                     (select count(distinct students.id)
                      from academic_session_enrollments
-                     inner join program_enrollments
-                        on program_enrollments.id = academic_session_enrollments.program_enrollment_id
+                     inner join course_enrollments
+                        on course_enrollments.id = academic_session_enrollments.course_enrollment_id
                      inner join students
-                        on students.id = program_enrollments.student_id
+                        on students.id = course_enrollments.student_id
                      where academic_session_enrollments.deleted_at is null
-                       and program_enrollments.deleted_at is null
+                       and course_enrollments.deleted_at is null
                        and students.deleted_at is null
                        and students.student_status = 'active'
                        and ? is not null
@@ -146,22 +146,22 @@ class ExecutiveAnalyticsService
             ? round(($occupiedBeds / $activeBeds) * 100, 2)
             : 0.0;
 
-        $topPrograms = ProgramEnrollment::query()
-            ->join('program_version_mappings', 'program_version_mappings.id', '=', 'program_enrollments.program_version_mapping_id')
-            ->join('programs', 'programs.id', '=', 'program_version_mappings.program_id')
-            ->whereNull('program_enrollments.deleted_at')
-            ->whereNull('program_version_mappings.deleted_at')
-            ->whereNull('programs.deleted_at')
-            ->select('programs.id', 'programs.name')
-            ->selectRaw('COUNT(DISTINCT program_enrollments.student_id) as student_count')
-            ->groupBy('programs.id', 'programs.name')
+        $topcourses = CourseEnrollment::query()
+            ->join('course_version_mappings', 'course_version_mappings.id', '=', 'course_enrollments.course_version_mapping_id')
+            ->join('courses', 'courses.id', '=', 'course_version_mappings.course_id')
+            ->whereNull('course_enrollments.deleted_at')
+            ->whereNull('course_version_mappings.deleted_at')
+            ->whereNull('courses.deleted_at')
+            ->select('courses.id', 'courses.name')
+            ->selectRaw('COUNT(DISTINCT course_enrollments.student_id) as student_count')
+            ->groupBy('courses.id', 'courses.name')
             ->orderByDesc('student_count')
             ->limit(5)
             ->get()
-            ->map(fn ($program) => [
-                'id' => $program->id,
-                'name' => $program->name,
-                'student_count' => (int) $program->student_count,
+            ->map(fn ($course) => [
+                'id' => $course->id,
+                'name' => $course->name,
+                'student_count' => (int) $course->student_count,
             ])
             ->all();
 
@@ -201,7 +201,7 @@ class ExecutiveAnalyticsService
                 'active_beds' => (int) $activeBeds,
             ],
             'breakdowns' => [
-                'top_programs' => $topPrograms,
+                'top_courses' => $topcourses,
                 'student_statuses' => $studentStatusBreakdown,
             ],
             'policy' => [

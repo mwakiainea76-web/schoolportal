@@ -4,11 +4,13 @@ import InputLabel from "@/Components/InputLabel";
 import TextInput from "@/Components/TextInput";
 import TextArea from "@/Components/TextArea";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
+import SearchSelect from "@/Components/SearchSelect";
 
 export default function CreateDepartment() {
     const { data, setData, post, processing, errors, reset } = useForm({
         code: "",
         name: "",
+        hod_staff_id: "",
         description: "",
     });
 
@@ -74,6 +76,24 @@ export default function CreateDepartment() {
                                 />
                                 <InputError
                                     message={errors.name}
+                                    className="mt-2"
+                                />
+                            </div>
+
+                            <div>
+                                <InputLabel value="Head of Department" />
+                                <SearchSelect
+                                    routeName="staffs.search"
+                                    defaultOptions={[]}
+                                    value={data.hod_staff_id}
+                                    placeholder="Search staff..."
+                                    onChange={(staff) =>
+                                        setData("hod_staff_id", staff.id)
+                                    }
+                                    error={errors.hod_staff_id}
+                                />
+                                <InputError
+                                    message={errors.hod_staff_id}
                                     className="mt-2"
                                 />
                             </div>

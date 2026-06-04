@@ -17,7 +17,7 @@ The schoolportal system implements a comprehensive marks management system allow
 - `academic_session_id` - Foreign key to `academic_sessions` (cascade delete)
 - `academic_session_enrollment_id` - Foreign key to `academic_session_enrollments` (cascade delete)
 - `student_id` - Foreign key to `students` (cascade delete)
-- `program_version_unit_id` - Foreign key to `program_version_units` (cascade delete)
+- `program_version_unit_id` - Foreign key to `course_version_units` (cascade delete)
 - `assessment_type` - String (20 chars) - Values: "theory" or "practical"
 - `assessment_number` - Unsigned integer - Assessment number for the unit
 - `marks` - Unsigned tiny integer (0-100) - The actual mark/score
@@ -44,7 +44,7 @@ The schoolportal system implements a comprehensive marks management system allow
 - `academicSession()` - belongsTo AcademicSession
 - `academicSessionEnrollment()` - belongsTo AcademicSessionEnrollment
 - `student()` - belongsTo Student
-- `programVersionUnit()` - belongsTo ProgramVersionUnit
+- `programVersionUnit()` - belongsTo CourseVersionUnit
 - `recordedByStaff()` - belongsTo Staff (via recorded_by_staff_id)
 
 ---
@@ -132,8 +132,8 @@ The schoolportal system implements a comprehensive marks management system allow
 
 **Helper Methods:**
 
-#### `resolveProgramVersionUnitByCode(string $unitCode)` - Protected
-- Looks up ProgramVersionUnit by unit code
+#### `resolveCourseVersionUnitByCode(string $unitCode)` - Protected
+- Looks up CourseVersionUnit by unit code
 - Returns null if not found
 - Eagerly loads related data: unit, programVersionMapping with program and version
 
@@ -194,7 +194,7 @@ All views in: [resources/js/Pages/Grades/](resources/js/Pages/Grades/)
 
 **Features:**
 - Filter section with:
-  - Program version unit code input (searchable)
+  - Course version unit code input (searchable)
   - Assessment type selector (theory/practical)
   - Assessment number input
   - Load button
@@ -359,8 +359,8 @@ The marks system depends on and relates to:
 - **Student** - Has many StudentMark records
 - **AcademicSession** - Marks belong to academic sessions
 - **AcademicSessionEnrollment** - Tracks student enrollment for each session
-- **ProgramVersionUnit** - The unit/course for which marks are recorded
-- **ProgramVersionMapping** - Maps programs to units
+- **CourseVersionUnit** - The unit/course for which marks are recorded
+- **CourseVersionMapping** - Maps programs to units
 - **Staff** - Records who entered the marks
 - **User** - Staff/Student user accounts
 
@@ -373,10 +373,10 @@ StudentMark
 ├── academic_session_id ──→ AcademicSession
 ├── academic_session_enrollment_id ──→ AcademicSessionEnrollment
 ├── student_id ──→ Student (via User)
-├── program_version_unit_id ──→ ProgramVersionUnit
-│   └── program_version_mapping_id ──→ ProgramVersionMapping
-│       ├── program_id ──→ Program
-│       └── program_version_id ──→ ProgramVersion
+├── program_version_unit_id ──→ CourseVersionUnit
+│   └── program_version_mapping_id ──→ CourseVersionMapping
+│       ├── program_id ──→ Course
+│       └── program_version_id ──→ CourseVersion
 └── recorded_by_staff_id ──→ Staff (via User)
 ```
 

@@ -8,7 +8,7 @@ use App\Http\Requests\UpdateFeeAssignmentRequest;
 use App\Models\AcademicSessionEnrollment;
 use App\Models\AcademicYear;
 use App\Models\CertificationLevel;
-use App\Models\ProgramVersionMapping;
+use App\Models\CourseVersionMapping;
 use App\Models\Department;
 use App\Models\FeeAssignment;
 use App\Models\FeePlan;
@@ -37,8 +37,8 @@ class FeeAssignmentController extends Controller
         $query = FeeAssignment::with([
             'feePlan',
             'academicYear',
-            'programVersionMapping',
-            'programVersionMapping.program.certificationLevel',
+            'courseVersionMapping',
+            'courseVersionMapping.course.certificationLevel',
             'createdBy',
         ]);
 
@@ -67,12 +67,12 @@ class FeeAssignmentController extends Controller
             ->orderBy('academic_year')
             ->get();
 
-        $curriculums = ProgramVersionMapping::query()
-            ->with(['programVersion:id,name', 'program:id,name'])
+        $curriculums = CourseVersionMapping::query()
+            ->with(['courseVersion:id,name', 'course:id,name'])
             ->get()
-            ->map(fn (ProgramVersionMapping $curriculum) => [
+            ->map(fn (CourseVersionMapping $curriculum) => [
                 'id' => $curriculum->id,
-                'name' => trim(($curriculum->programVersion?->name ?? 'Program Version').' - '.($curriculum->program?->name ?? 'Program')),
+                'name' => trim(($curriculum->courseVersion?->name ?? 'Course Version').' - '.($curriculum->course?->name ?? 'Course')),
             ]);
 
         return inertia('Fees/FeeAssignments/Create', [
@@ -111,19 +111,19 @@ class FeeAssignmentController extends Controller
             ->orderBy('academic_year')
             ->get();
 
-        $curriculums = ProgramVersionMapping::query()
-            ->with(['programVersion:id,name', 'program:id,name'])
+        $curriculums = CourseVersionMapping::query()
+            ->with(['courseVersion:id,name', 'course:id,name'])
             ->get()
-            ->map(fn (ProgramVersionMapping $curriculum) => [
+            ->map(fn (CourseVersionMapping $curriculum) => [
                 'id' => $curriculum->id,
-                'name' => trim(($curriculum->programVersion?->name ?? 'Program Version').' - '.($curriculum->program?->name ?? 'Program')),
+                'name' => trim(($curriculum->courseVersion?->name ?? 'Course Version').' - '.($curriculum->course?->name ?? 'Course')),
             ]);
 
         return inertia('Fees/FeeAssignments/Edit', [
             'assignment' => $feeAssignment->load([
                 'feePlan',
                 'academicYear',
-                'programVersionMapping',
+                'courseVersionMapping',
             ]),
             'feePlans' => FeePlan::select('id', 'name')->get(),
             'academicYear' => $year,
@@ -137,13 +137,13 @@ class FeeAssignmentController extends Controller
     public function store(StoreFeeAssignmentRequest $request)
     {
         $validated = $request->validated();
-        $programVersionMappingId = $validated['course_curriculum_id'];
+        $courseVersionMappingId = $validated['course_curriculum_id'];
 
-        DB::transaction(function () use ($validated, $programVersionMappingId) {
+        DB::transaction(function () use ($validated, $courseVersionMappingId) {
             // Deactivate all existing active assignments for this combination
             FeeAssignment::query()
                 ->where('academic_year_id', $validated['academic_year_id'])
-                ->where('program_version_mapping_id', $programVersionMappingId)
+                ->where('course_version_mapping_id', $courseVersionMappingId)
                 ->where('year_of_study', $validated['year_of_study'])
                 ->where('session_number', $validated['session_number'])
                 ->where('is_active', true)
@@ -156,7 +156,7 @@ class FeeAssignmentController extends Controller
             FeeAssignment::create([
                 'fee_plan_id' => $validated['fee_plan_id'],
                 'academic_year_id' => $validated['academic_year_id'],
-                'program_version_mapping_id' => $programVersionMappingId,
+                'course_version_mapping_id' => $courseVersionMappingId,
                 'year_of_study' => $validated['year_of_study'],
                 'session_number' => $validated['session_number'],
                 'created_by' => Auth::user()->staff->id,
@@ -177,9 +177,9 @@ class FeeAssignmentController extends Controller
     public function update(Request $request, FeeAssignment $feeAssignment)
     {
         $validated = $request->validate($this->rules($feeAssignment->id));
-        $programVersionMappingId = $validated['course_curriculum_id'];
+        $courseVersionMappingId = $validated['course_curriculum_id'];
 
-        DB::transaction(function () use ($validated, $feeAssignment, $programVersionMappingId) {
+        DB::transaction(function () use ($validated, $feeAssignment, $courseVersionMappingId) {
             // Deactivate the current assignment (being replaced)
             $feeAssignment->update([
                 'is_active' => false,
@@ -189,7 +189,7 @@ class FeeAssignmentController extends Controller
             // Deactivate any other active assignment for the target combination
             FeeAssignment::query()
                 ->where('academic_year_id', $validated['academic_year_id'])
-                ->where('program_version_mapping_id', $programVersionMappingId)
+                ->where('course_version_mapping_id', $courseVersionMappingId)
                 ->where('year_of_study', $validated['year_of_study'])
                 ->where('session_number', $validated['session_number'])
                 ->where('is_active', true)
@@ -202,7 +202,7 @@ class FeeAssignmentController extends Controller
             FeeAssignment::create([
                 'fee_plan_id' => $validated['fee_plan_id'],
                 'academic_year_id' => $validated['academic_year_id'],
-                'program_version_mapping_id' => $programVersionMappingId,
+                'course_version_mapping_id' => $courseVersionMappingId,
                 'year_of_study' => $validated['year_of_study'],
                 'session_number' => $validated['session_number'],
                 'created_by' => Auth::user()->staff->id,
@@ -245,7 +245,7 @@ class FeeAssignmentController extends Controller
             'assignment' => $feeAssignment->load([
                 'feePlan',
                 'academicYear',
-                'programVersionMapping',
+                'courseVersionMapping',
                 'createdBy',
             ]),
         ]);
@@ -276,15 +276,15 @@ class FeeAssignmentController extends Controller
     {
         return FeeAssignment::with([
             'feePlan:id,name',
-            'programVersionMapping:id,program_id,program_version_id',
-            'programVersionMapping.program:id,name',
-            'programVersionMapping.programVersion:id,name',
+            'courseVersionMapping:id,course_id,course_version_id',
+            'courseVersionMapping.course:id,name',
+            'courseVersionMapping.courseVersion:id,name',
         ])
             ->when($request->search, function ($q, $search) {
                 $q->where(function ($query) use ($search) {
                     $query->whereHas('feePlan', fn ($feePlanQuery) => $feePlanQuery->where('name', 'like', "%{$search}%"))
-                        ->orWhereHas('programVersionMapping.program', fn ($programQuery) => $programQuery->where('name', 'like', "%{$search}%"))
-                        ->orWhereHas('programVersionMapping.programVersion', fn ($versionQuery) => $versionQuery->where('name', 'like', "%{$search}%"));
+                        ->orWhereHas('courseVersionMapping.course', fn ($courseQuery) => $courseQuery->where('name', 'like', "%{$search}%"))
+                        ->orWhereHas('courseVersionMapping.courseVersion', fn ($versionQuery) => $versionQuery->where('name', 'like', "%{$search}%"));
                 });
             })
             ->limit(20)
@@ -293,8 +293,8 @@ class FeeAssignmentController extends Controller
                 'id' => $assignment->id,
                 'name' => collect([
                     $assignment->feePlan?->name,
-                    $assignment->programVersionMapping?->program?->name,
-                    $assignment->programVersionMapping?->programVersion?->name,
+                    $assignment->courseVersionMapping?->course?->name,
+                    $assignment->courseVersionMapping?->courseVersion?->name,
                 ])->filter()->implode(' - '),
             ]);
     }
@@ -311,7 +311,7 @@ class FeeAssignmentController extends Controller
         $enrollment = AcademicSessionEnrollment::findOrFail($validated['enrollment_id']);
 
         $assignment = FeeAssignment::query()
-            ->where('program_version_mapping_id', $enrollment->programEnrollment?->program_version_mapping_id)
+            ->where('course_version_mapping_id', $enrollment->courseEnrollment?->course_version_mapping_id)
             ->where('year_of_study', $enrollment->year_of_study)
             ->where('session_number', $enrollment->academicSession->session_No ?? 1)
             ->where('is_active', true)
@@ -329,7 +329,7 @@ class FeeAssignmentController extends Controller
                 'fee_plan_id' => $assignment->fee_plan_id,
                 'fee_plan_name' => $assignment->feePlan?->name,
                 'academic_year_id' => $assignment->academic_year_id,
-                'course_curriculum_id' => $assignment->program_version_mapping_id,
+                'course_curriculum_id' => $assignment->course_version_mapping_id,
                 'year_of_study' => $assignment->year_of_study,
                 'session_number' => $assignment->session_number,
                 'valid_from' => $assignment->valid_from,
@@ -360,7 +360,7 @@ class FeeAssignmentController extends Controller
         return response()->json($levels->values());
     }
 
-    public function bulkProgramVersions(Request $request)
+    public function bulkCourseVersions(Request $request)
     {
         $validated = $request->validate([
             'fee_plan_id' => 'required|exists:fee_plans,id',
@@ -371,19 +371,19 @@ class FeeAssignmentController extends Controller
             'session_number' => 'required|integer|min:1|max:20',
         ]);
 
-        $curriculums = ProgramVersionMapping::query()
+        $curriculums = CourseVersionMapping::query()
             ->active()
             ->with([
-                'programVersion:id,name',
-                'program:id,name,department_id,certification_level_id',
-                'program.certificationLevel:id,name',
+                'courseVersion:id,name',
+                'course:id,name,department_id,certification_level_id',
+                'course.certificationLevel:id,name',
             ])
-            ->whereHas('program', function ($query) use ($validated) {
+            ->whereHas('course', function ($query) use ($validated) {
                 $query->where('department_id', $validated['department_id'])
                     ->where('is_active', true)
                     ->where('certification_level_id', $validated['certification_level_id']);
             })
-            ->orderBy('program_version_id')
+            ->orderBy('course_version_id')
             ->get();
 
         $existingAssignments = FeeAssignment::query()
@@ -392,21 +392,21 @@ class FeeAssignmentController extends Controller
             ->where('year_of_study', $validated['year_of_study'])
             ->where('session_number', $validated['session_number'])
             ->where('is_active', true)
-            ->whereIn('program_version_mapping_id', $curriculums->pluck('id'))
+            ->whereIn('course_version_mapping_id', $curriculums->pluck('id'))
             ->orderByDesc('id')
             ->get()
-            ->unique('program_version_mapping_id')
-            ->keyBy('program_version_mapping_id');
+            ->unique('course_version_mapping_id')
+            ->keyBy('course_version_mapping_id');
 
         return response()->json([
-            'rows' => $curriculums->map(function (ProgramVersionMapping $curriculum) use ($existingAssignments, $validated) {
+            'rows' => $curriculums->map(function (CourseVersionMapping $curriculum) use ($existingAssignments, $validated) {
                 $assignment = $existingAssignments->get($curriculum->id);
 
                 return [
                     'id' => $curriculum->id,
-                    'course_name' => $curriculum->program?->name,
-                    'curriculum_name' => $curriculum->programVersion?->name ?? $curriculum->name,
-                    'certification_level_name' => $curriculum->program?->certificationLevel?->name,
+                    'course_name' => $curriculum->course?->name,
+                    'curriculum_name' => $curriculum->courseVersion?->name ?? $curriculum->name,
+                    'certification_level_name' => $curriculum->course?->certificationLevel?->name,
                     'is_assigned' => (int) $assignment?->fee_plan_id === (int) $validated['fee_plan_id'],
                     'has_other_fee_plan' => $assignment && (int) $assignment->fee_plan_id !== (int) $validated['fee_plan_id'],
                     'assigned_fee_plan_id' => $assignment?->fee_plan_id,
@@ -431,9 +431,9 @@ class FeeAssignmentController extends Controller
             'year_of_study' => 'required|integer|min:1|max:20',
             'session_number' => 'required|integer|min:1|max:20',
             'visible_course_curriculum_ids' => 'required|array|min:1',
-            'visible_course_curriculum_ids.*' => 'integer|exists:program_version_mappings,id',
+            'visible_course_curriculum_ids.*' => 'integer|exists:course_version_mappings,id',
             'selected_course_curriculum_ids' => 'nullable|array',
-            'selected_course_curriculum_ids.*' => 'integer|exists:program_version_mappings,id',
+            'selected_course_curriculum_ids.*' => 'integer|exists:course_version_mappings,id',
         ]);
 
         $visibleIds = collect($validated['visible_course_curriculum_ids'])
@@ -453,7 +453,7 @@ class FeeAssignmentController extends Controller
                 ->where('academic_year_id', $validated['academic_year_id'])
                 ->where('year_of_study', $validated['year_of_study'])
                 ->where('session_number', $validated['session_number'])
-                ->whereIn('program_version_mapping_id', $visibleIds)
+                ->whereIn('course_version_mapping_id', $visibleIds)
                 ->where('is_active', true)
                 ->update([
                     'is_active' => false,
@@ -461,11 +461,11 @@ class FeeAssignmentController extends Controller
                 ]);
 
             // Create new active assignments for selected curricula
-            foreach ($selectedIds as $courseProgramVersionId) {
+            foreach ($selectedIds as $courseCourseVersionId) {
                 FeeAssignment::create([
                     'fee_plan_id' => $validated['fee_plan_id'],
                     'academic_year_id' => $validated['academic_year_id'],
-                    'program_version_mapping_id' => $courseProgramVersionId,
+                    'course_version_mapping_id' => $courseCourseVersionId,
                     'year_of_study' => $validated['year_of_study'],
                     'session_number' => $validated['session_number'],
                     'created_by' => Auth::user()->staff->id,
@@ -478,7 +478,7 @@ class FeeAssignmentController extends Controller
 
         return redirect()
             ->route('fees.assignments.bulk')
-            ->with('success', 'ProgramVersion fee assignments updated successfully.');
+            ->with('success', 'CourseVersion fee assignments updated successfully.');
     }
 
     /* =========================================================
@@ -513,7 +513,7 @@ class FeeAssignmentController extends Controller
                 ->where('academic_year_id', $validated['academic_year_id'])
                 ->where('year_of_study', $validated['year_of_study'])
                 ->where('session_number', $validated['session_number'])
-                ->pluck('program_version_mapping_id');
+                ->pluck('course_version_mapping_id');
 
             if ($curriculumIds->isEmpty()) {
                 return 0;
@@ -522,7 +522,7 @@ class FeeAssignmentController extends Controller
             // Deactivate any existing active assignments for the target fee plan with these curricula
             FeeAssignment::query()
                 ->where('fee_plan_id', $validated['to_fee_plan_id'])
-                ->whereIn('program_version_mapping_id', $curriculumIds)
+                ->whereIn('course_version_mapping_id', $curriculumIds)
                 ->where('is_active', true)
                 ->update([
                     'is_active' => false,
@@ -535,7 +535,7 @@ class FeeAssignmentController extends Controller
                 FeeAssignment::create([
                     'fee_plan_id' => $validated['to_fee_plan_id'],
                     'academic_year_id' => $validated['academic_year_id'],
-                    'program_version_mapping_id' => $curriculumId,
+                    'course_version_mapping_id' => $curriculumId,
                     'year_of_study' => $validated['year_of_study'],
                     'session_number' => $validated['session_number'],
                     'created_by' => Auth::user()->staff->id,
@@ -570,8 +570,8 @@ class FeeAssignmentController extends Controller
         $affected = FeeAssignment::query()
             ->with([
                 'feePlan:id,name',
-                'programVersionMapping:id,program_version_id,program_id',
-                'programVersionMapping.programVersion:id,name',
+                'courseVersionMapping:id,course_version_id,course_id',
+                'courseVersionMapping.courseVersion:id,name',
             ])
             ->where('fee_plan_id', $validated['from_fee_plan_id'])
             ->where('academic_year_id', $validated['academic_year_id'])
@@ -603,7 +603,7 @@ class FeeAssignmentController extends Controller
         return [
             'fee_plan_id' => 'required|exists:fee_plans,id',
             'academic_year_id' => 'required|exists:academic_years,id',
-            'course_curriculum_id' => 'required|exists:program_version_mappings,id',
+            'course_curriculum_id' => 'required|exists:course_version_mappings,id',
             'year_of_study' => 'required|integer|min:1|max:20',
             'session_number' => 'required|integer|min:1|max:20',
         ];

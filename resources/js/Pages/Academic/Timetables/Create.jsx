@@ -8,7 +8,7 @@ export default function Create({
     departments,
     trainers,
     lecture_rooms,
-    program_version_units,
+    course_version_units,
     days,
     current_department_id,
     selected_department_id,
@@ -19,7 +19,7 @@ export default function Create({
         department_id: initialDepartment,
         trainer_staff_id: "",
         lecture_room_id: "",
-        program_version_unit_ids: [],
+        course_version_unit_ids: [],
         sessions: [
             {
                 day_of_week: "monday",
@@ -34,8 +34,8 @@ export default function Create({
         : trainers;
 
     const filteredUnits = data.department_id
-        ? program_version_units.filter((unit) => unit.department_id === data.department_id)
-        : program_version_units;
+        ? course_version_units.filter((unit) => unit.department_id === data.department_id)
+        : course_version_units;
 
     const filteredRooms = data.department_id
         ? lecture_rooms.filter((room) => room.department_id === data.department_id)
@@ -74,16 +74,16 @@ export default function Create({
 
     const toggleUnit = (unitId, checked) => {
         if (checked) {
-            setData("program_version_unit_ids", [
-                ...data.program_version_unit_ids,
+            setData("course_version_unit_ids", [
+                ...data.course_version_unit_ids,
                 unitId,
             ]);
             return;
         }
 
         setData(
-            "program_version_unit_ids",
-            data.program_version_unit_ids.filter((id) => id !== unitId),
+            "course_version_unit_ids",
+            data.course_version_unit_ids.filter((id) => id !== unitId),
         );
     };
 
@@ -104,7 +104,7 @@ export default function Create({
                     <p className="mt-2 max-w-3xl text-sm text-zinc-600">
                         Plan a real class session with trainer, hall, and one or
                         more equivalent curriculum units that can be taught
-                        together across programs.
+                        together across courses.
                     </p>
                 </div>
             }
@@ -117,7 +117,7 @@ export default function Create({
                     className="space-y-8 rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm"
                 >
                     <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
-                        A trainer can merge students from different programs into
+                        A trainer can merge students from different courses into
                         one class when the content is the same. Select all
                         matching curriculum units below, then assign one room and
                         one weekly slot for that merged teaching session.
@@ -135,7 +135,7 @@ export default function Create({
                                     setData("department_id", department.id);
                                     setData("trainer_staff_id", "");
                                     setData("lecture_room_id", "");
-                                    setData("program_version_unit_ids", []);
+                                    setData("course_version_unit_ids", []);
                                 }}
                                 error={errors.department_id}
                             />
@@ -190,21 +190,21 @@ export default function Create({
                                 Curriculum Units in This Class
                             </h2>
                             <p className="text-sm text-zinc-500">
-                                Choose every program version unit that shares the
+                                Choose every course version unit that shares the
                                 same content and can be merged into one teaching
                                 room and slot.
                             </p>
                         </div>
 
                         <InputError
-                            message={errors.program_version_unit_ids}
+                            message={errors.course_version_unit_ids}
                             className="mt-1"
                         />
 
                         <div className="grid gap-3 md:grid-cols-2">
                             {filteredUnits.length ? (
                                 filteredUnits.map((unit) => {
-                                    const checked = data.program_version_unit_ids.includes(
+                                    const checked = data.course_version_unit_ids.includes(
                                         unit.id,
                                     );
 

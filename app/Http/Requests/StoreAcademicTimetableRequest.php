@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use App\Models\AcademicSession;
 use App\Models\AcademicTimetable;
-use App\Models\ProgramVersionUnit;
+use App\Models\CourseVersionUnit;
 use App\Models\Staff;
 use App\Models\LectureRoom;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
@@ -25,8 +25,8 @@ class StoreAcademicTimetableRequest extends FormRequest
             'department_id' => ['required', 'exists:departments,id'],
             'trainer_staff_id' => ['required', 'exists:staffs,id'],
             'lecture_room_id' => ['required', 'exists:lecture_rooms,id'],
-            'program_version_unit_ids' => ['required', 'array', 'min:1'],
-            'program_version_unit_ids.*' => ['required', 'distinct', 'exists:program_version_units,id'],
+            'course_version_unit_ids' => ['required', 'array', 'min:1'],
+            'course_version_unit_ids.*' => ['required', 'distinct', 'exists:course_version_units,id'],
             'sessions' => ['required', 'array', 'min:1'],
             'sessions.*.day_of_week' => ['required', 'in:monday,tuesday,wednesday,thursday,friday,saturday,sunday'],
             'sessions.*.start_time' => ['required', 'date_format:H:i'],
@@ -51,7 +51,7 @@ class StoreAcademicTimetableRequest extends FormRequest
         $trainerId = (int) $this->integer('trainer_staff_id');
         $lectureRoomId = (int) $this->integer('lecture_room_id');
         $academicSessionId = $this->resolveCurrentAcademicSessionId();
-        $programVersionUnitIds = collect($this->input('program_version_unit_ids', []))
+        $courseVersionUnitIds = collect($this->input('course_version_unit_ids', []))
             ->map(fn ($id) => (int) $id)
             ->filter()
             ->values();
@@ -72,16 +72,16 @@ class StoreAcademicTimetableRequest extends FormRequest
             $validator->errors()->add('lecture_room_id', 'Selected lecture room must belong to the chosen department.');
         }
 
-        $programVersionUnits = ProgramVersionUnit::query()
-            ->with('programVersionMapping.program:id,department_id')
-            ->whereIn('id', $programVersionUnitIds)
+        $courseVersionUnits = CourseVersionUnit::query()
+            ->with('courseVersionMapping.course:id,department_id')
+            ->whereIn('id', $courseVersionUnitIds)
             ->get()
             ->keyBy('id');
 
-        foreach ($programVersionUnitIds as $programVersionUnitId) {
-            $programVersionUnit = $programVersionUnits->get($programVersionUnitId);
-            if (! $programVersionUnit || (int) $programVersionUnit->programVersionMapping?->program?->department_id !== $departmentId) {
-                $validator->errors()->add('program_version_unit_ids', 'Every selected curriculum unit must belong to the chosen department.');
+        foreach ($courseVersionUnitIds as $courseVersionUnitId) {
+            $courseVersionUnit = $courseVersionUnits->get($courseVersionUnitId);
+            if (! $courseVersionUnit || (int) $courseVersionUnit->courseVersionMapping?->program?->department_id !== $departmentId) {
+                $validator->errors()->add('course_version_unit_ids', 'Every selected curriculum unit must belong to the chosen department.');
                 break;
             }
         }
@@ -114,11 +114,11 @@ class StoreAcademicTimetableRequest extends FormRequest
                 $validator->errors()->add("sessions.{$session['index']}.start_time", "Session {$row} overlaps with another timetable slot already assigned to this lecture room.");
             }
 
-            if ($overlappingSessions->contains(function (AcademicTimetable $timetable) use ($programVersionUnitIds) {
-                return $timetable->programVersionUnits
+            if ($overlappingSessions->contains(function (AcademicTimetable $timetable) use ($courseVersionUnitIds) {
+                return $timetable->courseVersionUnits
                     ->pluck('id')
                     ->map(fn ($id) => (int) $id)
-                    ->intersect($programVersionUnitIds)
+                    ->intersect($courseVersionUnitIds)
                     ->isNotEmpty();
             })) {
                 $validator->errors()->add("sessions.{$session['index']}.start_time", "Session {$row} overlaps with another timetable slot already assigned to one of the selected curriculum units.");
@@ -172,7 +172,7 @@ class StoreAcademicTimetableRequest extends FormRequest
                 'start_time',
                 'end_time',
             ])
-            ->with('programVersionUnits:id,program_version_mapping_id,module_taught')
+            ->with('courseVersionUnits:id,course_version_mapping_id,module_taught')
             ->where('academic_session_id', $academicSessionId)
             ->whereIn('day_of_week', $days)
             ->where('start_time', '<', $latestEnd)

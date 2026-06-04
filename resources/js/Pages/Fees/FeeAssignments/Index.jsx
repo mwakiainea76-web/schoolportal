@@ -68,23 +68,23 @@ export default function FeeAssignmentsIndex({ assignments, filters }) {
         });
     };
 
-    const programCertificationLabel = (assignment) => {
-        const programName =
-            assignment.program_version_mapping?.program?.name ||
+    const courseCertificationLabel = (assignment) => {
+        const courseName =
+            assignment.course_version_mapping?.course?.name ||
             assignment.course_curriculum?.course?.name;
         const certificationName =
-            assignment.program_version_mapping?.program?.certificationLevel
+            assignment.course_version_mapping?.course?.certificationLevel
                 ?.name ||
-            assignment.program_version_mapping?.program?.certification_level
+            assignment.course_version_mapping?.course?.certification_level
                 ?.name ||
             assignment.course_curriculum?.course?.certificationLevel?.name ||
             assignment.course_curriculum?.course?.certification_level?.name;
 
-        if (!programName && !certificationName) {
+        if (!courseName && !certificationName) {
             return "-";
         }
 
-        return [programName, certificationName].filter(Boolean).join(" - ");
+        return [courseName, certificationName].filter(Boolean).join(" - ");
     };
     const [showModal, setShowModal] = useState(false);
     return (
@@ -93,33 +93,24 @@ export default function FeeAssignmentsIndex({ assignments, filters }) {
 
             <div className="mx-auto w-full max-w-7xl animate-in fade-in slide-in-from-bottom-4 duration-700">
                 <div className="mb-4 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <Link
-                            className="inline-block rounded bg-slate-400 px-4 py-1 text-white hover:bg-slate-700"
-                            href={route("fees.assignments.create")}
-                        >
-                            + Add Program Version Fee Assignment
-                        </Link>
-
-                        <button
-                            onClick={() => {
-                                const newShowInactive = !showInactive;
-                                setShowInactive(newShowInactive);
-                                router.get(
-                                    route("fees.assignments.index"),
-                                    { ...filters, show_inactive: newShowInactive },
-                                    { preserveState: true, replace: true }
-                                );
-                            }}
-                            className={`rounded px-4 py-1 transition ${
-                                showInactive
-                                    ? "bg-emerald-600 text-white hover:bg-emerald-700"
-                                    : "bg-zinc-200 text-zinc-700 hover:bg-zinc-300"
-                            }`}
-                        >
-                            {showInactive ? "Showing All" : "Active Only"}
-                        </button>
-                    </div>
+                    <button
+                        onClick={() => {
+                            const newShowInactive = !showInactive;
+                            setShowInactive(newShowInactive);
+                            router.get(
+                                route("fees.assignments.index"),
+                                { ...filters, show_inactive: newShowInactive },
+                                { preserveState: true, replace: true }
+                            );
+                        }}
+                        className={`rounded px-4 py-1 transition ${
+                            showInactive
+                                ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                                : "bg-zinc-200 text-zinc-700 hover:bg-zinc-300"
+                        }`}
+                    >
+                        {showInactive ? "Showing All" : "Active Only"}
+                    </button>
 
                     <div className="flex gap-3">
                         <Link
@@ -163,7 +154,7 @@ export default function FeeAssignmentsIndex({ assignments, filters }) {
                         <THdata
                             onClick={() => handleSort("course_curriculum_id")}
                         >
-                            Program / Certification{" "}
+                            Course / Certification{" "}
                             {renderArrow("course_curriculum_id")}
                         </THdata>
 
@@ -199,7 +190,7 @@ export default function FeeAssignmentsIndex({ assignments, filters }) {
                             assignments.data.map((item) => (
                                 <Trow key={item.id}>
                                     <Tdata>
-                                        {programCertificationLabel(item)}
+                                        {courseCertificationLabel(item)}
                                     </Tdata>
 
                                     <Tdata>{item.fee_plan?.name ?? "-"}</Tdata>

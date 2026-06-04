@@ -15,9 +15,9 @@ export default function Edit({
 }) {
     const hasAcademicYears = academicYear.length > 0;
     const hasFeePlans = feePlans.length > 0;
-    const hasProgramVersions = curriculums.length > 0;
+    const hasCourseVersions = curriculums.length > 0;
     const canUpdateAssignment =
-        !!assignment && hasAcademicYears && hasFeePlans && hasProgramVersions;
+        !!assignment && hasAcademicYears && hasFeePlans && hasCourseVersions;
 
     const { data, setData, put, processing, errors } = useForm({
         fee_plan_id: assignment.fee_plan_id || "",
@@ -42,13 +42,13 @@ export default function Edit({
             <div className="mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
                 <div className="overflow-hidden rounded-lg border border-zinc-100 bg-white shadow-sm">
                     <div className="bg-slate-400 py-2 text-center text-sm font-medium text-white">
-                        Edit Program Version Fee Assignment
+                        Edit Course Version Fee Assignment
                     </div>
 
                     <form className="space-y-8 p-10" onSubmit={submit}>
                         {!canUpdateAssignment ? (
                             <div className="rounded border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
-                                You cannot update this fee assignment until an academic year, a fee plan, and a program version mapping are available.
+                                You cannot update this fee assignment until an academic year, a fee plan, and a course version mapping are available.
                             </div>
                         ) : null}
                         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
@@ -91,19 +91,19 @@ export default function Edit({
                             </div>
 
                             <div>
-                                <InputLabel value="Program Version" />
+                                <InputLabel value="Course Version" />
                                 <SearchSelect
                                     defaultOptions={curriculums}
                                     value={data.course_curriculum_id}
-                                    placeholder="Select program version..."
-                                    disabled={!hasProgramVersions}
+                                    placeholder="Select course version..."
+                                    disabled={!hasCourseVersions}
                                     onChange={(item) =>
                                         setData("course_curriculum_id", item.id)
                                     }
                                 />
-                                {!hasProgramVersions ? (
+                                {!hasCourseVersions ? (
                                     <p className="mt-1 text-xs text-amber-600">
-                                        Create a program version mapping first to continue.
+                                        Create a course version mapping first to continue.
                                     </p>
                                 ) : null}
                                 <InputError

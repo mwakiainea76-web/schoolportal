@@ -99,17 +99,10 @@ export default function FeePlans({ feePlans }) {
 
             <div className="mx-auto w-full space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
                 {/* HEADER ACTION BAR */}
-                <div className="flex justify-between items-center">
+                <div>
                     <h1 className="text-lg font-semibold text-zinc-700">
                         Fee Plans
                     </h1>
-
-                    <Link
-                        href={route("fees.plans.create")}
-                        className="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-800 transition"
-                    >
-                        + Add Fee Plan
-                    </Link>
                 </div>
 
                 {/* FILTER BAR */}

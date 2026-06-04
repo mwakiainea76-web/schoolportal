@@ -10,8 +10,8 @@ return new class extends Migration
     {
         Schema::create('academic_session_enrollments', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('program_enrollment_id')
-                ->constrained('program_enrollments', 'id')
+            $table->foreignId('course_enrollment_id')
+                ->constrained('course_enrollments', 'id')
                 ->cascadeOnUpdate()
                 ->cascadeOnDelete();
             $table->foreignId('academic_session_id')
@@ -31,8 +31,8 @@ return new class extends Migration
             $table->softDeletes();
             $table->timestamps();
 
-            $table->unique(['program_enrollment_id', 'academic_session_id'], 'academic_session_enrollments_unique_session');
-            $table->index(['program_enrollment_id', 'id']);
+            $table->unique(['course_enrollment_id', 'academic_session_id'], 'academic_session_enrollments_unique_session');
+            $table->index(['course_enrollment_id', 'id']);
             $table->index(['academic_session_id', 'status']);
         });
     }

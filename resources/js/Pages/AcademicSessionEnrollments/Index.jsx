@@ -68,13 +68,6 @@ export default function Index({ enrollments }) {
             <Head title="Academic Session Enrollments" />
 
             <div className="max-w-7xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
-                <Link
-                    className="mb-4 px-4 py-1 bg-slate-400 text-white rounded hover:bg-slate-700 inline-block"
-                    href={route("academic.sessions.enrollments.create")}
-                >
-                    Enroll Student
-                </Link>
-
                 {/* Search */}
                 <form
                     className="w-full relative flex gap-x-7"
@@ -121,8 +114,8 @@ export default function Index({ enrollments }) {
                         <THdata>Student</THdata>
                         <THdata>Reg No.</THdata>
                         <THdata>Session</THdata>
-                        <THdata>Program Version</THdata>
-                        <THdata>Program</THdata>
+                        <THdata>Course Version</THdata>
+                        <THdata>Course</THdata>
                         <THdata>Year Of Study</THdata>
                         <THdata>Module</THdata>
                         <THdata>Status</THdata>

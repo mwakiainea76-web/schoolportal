@@ -1,11 +1,19 @@
-import { useForm } from "@inertiajs/react";
+import { Head, Link, router, useForm } from "@inertiajs/react";
 import { useEffect } from "react";
+import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import TextInput from "@/Components/TextInput";
 import SearchSelect from "@/Components/SearchSelect";
 
-export default function Create({ feePlanOptions = [], plan, setShowModal }) {
+export default function Create({
+    feePlanOptions = [],
+    feePlans = [],
+    plan,
+    setShowModal,
+}) {
+    const isModal = typeof setShowModal === "function";
+    const options = feePlanOptions.length ? feePlanOptions : feePlans;
     const { data, setData, post, processing, errors } = useForm({
         fee_plan_id: plan ? plan.id : "",
         name: "",
@@ -26,11 +34,14 @@ export default function Create({ feePlanOptions = [], plan, setShowModal }) {
             onSuccess: () => {
                 setData("amount", "");
                 setData("name", "");
+                if (!isModal) {
+                    router.visit(route("fees.plans.items.index"));
+                }
             },
         });
     };
 
-    return (
+    const form = (
         <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className="bg-white rounded-xl border border-zinc-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden">
                 <div className="bg-slate-600 text-white text-center py-2 text-sm font-medium tracking-wide">
@@ -44,7 +55,7 @@ export default function Create({ feePlanOptions = [], plan, setShowModal }) {
                             <SearchSelect
                                 value={data.fee_plan_id}
                                 placeholder="Search fee plan..."
-                                defaultOptions={feePlanOptions}
+                                defaultOptions={options}
                                 onChange={(plan) => setData("fee_plan_id", plan.id)}
                                 disabled={!!plan}
                             />
@@ -80,11 +91,28 @@ export default function Create({ feePlanOptions = [], plan, setShowModal }) {
                     <div className="flex justify-between items-center pt-4 border-t border-zinc-100">
                         <button
                             type="button"
-                            onClick={() => setShowModal(false)}
+                            onClick={() => {
+                                if (isModal) {
+                                    setShowModal(false);
+                                    return;
+                                }
+
+                                setData("fee_plan_id", "");
+                                setData("amount", "");
+                                setData("name", "");
+                            }}
                             className="px-4 py-2 bg-zinc-400 text-white rounded hover:bg-zinc-500 transition"
                         >
-                            Cancel
+                            {isModal ? "Cancel" : "Clear"}
                         </button>
+                        {!isModal ? (
+                            <Link
+                                href={route("fees.plans.items.index")}
+                                className="px-4 py-2 bg-zinc-400 text-white rounded hover:bg-zinc-500 transition"
+                            >
+                                Back
+                            </Link>
+                        ) : null}
                         <button
                             type="submit"
                             disabled={processing}
@@ -103,5 +131,16 @@ export default function Create({ feePlanOptions = [], plan, setShowModal }) {
                 </form>
             </div>
         </div>
+    );
+
+    if (isModal) {
+        return form;
+    }
+
+    return (
+        <AuthenticatedLayout>
+            <Head title="Add Fee Plan Item" />
+            <div className="mx-auto w-full max-w-3xl">{form}</div>
+        </AuthenticatedLayout>
     );
 }

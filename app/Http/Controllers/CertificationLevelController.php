@@ -59,7 +59,7 @@ class CertificationLevelController extends Controller
         $selectedExamBodyId = $request->integer('exam_body_id');
 
         return inertia('CertificationLevels/Create', [
-            'examBodies' => ExamBody::all(),
+            'examBodies' => [],
             'selectedExamBodyId' => $selectedExamBodyId ?: null,
             'selectedExamBody' => $selectedExamBodyId
                 ? ExamBody::select('id', 'name', 'code')->find($selectedExamBodyId)
@@ -81,7 +81,7 @@ class CertificationLevelController extends Controller
     public function edit(CertificationLevel $certification_level)
     {
         return inertia('CertificationLevels/Edit', [
-            'exam_bodies' => ExamBody::select('id', 'name', 'code')->limit(20)->get(),
+            'exam_bodies' => [],
             'certification_level' => $certification_level,
             'selectedExamBody' => $certification_level->examBody()
                 ->select('id', 'name', 'code')

@@ -21,13 +21,28 @@ class DepartmentController extends Controller
     public function index(DepartmentFilter $filter)
     {
         $departments = Department::query()
+            ->with('hod.user:id,first_name,last_name,email')
             ->tap(fn ($query) => $filter->apply(
                 $query,
                 request()->only(['search', 'sort', 'direction'])
             ))
             ->latest()
             ->paginate(10)
-            ->withQueryString();
+            ->withQueryString()
+            ->through(fn (Department $department) => [
+                'id' => $department->id,
+                'code' => $department->code,
+                'name' => $department->name,
+                'description' => $department->description,
+                'hod_staff_id' => $department->hod_staff_id,
+                'hod' => $department->hod
+                    ? [
+                        'id' => $department->hod->id,
+                        'name' => $this->staffLabel($department->hod),
+                    ]
+                    : null,
+                'created_at' => $department->created_at,
+            ]);
 
         return inertia('Departments/Index', [
             'departments' => $departments,
@@ -50,8 +65,16 @@ class DepartmentController extends Controller
 
     public function edit(Department $department)
     {
+        $department->load('hod.user:id,first_name,last_name,email');
+
         return inertia('Departments/Edit', [
             'department' => $department,
+            'selectedHod' => $department->hod
+                ? [
+                    'id' => $department->hod->id,
+                    'name' => $this->staffLabel($department->hod),
+                ]
+                : null,
         ]);
     }
 
@@ -82,5 +105,14 @@ class DepartmentController extends Controller
     public function search(Request $request)
     {
         return $this->service->search($request->q);
+    }
+
+    protected function staffLabel($staff): string
+    {
+        return collect([
+            trim(($staff->user?->first_name ?? '').' '.($staff->user?->last_name ?? '')),
+            $staff->staff_number,
+            $staff->designation,
+        ])->filter()->implode(' - ');
     }
 }

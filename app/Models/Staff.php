@@ -41,6 +41,11 @@ class Staff extends Model
         return $this->belongsTo(Department::class);
     }
 
+    public function hodDepartments()
+    {
+        return $this->hasMany(Department::class, 'hod_staff_id');
+    }
+
     public function next_of_kin()
     {
         return $this->hasMany(NextOfKin::class, 'user_id', 'user_id');

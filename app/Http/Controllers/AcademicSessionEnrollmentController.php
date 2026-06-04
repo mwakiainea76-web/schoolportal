@@ -5,8 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreAcademicSessionEnrollmentRequest;
 use App\Models\AcademicSession;
 use App\Models\AcademicSessionEnrollment;
-use App\Models\ProgramEnrollment;
-use App\Models\ProgramVersionUnit;
+use App\Models\CourseEnrollment;
+use App\Models\CourseVersionUnit;
 use App\Models\Student;
 use App\Models\StudentUnitRegistration;
 use App\Services\BillingService;
@@ -24,13 +24,13 @@ class AcademicSessionEnrollmentController extends Controller
     public function index(Request $request)
     {
         $enrollments = AcademicSessionEnrollment::with([
-            'programEnrollment.student.user',
-            'programEnrollment.programVersionMapping.programVersion',
-            'programEnrollment.programVersionMapping.program',
+            'courseEnrollment.student.user',
+            'courseEnrollment.courseVersionMapping.courseVersion',
+            'courseEnrollment.courseVersionMapping.course',
             'academicSession.academicYear',
         ])
             ->when($request->search, function ($q) use ($request) {
-                $q->whereHas('programEnrollment.student', function ($q) use ($request) {
+                $q->whereHas('courseEnrollment.student', function ($q) use ($request) {
                     $q->where('registration_number', 'like', "%{$request->search}%")
                         ->orWhereHas('user', function ($q) use ($request) {
                             $q->where('first_name', 'like', "%{$request->search}%")
@@ -45,15 +45,15 @@ class AcademicSessionEnrollmentController extends Controller
         $mapped = $enrollments->through(fn ($e) => [
             'id' => $e->id,
             'student_name' => trim(
-                ($e->programEnrollment?->student?->user?->first_name ?? '').' '.
-                ($e->programEnrollment?->student?->user?->last_name ?? '')
+                ($e->courseEnrollment?->student?->user?->first_name ?? '').' '.
+                ($e->courseEnrollment?->student?->user?->last_name ?? '')
             ),
-            'registration_number' => $e->programEnrollment?->student?->registration_number ?? 'N/A',
+            'registration_number' => $e->courseEnrollment?->student?->registration_number ?? 'N/A',
             'session' => $e->academicSession
                 ? "{$e->academicSession->academicYear->academic_year} - Session {$e->academicSession->session_No}"
                 : 'N/A',
-            'course' => $e->programEnrollment?->programVersionMapping?->program?->name ?? 'N/A',
-            'curriculum' => $e->programEnrollment?->programVersionMapping?->programVersion?->name ?? 'N/A',
+            'course' => $e->courseEnrollment?->courseVersionMapping?->course?->name ?? 'N/A',
+            'curriculum' => $e->courseEnrollment?->courseVersionMapping?->courseVersion?->name ?? 'N/A',
             'module' => $e->module,
             'year_of_study' => $e->year_of_study,
             'status' => $e->status,
@@ -142,7 +142,7 @@ class AcademicSessionEnrollmentController extends Controller
         try {
             $result = $this->registerUnitsForCurrentStudent(
                 $student,
-                collect($request->input('program_version_unit_ids', []))
+                collect($request->input('course_version_unit_ids', []))
             );
         } catch (ValidationException $e) {
             return back()->withErrors($this->normalizeUnitRegistrationErrors($e));
@@ -156,9 +156,9 @@ class AcademicSessionEnrollmentController extends Controller
     public function edit(AcademicSessionEnrollment $academicSessionEnrollment)
     {
         $e = $academicSessionEnrollment->load([
-            'programEnrollment.student.user',
-            'programEnrollment.programVersionMapping.programVersion',
-            'programEnrollment.programVersionMapping.program',
+            'courseEnrollment.student.user',
+            'courseEnrollment.courseVersionMapping.courseVersion',
+            'courseEnrollment.courseVersionMapping.course',
             'academicSession.academicYear',
         ]);
 
@@ -166,15 +166,15 @@ class AcademicSessionEnrollmentController extends Controller
             'enrollment' => [
                 'id' => $e->id,
                 'student_name' => trim(
-                    ($e->programEnrollment?->student?->user?->first_name ?? '').' '.
-                    ($e->programEnrollment?->student?->user?->last_name ?? '')
+                    ($e->courseEnrollment?->student?->user?->first_name ?? '').' '.
+                    ($e->courseEnrollment?->student?->user?->last_name ?? '')
                 ),
-                'registration_number' => $e->programEnrollment?->student?->registration_number ?? 'N/A',
+                'registration_number' => $e->courseEnrollment?->student?->registration_number ?? 'N/A',
                 'session' => $e->academicSession
                     ? "{$e->academicSession->academicYear->academic_year} - Session {$e->academicSession->session_No}"
                     : 'N/A',
-                'course' => $e->programEnrollment?->programVersionMapping?->program?->name ?? 'N/A',
-                'curriculum' => $e->programEnrollment?->programVersionMapping?->programVersion?->name ?? 'N/A',
+                'course' => $e->courseEnrollment?->courseVersionMapping?->course?->name ?? 'N/A',
+                'curriculum' => $e->courseEnrollment?->courseVersionMapping?->courseVersion?->name ?? 'N/A',
                 'module' => $e->module,
                 'year_of_study' => $e->year_of_study,
                 'status' => $e->status,
@@ -203,13 +203,13 @@ class AcademicSessionEnrollmentController extends Controller
 
     protected function enrollStudentIntoActiveSession(Student $student, ?int $creatorStaffId = null): AcademicSessionEnrollment
     {
-        $programEnrollment = ProgramEnrollment::where('student_id', $student->id)
+        $courseEnrollment = CourseEnrollment::where('student_id', $student->id)
             ->latest()
             ->first();
 
-        if (! $programEnrollment) {
+        if (! $courseEnrollment) {
             throw ValidationException::withMessages([
-                'session_registration' => "Student '{$student->registration_number}' is not enrolled in any program.",
+                'session_registration' => "Student '{$student->registration_number}' is not enrolled in any course.",
             ]);
         }
 
@@ -223,7 +223,7 @@ class AcademicSessionEnrollmentController extends Controller
             ]);
         }
 
-        $alreadyEnrolled = AcademicSessionEnrollment::where('program_enrollment_id', $programEnrollment->id)
+        $alreadyEnrolled = AcademicSessionEnrollment::where('course_enrollment_id', $courseEnrollment->id)
             ->where('academic_session_id', $activeSession->id)
             ->exists();
 
@@ -241,9 +241,9 @@ class AcademicSessionEnrollmentController extends Controller
             ]);
         }
 
-        return DB::transaction(function () use ($programEnrollment, $activeSession, $sessionNumber, $creatorStaffId) {
+        return DB::transaction(function () use ($courseEnrollment, $activeSession, $sessionNumber, $creatorStaffId) {
             $enrollment = AcademicSessionEnrollment::create([
-                'program_enrollment_id' => $programEnrollment->id,
+                'course_enrollment_id' => $courseEnrollment->id,
                 'academic_session_id' => $activeSession->id,
                 'module' => $sessionNumber,
                 'session_number' => $sessionNumber,
@@ -251,7 +251,7 @@ class AcademicSessionEnrollmentController extends Controller
             ]);
 
             $this->billingService->createInvoiceForEnrollment(
-                $enrollment->load(['academicSession.academicYear', 'programEnrollment']),
+                $enrollment->load(['academicSession.academicYear', 'courseEnrollment']),
                 $creatorStaffId
             );
 
@@ -261,14 +261,14 @@ class AcademicSessionEnrollmentController extends Controller
 
     protected function registerUnitsForCurrentStudent(Student $student, \Illuminate\Support\Collection $selectedUnitIds): array
     {
-        $programEnrollment = ProgramEnrollment::query()
+        $courseEnrollment = CourseEnrollment::query()
             ->where('student_id', $student->id)
             ->latest('id')
             ->first();
 
-        if (! $programEnrollment) {
+        if (! $courseEnrollment) {
             throw ValidationException::withMessages([
-                'unit_registration' => "Student '{$student->registration_number}' is not enrolled in any program.",
+                'unit_registration' => "Student '{$student->registration_number}' is not enrolled in any course.",
             ]);
         }
 
@@ -284,7 +284,7 @@ class AcademicSessionEnrollmentController extends Controller
 
         $sessionEnrollment = AcademicSessionEnrollment::query()
             ->with('academicSession.academicYear')
-            ->where('program_enrollment_id', $programEnrollment->id)
+            ->where('course_enrollment_id', $courseEnrollment->id)
             ->where('academic_session_id', $activeSession->id)
             ->latest('id')
             ->first();
@@ -295,9 +295,16 @@ class AcademicSessionEnrollmentController extends Controller
             ]);
         }
 
-        $moduleUnits = ProgramVersionUnit::query()
-            ->where('program_version_mapping_id', $programEnrollment->program_version_mapping_id)
-            ->where('module_taught', $sessionEnrollment->module)
+        $moduleUnits = CourseVersionUnit::query()
+            ->when(
+                $courseEnrollment->course_version_id,
+                fn ($query) => $query->where('course_version_id', $courseEnrollment->course_version_id),
+                fn ($query) => $query->where('course_version_mapping_id', $courseEnrollment->course_version_mapping_id)
+            )
+            ->where(function ($query) use ($sessionEnrollment) {
+                $query->where('module', $sessionEnrollment->module)
+                    ->orWhere('module_taught', $sessionEnrollment->module);
+            })
             ->orderBy('id')
             ->get(['id']);
 
@@ -333,9 +340,9 @@ class AcademicSessionEnrollmentController extends Controller
                 ->delete();
 
             StudentUnitRegistration::query()->insert(
-                $expectedIds->map(fn (int $programVersionUnitId) => [
+                $expectedIds->map(fn (int $courseVersionUnitId) => [
                     'academic_session_enrollment_id' => $sessionEnrollment->id,
-                    'program_version_unit_id' => $programVersionUnitId,
+                    'course_version_unit_id' => $courseVersionUnitId,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ])->all()
@@ -389,4 +396,3 @@ class AcademicSessionEnrollmentController extends Controller
         ];
     }
 }
-

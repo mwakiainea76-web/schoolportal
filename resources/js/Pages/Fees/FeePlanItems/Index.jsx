@@ -119,13 +119,6 @@ export default function Index({
                     >
                         Search
                     </button>
-                    <button
-                        type="button"
-                        className="px-4 py-1 bg-slate-400 text-white rounded hover:bg-slate-700 inline-block"
-                        onClick={() => setShowModal(true)}
-                    >
-                        Add fee plan item
-                    </button>
                 </form>
 
                 {/* TABLE */}

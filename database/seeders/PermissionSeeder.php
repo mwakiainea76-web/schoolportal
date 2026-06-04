@@ -15,11 +15,11 @@ class PermissionSeeder extends Seeder
 
         $modules = [
             'departments',
-            'programs',
-            'program-versions',
-            'programs.program-version-mappings',
+            'courses',
+            'course-versions',
+            'courses.course-version-mappings',
             'units',
-            'units.program-version-units',
+            'units.course-version-units',
             'permissions',
             'roles',
             'users',

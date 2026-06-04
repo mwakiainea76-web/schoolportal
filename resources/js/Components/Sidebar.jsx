@@ -189,7 +189,7 @@ export default function Sidebar({
         const parentActive = isSectionActive({ basePath, children });
         const isSingle = children.length === 1 && !children[0].children;
 
-        if (isSingle && !collapsed) {
+        if (isSingle) {
             const { routeName, fallback } = children[0];
 
             return (
@@ -197,14 +197,15 @@ export default function Sidebar({
                     <Link
                         href={safeRoute(routeName, fallback)}
                         onClick={handleSidebarLinkClick}
-                        className={`w-full flex items-center gap-3 px-4 py-3 text-sm transition ${
+                        title={collapsed ? label : undefined}
+                        className={`flex min-h-12 w-full items-center gap-3 px-4 text-sm transition ${
                             parentActive
                                 ? "bg-emerald-500 text-white"
                                 : "text-zinc-400 hover:bg-white/5 hover:text-white"
                         }`}
                     >
                         {ICONS[icon]}
-                        <span>{label}</span>
+                        {!collapsed && <span className="truncate">{label}</span>}
                     </Link>
                 </div>
             );
@@ -214,15 +215,16 @@ export default function Sidebar({
             <div key={key} className="border-b border-white/5">
                 <button
                     onClick={() => toggleMenu(key)}
-                    className={`w-full flex items-center justify-between px-4 py-3 text-sm transition ${
+                    title={collapsed ? label : undefined}
+                    className={`flex min-h-12 w-full items-center justify-between gap-3 px-4 text-sm transition ${
                         parentActive
                             ? "bg-emerald-500 text-white"
                             : "text-zinc-400 hover:bg-white/5 hover:text-white"
                     }`}
                 >
-                    <div className="flex items-center gap-3">
+                    <div className="flex min-w-0 items-center gap-3">
                         {ICONS[icon]}
-                        {!collapsed && <span>{label}</span>}
+                        {!collapsed && <span className="truncate">{label}</span>}
                     </div>
                     {!collapsed && (
                         <ChevronLeft
@@ -236,7 +238,7 @@ export default function Sidebar({
                 <div
                     className={`overflow-hidden transition-all duration-300 ${
                         isOpen && !collapsed
-                            ? "max-h-[42rem] opacity-100"
+                            ? "max-h-[80rem] opacity-100"
                             : "max-h-0 opacity-0"
                     }`}
                 >
@@ -244,9 +246,9 @@ export default function Sidebar({
                         if (child.children) {
                             return (
                                 <div key={child.key ?? child.label} className="py-2">
-                                    <p className="flex items-center gap-2 px-10 pb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-500 [&_svg]:h-3.5 [&_svg]:w-3.5">
+                                    <p className="flex min-h-6 items-center gap-2 px-4 pl-8 pr-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500 [&_svg]:h-3.5 [&_svg]:w-3.5 [&_svg]:shrink-0">
                                         {child.icon ? ICONS[child.icon] : null}
-                                        {child.label}
+                                        <span className="truncate">{child.label}</span>
                                     </p>
                                     {child.children.map(
                                         ({ routeName, fallback, label: childLabel, activeRouteNames }) => (
@@ -340,14 +342,15 @@ export default function Sidebar({
                                 dashboardFallback,
                             )}
                             onClick={handleSidebarLinkClick}
-                            className={`flex items-center px-4 py-3 transition ${isDashboardActive
+                            title={collapsed ? dashboardLabel : undefined}
+                            className={`flex min-h-12 items-center gap-3 px-4 transition ${isDashboardActive
                                 ? "bg-emerald-500 text-white"
                                 : "text-zinc-400 hover:bg-white/5 hover:text-white"
                                 }`}
                         >
                             {ICONS.dashboard}
                             {!collapsed && (
-                                <span className="ml-3">{dashboardLabel}</span>
+                                <span className="truncate">{dashboardLabel}</span>
                             )}
                         </Link>
                     </div>

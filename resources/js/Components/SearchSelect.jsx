@@ -1,6 +1,38 @@
 import { useEffect, useRef, useState } from "react";
 import { route } from "ziggy-js";
 
+const API_LOOKUP_ROUTES = {
+    "departments.search": "/api/lookups/departments",
+    "programs.search": "/api/lookups/courses",
+    "course-versions.search": "/api/lookups/course-versions",
+    "programs.course-version-mappings.search": "/api/lookups/course-versions",
+    "course-version-mappings.search": "/api/lookups/course-version-mappings",
+    "units.search": "/api/lookups/units",
+    "exam-bodies.search": "/api/lookups/exam-bodies",
+    "programs.course-version-mappings.program-search": "/api/lookups/exam-bodies",
+    "certification-levels.search": "/api/lookups/certification-levels",
+    "staffs.search": "/api/lookups/staffs",
+};
+
+const buildSearchUrl = (routeName, routeParams, text) => {
+    const apiUrl = API_LOOKUP_ROUTES[routeName];
+    const params = new URLSearchParams();
+
+    Object.entries(routeParams ?? {}).forEach(([key, value]) => {
+        if (value !== null && value !== undefined && value !== "") {
+            params.set(key, value);
+        }
+    });
+
+    params.set("q", text);
+
+    if (apiUrl) {
+        return `${apiUrl}?${params.toString()}`;
+    }
+
+    return route(routeName, { ...routeParams, q: text });
+};
+
 export default function SearchSelect({
     value,
     selectedLabel = null, // fallback label from backend relations
@@ -11,19 +43,43 @@ export default function SearchSelect({
     error = false,
     defaultOptions = [],
     disabled = false,
+    minSearchLength = 3,
+    preloadOptions = false,
 }) {
     const [query, setQuery] = useState("");
-    const [options, setOptions] = useState(defaultOptions);
+    const isApiLookup = !!API_LOOKUP_ROUTES[routeName];
+    const initialOptions = isApiLookup ? [] : defaultOptions;
+    const [options, setOptions] = useState(initialOptions);
     const [open, setOpen] = useState(false);
 
     const debounceRef = useRef(null);
     const wrapperRef = useRef(null);
+    const routeParamsKey = JSON.stringify(routeParams ?? {});
+
+    const fetchOptions = async (text = "") => {
+        if (!routeName || disabled) return;
+
+        const res = await fetch(buildSearchUrl(routeName, routeParams, text));
+        if (!res.ok) {
+            setOptions([]);
+            return;
+        }
+
+        const data = await res.json();
+
+        setOptions(Array.isArray(data) ? data : []);
+    };
 
     // -----------------------------
     // EDIT MODE + VALUE HYDRATION
     // -----------------------------
     useEffect(() => {
         if (value === null || value === undefined) return;
+
+        if (value === "") {
+            setQuery("");
+            return;
+        }
 
         // 1. match from current options (best case)
         const selected = defaultOptions.find(
@@ -60,17 +116,20 @@ export default function SearchSelect({
             try {
                 if (!routeName) return;
 
-                if (!text.trim()) {
-                    setOptions(defaultOptions);
+                const trimmedText = text.trim();
+
+                if (!trimmedText) {
+                    setOptions(initialOptions);
+                    onChange?.({ id: "", name: "" });
                     return;
                 }
 
-                const res = await fetch(
-                    route(routeName, { ...routeParams, q: text }),
-                );
-                const data = await res.json();
+                if (routeName && trimmedText.length < minSearchLength) {
+                    setOptions(initialOptions);
+                    return;
+                }
 
-                setOptions(data);
+                await fetchOptions(trimmedText);
             } catch (err) {
                 console.error("SearchSelect error:", err);
             }
@@ -104,11 +163,25 @@ export default function SearchSelect({
     // SYNC OPTIONS ON PROP CHANGE
     // -----------------------------
     useEffect(() => {
+        if (isApiLookup) {
+            if (!preloadOptions) {
+                setOptions([]);
+            }
+
+            return;
+        }
+
         setOptions(defaultOptions);
-    }, [defaultOptions]);
+    }, [defaultOptions, isApiLookup, preloadOptions]);
+
+    useEffect(() => {
+        if (!isApiLookup || !preloadOptions || disabled) return;
+
+        fetchOptions("");
+    }, [isApiLookup, preloadOptions, disabled, routeParamsKey]);
 
     return (
-        <div ref={wrapperRef} className="relative w-full">
+        <div ref={wrapperRef} className={`relative w-full ${open ? "z-[60]" : ""}`}>
             <input
                 value={query}
                 onChange={(e) =>
@@ -119,6 +192,9 @@ export default function SearchSelect({
                 onFocus={() => {
                     if (!disabled) {
                         setOpen(true);
+                        if (preloadOptions && isApiLookup) {
+                            fetchOptions("");
+                        }
                     }
                 }}
                 placeholder={placeholder}
@@ -129,8 +205,8 @@ export default function SearchSelect({
             />
 
             {open && (
-                <div className="absolute z-50 mt-1 w-full bg-white border rounded-xl shadow-lg max-h-60 overflow-y-auto">
-                    {options.length === 0 ? (
+                <div className="absolute z-[70] mt-1 w-full bg-white border rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                    {!Array.isArray(options) || options.length === 0 ? (
                         <div className="p-3 text-sm text-zinc-400">
                             No results found
                         </div>

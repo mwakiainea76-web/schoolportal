@@ -10,7 +10,7 @@ export default function Index({
     session_options,
     departments,
     trainers,
-    program_options,
+    course_options,
     module_options,
     days,
     current_department_id,
@@ -35,12 +35,12 @@ export default function Index({
 
         if (field === "department_id") {
             nextFilters.trainer_staff_id = "";
-            nextFilters.program_version_unit_id = "";
-            nextFilters.program_version_mapping_id = "";
+            nextFilters.course_version_unit_id = "";
+            nextFilters.course_version_mapping_id = "";
             nextFilters.module_number = "";
         }
 
-        if (field === "program_version_mapping_id") {
+        if (field === "course_version_mapping_id") {
             nextFilters.module_number = "";
         }
 
@@ -59,7 +59,7 @@ export default function Index({
                 session_options.find((session) => session.is_active)?.id || "",
             department_id: is_hod || is_trainer ? current_department_id || "" : "",
             trainer_staff_id: is_trainer ? filters.trainer_staff_id : "",
-            program_version_mapping_id: "",
+            course_version_mapping_id: "",
             module_number: "",
             day_of_week: "",
         });
@@ -69,7 +69,7 @@ export default function Index({
         ? Boolean(current_department_id)
         : Boolean(
               filters.department_id &&
-                  filters.program_version_mapping_id &&
+                  filters.course_version_mapping_id &&
                   filters.module_number,
           );
 
@@ -83,7 +83,7 @@ export default function Index({
               filters.academic_session_id &&
                   filters.department_id &&
                   (filters.trainer_staff_id ||
-                      (filters.program_version_mapping_id &&
+                      (filters.course_version_mapping_id &&
                           filters.module_number)),
           );
 
@@ -93,7 +93,7 @@ export default function Index({
         boardSessions.map((item) => item.trainer_staff_id),
     ).size;
     const totalUnits = new Set(
-        boardSessions.flatMap((item) => item.program_version_unit_ids || []),
+        boardSessions.flatMap((item) => item.course_version_unit_ids || []),
     ).size;
     const handleDownloadPdf = () => {
         window.print();
@@ -116,7 +116,7 @@ export default function Index({
                         <p className="mt-2 max-w-3xl text-sm text-zinc-600">
                             Schedule real teaching sessions by trainer, room,
                             day, and time, while allowing equivalent curriculum
-                            units from different programs to be merged into one
+                            units from different courses to be merged into one
                             class.
                         </p>
                     </div>
@@ -127,20 +127,6 @@ export default function Index({
                                 className="inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-white px-5 py-3 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
                             >
                                 Manage Rooms
-                            </Link>
-                        ) : null}
-                        {!is_trainer ? (
-                            <Link
-                                href={
-                                    is_hod
-                                        ? route("academic.timetables.hod.create")
-                                        : route("academic.timetables.create", {
-                                              department_id: filters.department_id,
-                                          })
-                                }
-                                className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-emerald-700"
-                            >
-                                Add Timetable Sessions
                             </Link>
                         ) : null}
                     </div>
@@ -219,7 +205,7 @@ export default function Index({
                             {totalUnits}
                         </p>
                         <p className="mt-2 text-sm text-zinc-600">
-                            Program version units currently mapped into those
+                            Course version units currently mapped into those
                             scheduled classes.
                         </p>
                     </div>
@@ -290,19 +276,19 @@ export default function Index({
                             </label>
                             {is_hod || is_trainer ? (
                                 <select
-                                    value={filters.program_version_mapping_id}
+                                    value={filters.course_version_mapping_id}
                                     onChange={(e) =>
                                         onFilterChange(
-                                            "program_version_mapping_id",
+                                            "course_version_mapping_id",
                                             e.target.value,
                                         )
                                     }
                                     className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none transition focus:border-emerald-400"
                                 >
                                     <option value="">All versioned courses</option>
-                                    {program_options.map((program) => (
-                                        <option key={program.id} value={program.id}>
-                                            {program.name}
+                                    {course_options.map((course) => (
+                                        <option key={course.id} value={course.id}>
+                                            {course.name}
                                         </option>
                                     ))}
                                 </select>
@@ -311,13 +297,13 @@ export default function Index({
                                     key={
                                         filters.department_id || "no-department"
                                     }
-                                    routeName="academic.timetables.programs.search"
+                                    routeName="academic.timetables.courses.search"
                                     routeParams={{
                                         department_id: filters.department_id,
                                         limit: 4,
                                     }}
-                                    defaultOptions={program_options}
-                                    value={filters.program_version_mapping_id}
+                                    defaultOptions={course_options}
+                                    value={filters.course_version_mapping_id}
                                     placeholder={
                                         filters.department_id
                                             ? "Search versioned course..."
@@ -325,7 +311,7 @@ export default function Index({
                                     }
                                     onChange={(item) =>
                                         onFilterChange(
-                                            "program_version_mapping_id",
+                                            "course_version_mapping_id",
                                             item.id,
                                         )
                                     }
@@ -343,7 +329,7 @@ export default function Index({
                                 onChange={(e) =>
                                     onFilterChange("module_number", e.target.value)
                                 }
-                                disabled={!filters.program_version_mapping_id}
+                                disabled={!filters.course_version_mapping_id}
                                 className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none transition focus:border-emerald-400 disabled:cursor-not-allowed disabled:bg-zinc-100"
                             >
                                 <option value="">Select module</option>

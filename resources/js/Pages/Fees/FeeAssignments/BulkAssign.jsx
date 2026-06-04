@@ -79,7 +79,7 @@ export default function BulkAssign({ feePlans, academicYear, departments }) {
             return;
         }
 
-        const loadProgramVersions = async () => {
+        const loadCourseVersions = async () => {
             setLoadingRows(true);
 
             try {
@@ -117,7 +117,7 @@ export default function BulkAssign({ feePlans, academicYear, departments }) {
             }
         };
 
-        loadProgramVersions();
+        loadCourseVersions();
     }, [
         data.fee_plan_id,
         data.academic_year_id,
@@ -132,7 +132,7 @@ export default function BulkAssign({ feePlans, academicYear, departments }) {
         rows.length > 0 &&
         rows.every((row) => selectedIds.includes(String(row.id)));
 
-    const toggleProgramVersion = (id) => {
+    const toggleCourseVersion = (id) => {
         const normalizedId = String(id);
         const updated = selectedIds.includes(normalizedId)
             ? data.selected_course_curriculum_ids.filter(
@@ -166,7 +166,7 @@ export default function BulkAssign({ feePlans, academicYear, departments }) {
             <div className="mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
                 <div className="overflow-hidden rounded-lg border bg-white shadow-sm">
                     <div className="bg-slate-600 py-2 text-center text-sm font-medium text-white">
-                        Program Version Fee Assignment
+                        Course Version Fee Assignment
                     </div>
 
                     <form className="space-y-8 p-8" onSubmit={submit}>
@@ -313,7 +313,7 @@ export default function BulkAssign({ feePlans, academicYear, departments }) {
                             <div className="flex items-center justify-between border-b bg-slate-50 px-4 py-3">
                                 <div>
                                     <h2 className="text-sm font-semibold text-slate-800">
-                                        Program Versions
+                                        Course Versions
                                     </h2>
                                     <p className="text-xs text-slate-500">
                                         Existing assignments for the selected
@@ -348,8 +348,8 @@ export default function BulkAssign({ feePlans, academicYear, departments }) {
                                     data.certification_level_id &&
                                     data.year_of_study &&
                                     data.session_number
-                                        ? "No program versions found for the selected department and certification level."
-                                        : "Select fee plan, academic year, department, certification level, year of study, and session number to load program versions."}
+                                        ? "No course versions found for the selected department and certification level."
+                                        : "Select fee plan, academic year, department, certification level, year of study, and session number to load course versions."}
                                 </div>
                             ) : (
                                 <div className="overflow-x-auto">
@@ -366,10 +366,10 @@ export default function BulkAssign({ feePlans, academicYear, departments }) {
                                                     />
                                                 </th>
                                                 <th className="px-4 py-3 text-left font-semibold text-slate-700">
-                                                    Program
+                                                    Course
                                                 </th>
                                                 <th className="px-4 py-3 text-left font-semibold text-slate-700">
-                                                    Program Version
+                                                    Course Version
                                                 </th>
                                                 <th className="px-4 py-3 text-left font-semibold text-slate-700">
                                                     Certification Level
@@ -402,7 +402,7 @@ export default function BulkAssign({ feePlans, academicYear, departments }) {
                                                                     checked
                                                                 }
                                                                 onChange={() =>
-                                                                    toggleProgramVersion(
+                                                                    toggleCourseVersion(
                                                                         row.id,
                                                                     )
                                                                 }
@@ -488,7 +488,7 @@ export default function BulkAssign({ feePlans, academicYear, departments }) {
                                         className="mx-auto"
                                     />
                                 ) : (
-                                    "Save Program Version Assignments"
+                                    "Save Course Version Assignments"
                                 )}
                             </button>
                         </div>

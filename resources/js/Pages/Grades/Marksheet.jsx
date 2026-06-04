@@ -12,7 +12,7 @@ export default function Marksheet({
     blocker,
 }) {
     const filterForm = useForm({
-        program_version_unit_code: filters.program_version_unit_code || "",
+        course_version_unit_code: filters.course_version_unit_code || "",
         session_number: filters.session_number || "",
         year_of_study: filters.year_of_study || "",
         registration_number: filters.registration_number || "",
@@ -23,8 +23,8 @@ export default function Marksheet({
         router.get(
             route("academic.marks.marksheet.index"),
             {
-                program_version_unit_code:
-                    filterForm.data.program_version_unit_code,
+                course_version_unit_code:
+                    filterForm.data.course_version_unit_code,
                 session_number: filterForm.data.session_number,
                 year_of_study: filterForm.data.year_of_study,
                 registration_number: filterForm.data.registration_number,
@@ -143,11 +143,11 @@ export default function Marksheet({
                             <input
                                 type="text"
                                 value={
-                                    filterForm.data.program_version_unit_code
+                                    filterForm.data.course_version_unit_code
                                 }
                                 onChange={(e) =>
                                     filterForm.setData(
-                                        "program_version_unit_code",
+                                        "course_version_unit_code",
                                         e.target.value.toUpperCase(),
                                     )
                                 }
@@ -156,7 +156,7 @@ export default function Marksheet({
                             />
                             <InputError
                                 message={
-                                    filterForm.errors.program_version_unit_code
+                                    filterForm.errors.course_version_unit_code
                                 }
                                 className="mt-2"
                             />

@@ -38,7 +38,7 @@ class EloquentFeePlanAssignmentRepository implements FeePlanAssignmentRepository
             ->get();
     }
 
-    public function assignmentsForProgramVersion(int $curriculumId): Collection
+    public function assignmentsForCourseVersion(int $curriculumId): Collection
     {
         return FeePlanAssignment::query()
             ->with(['feePlan', 'academicYear', 'session', 'assignedBy', 'cancelledBy', 'revisesAssignment'])
@@ -88,7 +88,7 @@ class EloquentFeePlanAssignmentRepository implements FeePlanAssignmentRepository
 
     public function unassignedCurricula(int $academicYearId, int $sessionId): Collection
     {
-        return \App\Models\ProgramVersion::query()
+        return \App\Models\CourseVersion::query()
             ->active()
             ->whereDoesntHave('feePlanAssignments', function ($query) use ($academicYearId, $sessionId) {
                 $query->where('academic_year_id', $academicYearId)

@@ -61,14 +61,6 @@ export default function Index({ permissions }) {
             <Head title="Permissions" />
 
             <div className="max-w-4xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
-                {/* CREATE BUTTON */}
-                <Link
-                    href={route("permissions.create")}
-                    className="mb-4 px-4 py-1 bg-slate-400 text-white rounded hover:bg-slate-700 inline-block"
-                >
-                    Add Permission
-                </Link>
-
                 {/* SEARCH */}
                 <form className="w-full flex gap-x-7 mb-4" onSubmit={submit}>
                     <SearchSelect

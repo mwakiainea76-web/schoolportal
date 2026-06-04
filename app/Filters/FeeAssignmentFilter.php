@@ -9,7 +9,7 @@ class FeeAssignmentFilter
     protected array $allowedSorts = [
         'created' => 'created_at',
         'fee_plan_id' => 'fee_plan_id',
-        'course_curriculum_id' => 'program_version_mapping_id',
+        'course_curriculum_id' => 'course_version_mapping_id',
         'year_of_study' => 'year_of_study',
         'session_number' => 'session_number',
         'valid_from' => 'valid_from',
@@ -22,7 +22,7 @@ class FeeAssignmentFilter
             ->when($filters['academic_year_id'] ?? null, fn ($q, $id) => $q->where('academic_year_id', $id)
             )
 
-            ->when($filters['course_curriculum_id'] ?? null, fn ($q, $id) => $q->where('program_version_mapping_id', $id)
+            ->when($filters['course_curriculum_id'] ?? null, fn ($q, $id) => $q->where('course_version_mapping_id', $id)
             )
 
             ->when($filters['fee_plan_id'] ?? null, fn ($q, $id) => $q->where('fee_plan_id', $id)

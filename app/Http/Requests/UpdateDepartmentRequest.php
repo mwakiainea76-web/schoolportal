@@ -24,6 +24,7 @@ class UpdateDepartmentRequest extends FormRequest
                     ->ignore($this->route('department')?->id),
             ],
             'description' => ['nullable', 'string', 'max:255'],
+            'hod_staff_id' => ['nullable', 'exists:staffs,id'],
         ];
     }
 }

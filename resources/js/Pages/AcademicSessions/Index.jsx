@@ -59,13 +59,6 @@ export default function UnitsIndex({ academic_sessions }) {
             <Head title="Academic Sessions" />
 
             <div className="max-w-6xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
-                <Link
-                    className="mb-4 px-4 py-1 bg-slate-400 text-white rounded hover:bg-slate-700 inline-block"
-                    href={route("academic.sessions.create")}
-                >
-                    Add Academic Session
-                </Link>
-
                 <form
                     className="w-full relative flex gap-x-7"
                     onSubmit={submit}

@@ -119,8 +119,8 @@ class InvoiceController extends Controller
 
         $invoice->load([
             'student.user',
-            'enrollment.programEnrollment.programVersionMapping.program',
-            'enrollment.programEnrollment.programVersionMapping.programVersion',
+            'enrollment.courseEnrollment.courseVersionMapping.course',
+            'enrollment.courseEnrollment.courseVersionMapping.courseVersion',
             'enrollment.academicSession',
             'academicSession',
             'items',
@@ -609,13 +609,13 @@ class InvoiceController extends Controller
 
         $enrollment = AcademicSessionEnrollment::query()
             ->with([
-                'programEnrollment',
+                'courseEnrollment',
                 'student.user',
                 'academicSession',
-                'programVersionMapping.program',
-                'programVersionMapping.programVersion',
+                'courseVersionMapping.course',
+                'courseVersionMapping.courseVersion',
             ])
-            ->whereHas('programEnrollment', fn ($query) => $query->where('student_id', $student->id))
+            ->whereHas('courseEnrollment', fn ($query) => $query->where('student_id', $student->id))
             ->latest('academic_session_id')
             ->latest('id')
             ->first();
@@ -733,8 +733,8 @@ class InvoiceController extends Controller
                 try {
                     $enrollment = AcademicSessionEnrollment::query()
                         ->with([
-                            'programEnrollment.programVersionMapping.program',
-                            'programEnrollment.programVersionMapping.programVersion',
+                            'courseEnrollment.courseVersionMapping.course',
+                            'courseEnrollment.courseVersionMapping.courseVersion',
                             'academicSession',
                         ])
                         ->findOrFail($id);

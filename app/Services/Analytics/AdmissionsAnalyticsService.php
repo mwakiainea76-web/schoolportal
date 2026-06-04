@@ -49,13 +49,13 @@ class AdmissionsAnalyticsService
 
         $admissionsByDepartment = Student::query()
             ->join('users', 'users.id', '=', 'students.user_id')
-            ->leftJoin('program_enrollments', function ($join) {
-                $join->on('program_enrollments.student_id', '=', 'students.id')
-                    ->whereNull('program_enrollments.deleted_at');
+            ->leftJoin('course_enrollments', function ($join) {
+                $join->on('course_enrollments.student_id', '=', 'students.id')
+                    ->whereNull('course_enrollments.deleted_at');
             })
-            ->leftJoin('program_version_mappings', 'program_version_mappings.id', '=', 'program_enrollments.program_version_mapping_id')
-            ->leftJoin('programs', 'programs.id', '=', 'program_version_mappings.program_id')
-            ->leftJoin('departments', 'departments.id', '=', 'programs.department_id')
+            ->leftJoin('course_version_mappings', 'course_version_mappings.id', '=', 'course_enrollments.course_version_mapping_id')
+            ->leftJoin('courses', 'courses.id', '=', 'course_version_mappings.course_id')
+            ->leftJoin('departments', 'departments.id', '=', 'courses.department_id')
             ->whereNull('students.deleted_at')
             ->whereNull('users.deleted_at')
             ->selectRaw("COALESCE(departments.name, 'Unassigned') as department_name")
@@ -69,24 +69,24 @@ class AdmissionsAnalyticsService
             ])
             ->all();
 
-        $admissionsByProgram = Student::query()
+        $admissionsBycourse = Student::query()
             ->join('users', 'users.id', '=', 'students.user_id')
-            ->leftJoin('program_enrollments', function ($join) {
-                $join->on('program_enrollments.student_id', '=', 'students.id')
-                    ->whereNull('program_enrollments.deleted_at');
+            ->leftJoin('course_enrollments', function ($join) {
+                $join->on('course_enrollments.student_id', '=', 'students.id')
+                    ->whereNull('course_enrollments.deleted_at');
             })
-            ->leftJoin('program_version_mappings', 'program_version_mappings.id', '=', 'program_enrollments.program_version_mapping_id')
-            ->leftJoin('programs', 'programs.id', '=', 'program_version_mappings.program_id')
+            ->leftJoin('course_version_mappings', 'course_version_mappings.id', '=', 'course_enrollments.course_version_mapping_id')
+            ->leftJoin('courses', 'courses.id', '=', 'course_version_mappings.course_id')
             ->whereNull('students.deleted_at')
             ->whereNull('users.deleted_at')
-            ->selectRaw("COALESCE(programs.name, 'Unassigned') as program_name")
+            ->selectRaw("COALESCE(courses.name, 'Unassigned') as course_name")
             ->selectRaw('COUNT(DISTINCT students.id) as total')
-            ->groupBy('program_name')
+            ->groupBy('course_name')
             ->orderByDesc('total')
             ->limit(10)
             ->get()
             ->map(fn ($row) => [
-                'program_name' => $row->program_name,
+                'course_name' => $row->course_name,
                 'total' => (int) $row->total,
             ])
             ->all();
@@ -137,15 +137,15 @@ class AdmissionsAnalyticsService
             })
             ->all();
 
-        $studentsMissingProgramEnrollment = Student::query()
+        $studentsMissingCourseEnrollment = Student::query()
             ->join('users', 'users.id', '=', 'students.user_id')
             ->whereNull('students.deleted_at')
             ->whereNull('users.deleted_at')
             ->whereNotExists(function ($query) {
                 $query->selectRaw('1')
-                    ->from('program_enrollments')
-                    ->whereColumn('program_enrollments.student_id', 'students.id')
-                    ->whereNull('program_enrollments.deleted_at');
+                    ->from('course_enrollments')
+                    ->whereColumn('course_enrollments.student_id', 'students.id')
+                    ->whereNull('course_enrollments.deleted_at');
             })
             ->select('students.id', 'students.registration_number', 'students.admission_date', 'users.first_name', 'users.last_name')
             ->orderByDesc('students.admission_date')
@@ -200,10 +200,10 @@ class AdmissionsAnalyticsService
                 ->whereNull('users.deleted_at')
                 ->whereNotExists(function ($query) use ($activeSession) {
                     $query->selectRaw('1')
-                        ->from('program_enrollments')
-                        ->join('academic_session_enrollments', 'academic_session_enrollments.program_enrollment_id', '=', 'program_enrollments.id')
-                        ->whereColumn('program_enrollments.student_id', 'students.id')
-                        ->whereNull('program_enrollments.deleted_at')
+                        ->from('course_enrollments')
+                        ->join('academic_session_enrollments', 'academic_session_enrollments.course_enrollment_id', '=', 'course_enrollments.id')
+                        ->whereColumn('course_enrollments.student_id', 'students.id')
+                        ->whereNull('course_enrollments.deleted_at')
                         ->whereNull('academic_session_enrollments.deleted_at')
                         ->where('academic_session_enrollments.academic_session_id', $activeSession->id);
                 })
@@ -258,7 +258,7 @@ class AdmissionsAnalyticsService
                 'active_accounts' => (int) $activeAccounts,
                 'inactive_accounts' => (int) $inactiveAccounts,
                 'pwd_students' => (int) $pwdStudents,
-                'students_missing_program_enrollment_count' => count($studentsMissingProgramEnrollment),
+                'students_missing_course_enrollment_count' => count($studentsMissingCourseEnrollment),
                 'students_missing_next_of_kin_count' => count($studentsMissingNextOfKin),
                 'students_not_session_enrolled_count' => count($studentsNotSessionEnrolled),
                 'duplicate_contact_risk_count' => count($duplicateContactRisk),
@@ -266,12 +266,12 @@ class AdmissionsAnalyticsService
             'breakdowns' => [
                 'intake_trend' => $intakeTrend,
                 'admissions_by_department' => $admissionsByDepartment,
-                'admissions_by_program' => $admissionsByProgram,
+                'admissions_by_course' => $admissionsBycourse,
                 'admissions_by_county' => $admissionsByCounty,
                 'admissions_by_gender' => $admissionsByGender,
             ],
             'exceptions' => [
-                'students_missing_program_enrollment' => $studentsMissingProgramEnrollment,
+                'students_missing_course_enrollment' => $studentsMissingCourseEnrollment,
                 'students_missing_next_of_kin' => $studentsMissingNextOfKin,
                 'inactive_student_accounts' => $inactiveStudentAccounts,
                 'students_not_session_enrolled' => $studentsNotSessionEnrolled,

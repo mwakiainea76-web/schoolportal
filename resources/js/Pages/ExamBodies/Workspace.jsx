@@ -179,17 +179,10 @@ export default function Workspace({
                         </div>
 
                         <div className="min-h-[30rem] rounded-lg border border-zinc-100 bg-white p-6 shadow-sm">
-                            <div className="mb-6 flex items-center justify-between gap-4">
+                            <div className="mb-6">
                                 <h3 className="text-xl font-medium text-zinc-600">
                                     Exam Bodies
                                 </h3>
-                                <button
-                                    type="button"
-                                    onClick={() => openExamBodyModal()}
-                                    className="rounded-lg bg-emerald-700 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800"
-                                >
-                                    + Add Exam Body
-                                </button>
                             </div>
 
                             <div className="space-y-4">
@@ -257,18 +250,10 @@ export default function Workspace({
                         </div>
 
                         <div className="rounded-lg border border-zinc-100 bg-white p-6 shadow-sm">
-                            <div className="mb-6 flex items-center justify-between gap-4">
+                            <div className="mb-6">
                                 <h3 className="text-xl font-medium text-zinc-600">
                                     Levels for {activeExamBody?.code ?? "Exam Body"}
                                 </h3>
-                                <button
-                                    type="button"
-                                    onClick={() => openLevelModal()}
-                                    disabled={!activeExamBody}
-                                    className="rounded-lg bg-emerald-700 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
-                                >
-                                    + Add Level / Grade
-                                </button>
                             </div>
 
                             <div className="space-y-4">

@@ -5,8 +5,9 @@ import InputLabel from "@/Components/InputLabel";
 import TextInput from "@/Components/TextInput";
 import TextArea from "@/Components/TextArea";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
+import SearchSelect from "@/Components/SearchSelect";
 
-const Edit = ({ department }) => {
+const Edit = ({ department, selectedHod = null }) => {
     const dept = department || null;
 
     const hasInitialized = useRef(false);
@@ -14,6 +15,7 @@ const Edit = ({ department }) => {
     const { data, setData, put, processing, errors } = useForm({
         code: "",
         name: "",
+        hod_staff_id: "",
         description: "",
     });
 
@@ -27,6 +29,7 @@ const Edit = ({ department }) => {
             setData({
                 code: "",
                 name: "",
+                hod_staff_id: "",
                 description: "",
             });
             return;
@@ -35,6 +38,7 @@ const Edit = ({ department }) => {
         setData({
             code: department.code ?? "",
             name: department.name ?? "",
+            hod_staff_id: department.hod_staff_id ?? "",
             description: department.description ?? "",
         });
 
@@ -96,6 +100,22 @@ const Edit = ({ department }) => {
                                     }
                                 />
                                 <InputError message={errors.name} />
+                            </div>
+
+                            <div>
+                                <InputLabel value="Head of Department" />
+                                <SearchSelect
+                                    routeName="staffs.search"
+                                    defaultOptions={[]}
+                                    value={data.hod_staff_id}
+                                    selectedLabel={selectedHod?.name}
+                                    placeholder="Search staff..."
+                                    onChange={(staff) =>
+                                        setData("hod_staff_id", staff.id)
+                                    }
+                                    error={errors.hod_staff_id}
+                                />
+                                <InputError message={errors.hod_staff_id} />
                             </div>
                         </div>
 

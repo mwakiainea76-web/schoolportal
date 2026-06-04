@@ -3,39 +3,39 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\ProgramVersion;
-use App\Models\ProgramVersionMapping;
+use App\Models\CourseVersion;
+use App\Models\CourseVersionMapping;
 use App\Support\ApiResponse;
 
 class PublicCourseController extends Controller
 {
     public function index()
     {
-        $activeProgramVersion = ProgramVersion::query()
+        $activeCourseVersion = CourseVersion::query()
             ->active()
             ->first(['id', 'name', 'start_date', 'end_date']);
 
-        $courses = ProgramVersionMapping::query()
+        $courses = CourseVersionMapping::query()
             ->active()
-            ->whereHas('programVersion', fn ($query) => $query->active())
+            ->whereHas('courseVersion', fn ($query) => $query->active())
             ->with([
-                'program:id,code,name,certification_level_id',
-                'program.certificationLevel:id,name,duration_in_months',
-                'programVersion:id,name',
+                'course:id,code,name,certification_level_id',
+                'course.certificationLevel:id,name,duration_in_months',
+                'courseVersion:id,name',
             ])
-            ->orderBy('program_id')
+            ->orderBy('course_id')
             ->get()
-            ->map(function (ProgramVersionMapping $mapping) {
-                $program = $mapping->program;
-                $certificationLevel = $program?->certificationLevel?->name;
+            ->map(function (CourseVersionMapping $mapping) {
+                $course = $mapping->course;
+                $certificationLevel = $course?->certificationLevel?->name;
 
                 return [
 
-                    'code' => $program?->code,
-                    'course_name' => $program?->name,
+                    'code' => $course?->code,
+                    'course_name' => $course?->name,
                     'certification_level' => $certificationLevel,
-                    'program_version_name' => $mapping->programVersion?->name,
-                    'duration_in_months' => $program?->certificationLevel?->duration_in_months,
+                    'course_version_name' => $mapping->courseVersion?->name,
+                    'duration_in_months' => $course?->certificationLevel?->duration_in_months,
                 ];
             })
             ->values();

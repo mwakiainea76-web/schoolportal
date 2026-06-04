@@ -40,19 +40,19 @@ class BillingService
 
             $assignment = $this->feeAssignmentService->resolveActiveAssignment(
                 $enrollment->academicSession?->academic_year_id ?? 0,
-                $enrollment->programEnrollment?->program_version_mapping_id ?? null,
+                $enrollment->courseEnrollment?->course_version_mapping_id ?? null,
                 $enrollment->year_of_study,
                 $enrollment->session_number ?: ($enrollment->academicSession?->session_number ?? $enrollment->academicSession?->session_No ?? null),
                 $issueDate
             );
 
             if (! $assignment) {
-                $programName = $enrollment->programEnrollment?->programVersionMapping?->program?->name ?? 'your program';
-                $programVersionName = $enrollment->programEnrollment?->programVersionMapping?->programVersion?->name ?? 'your program version';
+                $courseName = $enrollment->courseEnrollment?->courseVersionMapping?->course?->name ?? 'your course';
+                $courseVersionName = $enrollment->courseEnrollment?->courseVersionMapping?->courseVersion?->name ?? 'your course version';
                 $sessionLabel = $enrollment->academicSession?->display_name ?? 'this session';
 
                 throw ValidationException::withMessages([
-                    'assignment' => "No active fee assignment exists for {$programName} - {$programVersionName} in {$sessionLabel}. Assign a fee plan to this program version before session registration.",
+                    'assignment' => "No active fee assignment exists for {$courseName} - {$courseVersionName} in {$sessionLabel}. Assign a fee plan to this course version before session registration.",
                 ]);
             }
 
@@ -239,9 +239,9 @@ class BillingService
 
     protected function studentIdForEnrollment(AcademicSessionEnrollment $enrollment, bool $throw = true): ?int
     {
-        $enrollment->loadMissing('programEnrollment');
+        $enrollment->loadMissing('courseEnrollment');
 
-        $studentId = $enrollment->programEnrollment?->student_id ?? $enrollment->student_id;
+        $studentId = $enrollment->courseEnrollment?->student_id ?? $enrollment->student_id;
 
         if (! $studentId && $throw) {
             throw ValidationException::withMessages([
@@ -894,7 +894,7 @@ class BillingService
         }
 
         $latestEnrollmentSessionId = AcademicSessionEnrollment::query()
-            ->whereHas('programEnrollment', fn ($query) => $query->where('student_id', $student->id))
+            ->whereHas('courseEnrollment', fn ($query) => $query->where('student_id', $student->id))
             ->latest('academic_session_id')
             ->value('academic_session_id');
 

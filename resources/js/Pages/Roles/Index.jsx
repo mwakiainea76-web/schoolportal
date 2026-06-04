@@ -269,18 +269,10 @@ export default function RolesIndex({
 
                 <div className="flex w-full flex-col gap-6 lg:flex-row lg:items-start">
                     <section className="w-full shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm lg:w-[360px] xl:w-[420px]">
-                        <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+                        <div className="border-b border-slate-100 px-6 py-4">
                             <h2 className="text-lg font-semibold text-slate-900">
                                 Roles
                             </h2>
-
-                            <button
-                                type="button"
-                                onClick={openCreateRole}
-                                className="rounded bg-emerald-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-800"
-                            >
-                                + Add Role
-                            </button>
                         </div>
 
                         <div className="divide-y divide-slate-100">
@@ -408,13 +400,6 @@ export default function RolesIndex({
                                     className="rounded bg-slate-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                     Save Permissions
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={openCreatePermission}
-                                    className="rounded bg-emerald-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-800"
-                                >
-                                    + Add Permission
                                 </button>
                             </div>
                         </div>

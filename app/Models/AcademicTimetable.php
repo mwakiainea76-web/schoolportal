@@ -15,7 +15,7 @@ class AcademicTimetable extends Model
     protected $fillable = [
         'department_id',
         'academic_session_id',
-        'program_version_unit_id',
+        'course_version_unit_id',
         'trainer_staff_id',
         'lecture_room_id',
         'day_of_week',
@@ -35,18 +35,18 @@ class AcademicTimetable extends Model
         return $this->belongsTo(AcademicSession::class, 'academic_session_id');
     }
 
-    public function programVersionUnit()
+    public function courseVersionUnit()
     {
-        return $this->belongsTo(ProgramVersionUnit::class);
+        return $this->belongsTo(CourseVersionUnit::class);
     }
 
-    public function programVersionUnits()
+    public function courseVersionUnits()
     {
         return $this->belongsToMany(
-            ProgramVersionUnit::class,
-            'academic_timetable_program_version_unit',
+            CourseVersionUnit::class,
+            'academic_timetable_course_version_unit',
             'academic_timetable_id',
-            'program_version_unit_id'
+            'course_version_unit_id'
         )->withTimestamps();
     }
 

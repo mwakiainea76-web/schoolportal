@@ -22,26 +22,26 @@ class DataQualityAnalyticsService
                     ->orWhereNotNull('users.deleted_at');
             });
 
-        $studentsWithoutProgramEnrollmentBase = DB::table('students')
+        $studentsWithoutCourseEnrollmentBase = DB::table('students')
             ->join('users', 'users.id', '=', 'students.user_id')
             ->whereNull('students.deleted_at')
             ->whereNull('users.deleted_at')
             ->whereNotExists(function ($query) {
                 $query->selectRaw('1')
-                    ->from('program_enrollments')
-                    ->whereColumn('program_enrollments.student_id', 'students.id')
-                    ->whereNull('program_enrollments.deleted_at');
+                    ->from('course_enrollments')
+                    ->whereColumn('course_enrollments.student_id', 'students.id')
+                    ->whereNull('course_enrollments.deleted_at');
             });
 
         $enrollmentsWithoutAcademicSessionBase = DB::table('academic_session_enrollments')
             ->leftJoin('academic_sessions', 'academic_sessions.id', '=', 'academic_session_enrollments.academic_session_id')
-            ->leftJoin('program_enrollments', 'program_enrollments.id', '=', 'academic_session_enrollments.program_enrollment_id')
+            ->leftJoin('course_enrollments', 'course_enrollments.id', '=', 'academic_session_enrollments.course_enrollment_id')
             ->whereNull('academic_session_enrollments.deleted_at')
             ->where(function ($query) {
                 $query->whereNull('academic_sessions.id')
                     ->orWhereNotNull('academic_sessions.deleted_at')
-                    ->orWhereNull('program_enrollments.id')
-                    ->orWhereNotNull('program_enrollments.deleted_at');
+                    ->orWhereNull('course_enrollments.id')
+                    ->orWhereNotNull('course_enrollments.deleted_at');
             });
 
         $invoicesWithoutEnrollmentBase = DB::table('student_invoices')
@@ -75,19 +75,19 @@ class DataQualityAnalyticsService
             ->whereNull('academic_sessions.deleted_at')
             ->where('academic_sessions.is_active', true);
 
-        $multipleActiveProgramMappingsBase = DB::table('program_version_mappings')
-            ->join('programs', 'programs.id', '=', 'program_version_mappings.program_id')
-            ->join('program_versions', 'program_versions.id', '=', 'program_version_mappings.program_version_id')
-            ->whereNull('program_version_mappings.deleted_at')
-            ->where('program_version_mappings.is_active', true);
+        $multipleActivecourseMappingsBase = DB::table('course_version_mappings')
+            ->join('courses', 'courses.id', '=', 'course_version_mappings.course_id')
+            ->join('course_versions', 'course_versions.id', '=', 'course_version_mappings.course_version_id')
+            ->whereNull('course_version_mappings.deleted_at')
+            ->where('course_version_mappings.is_active', true);
 
         $invoiceStudentMismatchBase = DB::table('student_invoices')
             ->join('academic_session_enrollments', 'academic_session_enrollments.id', '=', 'student_invoices.enrollment_id')
-            ->join('program_enrollments', 'program_enrollments.id', '=', 'academic_session_enrollments.program_enrollment_id')
+            ->join('course_enrollments', 'course_enrollments.id', '=', 'academic_session_enrollments.course_enrollment_id')
             ->whereNull('student_invoices.deleted_at')
             ->whereNull('academic_session_enrollments.deleted_at')
-            ->whereNull('program_enrollments.deleted_at')
-            ->whereColumn('student_invoices.student_id', '!=', 'program_enrollments.student_id');
+            ->whereNull('course_enrollments.deleted_at')
+            ->whereColumn('student_invoices.student_id', '!=', 'course_enrollments.student_id');
 
         $invalidInvoiceStatusesBase = DB::table('student_invoices')
             ->whereNull('deleted_at')
@@ -116,7 +116,7 @@ class DataQualityAnalyticsService
         $duplicateContacts = $this->duplicateContacts();
 
         $studentsWithoutUserCount = (clone $studentsWithoutUserBase)->count();
-        $studentsWithoutProgramEnrollmentCount = (clone $studentsWithoutProgramEnrollmentBase)->count();
+        $studentsWithoutCourseEnrollmentCount = (clone $studentsWithoutCourseEnrollmentBase)->count();
         $enrollmentsWithoutAcademicSessionCount = (clone $enrollmentsWithoutAcademicSessionBase)->count();
         $invoicesWithoutEnrollmentCount = (clone $invoicesWithoutEnrollmentBase)->count();
         $paymentsWithoutStudentCount = (clone $paymentsWithoutStudentBase)->count();
@@ -146,17 +146,17 @@ class DataQualityAnalyticsService
             ? $activeAcademicSessions
             : [];
 
-        $multipleActiveProgramMappings = (clone $multipleActiveProgramMappingsBase)
-            ->groupBy('program_version_mappings.program_id', 'programs.name')
-            ->select('program_version_mappings.program_id', 'programs.name as program_name')
+        $multipleActivecourseMappings = (clone $multipleActivecourseMappingsBase)
+            ->groupBy('course_version_mappings.course_id', 'courses.name')
+            ->select('course_version_mappings.course_id', 'courses.name as course_name')
             ->selectRaw('COUNT(*) as active_mapping_count')
             ->havingRaw('COUNT(*) > 1')
             ->orderByDesc('active_mapping_count')
             ->limit(10)
             ->get()
             ->map(fn ($row) => [
-                'program_id' => (int) $row->program_id,
-                'program_name' => $row->program_name,
+                'course_id' => (int) $row->course_id,
+                'course_name' => $row->course_name,
                 'active_mapping_count' => (int) $row->active_mapping_count,
             ])
             ->all();
@@ -172,7 +172,7 @@ class DataQualityAnalyticsService
             'metrics' => [
                 'records_missing_required_relationships' => (int) (
                     $studentsWithoutUserCount +
-                    $studentsWithoutProgramEnrollmentCount +
+                    $studentsWithoutCourseEnrollmentCount +
                     $enrollmentsWithoutAcademicSessionCount +
                     $invoicesWithoutEnrollmentCount +
                     $paymentsWithoutStudentCount +
@@ -192,7 +192,7 @@ class DataQualityAnalyticsService
                 'slow_query_count' => $slowQueryCount,
                 'failed_job_count' => (int) $failedJobCount,
                 'multi_active_session_count' => count($multipleActiveAcademicSessions),
-                'multi_active_program_mapping_count' => count($multipleActiveProgramMappings),
+                'multi_active_course_mapping_count' => count($multipleActivecourseMappings),
             ],
             'exceptions' => [
                 'students_without_user' => (clone $studentsWithoutUserBase)
@@ -205,7 +205,7 @@ class DataQualityAnalyticsService
                         'registration_number' => $row->registration_number,
                     ])
                     ->all(),
-                'students_without_program_enrollment' => (clone $studentsWithoutProgramEnrollmentBase)
+                'students_without_course_enrollment' => (clone $studentsWithoutCourseEnrollmentBase)
                     ->select('students.id', 'students.registration_number', 'users.first_name', 'users.last_name')
                     ->orderByDesc('students.id')
                     ->limit(10)
@@ -217,13 +217,13 @@ class DataQualityAnalyticsService
                     ])
                     ->all(),
                 'enrollments_without_academic_session' => (clone $enrollmentsWithoutAcademicSessionBase)
-                    ->select('academic_session_enrollments.id', 'academic_session_enrollments.program_enrollment_id', 'academic_session_enrollments.academic_session_id')
+                    ->select('academic_session_enrollments.id', 'academic_session_enrollments.course_enrollment_id', 'academic_session_enrollments.academic_session_id')
                     ->orderByDesc('academic_session_enrollments.id')
                     ->limit(10)
                     ->get()
                     ->map(fn ($row) => [
                         'enrollment_id' => (int) $row->id,
-                        'program_enrollment_id' => (int) $row->program_enrollment_id,
+                        'course_enrollment_id' => (int) $row->course_enrollment_id,
                         'academic_session_id' => $row->academic_session_id ? (int) $row->academic_session_id : null,
                     ])
                     ->all(),
@@ -262,7 +262,7 @@ class DataQualityAnalyticsService
                     ])
                     ->all(),
                 'multiple_active_academic_sessions' => $multipleActiveAcademicSessions,
-                'multiple_active_program_mappings' => $multipleActiveProgramMappings,
+                'multiple_active_course_mappings' => $multipleActivecourseMappings,
                 'duplicate_contact_identifiers' => $duplicateContacts,
                 'invoice_student_mismatches' => (clone $invoiceStudentMismatchBase)
                     ->join('students', 'students.id', '=', 'student_invoices.student_id')

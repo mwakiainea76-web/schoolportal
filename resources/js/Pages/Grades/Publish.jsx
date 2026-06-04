@@ -11,7 +11,7 @@ export default function Publish({
     filter_options,
 }) {
     const filterForm = useForm({
-        program_version_unit_code: filters.program_version_unit_code || "",
+        course_version_unit_code: filters.course_version_unit_code || "",
         academic_year: filters.academic_year || "",
         module: filters.module || "",
     });
@@ -32,8 +32,8 @@ export default function Publish({
         router.get(
             route("academic.marks.publish.index"),
             {
-                program_version_unit_code:
-                    filterForm.data.program_version_unit_code,
+                course_version_unit_code:
+                    filterForm.data.course_version_unit_code,
                 academic_year: filterForm.data.academic_year,
                 module: filterForm.data.module,
             },
@@ -45,8 +45,8 @@ export default function Publish({
         router.get(
             route("academic.marks.publish.index"),
             {
-                program_version_unit_code:
-                    filterForm.data.program_version_unit_code,
+                course_version_unit_code:
+                    filterForm.data.course_version_unit_code,
                 academic_year: filterForm.data.academic_year,
                 module: filterForm.data.module,
                 page,
@@ -59,8 +59,8 @@ export default function Publish({
         router.post(
             route("academic.marks.publish.assessment"),
             {
-                program_version_unit_code:
-                    filterForm.data.program_version_unit_code,
+                course_version_unit_code:
+                    filterForm.data.course_version_unit_code,
                 academic_year: filterForm.data.academic_year,
                 module: filterForm.data.module,
                 action,
@@ -102,17 +102,17 @@ export default function Publish({
                     <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
                         <div className="xl:col-span-2">
                             <InputLabel
-                                value="Program Version Unit Code"
+                                value="Course Version Unit Code"
                                 required
                             />
                             <input
                                 type="text"
                                 value={
-                                    filterForm.data.program_version_unit_code
+                                    filterForm.data.course_version_unit_code
                                 }
                                 onChange={(e) =>
                                     filterForm.setData(
-                                        "program_version_unit_code",
+                                        "course_version_unit_code",
                                         e.target.value.toUpperCase(),
                                     )
                                 }
@@ -121,7 +121,7 @@ export default function Publish({
                             />
                             <InputError
                                 message={
-                                    filterForm.errors.program_version_unit_code
+                                    filterForm.errors.course_version_unit_code
                                 }
                                 className="mt-2"
                             />
@@ -181,7 +181,7 @@ export default function Publish({
                         <button
                             type="submit"
                             disabled={
-                                !filterForm.data.program_version_unit_code
+                                !filterForm.data.course_version_unit_code
                             }
                             className="rounded-xl bg-emerald-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
                         >

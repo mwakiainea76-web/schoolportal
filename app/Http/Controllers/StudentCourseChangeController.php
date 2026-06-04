@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\CourseChangeLog;
 use App\Models\LoginAccountHistory;
-use App\Models\ProgramEnrollment;
-use App\Models\ProgramVersionMapping;
+use App\Models\CourseEnrollment;
+use App\Models\CourseVersionMapping;
 use App\Models\Student;
 use App\Models\User;
 use App\Support\RbacCache;
@@ -50,7 +50,7 @@ class StudentCourseChangeController extends Controller
     {
         $validated = $request->validate([
             'registration_number' => ['required', 'string', 'max:100'],
-            'new_program_version_mapping_id' => ['required', 'integer', 'exists:program_version_mappings,id'],
+            'new_course_version_mapping_id' => ['required', 'integer', 'exists:course_version_mappings,id'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
 
@@ -69,10 +69,10 @@ class StudentCourseChangeController extends Controller
 
             $student->loadMissing(['user.nextofkin']);
 
-            $oldEnrollment = ProgramEnrollment::query()
+            $oldEnrollment = CourseEnrollment::query()
                 ->where('student_id', $student->id)
                 ->where('status', 'active')
-                ->with(['programVersionMapping.program.certificationLevel', 'programVersionMapping.programVersion'])
+                ->with(['courseVersionMapping.course.certificationLevel', 'courseVersionMapping.courseVersion'])
                 ->lockForUpdate()
                 ->first();
 
@@ -82,7 +82,7 @@ class StudentCourseChangeController extends Controller
                 ]);
             }
 
-            $otherActiveEnrollments = ProgramEnrollment::query()
+            $otherActiveEnrollments = CourseEnrollment::query()
                 ->where('student_id', $student->id)
                 ->where('status', 'active')
                 ->whereKeyNot($oldEnrollment->id)
@@ -95,20 +95,20 @@ class StudentCourseChangeController extends Controller
                 ]);
             }
 
-            $newMapping = ProgramVersionMapping::query()
+            $newMapping = CourseVersionMapping::query()
                 ->active()
-                ->with(['program.certificationLevel', 'programVersion'])
-                ->find($validated['new_program_version_mapping_id']);
+                ->with(['course.certificationLevel', 'courseVersion'])
+                ->find($validated['new_course_version_mapping_id']);
 
             if (! $newMapping) {
                 throw ValidationException::withMessages([
-                    'new_program_version_mapping_id' => 'The selected course is not active.',
+                    'new_course_version_mapping_id' => 'The selected course is not active.',
                 ]);
             }
 
-            if ((int) $oldEnrollment->program_version_mapping_id === (int) $newMapping->id) {
+            if ((int) $oldEnrollment->course_version_mapping_id === (int) $newMapping->id) {
                 throw ValidationException::withMessages([
-                    'new_program_version_mapping_id' => 'New course must differ from current course.',
+                    'new_course_version_mapping_id' => 'New course must differ from current course.',
                 ]);
             }
 
@@ -163,9 +163,9 @@ class StudentCourseChangeController extends Controller
                 'transferred_by' => $request->user()?->id,
             ]);
 
-            $newEnrollment = ProgramEnrollment::create([
+            $newEnrollment = CourseEnrollment::create([
                 'student_id' => $student->id,
-                'program_version_mapping_id' => $newMapping->id,
+                'course_version_mapping_id' => $newMapping->id,
                 'status' => 'active',
             ]);
 
@@ -183,10 +183,10 @@ class StudentCourseChangeController extends Controller
 
             $changeLog = CourseChangeLog::create([
                 'student_id' => $student->id,
-                'old_program_enrollment_id' => $oldEnrollment->id,
-                'new_program_enrollment_id' => $newEnrollment->id,
-                'old_program_version_mapping_id' => $oldEnrollment->program_version_mapping_id,
-                'new_program_version_mapping_id' => $newMapping->id,
+                'old_course_enrollment_id' => $oldEnrollment->id,
+                'new_course_enrollment_id' => $newEnrollment->id,
+                'old_course_version_mapping_id' => $oldEnrollment->course_version_mapping_id,
+                'new_course_version_mapping_id' => $newMapping->id,
                 'old_registration_number' => $oldRegistrationNumber,
                 'new_registration_number' => $newRegistrationNumber,
                 'old_user_id' => $oldUser->id,
@@ -227,7 +227,7 @@ class StudentCourseChangeController extends Controller
             return [
                 'old_registration_number' => $oldRegistrationNumber,
                 'new_registration_number' => $newRegistrationNumber,
-                'old_course' => $this->courseName($oldEnrollment->programVersionMapping),
+                'old_course' => $this->courseName($oldEnrollment->courseVersionMapping),
                 'new_course' => $this->courseName($newMapping),
                 'username' => $newRegistrationNumber,
                 'email' => $generatedEmail,
@@ -247,47 +247,47 @@ class StudentCourseChangeController extends Controller
             ->where('student_status', 'active')
             ->with([
                 'user:id,first_name,last_name,email,login_id,is_active',
-                'programEnrollment.programVersionMapping.program.certificationLevel',
-                'programEnrollment.programVersionMapping.programVersion',
+                'courseEnrollment.courseVersionMapping.course.certificationLevel',
+                'courseEnrollment.courseVersionMapping.courseVersion',
             ])
             ->first();
     }
 
     protected function studentPayload(Student $student): array
     {
-        $mapping = $student->programEnrollment?->programVersionMapping;
+        $mapping = $student->courseEnrollment?->courseVersionMapping;
 
         return [
             'id' => $student->id,
             'full_name' => trim(($student->user?->first_name ?? '').' '.($student->user?->last_name ?? '')),
             'current_course' => $this->courseName($mapping),
-            'current_program_version_mapping_id' => $mapping?->id,
+            'current_course_version_mapping_id' => $mapping?->id,
             'current_admission_number' => $student->registration_number,
-            'current_enrolment_status' => $student->programEnrollment?->status ?? 'missing',
+            'current_enrolment_status' => $student->courseEnrollment?->status ?? 'missing',
             'student_status' => $student->student_status,
         ];
     }
 
     protected function activeCourseCurricula()
     {
-        return ProgramVersionMapping::query()
+        return CourseVersionMapping::query()
             ->active()
-            ->with(['program.certificationLevel', 'programVersion'])
+            ->with(['course.certificationLevel', 'courseVersion'])
             ->orderByDesc('id')
             ->get()
-            ->map(fn (ProgramVersionMapping $mapping) => [
+            ->map(fn (CourseVersionMapping $mapping) => [
                 'id' => $mapping->id,
                 'name' => $this->courseName($mapping),
             ]);
     }
 
-    protected function courseName(?ProgramVersionMapping $mapping): string
+    protected function courseName(?CourseVersionMapping $mapping): string
     {
         if (! $mapping) {
             return 'No course assigned';
         }
 
-        return trim(($mapping->programVersion?->name ?? 'Program Version').' - '.($mapping->program?->display_name ?? $mapping->program?->name ?? 'Program'), ' -');
+        return trim(($mapping->courseVersion?->name ?? 'Course Version').' - '.($mapping->course?->display_name ?? $mapping->course?->name ?? 'Course'), ' -');
     }
 
     protected function generateRegistrationNumber(): string

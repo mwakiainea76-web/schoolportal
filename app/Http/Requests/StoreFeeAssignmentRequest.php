@@ -24,7 +24,7 @@ class StoreFeeAssignmentRequest extends FormRequest
         return [
             'fee_plan_id' => 'required|exists:fee_plans,id',
             'academic_year_id' => 'required|exists:academic_years,id',
-            'course_curriculum_id' => 'required|exists:program_version_mappings,id',
+            'course_curriculum_id' => 'required|exists:course_version_mappings,id',
             'year_of_study' => 'required|integer|min:1|max:20',
             'session_number' => 'required|integer|min:1|max:20',
         ];

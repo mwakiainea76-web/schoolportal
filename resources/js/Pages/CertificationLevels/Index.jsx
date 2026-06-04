@@ -64,13 +64,6 @@ export default function CertificationLevels({ certificationLevels }) {
             <Head title="Certification Levels" />
 
             <div className=" mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
-                <Link
-                    className="mb-4 px-4 py-1 bg-slate-400 text-white rounded hover:bg-slate-700 inline-block"
-                    href={route("certification-levels.create")}
-                >
-                    Add Certification Level
-                </Link>
-
                 <form
                     className="w-full relative flex gap-x-7"
                     onSubmit={submit}

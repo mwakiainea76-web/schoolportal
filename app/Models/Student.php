@@ -23,12 +23,12 @@ class Student extends Model
 
     public function courseEnrollments()
     {
-        return $this->hasMany(ProgramEnrollment::class);
+        return $this->hasMany(CourseEnrollment::class);
     }
 
-    public function programEnrollment()
+    public function courseEnrollment()
     {
-        return $this->hasOne(ProgramEnrollment::class)
+        return $this->hasOne(CourseEnrollment::class)
             ->where('status', 'active')
             ->latestOfMany();
     }
@@ -42,7 +42,7 @@ class Student extends Model
     {
         return $this->hasManyThrough(
             Enrollment::class,
-            ProgramEnrollment::class,
+            CourseEnrollment::class,
             'student_id',
             'course_enrollment_id'
         );

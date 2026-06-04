@@ -11,7 +11,7 @@ class StudentUnitRegistration extends Model
 
     protected $fillable = [
         'academic_session_enrollment_id',
-        'program_version_unit_id',
+        'course_version_unit_id',
     ];
 
     public function academicSessionEnrollment()
@@ -19,8 +19,8 @@ class StudentUnitRegistration extends Model
         return $this->belongsTo(AcademicSessionEnrollment::class);
     }
 
-    public function programVersionUnit()
+    public function courseVersionUnit()
     {
-        return $this->belongsTo(ProgramVersionUnit::class);
+        return $this->belongsTo(CourseVersionUnit::class);
     }
 }

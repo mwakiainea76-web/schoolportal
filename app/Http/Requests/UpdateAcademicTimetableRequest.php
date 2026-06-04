@@ -3,7 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\AcademicTimetable;
-use App\Models\ProgramVersionUnit;
+use App\Models\CourseVersionUnit;
 use App\Models\Staff;
 use App\Models\LectureRoom;
 use Illuminate\Foundation\Http\FormRequest;
@@ -21,8 +21,8 @@ class UpdateAcademicTimetableRequest extends FormRequest
             'department_id' => ['required', 'exists:departments,id'],
             'trainer_staff_id' => ['required', 'exists:staffs,id'],
             'lecture_room_id' => ['required', 'exists:lecture_rooms,id'],
-            'program_version_unit_ids' => ['required', 'array', 'min:1'],
-            'program_version_unit_ids.*' => ['required', 'distinct', 'exists:program_version_units,id'],
+            'course_version_unit_ids' => ['required', 'array', 'min:1'],
+            'course_version_unit_ids.*' => ['required', 'distinct', 'exists:course_version_units,id'],
             'day_of_week' => ['required', 'in:monday,tuesday,wednesday,thursday,friday,saturday,sunday'],
             'start_time' => ['required', 'date_format:H:i'],
             'end_time' => ['required', 'date_format:H:i'],
@@ -39,7 +39,7 @@ class UpdateAcademicTimetableRequest extends FormRequest
             $departmentId = (int) $this->integer('department_id');
             $trainerId = (int) $this->integer('trainer_staff_id');
             $lectureRoomId = (int) $this->integer('lecture_room_id');
-            $programVersionUnitIds = collect($this->input('program_version_unit_ids', []))
+            $courseVersionUnitIds = collect($this->input('course_version_unit_ids', []))
                 ->map(fn ($id) => (int) $id)
                 ->filter()
                 ->values()
@@ -63,16 +63,16 @@ class UpdateAcademicTimetableRequest extends FormRequest
                 $validator->errors()->add('lecture_room_id', 'Selected lecture room must belong to the chosen department.');
             }
 
-            $programVersionUnits = ProgramVersionUnit::query()
-                ->with('programVersionMapping.program:id,department_id')
-                ->whereIn('id', $programVersionUnitIds)
+            $courseVersionUnits = CourseVersionUnit::query()
+                ->with('courseVersionMapping.course:id,department_id')
+                ->whereIn('id', $courseVersionUnitIds)
                 ->get()
                 ->keyBy('id');
 
-            foreach ($programVersionUnitIds as $programVersionUnitId) {
-                $programVersionUnit = $programVersionUnits->get($programVersionUnitId);
-                if (! $programVersionUnit || (int) $programVersionUnit->programVersionMapping?->program?->department_id !== $departmentId) {
-                    $validator->errors()->add('program_version_unit_ids', 'Every selected curriculum unit must belong to the chosen department.');
+            foreach ($courseVersionUnitIds as $courseVersionUnitId) {
+                $courseVersionUnit = $courseVersionUnits->get($courseVersionUnitId);
+                if (! $courseVersionUnit || (int) $courseVersionUnit->courseVersionMapping?->course?->department_id !== $departmentId) {
+                    $validator->errors()->add('course_version_unit_ids', 'Every selected curriculum unit must belong to the chosen department.');
                     break;
                 }
             }
@@ -102,8 +102,8 @@ class UpdateAcademicTimetableRequest extends FormRequest
             }
 
             $unitOverlap = AcademicTimetable::query()
-                ->whereHas('programVersionUnits', function ($query) use ($programVersionUnitIds) {
-                    $query->whereIn('program_version_units.id', $programVersionUnitIds);
+                ->whereHas('courseVersionUnits', function ($query) use ($courseVersionUnitIds) {
+                    $query->whereIn('course_version_units.id', $courseVersionUnitIds);
                 })
                 ->where('day_of_week', $day)
                 ->where('start_time', '<', $end)

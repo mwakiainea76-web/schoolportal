@@ -3,9 +3,9 @@
 use App\Models\CertificationLevel;
 use App\Models\Department;
 use App\Models\ExamBody;
-use App\Models\Program;
-use App\Models\ProgramVersion;
-use App\Models\ProgramVersionMapping;
+use App\Models\Course;
+use App\Models\CourseVersion;
+use App\Models\CourseVersionMapping;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -32,7 +32,7 @@ it('returns courses offered for the active program version with certification le
         'entry_grade' => 'D',
     ]);
 
-    $activeVersion = ProgramVersion::query()->create([
+    $activeVersion = CourseVersion::query()->create([
         'name' => 'September 2026 Intake',
         'description' => 'Active intake',
         'is_active' => true,
@@ -41,7 +41,7 @@ it('returns courses offered for the active program version with certification le
         'created_by' => $user->id,
     ]);
 
-    $inactiveVersion = ProgramVersion::query()->create([
+    $inactiveVersion = CourseVersion::query()->create([
         'name' => 'Archived Intake',
         'description' => 'Inactive intake',
         'is_active' => false,
@@ -50,7 +50,7 @@ it('returns courses offered for the active program version with certification le
         'created_by' => $user->id,
     ]);
 
-    $ictTechnician = Program::query()->create([
+    $ictTechnician = Course::query()->create([
         'code' => 'ICT001',
         'name' => 'ICT technician',
         'description' => 'ICT program',
@@ -60,7 +60,7 @@ it('returns courses offered for the active program version with certification le
         'department_id' => $department->id,
     ]);
 
-    $electrical = Program::query()->create([
+    $electrical = Course::query()->create([
         'code' => 'ELE001',
         'name' => 'Electrical Installation',
         'description' => 'Electrical program',
@@ -70,17 +70,17 @@ it('returns courses offered for the active program version with certification le
         'department_id' => $department->id,
     ]);
 
-    ProgramVersionMapping::query()->create([
+    CourseVersionMapping::query()->create([
         'program_id' => $ictTechnician->id,
-        'program_version_id' => $activeVersion->id,
+        'course_version_id' => $activeVersion->id,
         'is_active' => true,
         'description' => 'Currently offered',
         'created_by' => $user->id,
     ]);
 
-    ProgramVersionMapping::query()->create([
+    CourseVersionMapping::query()->create([
         'program_id' => $electrical->id,
-        'program_version_id' => $inactiveVersion->id,
+        'course_version_id' => $inactiveVersion->id,
         'is_active' => true,
         'description' => 'Should not be returned',
         'created_by' => $user->id,

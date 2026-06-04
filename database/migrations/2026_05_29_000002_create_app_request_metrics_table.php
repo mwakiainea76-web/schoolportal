@@ -19,6 +19,8 @@ return new class extends Migration
             $table->unsignedInteger('response_size_bytes')->nullable();
             $table->boolean('is_api')->default(false);
             $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->string('error_status', 20)->nullable();
+            $table->timestamp('error_status_updated_at')->nullable();
             $table->timestamp('occurred_at')->index();
             $table->timestamps();
 
@@ -27,6 +29,8 @@ return new class extends Migration
             $table->index(['route_name', 'occurred_at']);
             $table->index(['method', 'route_name', 'occurred_at']);
             $table->index(['method', 'path', 'occurred_at']);
+            $table->index(['error_status', 'occurred_at']);
+            $table->index(['occurred_at', 'status_code', 'error_status']);
         });
     }
 

@@ -13,7 +13,7 @@ class StudentMark extends Model
         'academic_session_id',
         'academic_session_enrollment_id',
         'student_id',
-        'program_version_unit_id',
+        'course_version_unit_id',
         'assessment_type',
         'assessment_number',
         'marks',
@@ -42,9 +42,9 @@ class StudentMark extends Model
         return $this->belongsTo(Student::class);
     }
 
-    public function programVersionUnit()
+    public function courseVersionUnit()
     {
-        return $this->belongsTo(ProgramVersionUnit::class);
+        return $this->belongsTo(CourseVersionUnit::class);
     }
 
     public function recordedByStaff()

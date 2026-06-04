@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreStudentRequest extends FormRequest
 {
@@ -28,8 +29,17 @@ class StoreStudentRequest extends FormRequest
 
             // Academic
             'previous_school' => ['required', 'string', 'max:255'],
-            'course_curriculum_id' => ['required', 'exists:program_version_mappings,id'],
+            'course_id' => ['required', 'exists:courses,id'],
+            'exam_body_id' => ['required', 'exists:exam_bodies,id'],
+            'course_version_id' => ['required', 'exists:course_versions,id'],
+            'course_curriculum_id' => [
+                'required',
+                Rule::exists('course_version_mappings', 'id')
+                    ->where('course_id', $this->input('course_id'))
+                    ->where('course_version_id', $this->input('course_version_id')),
+            ],
             'current_module' => ['required', 'string'],
+            'study_mode' => ['nullable', Rule::in(['full_time', 'part_time', 'online', 'distance'])],
             'fee_discount_percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
 
             // Medical

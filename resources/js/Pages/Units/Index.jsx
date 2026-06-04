@@ -61,15 +61,6 @@ export default function UnitsIndex({ units }) {
             <Head title="Units" />
 
             <div className=" mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
-                {can("units.create") ? (
-                    <Link
-                        className="mb-4 px-4 py-1 bg-slate-400 text-white rounded hover:bg-slate-700 inline-block"
-                        href={route("units.create")}
-                    >
-                        Add Unit
-                    </Link>
-                ) : null}
-
                 {can("units.edit") ? (
                     <form
                         className="w-full relative flex gap-x-7"

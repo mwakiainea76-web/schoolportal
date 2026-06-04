@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Models\AcademicSessionEnrollment;
-use App\Models\ProgramEnrollment;
+use App\Models\CourseEnrollment;
 use App\Models\Student;
 use App\Models\StudentInvoice;
 
@@ -18,55 +18,64 @@ class StudentAcademicContextService
         return AcademicSessionEnrollment::query()
             ->with([
                 'academicSession.academicYear',
-                'programEnrollment.programVersionMapping.program',
-                'programEnrollment.programVersionMapping.programVersion',
+                'courseEnrollment.course',
+                'courseEnrollment.courseVersion',
+                'courseEnrollment.examBody',
+                'courseEnrollment.courseVersionMapping.course',
+                'courseEnrollment.courseVersionMapping.courseVersion',
             ])
-            ->whereHas('programEnrollment', fn ($query) => $query->where('student_id', $student->id))
+            ->whereHas('courseEnrollment', fn ($query) => $query->where('student_id', $student->id))
             ->latest('academic_session_id')
             ->latest('id')
             ->first();
     }
 
-    public function latestProgramEnrollmentForStudent(?Student $student): ?ProgramEnrollment
+    public function latestCourseEnrollmentForStudent(?Student $student): ?CourseEnrollment
     {
         if (! $student) {
             return null;
         }
 
-        return ProgramEnrollment::query()
+        return CourseEnrollment::query()
             ->with([
-                'programVersionMapping.program',
-                'programVersionMapping.programVersion',
+                'course',
+                'courseVersion',
+                'examBody',
+                'courseVersionMapping.course',
+                'courseVersionMapping.courseVersion',
             ])
             ->where('student_id', $student->id)
             ->latest('id')
             ->first();
     }
 
-    public function currentProgramEnrollmentForStudent(?Student $student): ?ProgramEnrollment
+    public function currentCourseEnrollmentForStudent(?Student $student): ?CourseEnrollment
     {
         $sessionEnrollment = $this->latestSessionEnrollmentForStudent($student);
 
-        if ($sessionEnrollment?->programEnrollment) {
-            return $sessionEnrollment->programEnrollment;
+        if ($sessionEnrollment?->courseEnrollment) {
+            return $sessionEnrollment->courseEnrollment;
         }
 
-        return $this->latestProgramEnrollmentForStudent($student);
+        return $this->latestCourseEnrollmentForStudent($student);
     }
 
-    public function programEnrollmentForInvoice(StudentInvoice $invoice): ?ProgramEnrollment
+    public function courseEnrollmentForInvoice(StudentInvoice $invoice): ?CourseEnrollment
     {
-        if ($invoice->relationLoaded('enrollment') && $invoice->enrollment?->programEnrollment) {
-            return $invoice->enrollment->programEnrollment;
+        if ($invoice->relationLoaded('enrollment') && $invoice->enrollment?->courseEnrollment) {
+            return $invoice->enrollment->courseEnrollment;
         }
 
-        $invoice->loadMissing('enrollment.programEnrollment.programVersionMapping.program');
-        $invoice->loadMissing('enrollment.programEnrollment.programVersionMapping.programVersion');
+        $invoice->loadMissing('enrollment.courseEnrollment.course');
+        $invoice->loadMissing('enrollment.courseEnrollment.courseVersion');
+        $invoice->loadMissing('enrollment.courseEnrollment.examBody');
+        $invoice->loadMissing('enrollment.courseEnrollment.courseVersionMapping.course');
+        $invoice->loadMissing('enrollment.courseEnrollment.courseVersionMapping.courseVersion');
 
-        if ($invoice->enrollment?->programEnrollment) {
-            return $invoice->enrollment->programEnrollment;
+        if ($invoice->enrollment?->courseEnrollment) {
+            return $invoice->enrollment->courseEnrollment;
         }
 
-        return $this->latestProgramEnrollmentForStudent($invoice->student);
+        return $this->latestCourseEnrollmentForStudent($invoice->student);
     }
 }
