@@ -4,13 +4,12 @@ import InputLabel from "@/Components/InputLabel";
 import TextInput from "@/Components/TextInput";
 import TextArea from "@/Components/TextArea";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
-import SearchSelect from "@/Components/SearchSelect";
 
 export default function CreateDepartment() {
     const { data, setData, post, processing, errors, reset } = useForm({
         code: "",
         name: "",
-        hod_staff_id: "",
+        hod_staff_number: "",
         description: "",
     });
 
@@ -81,19 +80,24 @@ export default function CreateDepartment() {
                             </div>
 
                             <div>
-                                <InputLabel value="Head of Department" />
-                                <SearchSelect
-                                    routeName="staffs.search"
-                                    defaultOptions={[]}
-                                    value={data.hod_staff_id}
-                                    placeholder="Search staff..."
-                                    onChange={(staff) =>
-                                        setData("hod_staff_id", staff.id)
+                                <InputLabel value="HOD (Staff number)" />
+                                <TextInput
+                                    id="hod_staff_number"
+                                    error={errors.hod_staff_number}
+                                    type="text"
+                                    name="hod_staff_number"
+                                    className="mt-1 block w-full"
+                                    placeholder="Nullable: enter exact staff number"
+                                    value={data.hod_staff_number}
+                                    onChange={(e) =>
+                                        setData(
+                                            "hod_staff_number",
+                                            e.target.value,
+                                        )
                                     }
-                                    error={errors.hod_staff_id}
                                 />
                                 <InputError
-                                    message={errors.hod_staff_id}
+                                    message={errors.hod_staff_number}
                                     className="mt-2"
                                 />
                             </div>

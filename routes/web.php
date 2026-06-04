@@ -188,16 +188,16 @@ Route::middleware(['auth', 'non_student'])->group(function () {
     |--------------------------------------------------------------------------
     */
     Route::prefix('courses')->name('courses.')->group(function () {
-        Route::get('/', [courseController::class, 'index'])->name('index');
-        Route::get('/create', [courseController::class, 'create'])->name('create');
-        Route::post('/', [courseController::class, 'store'])->name('store');
+        Route::get('/', [CourseController::class, 'index'])->name('index');
+        Route::get('/create', [CourseController::class, 'create'])->name('create');
+        Route::post('/', [CourseController::class, 'store'])->name('store');
         Route::get('/enrollments', [CourseEnrollmentController::class, 'index'])->name('enrollments.index');
 
-        Route::get('/{course}/edit', [courseController::class, 'edit'])->name('edit');
-        Route::put('/{course}', [courseController::class, 'update'])->name('update');
-        Route::delete('/{course}', [courseController::class, 'destroy'])->name('destroy');
+        Route::get('/{course}/edit', [CourseController::class, 'edit'])->name('edit');
+        Route::put('/{course}', [CourseController::class, 'update'])->name('update');
+        Route::delete('/{course}', [CourseController::class, 'destroy'])->name('destroy');
 
-        Route::get('/search', [courseController::class, 'search'])->name('search');
+        Route::get('/search', [CourseController::class, 'search'])->name('search');
     });
 
     /*
@@ -486,6 +486,7 @@ Route::middleware(['auth', 'non_student'])->group(function () {
         Route::get('/', [StudentController::class, 'index'])->name('index');
         Route::get('/create', [StudentController::class, 'create'])->name('create');
         Route::post('/', [StudentController::class, 'store'])->name('store');
+        Route::get('/exam-bodies/{examBody}/course-versions', [StudentController::class, 'examBodyCourseVersions'])->name('exam-body-course-versions');
         Route::get('/courses/{course}/curricula', [StudentController::class, 'courseCurricula'])->name('course-curricula');
         Route::get('/cycles/{courseVersion}/courses', [StudentController::class, 'cycleCourses'])->name('cycle-courses');
         Route::middleware('role:admin')->group(function () {

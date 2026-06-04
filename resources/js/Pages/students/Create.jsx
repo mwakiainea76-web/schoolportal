@@ -19,7 +19,7 @@ const STORAGE_KEY = "student_form_draft";
 
 export default function CreateStudent({
     courseVersions = [],
-    courseCurricula = [],
+    coursesForVersion = [],
 }) {
     const { data, setData, post, processing, errors, reset } = useForm({
         first_name: "",
@@ -41,7 +41,7 @@ export default function CreateStudent({
         course_version_id: "",
         course_curriculum_id: "",
         current_module: "",
-        study_mode: "full_time",
+        study_mode: "fulltime",
         fee_discount_percentage: "",
         kin_first_name: "",
         kin_last_name: "",
@@ -50,10 +50,13 @@ export default function CreateStudent({
         kin_alt_phone: "",
         kin_email: "",
     });
-    const [curriculumOptions, setCurriculumOptions] =
+    const [courseVersionOptions, setCourseVersionOptions] =
         useState(courseVersions);
-    const [loadingCurricula, setLoadingCurricula] = useState(false);
-    const hasCourseVersions = curriculumOptions.length > 0;
+    const [courseOptions, setCourseOptions] = useState(coursesForVersion);
+    const [loadingCourseVersions, setLoadingCourseVersions] = useState(false);
+    const [loadingCourses, setLoadingCourses] = useState(false);
+    const hasCourseVersions = courseVersionOptions.length > 0;
+    const hasCoursesForVersion = courseOptions.length > 0;
     const handleChange = (e) => setData(e.target.name, e.target.value);
 
     useEffect(() => {
@@ -61,57 +64,104 @@ export default function CreateStudent({
     }, [data]);
 
     useEffect(() => {
-        setCurriculumOptions(courseVersions);
+        setCourseVersionOptions(courseVersions);
     }, [courseVersions]);
 
     useEffect(() => {
-        if (!data.course_id) {
-            setCurriculumOptions([]);
+        if (!data.exam_body_id) {
+            setCourseVersionOptions([]);
+            setCourseOptions([]);
             setData({
                 ...data,
-                exam_body_id: "",
                 course_version_id: "",
                 course_curriculum_id: "",
+                course_id: "",
             });
             return;
         }
 
-        setLoadingCurricula(true);
+        setLoadingCourseVersions(true);
         axios
-            .get(route("students.course-curricula", data.course_id))
+            .get(
+                route("students.exam-body-course-versions", data.exam_body_id),
+            )
             .then((response) => {
-                const curricula = response.data ?? [];
-                setCurriculumOptions(curricula);
+                const versions = response.data ?? [];
+                setCourseVersionOptions(versions);
 
-                const selectedCurriculumStillExists = curricula.some(
-                    (curriculum) =>
-                        String(curriculum.id) ===
+                const selectedVersionStillExists = versions.some(
+                    (courseVersion) =>
+                        String(courseVersion.id) ===
                         String(data.course_version_id),
                 );
 
-                if (curricula.length === 1) {
-                    const curriculum = curricula[0];
+                if (versions.length === 1) {
+                    const courseVersion = versions[0];
 
                     setData({
                         ...data,
-                        exam_body_id: curriculum.exam_body_id ?? data.exam_body_id,
-                        course_version_id: curriculum.id,
-                        course_curriculum_id:
-                            curriculum.course_version_mapping_id ?? "",
+                        course_version_id: courseVersion.id,
+                        course_curriculum_id: "",
+                        course_id: "",
                     });
                     return;
                 }
 
-                if (!selectedCurriculumStillExists) {
+                if (!selectedVersionStillExists) {
                     setData({
                         ...data,
                         course_version_id: "",
                         course_curriculum_id: "",
+                        course_id: "",
                     });
                 }
             })
-            .finally(() => setLoadingCurricula(false));
-    }, [data.course_id]);
+            .finally(() => setLoadingCourseVersions(false));
+    }, [data.exam_body_id]);
+
+    useEffect(() => {
+        if (!data.course_version_id) {
+            setCourseOptions([]);
+            setData({
+                ...data,
+                course_curriculum_id: "",
+                course_id: "",
+            });
+            return;
+        }
+
+        setLoadingCourses(true);
+        axios
+            .get(route("students.cycle-courses", data.course_version_id))
+            .then((response) => {
+                const courses = response.data ?? [];
+                setCourseOptions(courses);
+
+                const selectedCourseStillExists = courses.some(
+                    (course) => String(course.id) === String(data.course_curriculum_id),
+                );
+
+                if (courses.length === 1) {
+                    const course = courses[0];
+
+                    setData({
+                        ...data,
+                        course_curriculum_id: course.id,
+                        course_id: course.course_id ?? "",
+                    });
+                    return;
+                }
+
+                if (!selectedCourseStillExists) {
+                    setData({
+                        ...data,
+                        course_curriculum_id: "",
+                        course_id: "",
+                    });
+                }
+            })
+            .finally(() => setLoadingCourses(false));
+    }, [data.course_version_id]);
 
     useEffect(() => {
         const saved = localStorage.getItem(STORAGE_KEY);
@@ -325,12 +375,12 @@ export default function CreateStudent({
                                 </div>
                                 <div className="p-4">
                                     <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-                                        {data.course_id &&
+                                        {data.exam_body_id &&
                                         !hasCourseVersions &&
-                                        !loadingCurricula ? (
+                                        !loadingCourseVersions ? (
                                             <div className="rounded border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 md:col-span-2 xl:col-span-3">
                                                 No active curriculum versions are
-                                                available for the selected course.
+                                                available for the selected exam body.
                                             </div>
                                         ) : null}
 
@@ -349,77 +399,105 @@ export default function CreateStudent({
                                         </div>
 
                                         <div>
-                                            <InputLabel value="Course" required />
+                                            <InputLabel value="Exam Body" required />
                                             <SearchSelect
-                                                routeName="courses.search"
+                                                routeName="exam-bodies.search"
                                                 defaultOptions={[]}
-                                                value={data.course_id}
+                                                value={data.exam_body_id}
                                                 preloadOptions
                                                 minSearchLength={3}
-                                                onChange={(course) =>
+                                                onChange={(examBody) =>
                                                     setData({
                                                         ...data,
-                                                        course_id: course.id,
-                                                        exam_body_id:
-                                                            course.exam_body_id ??
-                                                            "",
+                                                        exam_body_id: examBody.id,
                                                         course_version_id: "",
                                                         course_curriculum_id: "",
+                                                        course_id: "",
                                                     })
                                                 }
-                                                placeholder="Search course..."
-                                                error={errors.course_id}
+                                                placeholder="Search exam body..."
+                                                error={errors.exam_body_id}
                                             />
                                             <InputError
-                                                message={errors.course_id}
+                                                message={errors.exam_body_id}
                                             />
-                                            <InputError message={errors.exam_body_id} />
                                         </div>
 
                                         <div>
-                                            <InputLabel value="Curriculum" required />
+                                            <InputLabel value="Course Version" required />
                                             <SearchSelect
-                                                key={`curriculum-${data.course_id}-${curriculumOptions.length}`}
-                                                defaultOptions={curriculumOptions}
+                                                key={`course-version-${data.exam_body_id}-${courseVersionOptions.length}`}
+                                                defaultOptions={courseVersionOptions}
                                                 value={data.course_version_id}
                                                 disabled={
-                                                    !data.course_id ||
-                                                    loadingCurricula
+                                                    !data.exam_body_id ||
+                                                    loadingCourseVersions
                                                 }
-                                                onChange={(curriculum) =>
+                                                onChange={(courseVersion) =>
                                                     setData({
                                                         ...data,
                                                         course_version_id:
-                                                            curriculum.id,
-                                                        exam_body_id:
-                                                            curriculum.exam_body_id ??
-                                                            data.exam_body_id,
-                                                        course_curriculum_id:
-                                                            curriculum.course_version_mapping_id ??
-                                                            "",
+                                                            courseVersion.id,
+                                                        course_curriculum_id: "",
+                                                        course_id: "",
                                                     })
                                                 }
                                                 placeholder={
-                                                    loadingCurricula
-                                                        ? "Loading curricula..."
-                                                        : "Select curriculum..."
+                                                    loadingCourseVersions
+                                                        ? "Loading course versions..."
+                                                        : "Select course version..."
                                                 }
                                                 error={errors.course_version_id}
                                             />
-                                            {data.course_id &&
-                                            curriculumOptions.length > 1 ? (
+                                            {data.exam_body_id &&
+                                            courseVersionOptions.length > 1 ? (
                                                 <p className="mt-1 text-xs text-amber-600">
-                                                    Multiple active curriculum
-                                                    versions exist. Select one for
-                                                    this student.
+                                                    Multiple active course versions
+                                                    exist. Select one for this
+                                                    student.
                                                 </p>
                                             ) : null}
                                             <InputError
                                                 message={errors.course_version_id}
                                             />
-                                            <InputError
-                                                message={errors.course_curriculum_id}
+                                        </div>
+
+                                        <div>
+                                            <InputLabel value="Course" required />
+                                            <SearchSelect
+                                                key={`course-${data.course_version_id}-${courseOptions.length}`}
+                                                defaultOptions={courseOptions}
+                                                value={data.course_curriculum_id}
+                                                disabled={
+                                                    !data.course_version_id ||
+                                                    loadingCourses
+                                                }
+                                                onChange={(course) =>
+                                                    setData({
+                                                        ...data,
+                                                        course_curriculum_id:
+                                                            course.id,
+                                                        course_id:
+                                                            course.course_id ?? "",
+                                                    })
+                                                }
+                                                placeholder={
+                                                    loadingCourses
+                                                        ? "Loading courses..."
+                                                        : "Select course..."
+                                                }
+                                                error={errors.course_curriculum_id}
                                             />
+                                            {data.course_version_id &&
+                                            !hasCoursesForVersion &&
+                                            !loadingCourses ? (
+                                                <p className="mt-1 text-xs text-amber-600">
+                                                    No active courses are mapped to
+                                                    this course version yet.
+                                                </p>
+                                            ) : null}
+                                            <InputError message={errors.course_id} />
+                                            <InputError message={errors.course_curriculum_id} />
                                         </div>
 
                                         <div>

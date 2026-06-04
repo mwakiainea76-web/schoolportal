@@ -114,7 +114,13 @@ export default function DepartmentsIndex({ departments }) {
                                     <Tdata>
                                         {formatDate(department.created_at)}
                                     </Tdata>
-                                    <Tdata>{department.hod?.name ?? "-"}</Tdata>
+                                    <Tdata>
+                                        {department.hod
+                                            ? [department.hod.staff_number, department.hod.name]
+                                                  .filter(Boolean)
+                                                  .join(" - ")
+                                            : "-"}
+                                    </Tdata>
                                     <Tdata>
                                         <div className="flex items-center justify-center gap-x-10">
                                             <Link

@@ -19,7 +19,7 @@ import {
 export default function EditStudent({
     student,
     courseVersions = [],
-    courseCurricula = [],
+    coursesForVersion = [],
 }) {
     const existingCourseVersionMappingId =
         student.course_enrollment?.course_version_mapping_id ||
@@ -51,6 +51,14 @@ export default function EditStudent({
         student.courseEnrollment?.courseVersionMapping?.courseVersion?.id ||
         "";
 
+    const selectedExamBodyLabel =
+        [
+            student.course_enrollment?.exam_body?.code,
+            student.course_enrollment?.exam_body?.name,
+            student.courseEnrollment?.examBody?.code,
+            student.courseEnrollment?.examBody?.name,
+        ].filter(Boolean).join(" - ") || "";
+
     const { data, setData, put, processing, errors } = useForm({
         first_name: student.user?.first_name || "",
         last_name: student.user?.last_name || "",
@@ -70,6 +78,10 @@ export default function EditStudent({
         exam_body_id: existingExamBodyId,
         course_version_id: existingCourseVersionId,
         course_curriculum_id: existingCourseVersionMappingId,
+        study_mode:
+            student.course_enrollment?.study_mode ||
+            student.courseEnrollment?.study_mode ||
+            "fulltime",
         admission_date: student.admission_date || "",
         current_module: student.current_module || "",
         fee_discount_percentage: student.fee_discount_percentage || "",
@@ -82,7 +94,10 @@ export default function EditStudent({
             student.user?.nextofkin?.alternate_phone_number || "",
         kin_email: student.user?.nextofkin?.email || "",
     });
-    const [courseOptions, setCourseOptions] = useState(courseCurricula);
+    const [courseVersionOptions, setCourseVersionOptions] =
+        useState(courseVersions);
+    const [courseOptions, setCourseOptions] = useState(coursesForVersion);
+    const [loadingCourseVersions, setLoadingCourseVersions] = useState(false);
     const [loadingCourses, setLoadingCourses] = useState(false);
     const hasCourseVersionMappings = courseOptions.length > 0;
     const hasLockedCourseEnrollment = Boolean(existingCourseVersionId);
@@ -94,7 +109,7 @@ export default function EditStudent({
         student.course_enrollment?.course_version_mapping?.course?.name ||
         student.courseEnrollment?.courseVersionMapping?.course?.name ||
         "";
-    const selectedCurriculumLabel =
+    const selectedCourseVersionLabel =
         student.course_enrollment?.course_version?.name ||
         student.courseEnrollment?.courseVersion?.name ||
         student.course_enrollment?.course_version_mapping?.course_version
@@ -120,61 +135,117 @@ export default function EditStudent({
     ]);
 
     useEffect(() => {
-        setCourseOptions(courseCurricula);
-    }, [courseCurricula]);
+        setCourseVersionOptions(courseVersions);
+    }, [courseVersions]);
+
+    useEffect(() => {
+        setCourseOptions(coursesForVersion);
+    }, [coursesForVersion]);
 
     useEffect(() => {
         if (hasLockedCourseEnrollment) {
             return;
         }
 
-        if (!data.course_id) {
+        if (!data.exam_body_id) {
+            setCourseVersionOptions([]);
             setCourseOptions([]);
             setData({
                 ...data,
-                exam_body_id: "",
                 course_version_id: "",
                 course_curriculum_id: "",
+                course_id: "",
+            });
+            return;
+        }
+
+        setLoadingCourseVersions(true);
+        axios
+            .get(
+                route("students.exam-body-course-versions", data.exam_body_id),
+            )
+            .then((response) => {
+                const versions = response.data ?? [];
+                setCourseVersionOptions(versions);
+
+                const selectedVersionStillExists = versions.some(
+                    (courseVersion) =>
+                        String(courseVersion.id) ===
+                        String(data.course_version_id),
+                );
+
+                if (versions.length === 1) {
+                    const courseVersion = versions[0];
+
+                    setData({
+                        ...data,
+                        course_version_id: courseVersion.id,
+                        course_curriculum_id: "",
+                        course_id: "",
+                    });
+                    return;
+                }
+
+                if (!selectedVersionStillExists) {
+                    setData({
+                        ...data,
+                        course_version_id: "",
+                        course_curriculum_id: "",
+                        course_id: "",
+                    });
+                }
+            })
+            .finally(() => setLoadingCourseVersions(false));
+    }, [data.exam_body_id, hasLockedCourseEnrollment]);
+
+    useEffect(() => {
+        if (hasLockedCourseEnrollment) {
+            return;
+        }
+
+        if (!data.course_version_id) {
+            setCourseOptions([]);
+            setData({
+                ...data,
+                course_curriculum_id: "",
+                course_id: "",
             });
             return;
         }
 
         setLoadingCourses(true);
         axios
-            .get(route("students.course-curricula", data.course_id))
+            .get(route("students.cycle-courses", data.course_version_id))
             .then((response) => {
-                const curricula = response.data ?? [];
-                setCourseOptions(curricula);
+                const courses = response.data ?? [];
+                setCourseOptions(courses);
 
-                const selectedCurriculumStillExists = curricula.some(
-                    (curriculum) =>
-                        String(curriculum.id) ===
-                        String(data.course_version_id),
+                const selectedCourseStillExists = courses.some(
+                    (course) =>
+                        String(course.id) === String(data.course_curriculum_id),
                 );
 
-                if (curricula.length === 1) {
-                    const curriculum = curricula[0];
+                if (courses.length === 1) {
+                    const course = courses[0];
 
                     setData({
                         ...data,
-                        exam_body_id: curriculum.exam_body_id ?? data.exam_body_id,
-                        course_version_id: curriculum.id,
-                        course_curriculum_id:
-                            curriculum.course_version_mapping_id ?? "",
+                        course_curriculum_id: course.id,
+                        course_id: course.course_id ?? "",
                     });
                     return;
                 }
 
-                if (!selectedCurriculumStillExists) {
+                if (!selectedCourseStillExists) {
                     setData({
                         ...data,
-                        course_version_id: "",
                         course_curriculum_id: "",
+                        course_id: "",
                     });
                 }
             })
             .finally(() => setLoadingCourses(false));
-    }, [data.course_id, hasLockedCourseEnrollment]);
+    }, [data.course_version_id, hasLockedCourseEnrollment]);
 
     const submit = (e) => {
         e.preventDefault();
@@ -382,13 +453,13 @@ export default function EditStudent({
                                 </div>
                                 <div className="p-4">
                                     <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-                                        {data.course_id &&
+                                        {data.exam_body_id &&
                                         !hasCourseVersionMappings &&
                                         !loadingCourses &&
                                         !hasLockedCourseEnrollment ? (
                                             <div className="rounded border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 md:col-span-2 xl:col-span-3">
                                                 No active curriculum versions are
-                                                available for the selected course.
+                                                available for the selected exam body.
                                             </div>
                                         ) : null}
 
@@ -407,86 +478,130 @@ export default function EditStudent({
                                         </div>
 
                                         <div>
-                                            <InputLabel value="Course" required />
-                                            <SearchSelect
-                                                routeName="courses.search"
-                                                defaultOptions={[]}
-                                                value={data.course_id}
-                                                selectedLabel={selectedcourseLabel}
-                                                disabled={hasLockedCourseEnrollment}
-                                                preloadOptions
-                                                minSearchLength={3}
-                                                onChange={(course) =>
-                                                    setData({
-                                                        ...data,
-                                                        course_id: course.id,
-                                                        exam_body_id:
-                                                            course.exam_body_id ??
-                                                            "",
-                                                        course_version_id: "",
-                                                        course_curriculum_id: "",
-                                                    })
-                                                }
-                                                placeholder="Search course..."
-                                                error={errors.course_id}
-                                            />
-                                            <InputError
-                                                message={errors.course_id}
-                                            />
+                                            <InputLabel value="Exam Body" required />
+                                            {hasLockedCourseEnrollment ? (
+                                                <TextInput
+                                                    value={selectedExamBodyLabel}
+                                                    disabled
+                                                    className="cursor-not-allowed bg-gray-100"
+                                                />
+                                            ) : (
+                                                <SearchSelect
+                                                    routeName="exam-bodies.search"
+                                                    defaultOptions={[]}
+                                                    value={data.exam_body_id}
+                                                    preloadOptions
+                                                    minSearchLength={3}
+                                                    onChange={(examBody) =>
+                                                        setData({
+                                                            ...data,
+                                                            exam_body_id: examBody.id,
+                                                            course_version_id: "",
+                                                            course_curriculum_id: "",
+                                                            course_id: "",
+                                                        })
+                                                    }
+                                                    placeholder="Search exam body..."
+                                                    error={errors.exam_body_id}
+                                                />
+                                            )}
                                             <InputError message={errors.exam_body_id} />
                                         </div>
 
                                         <div>
-                                            <InputLabel value="Curriculum" required />
-                                            <SearchSelect
-                                                key={`curriculum-${data.course_id || data.course_version_id}-${courseOptions.length}`}
-                                                defaultOptions={courseOptions}
-                                                value={data.course_version_id}
-                                                selectedLabel={selectedCurriculumLabel}
-                                                disabled={
-                                                    hasLockedCourseEnrollment ||
-                                                    !data.course_id ||
-                                                    loadingCourses
-                                                }
-                                                onChange={(curriculum) =>
-                                                    setData({
-                                                        ...data,
-                                                        course_version_id:
-                                                            curriculum.id,
-                                                        exam_body_id:
-                                                            curriculum.exam_body_id ??
-                                                            data.exam_body_id,
-                                                        course_curriculum_id:
-                                                            curriculum.course_version_mapping_id ??
-                                                            "",
-                                                    })
-                                                }
-                                                placeholder={
-                                                    loadingCourses
-                                                        ? "Loading curricula..."
-                                                        : "Select curriculum..."
-                                                }
-                                                error={errors.course_version_id}
-                                            />
+                                            <InputLabel value="Course Version" required />
+                                            {hasLockedCourseEnrollment ? (
+                                                <TextInput
+                                                    value={selectedCourseVersionLabel}
+                                                    disabled
+                                                    className="cursor-not-allowed bg-gray-100"
+                                                />
+                                            ) : (
+                                                <SearchSelect
+                                                    key={`course-version-${data.exam_body_id || data.course_version_id}-${courseVersionOptions.length}`}
+                                                    defaultOptions={courseVersionOptions}
+                                                    value={data.course_version_id}
+                                                    disabled={
+                                                        !data.exam_body_id ||
+                                                        loadingCourseVersions
+                                                    }
+                                                    onChange={(courseVersion) =>
+                                                        setData({
+                                                            ...data,
+                                                            course_version_id:
+                                                                courseVersion.id,
+                                                            course_curriculum_id: "",
+                                                            course_id: "",
+                                                        })
+                                                    }
+                                                    placeholder={
+                                                        loadingCourseVersions
+                                                            ? "Loading course versions..."
+                                                            : "Select course version..."
+                                                    }
+                                                    error={errors.course_version_id}
+                                                />
+                                            )}
                                             {hasLockedCourseEnrollment ? (
                                                 <p className="mt-1 text-xs text-slate-500">
-                                                    Enrollment curriculum is locked
-                                                    after admission.
+                                                    Enrollment exam body and course version are locked after admission.
                                                 </p>
-                                            ) : data.course_id &&
-                                              !hasCourseVersionMappings &&
-                                              !loadingCourses ? (
+                                            ) : data.exam_body_id &&
+                                              courseVersionOptions.length > 1 ? (
                                                 <p className="mt-1 text-xs text-amber-600">
-                                                    No active curricula are assigned
-                                                    to this course yet.
+                                                    Multiple active course versions exist. Select one for this student.
                                                 </p>
                                             ) : null}
                                             <InputError
                                                 message={errors.course_version_id}
                                             />
-                                            <InputError
-                                                message={errors.course_curriculum_id}
-                                            />
+                                        </div>
+
+                                        <div>
+                                            <InputLabel value="Course" required />
+                                            {hasLockedCourseEnrollment ? (
+                                                <TextInput
+                                                    value={selectedcourseLabel}
+                                                    disabled
+                                                    className="cursor-not-allowed bg-gray-100"
+                                                />
+                                            ) : (
+                                                <SearchSelect
+                                                    key={`course-${data.course_version_id || data.course_curriculum_id}-${courseOptions.length}`}
+                                                    defaultOptions={courseOptions}
+                                                    value={data.course_curriculum_id}
+                                                    disabled={
+                                                        !data.course_version_id ||
+                                                        loadingCourses
+                                                    }
+                                                    onChange={(course) =>
+                                                        setData({
+                                                            ...data,
+                                                            course_curriculum_id:
+                                                                course.id,
+                                                            course_id:
+                                                                course.course_id ?? "",
+                                                        })
+                                                    }
+                                                    placeholder={
+                                                        loadingCourses
+                                                            ? "Loading courses..."
+                                                            : "Select course..."
+                                                    }
+                                                    error={errors.course_curriculum_id}
+                                                />
+                                            )}
+                                            {!hasLockedCourseEnrollment &&
+                                            data.course_version_id &&
+                                            !hasCourseVersionMappings &&
+                                            !loadingCourses ? (
+                                                <p className="mt-1 text-xs text-amber-600">
+                                                    No active courses are mapped to
+                                                    this course version yet.
+                                                </p>
+                                            ) : null}
+                                            <InputError message={errors.course_id} />
+                                            <InputError message={errors.course_curriculum_id} />
                                         </div>
 
                                         <div>

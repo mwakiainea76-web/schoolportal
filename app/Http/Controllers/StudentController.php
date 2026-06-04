@@ -7,10 +7,12 @@ use App\Http\Requests\StoreStudentRequest;
 use App\Http\Requests\UpdateStudentRequest;
 use App\Models\CourseEnrollment;
 use App\Models\Course;
+use App\Models\ExamBody;
 use App\Models\CourseVersion;
 use App\Models\CourseVersionMapping;
 use App\Models\Student;
 use App\Models\User;
+use Carbon\Carbon;
 use App\Support\RbacCache;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
@@ -148,6 +150,7 @@ class StudentController extends Controller
     {
         return inertia('students/Create', [
             'courseVersions' => [],
+            'coursesForVersion' => [],
             'courseCurricula' => [],
         ]);
     }
@@ -213,13 +216,16 @@ class StudentController extends Controller
 
             $courseEnrollment = new CourseEnrollment;
             $courseEnrollment->student_id = $student->id;
-            $courseEnrollment->program_id = $request->program_id;
+            $courseEnrollment->course_id = $request->course_id;
             $courseEnrollment->course_version_id = $request->course_version_id;
             $courseEnrollment->exam_body_id = $request->exam_body_id;
             $courseEnrollment->course_version_mapping_id = $request->course_curriculum_id;
             $courseEnrollment->enrollment_date = now()->toDateString();
             $courseEnrollment->intake_year = now()->year;
-            $courseEnrollment->study_mode = $request->study_mode ?? 'full_time';
+            $courseEnrollment->intake_period = $this->intakePeriod();
+            $courseEnrollment->expected_completion_date = $this->expectedCompletionDate($request->course_id);
+            $courseEnrollment->study_mode = $request->study_mode ?? 'fulltime';
+            $courseEnrollment->status = 'active';
             $courseEnrollment->save();
 
             $user->nextOfKin()->create([
@@ -243,19 +249,22 @@ class StudentController extends Controller
     {
         $student->load([
             'user.nextofkin',
-            'courseEnrollment.program',
+            'courseEnrollment.course',
             'courseEnrollment.courseVersion',
             'courseEnrollment.examBody',
-            'courseEnrollment.courseVersionMapping.program',
+            'courseEnrollment.courseVersionMapping.course',
             'courseEnrollment.courseVersionMapping.courseVersion',
         ]);
 
         return inertia('students/Edit', [
             'student' => $student,
-            'courseVersions' => [],
-            'courseCurricula' => $student->courseEnrollment?->program_id
-                ? $this->curriculumOptionsForProgram($student->courseEnrollment->program_id)
+            'courseVersions' => $student->courseEnrollment?->exam_body_id
+                ? $this->activeCourseVersionOptionsForExamBody($student->courseEnrollment->exam_body_id)
                 : [],
+            'coursesForVersion' => $student->courseEnrollment?->course_version_id
+                ? $this->courseOptionsForCourseVersion($student->courseEnrollment->course_version_id)
+                : [],
+            'courseCurricula' => [],
         ]);
     }
 
@@ -263,8 +272,8 @@ class StudentController extends Controller
     {
         $student->loadMissing([
             'user',
-            'courseEnrollment.courseVersionMapping.program.department',
-            'courseEnrollment.courseVersionMapping.program.certificationLevel',
+            'courseEnrollment.courseVersionMapping.course.department',
+            'courseEnrollment.courseVersionMapping.course.certificationLevel',
             'courseEnrollment.courseVersionMapping.courseVersion',
         ]);
 
@@ -278,7 +287,7 @@ class StudentController extends Controller
             'program' => $course,
             'courseVersion' => $courseVersion,
             'department' => $course?->department,
-            'certificationLevel' => $program?->certificationLevel,
+            'certificationLevel' => $course?->certificationLevel,
         ]);
     }
 
@@ -326,17 +335,20 @@ class StudentController extends Controller
             ]);
             if (! $courseEnrollment->exists && $courseVersionMappingId) {
                 $mapping = CourseVersionMapping::query()
-                    ->with('program.certificationLevel:id,exam_body_id')
+                    ->with('course.certificationLevel:id,exam_body_id')
                     ->find($courseVersionMappingId);
 
-                $courseEnrollment->program_id = $request->program_id ?? $mapping?->program_id;
+                $courseEnrollment->course_id = $request->course_id ?? $mapping?->course_id;
                 $courseEnrollment->course_version_id = $request->course_version_id ?? $mapping?->course_version_id;
-                $courseEnrollment->exam_body_id = $request->exam_body_id ?? $mapping?->program?->certificationLevel?->exam_body_id;
+                $courseEnrollment->exam_body_id = $request->exam_body_id ?? $mapping?->course?->certificationLevel?->exam_body_id;
                 $courseEnrollment->course_version_mapping_id =
                     $courseVersionMappingId;
                 $courseEnrollment->enrollment_date = now()->toDateString();
                 $courseEnrollment->intake_year = now()->year;
-                $courseEnrollment->study_mode = $request->study_mode ?? 'full_time';
+                $courseEnrollment->intake_period = $this->intakePeriod();
+                $courseEnrollment->expected_completion_date = $this->expectedCompletionDate($courseEnrollment->course_id);
+                $courseEnrollment->study_mode = $request->study_mode ?? 'fulltime';
+                $courseEnrollment->status = 'active';
                 $courseEnrollment->save();
             }
 
@@ -408,9 +420,14 @@ class StudentController extends Controller
         return response()->json($this->courseOptionsForCourseVersion($courseVersion->id));
     }
 
-    public function programCurricula(Course $program): JsonResponse
+    public function examBodyCourseVersions(ExamBody $examBody): JsonResponse
     {
-        return response()->json($this->curriculumOptionsForProgram($program->id));
+        return response()->json($this->activeCourseVersionOptionsForExamBody($examBody->id));
+    }
+
+    public function courseCurricula(Course $course): JsonResponse
+    {
+        return response()->json($this->curriculumOptionsForCourse($course->id));
     }
 
     private function courseVersionOptions()
@@ -434,21 +451,24 @@ class StudentController extends Controller
 
         return CourseVersionMapping::query()
             ->with([
-                'program:id,name,certification_level_id',
-                'program.certificationLevel:id,name,exam_body_id',
-                'program.certificationLevel.examBody:id,code,name',
+                'course:id,name,code,certification_level_id',
+                'course.certificationLevel:id,name,exam_body_id',
+                'course.certificationLevel.examBody:id,code,name',
             ])
+            ->active()
             ->where('course_version_id', $courseVersionId)
             ->orderByDesc('id')
-            ->get(['id', 'program_id', 'course_version_id'])
+            ->get(['id', 'course_id', 'course_version_id'])
             ->map(function (CourseVersionMapping $mapping) {
-                $course = $mapping->program;
+                $course = $mapping->course;
                 $level = $course?->certificationLevel;
                 $examBody = $level?->examBody;
 
                 return [
                     'id' => $mapping->id,
+                    'course_id' => $mapping->course_id,
                     'course_version_id' => $mapping->course_version_id,
+                    'course_version_mapping_id' => $mapping->id,
                     'name' => collect([
                         $course?->display_name ?? $course?->name ?? 'Course',
                         $examBody?->code,
@@ -459,42 +479,97 @@ class StudentController extends Controller
             ->values();
     }
 
-    private function curriculumOptionsForProgram(?int $programId)
+    private function curriculumOptionsForCourse(?int $courseId)
     {
-        if (! $programId) {
+        if (! $courseId) {
             return collect();
         }
 
-        $program = Course::query()
+        $course = Course::query()
             ->with('certificationLevel:id,exam_body_id')
-            ->find($programId);
+            ->find($courseId);
 
-        if (! $program) {
+        if (! $course) {
             return collect();
         }
 
-        $examBodyId = $program->certificationLevel?->exam_body_id;
+        $examBodyId = $course->certificationLevel?->exam_body_id;
 
         return CourseVersion::query()
             ->with([
                 'activeCourseVersionMapping' => fn ($query) => $query
-                    ->where('program_id', $program->id)
-                    ->select('id', 'program_id', 'course_version_id'),
+                    ->where('course_id', $course->id)
+                    ->select('id', 'course_id', 'course_version_id'),
             ])
             ->where('is_active', true)
-            ->where('program_id', $program->id)
+            ->whereDate('start_date', '<=', Carbon::today())
             ->when($examBodyId, fn ($query) => $query->where('exam_body_id', $examBodyId))
+            ->where(function ($query) {
+                $query->whereNull('end_date')
+                    ->orWhereDate('end_date', '>=', Carbon::today());
+            })
+            ->whereHas('activeCourseVersionMapping', fn ($query) => $query->where('course_id', $course->id))
             ->orderByDesc('id')
-            ->get(['id', 'program_id', 'exam_body_id', 'name'])
+            ->get(['id', 'course_id', 'exam_body_id', 'name'])
             ->map(function (CourseVersion $courseVersion) {
                 return [
                     'id' => $courseVersion->id,
-                    'program_id' => $courseVersion->program_id,
+                    'course_id' => $courseVersion->course_id,
                     'exam_body_id' => $courseVersion->exam_body_id,
                     'course_version_mapping_id' => $courseVersion->activeCourseVersionMapping?->id,
                     'name' => $courseVersion->name,
                 ];
             })
             ->values();
+    }
+
+    private function activeCourseVersionOptionsForExamBody(?int $examBodyId)
+    {
+        if (! $examBodyId) {
+            return collect();
+        }
+
+        return CourseVersion::query()
+            ->where('exam_body_id', $examBodyId)
+            ->where('is_active', true)
+            ->whereDate('start_date', '<=', Carbon::today())
+            ->where(function ($query) {
+                $query->whereNull('end_date')
+                    ->orWhereDate('end_date', '>=', Carbon::today());
+            })
+            ->orderBy('name')
+            ->get(['id', 'exam_body_id', 'name'])
+            ->map(fn (CourseVersion $courseVersion) => [
+                'id' => $courseVersion->id,
+                'exam_body_id' => $courseVersion->exam_body_id,
+                'name' => $courseVersion->name,
+            ])
+            ->values();
+    }
+
+    private function intakePeriod(): string
+    {
+        $month = (int) now()->format('n');
+
+        return match (true) {
+            $month <= 4 => 'Jan',
+            $month <= 8 => 'May',
+            default => 'Sep',
+        };
+    }
+
+    private function expectedCompletionDate(?int $courseId): ?string
+    {
+        if (! $courseId) {
+            return null;
+        }
+
+        $durationInMonths = Course::query()->whereKey($courseId)->value('duration_in_months');
+
+        if (! $durationInMonths) {
+            return null;
+        }
+
+        return now()->addMonthsNoOverflow((int) $durationInMonths)->toDateString();
     }
 }

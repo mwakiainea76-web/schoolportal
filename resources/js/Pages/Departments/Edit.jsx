@@ -1,11 +1,10 @@
-import React, { useEffect, useRef, useState } from "react";
-import { Head, Link, router, useForm } from "@inertiajs/react";
+import React, { useEffect, useRef } from "react";
+import { Head, Link, useForm } from "@inertiajs/react";
 import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import TextInput from "@/Components/TextInput";
 import TextArea from "@/Components/TextArea";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
-import SearchSelect from "@/Components/SearchSelect";
 
 const Edit = ({ department, selectedHod = null }) => {
     const dept = department || null;
@@ -15,7 +14,7 @@ const Edit = ({ department, selectedHod = null }) => {
     const { data, setData, put, processing, errors } = useForm({
         code: "",
         name: "",
-        hod_staff_id: "",
+        hod_staff_number: "",
         description: "",
     });
 
@@ -29,7 +28,7 @@ const Edit = ({ department, selectedHod = null }) => {
             setData({
                 code: "",
                 name: "",
-                hod_staff_id: "",
+                hod_staff_number: "",
                 description: "",
             });
             return;
@@ -38,7 +37,7 @@ const Edit = ({ department, selectedHod = null }) => {
         setData({
             code: department.code ?? "",
             name: department.name ?? "",
-            hod_staff_id: department.hod_staff_id ?? "",
+            hod_staff_number: selectedHod?.staff_number ?? "",
             description: department.description ?? "",
         });
 
@@ -103,19 +102,19 @@ const Edit = ({ department, selectedHod = null }) => {
                             </div>
 
                             <div>
-                                <InputLabel value="Head of Department" />
-                                <SearchSelect
-                                    routeName="staffs.search"
-                                    defaultOptions={[]}
-                                    value={data.hod_staff_id}
-                                    selectedLabel={selectedHod?.name}
-                                    placeholder="Search staff..."
-                                    onChange={(staff) =>
-                                        setData("hod_staff_id", staff.id)
+                                <InputLabel value="HOD (Staff number)" />
+                                <TextInput
+                                    value={data.hod_staff_number}
+                                    error={errors.hod_staff_number}
+                                    placeholder="Nullable: enter exact staff number"
+                                    onChange={(e) =>
+                                        setData(
+                                            "hod_staff_number",
+                                            e.target.value,
+                                        )
                                     }
-                                    error={errors.hod_staff_id}
                                 />
-                                <InputError message={errors.hod_staff_id} />
+                                <InputError message={errors.hod_staff_number} />
                             </div>
                         </div>
 

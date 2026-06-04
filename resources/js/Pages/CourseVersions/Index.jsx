@@ -8,7 +8,6 @@ import Tbody from "@/Components/Table/Tbody";
 import Trow from "@/Components/Table/Trow";
 import Tdata from "@/Components/Table/Tdata";
 import SearchSelect from "@/Components/SearchSelect";
-import formatDate from "@/utils/date";
 import useRbac from "@/Hooks/UseRBAC";
 
 export default function CourseVersionIndex({
@@ -94,36 +93,18 @@ export default function CourseVersionIndex({
                 >
                     <Thead>
                         <THdata
-                            onClick={() => handleSort("id")}
-                            className="cursor-pointer"
-                        >
-                            Id {renderArrow("id")}
-                        </THdata>
-                        <THdata
                             onClick={() => handleSort("name")}
                             className="cursor-pointer"
                         >
                             Name {renderArrow("name")}
                         </THdata>
                         <THdata
-                            onClick={() => handleSort("start_date")}
+                            onClick={() => handleSort("description")}
                             className="cursor-pointer"
                         >
-                            Start Date {renderArrow("start_date")}
+                            Brief Description {renderArrow("description")}
                         </THdata>
-                        <THdata
-                            onClick={() => handleSort("end_date")}
-                            className="cursor-pointer"
-                        >
-                            End Date {renderArrow("end_date")}
-                        </THdata>
-                        <THdata>Status</THdata>
-                        <THdata
-                            onClick={() => handleSort("created_at")}
-                            className="cursor-pointer"
-                        >
-                            Created {renderArrow("created_at")}
-                        </THdata>
+                        <THdata>Exam Body</THdata>
 
                         {can("course-versions.edit") ||
                         can("course-versions.delete") ? (
@@ -137,31 +118,16 @@ export default function CourseVersionIndex({
                         {curricula?.data?.length ? (
                             curricula.data.map((curriculum) => (
                                 <Trow key={curriculum.id}>
-                                    <Tdata>{curriculum.id}</Tdata>
                                     <Tdata>{curriculum.name}</Tdata>
                                     <Tdata>
-                                        {formatDate(curriculum.start_date)}
+                                        {curriculum.description || "-"}
                                     </Tdata>
                                     <Tdata>
-                                        {curriculum.end_date
-                                            ? formatDate(curriculum.end_date)
-                                            : "Ongoing"}
-                                    </Tdata>
-                                    <Tdata>
-                                        <span
-                                            className={`px-2 py-1 rounded text-xs ${
-                                                curriculum.is_active
-                                                    ? "bg-green-100 text-green-800"
-                                                    : "bg-red-100 text-red-800"
-                                            }`}
-                                        >
-                                            {curriculum.is_active
-                                                ? "Active"
-                                                : "Inactive"}
-                                        </span>
-                                    </Tdata>
-                                    <Tdata>
-                                        {formatDate(curriculum.created_at)}
+                                        {curriculum.exam_body
+                                            ? [curriculum.exam_body.code, curriculum.exam_body.name]
+                                                  .filter(Boolean)
+                                                  .join(" - ")
+                                            : "-"}
                                     </Tdata>
 
                                     {can("course-versions.edit") ||
@@ -202,7 +168,7 @@ export default function CourseVersionIndex({
                             ))
                         ) : (
                             <Trow>
-                                <Tdata colSpan="7" className="text-center py-4">
+                                <Tdata colSpan="4" className="text-center py-4">
                                     No course versions found.
                                 </Tdata>
                             </Trow>

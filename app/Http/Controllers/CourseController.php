@@ -62,7 +62,7 @@ class CourseController extends Controller
                 'created_at' => $course->created_at,
             ]);
 
-        return inertia('courses/Index', [
+        return inertia('Courses/Index', [
             'courses' => $courses,
             'filters' => (object) $filters,
             'selectedFilters' => $this->selectedIndexFilters($filters),
@@ -71,7 +71,7 @@ class CourseController extends Controller
 
     public function create()
     {
-        return inertia('courses/Create');
+        return inertia('Courses/Create');
     }
 
     public function store(StorecourseRequest $request)
@@ -96,7 +96,7 @@ class CourseController extends Controller
             ->firstWhere('is_active', true)
             ?? $course->courseVersionMappings->first();
 
-        return inertia('courses/Edit', [
+        return inertia('Courses/Edit', [
             'selected_filters' => [
                 'department' => $course->department?->name,
                 'certification_level' => $course->certificationLevel?->name,

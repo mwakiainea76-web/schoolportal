@@ -38,7 +38,8 @@ class DepartmentController extends Controller
                 'hod' => $department->hod
                     ? [
                         'id' => $department->hod->id,
-                        'name' => $this->staffLabel($department->hod),
+                        'name' => trim(($department->hod->user?->first_name ?? '').' '.($department->hod->user?->last_name ?? '')),
+                        'staff_number' => $department->hod->staff_number,
                     ]
                     : null,
                 'created_at' => $department->created_at,
@@ -73,6 +74,7 @@ class DepartmentController extends Controller
                 ? [
                     'id' => $department->hod->id,
                     'name' => $this->staffLabel($department->hod),
+                    'staff_number' => $department->hod->staff_number,
                 ]
                 : null,
         ]);

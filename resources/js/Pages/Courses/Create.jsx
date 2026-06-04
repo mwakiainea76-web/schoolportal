@@ -40,74 +40,6 @@ export default function Createcourse() {
                 <div className="bg-white rounded-lg border border-zinc-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden">
                     <form className="p-10 space-y-8" onSubmit={submit}>
                         <div className=" grid grid-cols-1 md:grid-cols-2  xl:grid-cols-3  gap-8">
-                            <div>
-                                <InputLabel
-                                    htmlFor="course_version_id"
-                                    value="Course Version"
-                                />
-                                <SearchSelect
-                                    routeName="course-versions.search"
-                                    defaultOptions={[]}
-                                    placeholder="Select course version..."
-                                    value={data.course_version_id}
-                                    preloadOptions
-                                    onChange={(version) =>
-                                        setData("course_version_id", version.id)
-                                    }
-                                    error={errors.course_version_id}
-                                />
-                                <InputError
-                                    message={errors.course_version_id}
-                                    className="mt-2"
-                                />
-                            </div>
-
-                            <div>
-                                <InputLabel
-                                    htmlFor="department_id"
-                                    value="Department"
-                                />
-                                <SearchSelect
-                                    routeName="departments.search"
-                                    defaultOptions={[]}
-                                    placeholder="Search Department..."
-                                    value={data.department_id}
-                                    preloadOptions
-                                    onChange={(dept) =>
-                                        setData("department_id", dept.id)
-                                    }
-                                    error={errors.department_id}
-                                />
-                                <InputError
-                                    message={errors.department_id}
-                                    className="mt-2"
-                                />
-                            </div>
-                            {/* CERTIFICATION LEVEL */}
-                            <div>
-                                <InputLabel
-                                    htmlFor="certification_level_id"
-                                    value="Certification Level"
-                                />
-                                <SearchSelect
-                                    routeName="certification-levels.search"
-                                    defaultOptions={[]}
-                                    placeholder="Type in certification name ..."
-                                    value={data.certification_level_id}
-                                    preloadOptions
-                                    onChange={(level) =>
-                                        setData(
-                                            "certification_level_id",
-                                            level.id,
-                                        )
-                                    }
-                                    error={errors.certification_level_id}
-                                />
-                                <InputError
-                                    message={errors.certification_level_id}
-                                    className="mt-2"
-                                />
-                            </div>
                             {/* CODE */}
                             <div>
                                 <InputLabel
@@ -176,9 +108,77 @@ export default function Createcourse() {
                                     className="mt-2"
                                 />
                             </div>
+                            <div>
+                                <InputLabel
+                                    htmlFor="course_version_id"
+                                    value="Course Version"
+                                />
+                                <SearchSelect
+                                    routeName="course-versions.search"
+                                    defaultOptions={[]}
+                                    placeholder="Select course version..."
+                                    value={data.course_version_id}
+                                    preloadOptions
+                                    onChange={(version) =>
+                                        setData("course_version_id", version.id)
+                                    }
+                                    error={errors.course_version_id}
+                                />
+                                <InputError
+                                    message={errors.course_version_id}
+                                    className="mt-2"
+                                />
+                            </div>
+
+                            <div>
+                                <InputLabel
+                                    htmlFor="department_id"
+                                    value="Department"
+                                />
+                                <SearchSelect
+                                    routeName="departments.search"
+                                    defaultOptions={[]}
+                                    placeholder="Search Department..."
+                                    value={data.department_id}
+                                    preloadOptions
+                                    onChange={(dept) =>
+                                        setData("department_id", dept.id)
+                                    }
+                                    error={errors.department_id}
+                                />
+                                <InputError
+                                    message={errors.department_id}
+                                    className="mt-2"
+                                />
+                            </div>
+                            {/* CERTIFICATION LEVEL */}
+                            <div>
+                                <InputLabel
+                                    htmlFor="certification_level_id"
+                                    value="Certification Level"
+                                />
+                                <SearchSelect
+                                    routeName="certification-levels.search"
+                                    defaultOptions={[]}
+                                    placeholder="Type in certification name ..."
+                                    value={data.certification_level_id}
+                                    preloadOptions
+                                    onChange={(level) =>
+                                        setData(
+                                            "certification_level_id",
+                                            level.id,
+                                        )
+                                    }
+                                    error={errors.certification_level_id}
+                                />
+                                <InputError
+                                    message={errors.certification_level_id}
+                                    className="mt-2"
+                                />
+                            </div>
                         </div>
 
-                         {/* DESCRIPTION */}
+                        {/* DESCRIPTION */}
                         <div className="space-y-2">
                             <label className="text-sm font-bold text-zinc-700 ml-1">
                                 Description

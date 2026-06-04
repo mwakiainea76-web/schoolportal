@@ -3,32 +3,16 @@ import { Head, Link, useForm } from "@inertiajs/react";
 import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import TextArea from "@/Components/TextArea";
-import SearchSelect from "@/Components/SearchSelect";
 import TextInput from "@/Components/TextInput";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 
 const Edit = ({ curriculum }) => {
     const c = curriculum;
-    const lifecycleText = c?.end_date
-        ? "Session is done"
-        : c?.start_date
-          ? "Session is ongoing"
-          : "Upcoming";
-    const isVersionStateLocked = Boolean(c?.end_date);
-    const versionStateOptions = [
-        { id: "start", name: "Start Version" },
-        { id: "end", name: "End Version" },
-    ];
 
     const { data, setData, put, processing, errors } = useForm({
-        course_id: c?.course_id || "",
-        exam_body_id:
-            c?.exam_body_id ||
-            c?.course?.certification_level?.exam_body_id ||
-            "",
+        exam_body_code: c?.exam_body?.code || "",
         name: c?.name || "",
         description: c?.description || "",
-        version_state: c?.is_active ? "start" : "end",
     });
 
     const submit = (e) => {
@@ -52,39 +36,23 @@ const Edit = ({ curriculum }) => {
                     onSubmit={submit}
                     className="bg-white p-10 space-y-6 border rounded-lg"
                 >
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <InputLabel value="Course" required />
-                            <SearchSelect
-                                routeName="courses.search"
-                                defaultOptions={[]}
-                                value={data.course_id}
-                                selectedLabel={
-                                    c?.course?.display_name ||
-                                    c?.course?.name
+                            <InputLabel value="Exam Body Code" required />
+                            <TextInput
+                                value={data.exam_body_code}
+                                onChange={(e) =>
+                                    setData("exam_body_code", e.target.value)
                                 }
-                                placeholder="Search course..."
-                                preloadOptions
-                                minSearchLength={3}
-                                onChange={(course) =>
-                                    setData({
-                                        ...data,
-                                        course_id: course.id,
-                                        exam_body_id:
-                                            course.exam_body_id ?? "",
-                                    })
-                                }
-                                error={errors.course_id}
+                                error={errors.exam_body_code}
+                                placeholder="Enter exact exam body code"
                             />
-                            <InputError message={errors.course_id} />
-                            <InputError message={errors.exam_body_id} />
+                            <InputError message={errors.exam_body_code} />
                         </div>
 
                         <div>
                             <InputLabel value="Course Version Name" required />
                             <TextInput
-                                className="cursor-not-allowed bg-gray-100"
-                                disabled
                                 value={data.name}
                                 onChange={(e) =>
                                     setData("name", e.target.value)
@@ -93,43 +61,10 @@ const Edit = ({ curriculum }) => {
                             />
                             <InputError message={errors.name} />
                         </div>
-
-                        <div>
-                            <InputLabel value="Version State" required />
-
-                            <SearchSelect
-                                routeName={null}
-                                defaultOptions={versionStateOptions}
-                                value={data.version_state}
-                                selectedLabel={
-                                    data.version_state === "start"
-                                        ? "Start Version"
-                                        : "End Version"
-                                }
-                                placeholder="Select version state"
-                                onChange={(item) =>
-                                    setData("version_state", item.id)
-                                }
-                                error={errors.version_state}
-                                disabled={isVersionStateLocked}
-                            />
-                            <InputError message={errors.version_state} />
-                            <p
-                                className={`mt-1 text-xs ${
-                                    isVersionStateLocked
-                                        ? "text-amber-600"
-                                        : "text-slate-500"
-                                }`}
-                            >
-                                {isVersionStateLocked
-                                    ? "This course version is closed and cannot be reactivated."
-                                    : lifecycleText}
-                            </p>
-                        </div>
                     </div>
 
                     <div>
-                        <InputLabel value="Description" />
+                        <InputLabel value="Brief Description" />
                         <TextArea
                             value={data.description}
                             onChange={(e) =>

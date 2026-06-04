@@ -38,6 +38,11 @@ class Student extends Model
         return $this->hasMany(CourseChangeLog::class);
     }
 
+    public function courseVersionTransfers()
+    {
+        return $this->hasMany(CourseVersionTransfer::class);
+    }
+
     public function enrollments()
     {
         return $this->hasManyThrough(
@@ -73,4 +78,3 @@ class Student extends Model
         return $this->hasMany(StudentMark::class);
     }
 }
-

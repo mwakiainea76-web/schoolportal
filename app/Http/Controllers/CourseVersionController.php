@@ -18,6 +18,7 @@ class CourseVersionController extends Controller
     public function index(CourseVersionFilter $filter)
     {
         $curricula = CourseVersion::query()
+            ->with('examBody:id,code,name')
             ->tap(fn ($query) => $filter->apply(
                 $query,
                 request()->only(['search', 'sort', 'direction'])
@@ -48,7 +49,7 @@ class CourseVersionController extends Controller
 
     public function show(CourseVersion $curriculum)
     {
-        $curriculum->load('course.certificationLevel.examBody');
+        $curriculum->load(['course.certificationLevel.examBody', 'examBody:id,code,name']);
 
         return inertia('CourseVersions/Edit', [
             'curriculum' => $curriculum,
@@ -57,7 +58,7 @@ class CourseVersionController extends Controller
 
     public function edit(CourseVersion $curriculum)
     {
-        $curriculum->load('course.certificationLevel.examBody');
+        $curriculum->load(['course.certificationLevel.examBody', 'examBody:id,code,name']);
 
         return inertia('CourseVersions/Edit', [
             'curriculum' => $curriculum,

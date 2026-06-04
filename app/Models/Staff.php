@@ -60,4 +60,9 @@ class Staff extends Model
     {
         return $this->hasMany(AcademicTimetable::class, 'created_by');
     }
+
+    public function approvedCourseVersionTransfers()
+    {
+        return $this->hasMany(CourseVersionTransfer::class, 'approved_by');
+    }
 }

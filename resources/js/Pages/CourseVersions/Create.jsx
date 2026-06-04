@@ -3,14 +3,14 @@ import { Head, Link, useForm } from "@inertiajs/react";
 import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import TextInput from "@/Components/TextInput";
-import SearchSelect from "@/Components/SearchSelect";
+import TextArea from "@/Components/TextArea";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 
 const Create = () => {
     const { data, setData, post, processing, errors } = useForm({
-        course_id: "",
-        exam_body_id: "",
+        exam_body_code: "",
         name: "",
+        description: "",
     });
 
     const submit = (e) => {
@@ -36,25 +36,16 @@ const Create = () => {
                 >
                     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                         <div>
-                            <InputLabel value="Course" required />
-                            <SearchSelect
-                                routeName="courses.search"
-                                defaultOptions={[]}
-                                placeholder="Search course..."
-                                value={data.course_id}
-                                preloadOptions
-                                minSearchLength={3}
-                                onChange={(course) =>
-                                    setData({
-                                        ...data,
-                                        course_id: course.id,
-                                        exam_body_id: course.exam_body_id ?? "",
-                                    })
+                            <InputLabel value="Exam Body Code" required />
+                            <TextInput
+                                value={data.exam_body_code}
+                                onChange={(e) =>
+                                    setData("exam_body_code", e.target.value)
                                 }
-                                error={errors.course_id}
+                                error={errors.exam_body_code}
+                                placeholder="Enter exact exam body code"
                             />
-                            <InputError message={errors.course_id} />
-                            <InputError message={errors.exam_body_id} />
+                            <InputError message={errors.exam_body_code} />
                         </div>
 
                         <div>
@@ -68,6 +59,18 @@ const Create = () => {
                             />
                             <InputError message={errors.name} />
                         </div>
+                    </div>
+
+                    <div>
+                        <InputLabel value="Brief Description" />
+                        <TextArea
+                            value={data.description}
+                            onChange={(e) =>
+                                setData("description", e.target.value)
+                            }
+                            error={errors.description}
+                        />
+                        <InputError message={errors.description} />
                     </div>
 
                     <div className="flex justify-between pt-4">

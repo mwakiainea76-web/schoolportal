@@ -4,24 +4,41 @@ namespace App\Services;
 
 use App\Models\Course;
 use App\Models\Department;
+use App\Models\Staff;
 
 class DepartmentService
 {
     public function create(array $data): Department
     {
-        return Department::create($data);
+        return Department::create([
+            'name' => $data['name'],
+            'description' => $data['description'] ?? null,
+            'code' => $data['code'],
+            'hod_staff_id' => $this->resolveHodStaffId($data['hod_staff_number'] ?? null),
+        ]);
     }
 
     public function update(Department $department, array $data): Department
     {
         $department->update([
             'name' => $data['name'],
-            'description' => $data['description'],
+            'description' => $data['description'] ?? null,
             'code' => $data['code'],
-            'hod_staff_id' => $data['hod_staff_id'] ?? null,
+            'hod_staff_id' => $this->resolveHodStaffId($data['hod_staff_number'] ?? null),
         ]);
 
         return $department;
+    }
+
+    protected function resolveHodStaffId(?string $staffNumber): ?int
+    {
+        if (! $staffNumber) {
+            return null;
+        }
+
+        return Staff::query()
+            ->where('staff_number', $staffNumber)
+            ->value('id');
     }
 
     public function delete(Department $department): array

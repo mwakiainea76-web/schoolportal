@@ -24,7 +24,16 @@ class UpdateDepartmentRequest extends FormRequest
                     ->ignore($this->route('department')?->id),
             ],
             'description' => ['nullable', 'string', 'max:255'],
-            'hod_staff_id' => ['nullable', 'exists:staffs,id'],
+            'hod_staff_number' => ['nullable', 'string', 'exists:staffs,staff_number'],
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $staffNumber = trim((string) $this->input('hod_staff_number', ''));
+
+        $this->merge([
+            'hod_staff_number' => $staffNumber === '' ? null : $staffNumber,
+        ]);
     }
 }

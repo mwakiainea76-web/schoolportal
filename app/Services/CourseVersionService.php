@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\ExamBody;
 use App\Models\CourseVersion;
 use Illuminate\Support\Facades\DB;
 
@@ -19,16 +20,14 @@ class CourseVersionService
         }
 
         DB::transaction(function () use ($data) {
-            $isActive = (bool) ($data['is_active'] ?? false);
-
             CourseVersion::create([
-                'course_id' => $data['course_id'],
-                'exam_body_id' => $data['exam_body_id'],
+                'course_id' => $data['course_id'] ?? null,
+                'exam_body_id' => $this->resolveExamBodyId($data['exam_body_code']),
                 'name' => $data['name'],
-                'is_active' => $isActive,
+                'is_active' => true,
                 'description' => $data['description'] ?? null,
-                'start_date' => $data['start_date'] ?? null,
-                'end_date' => $data['end_date'] ?? null,
+                'start_date' => now()->toDateString(),
+                'end_date' => null,
                 'created_by' => auth()->id(),
                 'updated_by' => auth()->id(),
             ]);
@@ -53,34 +52,15 @@ class CourseVersionService
             ];
         }
 
-        if ($curriculum->end_date && ($data['version_state'] ?? null) === 'start') {
-            return [
-                'status' => false,
-                'message' => 'This course version is closed and cannot be reactivated.',
-            ];
-        }
-
         DB::transaction(function () use ($curriculum, $data) {
-            $versionState = $data['version_state'] ?? ($curriculum->is_active ? 'start' : 'end');
-            $isActive = $versionState === 'start';
-            $startDate = $curriculum->start_date;
-            $endDate = $curriculum->end_date;
-
-            if ($isActive) {
-                $startDate = $startDate ?: now()->toDateString();
-                $endDate = null;
-            } else {
-                $endDate = now()->toDateString();
-            }
-
             $curriculum->update([
-                'course_id' => $data['course_id'],
-                'exam_body_id' => $data['exam_body_id'],
+                'course_id' => $data['course_id'] ?? $curriculum->course_id,
+                'exam_body_id' => $this->resolveExamBodyId($data['exam_body_code']),
                 'name' => $data['name'],
-                'is_active' => $isActive,
+                'is_active' => $curriculum->is_active,
                 'description' => $data['description'] ?? null,
-                'start_date' => $startDate,
-                'end_date' => $endDate,
+                'start_date' => $curriculum->start_date,
+                'end_date' => $curriculum->end_date,
                 'updated_by' => auth()->id(),
             ]);
         });
@@ -94,5 +74,12 @@ class CourseVersionService
     public function delete(CourseVersion $curriculum): void
     {
         $curriculum->delete();
+    }
+
+    protected function resolveExamBodyId(string $examBodyCode): ?int
+    {
+        return ExamBody::query()
+            ->where('code', $examBodyCode)
+            ->value('id');
     }
 }

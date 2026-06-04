@@ -86,4 +86,14 @@ class CourseVersionMapping extends Model
             ->withPivot('module_taught')
             ->withTimestamps();
     }
+
+    public function outgoingTransfers()
+    {
+        return $this->hasMany(CourseVersionTransfer::class, 'from_course_version_mapping_id');
+    }
+
+    public function incomingTransfers()
+    {
+        return $this->hasMany(CourseVersionTransfer::class, 'to_course_version_mapping_id');
+    }
 }

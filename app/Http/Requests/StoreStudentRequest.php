@@ -31,7 +31,11 @@ class StoreStudentRequest extends FormRequest
             'previous_school' => ['required', 'string', 'max:255'],
             'course_id' => ['required', 'exists:courses,id'],
             'exam_body_id' => ['required', 'exists:exam_bodies,id'],
-            'course_version_id' => ['required', 'exists:course_versions,id'],
+            'course_version_id' => [
+                'required',
+                Rule::exists('course_versions', 'id')
+                    ->where('exam_body_id', $this->input('exam_body_id')),
+            ],
             'course_curriculum_id' => [
                 'required',
                 Rule::exists('course_version_mappings', 'id')
@@ -39,7 +43,7 @@ class StoreStudentRequest extends FormRequest
                     ->where('course_version_id', $this->input('course_version_id')),
             ],
             'current_module' => ['required', 'string'],
-            'study_mode' => ['nullable', Rule::in(['full_time', 'part_time', 'online', 'distance'])],
+            'study_mode' => ['nullable', Rule::in(['fulltime', 'parttime'])],
             'fee_discount_percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
 
             // Medical

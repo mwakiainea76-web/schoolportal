@@ -6,6 +6,7 @@ use App\Models\CourseChangeLog;
 use App\Models\LoginAccountHistory;
 use App\Models\CourseEnrollment;
 use App\Models\CourseVersionMapping;
+use App\Models\CourseVersionTransfer;
 use App\Models\Student;
 use App\Models\User;
 use App\Support\RbacCache;
@@ -165,7 +166,17 @@ class StudentCourseChangeController extends Controller
 
             $newEnrollment = CourseEnrollment::create([
                 'student_id' => $student->id,
+                'course_id' => $newMapping->course_id,
+                'course_version_id' => $newMapping->course_version_id,
+                'exam_body_id' => $newMapping->course?->certificationLevel?->exam_body_id,
                 'course_version_mapping_id' => $newMapping->id,
+                'enrollment_date' => now()->toDateString(),
+                'intake_year' => now()->year,
+                'intake_period' => $this->intakePeriod(),
+                'expected_completion_date' => $newMapping->course?->duration_in_months
+                    ? now()->addMonthsNoOverflow((int) $newMapping->course->duration_in_months)->toDateString()
+                    : null,
+                'study_mode' => $oldEnrollment->study_mode ?: 'fulltime',
                 'status' => 'active',
             ]);
 
@@ -194,6 +205,15 @@ class StudentCourseChangeController extends Controller
                 'processed_by' => $request->user()?->id,
                 'changed_at' => now(),
                 'notes' => $validated['notes'] ?? null,
+            ]);
+
+            CourseVersionTransfer::create([
+                'student_id' => $student->id,
+                'from_course_version_mapping_id' => $oldEnrollment->course_version_mapping_id,
+                'to_course_version_mapping_id' => $newMapping->id,
+                'transfer_date' => now()->toDateString(),
+                'reason' => $validated['notes'] ?? null,
+                'approved_by' => $request->user()?->staff?->id,
             ]);
 
             LoginAccountHistory::create([
@@ -330,5 +350,16 @@ class StudentCourseChangeController extends Controller
         }
 
         return $email;
+    }
+
+    protected function intakePeriod(): string
+    {
+        $month = (int) now()->format('n');
+
+        return match (true) {
+            $month <= 4 => 'Jan',
+            $month <= 8 => 'May',
+            default => 'Sep',
+        };
     }
 }

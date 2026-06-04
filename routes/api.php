@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\FeeManagement\FeeComponentController;
 use App\Http\Controllers\Api\FeeManagement\FeePlanController;
 use App\Http\Controllers\Api\AcademicLookupController;
 use App\Http\Controllers\Api\PublicCourseController;
+use App\Http\Controllers\Api\StaffLookupController;
 use App\Http\Controllers\ReportingController;
 use Illuminate\Support\Facades\Route;
 
@@ -36,6 +37,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/academic-years/{id}/sessions/{sid}/unassigned-curricula', [FeeAssignmentController::class, 'unassignedCurricula']);
     Route::get('/academic-years/{id}/sessions/{sid}/unassigned-course-versions', [FeeAssignmentController::class, 'unassignedCurricula']);
 });
+
+Route::middleware(['web', 'auth', 'non_student'])
+    ->prefix('staffs')
+    ->name('api.staffs.')
+    ->group(function () {
+        Route::get('/hod-search', [StaffLookupController::class, 'hods'])->name('hod-search');
+    });
 
 Route::middleware(['web', 'auth', 'non_student'])
     ->prefix('lookups')

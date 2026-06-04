@@ -15,18 +15,24 @@ class StoreCourseVersionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'course_id' => ['required', 'exists:courses,id'],
-            'exam_body_id' => ['required', 'exists:exam_bodies,id'],
+            'course_id' => ['nullable', 'exists:courses,id'],
+            'exam_body_code' => ['required', 'string', 'exists:exam_bodies,code'],
             'name' => [
                 'required',
                 'string',
                 'max:255',
                 Rule::unique('course_versions', 'name'),
             ],
-            'is_active' => ['sometimes', 'boolean'],
             'description' => ['nullable', 'string'],
-            'start_date' => ['nullable', 'date'],
-            'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $examBodyCode = trim((string) $this->input('exam_body_code', ''));
+
+        $this->merge([
+            'exam_body_code' => $examBodyCode,
+        ]);
     }
 }
