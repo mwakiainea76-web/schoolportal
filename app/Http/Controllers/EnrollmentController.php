@@ -19,8 +19,8 @@ class EnrollmentController extends Controller
             ->apply(
                 Enrollment::with([
                     'student.user',
-                    'courseEnrollment.courseVersionMapping.course',
-                    'courseEnrollment.courseVersionMapping.courseVersion',
+                    'courseEnrollment.curriculumMapping.course',
+                    'courseEnrollment.curriculumMapping.curriculum',
                     'academicSession',
                 ]),
                 $request->all()

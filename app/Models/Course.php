@@ -34,31 +34,31 @@ class Course extends Model
         return $this->belongsTo(CertificationLevel::class);
     }
 
-    public function courseVersionMappings()
+    public function curriculumMappings()
     {
-        return $this->hasMany(CourseVersionMapping::class);
+        return $this->hasMany(CurriculumMapping::class);
     }
 
-    public function ownedCourseVersions()
+    public function ownedCurriculums()
     {
-        return $this->hasMany(CourseVersion::class);
+        return $this->hasMany(Curriculum::class);
     }
 
     public function curriculum()
     {
         return $this->hasOneThrough(
-            CourseVersion::class,
-            CourseVersionMapping::class,
+            Curriculum::class,
+            CurriculumMapping::class,
             'course_id',
             'id',
             'id',
-            'course_version_id'
-        )->where('course_version_mappings.is_active', true);
+            'curriculum_id'
+        )->where('curriculum_mappings.is_active', true);
     }
 
-    public function courseVersions()
+    public function curriculums()
     {
-        return $this->belongsToMany(CourseVersion::class, 'course_version_mappings')
+        return $this->belongsToMany(Curriculum::class, 'curriculum_mappings')
             ->withPivot(['is_active', 'description', 'created_by', 'updated_by'])
             ->withTimestamps();
     }

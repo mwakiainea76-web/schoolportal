@@ -16,7 +16,7 @@ export default function Index({
     );
 
     const filterForm = useForm({
-        course_version_unit_code: filters.course_version_unit_code || "",
+        curriculum_unit_code: filters.curriculum_unit_code || "",
         assessment_type: filters.assessment_type || "theory",
         assessment_number: filters.assessment_number || "1",
         module: filters.module || "",
@@ -41,8 +41,8 @@ export default function Index({
         router.get(
             route("academic.marks.index"),
             {
-                course_version_unit_code:
-                    filterForm.data.course_version_unit_code,
+                curriculum_unit_code:
+                    filterForm.data.curriculum_unit_code,
                 assessment_type: filterForm.data.assessment_type,
                 assessment_number: filterForm.data.assessment_number,
             },
@@ -56,8 +56,8 @@ export default function Index({
         router.get(
             route("academic.marks.index"),
             {
-                course_version_unit_code:
-                    filterForm.data.course_version_unit_code,
+                curriculum_unit_code:
+                    filterForm.data.curriculum_unit_code,
                 assessment_type: filterForm.data.assessment_type,
                 assessment_number: filterForm.data.assessment_number,
                 module: filterForm.data.module,
@@ -73,8 +73,8 @@ export default function Index({
         router.get(
             route("academic.marks.index"),
             {
-                course_version_unit_code:
-                    filterForm.data.course_version_unit_code,
+                curriculum_unit_code:
+                    filterForm.data.curriculum_unit_code,
                 assessment_type: filterForm.data.assessment_type,
                 assessment_number: filterForm.data.assessment_number,
                 module: filterForm.data.module,
@@ -106,8 +106,8 @@ export default function Index({
             route("academic.marks.store"),
             {
                 ...marksForm.data,
-                course_version_unit_code:
-                    filterForm.data.course_version_unit_code,
+                curriculum_unit_code:
+                    filterForm.data.curriculum_unit_code,
                 assessment_type: filterForm.data.assessment_type,
                 assessment_number: filterForm.data.assessment_number,
             },
@@ -131,7 +131,7 @@ export default function Index({
                         Marks Entry
                     </h1>
                     <p className="mt-2 max-w-3xl text-sm text-zinc-600">
-                        Enter the course version unit code, then fill
+                        Enter the curriculum unit code, then fill
                         registration numbers and marks manually.
                     </p>
                 </div>
@@ -154,15 +154,15 @@ export default function Index({
 
                     <div>
                         <InputLabel
-                            value="Course Version Unit Code"
+                            value="Curriculum Unit Code"
                             required
                         />
                         <input
                             type="text"
-                            value={filterForm.data.course_version_unit_code}
+                            value={filterForm.data.curriculum_unit_code}
                             onChange={(e) =>
                                 filterForm.setData(
-                                    "course_version_unit_code",
+                                    "curriculum_unit_code",
                                     e.target.value.toUpperCase(),
                                 )
                             }
@@ -171,7 +171,7 @@ export default function Index({
                         />
                         <InputError
                             message={
-                                filterForm.errors.course_version_unit_code
+                                filterForm.errors.curriculum_unit_code
                             }
                             className="mt-2"
                         />
@@ -184,13 +184,13 @@ export default function Index({
                                     {selected_unit.code} – {selected_unit.name}
                                 </span>
                             ) : (
-                                "Load a unit code to confirm the selected course version unit."
+                                "Load a unit code to confirm the selected curriculum unit."
                             )}
                         </div>
                         <button
                             type="submit"
                             disabled={
-                                !filterForm.data.course_version_unit_code
+                                !filterForm.data.curriculum_unit_code
                             }
                             className="rounded-xl bg-emerald-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
                         >
@@ -288,8 +288,8 @@ export default function Index({
                         {/* Hidden fields carry filter state to the POST */}
                         <input
                             type="hidden"
-                            value={filterForm.data.course_version_unit_code}
-                            name="course_version_unit_code"
+                            value={filterForm.data.curriculum_unit_code}
+                            name="curriculum_unit_code"
                         />
                         <input
                             type="hidden"
@@ -444,9 +444,9 @@ export default function Index({
                                         router.get(
                                             route("academic.marks.index"),
                                             {
-                                                course_version_unit_code:
+                                                curriculum_unit_code:
                                                     filterForm.data
-                                                        .course_version_unit_code,
+                                                        .curriculum_unit_code,
                                                 assessment_type:
                                                     filterForm.data
                                                         .assessment_type,

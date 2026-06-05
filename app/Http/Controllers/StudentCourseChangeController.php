@@ -5,8 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\CourseChangeLog;
 use App\Models\LoginAccountHistory;
 use App\Models\CourseEnrollment;
-use App\Models\CourseVersionMapping;
-use App\Models\CourseVersionTransfer;
+use App\Models\CurriculumMapping;
+use App\Models\CurriculumTransfer;
 use App\Models\Student;
 use App\Models\User;
 use App\Support\RbacCache;
@@ -42,7 +42,7 @@ class StudentCourseChangeController extends Controller
             ],
             'student' => $studentDetails,
             'lookupError' => $lookupError,
-            'courseCurricula' => $this->activeCourseCurricula(),
+            'curriculumMappings' => $this->activeCourseCurricula(),
             'latestTransfer' => session('latestTransfer'),
         ]);
     }
@@ -51,7 +51,7 @@ class StudentCourseChangeController extends Controller
     {
         $validated = $request->validate([
             'registration_number' => ['required', 'string', 'max:100'],
-            'new_course_version_mapping_id' => ['required', 'integer', 'exists:course_version_mappings,id'],
+            'new_curriculum_mapping_id' => ['required', 'integer', 'exists:curriculum_mappings,id'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
 
@@ -73,7 +73,7 @@ class StudentCourseChangeController extends Controller
             $oldEnrollment = CourseEnrollment::query()
                 ->where('student_id', $student->id)
                 ->where('status', 'active')
-                ->with(['courseVersionMapping.course.certificationLevel', 'courseVersionMapping.courseVersion'])
+                ->with(['curriculumMapping.course.certificationLevel', 'curriculumMapping.curriculum'])
                 ->lockForUpdate()
                 ->first();
 
@@ -96,20 +96,20 @@ class StudentCourseChangeController extends Controller
                 ]);
             }
 
-            $newMapping = CourseVersionMapping::query()
+            $newMapping = CurriculumMapping::query()
                 ->active()
-                ->with(['course.certificationLevel', 'courseVersion'])
-                ->find($validated['new_course_version_mapping_id']);
+                ->with(['course.certificationLevel', 'curriculum'])
+                ->find($validated['new_curriculum_mapping_id']);
 
             if (! $newMapping) {
                 throw ValidationException::withMessages([
-                    'new_course_version_mapping_id' => 'The selected course is not active.',
+                    'new_curriculum_mapping_id' => 'The selected course is not active.',
                 ]);
             }
 
-            if ((int) $oldEnrollment->course_version_mapping_id === (int) $newMapping->id) {
+            if ((int) $oldEnrollment->curriculum_mapping_id === (int) $newMapping->id) {
                 throw ValidationException::withMessages([
-                    'new_course_version_mapping_id' => 'New course must differ from current course.',
+                    'new_curriculum_mapping_id' => 'New course must differ from current course.',
                 ]);
             }
 
@@ -167,9 +167,9 @@ class StudentCourseChangeController extends Controller
             $newEnrollment = CourseEnrollment::create([
                 'student_id' => $student->id,
                 'course_id' => $newMapping->course_id,
-                'course_version_id' => $newMapping->course_version_id,
+                'curriculum_id' => $newMapping->curriculum_id,
                 'exam_body_id' => $newMapping->course?->certificationLevel?->exam_body_id,
-                'course_version_mapping_id' => $newMapping->id,
+                'curriculum_mapping_id' => $newMapping->id,
                 'enrollment_date' => now()->toDateString(),
                 'intake_year' => now()->year,
                 'intake_period' => $this->intakePeriod(),
@@ -196,8 +196,8 @@ class StudentCourseChangeController extends Controller
                 'student_id' => $student->id,
                 'old_course_enrollment_id' => $oldEnrollment->id,
                 'new_course_enrollment_id' => $newEnrollment->id,
-                'old_course_version_mapping_id' => $oldEnrollment->course_version_mapping_id,
-                'new_course_version_mapping_id' => $newMapping->id,
+                'old_curriculum_mapping_id' => $oldEnrollment->curriculum_mapping_id,
+                'new_curriculum_mapping_id' => $newMapping->id,
                 'old_registration_number' => $oldRegistrationNumber,
                 'new_registration_number' => $newRegistrationNumber,
                 'old_user_id' => $oldUser->id,
@@ -207,10 +207,10 @@ class StudentCourseChangeController extends Controller
                 'notes' => $validated['notes'] ?? null,
             ]);
 
-            CourseVersionTransfer::create([
+            CurriculumTransfer::create([
                 'student_id' => $student->id,
-                'from_course_version_mapping_id' => $oldEnrollment->course_version_mapping_id,
-                'to_course_version_mapping_id' => $newMapping->id,
+                'from_curriculum_mapping_id' => $oldEnrollment->curriculum_mapping_id,
+                'to_curriculum_mapping_id' => $newMapping->id,
                 'transfer_date' => now()->toDateString(),
                 'reason' => $validated['notes'] ?? null,
                 'approved_by' => $request->user()?->staff?->id,
@@ -247,7 +247,7 @@ class StudentCourseChangeController extends Controller
             return [
                 'old_registration_number' => $oldRegistrationNumber,
                 'new_registration_number' => $newRegistrationNumber,
-                'old_course' => $this->courseName($oldEnrollment->courseVersionMapping),
+                'old_course' => $this->courseName($oldEnrollment->curriculumMapping),
                 'new_course' => $this->courseName($newMapping),
                 'username' => $newRegistrationNumber,
                 'email' => $generatedEmail,
@@ -267,21 +267,21 @@ class StudentCourseChangeController extends Controller
             ->where('student_status', 'active')
             ->with([
                 'user:id,first_name,last_name,email,login_id,is_active',
-                'courseEnrollment.courseVersionMapping.course.certificationLevel',
-                'courseEnrollment.courseVersionMapping.courseVersion',
+                'courseEnrollment.curriculumMapping.course.certificationLevel',
+                'courseEnrollment.curriculumMapping.curriculum',
             ])
             ->first();
     }
 
     protected function studentPayload(Student $student): array
     {
-        $mapping = $student->courseEnrollment?->courseVersionMapping;
+        $mapping = $student->courseEnrollment?->curriculumMapping;
 
         return [
             'id' => $student->id,
             'full_name' => trim(($student->user?->first_name ?? '').' '.($student->user?->last_name ?? '')),
             'current_course' => $this->courseName($mapping),
-            'current_course_version_mapping_id' => $mapping?->id,
+            'current_curriculum_mapping_id' => $mapping?->id,
             'current_admission_number' => $student->registration_number,
             'current_enrolment_status' => $student->courseEnrollment?->status ?? 'missing',
             'student_status' => $student->student_status,
@@ -290,24 +290,24 @@ class StudentCourseChangeController extends Controller
 
     protected function activeCourseCurricula()
     {
-        return CourseVersionMapping::query()
+        return CurriculumMapping::query()
             ->active()
-            ->with(['course.certificationLevel', 'courseVersion'])
+            ->with(['course.certificationLevel', 'curriculum'])
             ->orderByDesc('id')
             ->get()
-            ->map(fn (CourseVersionMapping $mapping) => [
+            ->map(fn (CurriculumMapping $mapping) => [
                 'id' => $mapping->id,
                 'name' => $this->courseName($mapping),
             ]);
     }
 
-    protected function courseName(?CourseVersionMapping $mapping): string
+    protected function courseName(?CurriculumMapping $mapping): string
     {
         if (! $mapping) {
             return 'No course assigned';
         }
 
-        return trim(($mapping->courseVersion?->name ?? 'Course Version').' - '.($mapping->course?->display_name ?? $mapping->course?->name ?? 'Course'), ' -');
+        return trim(($mapping->curriculum?->name ?? 'Curriculum').' - '.($mapping->course?->display_name ?? $mapping->course?->name ?? 'Course'), ' -');
     }
 
     protected function generateRegistrationNumber(): string

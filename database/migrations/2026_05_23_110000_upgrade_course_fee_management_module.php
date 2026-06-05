@@ -40,7 +40,9 @@ return new class extends Migration
             $table->softDeletes();
         });
 
-        DB::statement('ALTER TABLE fee_components ADD CONSTRAINT fee_components_amount_positive CHECK (amount > 0)');
+        if (DB::connection()->getDriverName() !== 'sqlite') {
+            DB::statement('ALTER TABLE fee_components ADD CONSTRAINT fee_components_amount_positive CHECK (amount > 0)');
+        }
     }
 
     private function createFeePlanAssignmentsTable(): void
@@ -55,7 +57,7 @@ return new class extends Migration
                 ->constrained('fee_plans')
                 ->cascadeOnUpdate()
                 ->restrictOnDelete();
-            $table->foreignId('course_version_id');
+            $table->foreignId('curriculum_id');
             $table->foreignId('academic_year_id')
                 ->constrained('academic_years')
                 ->cascadeOnUpdate()
@@ -83,9 +85,9 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            $table->foreign('course_version_id')
+            $table->foreign('curriculum_id')
                 ->references('id')
-                ->on('course_versions')
+                ->on('curricula')
                 ->cascadeOnUpdate()
                 ->restrictOnDelete();
         });
@@ -97,6 +99,6 @@ return new class extends Migration
                 ->nullOnDelete();
         });
 
-        DB::statement('CREATE UNIQUE INDEX fee_plan_assignments_active_unique ON fee_plan_assignments (course_version_id, academic_year_id, session_id) WHERE status = \'active\' AND deleted_at IS NULL');
+        DB::statement('CREATE UNIQUE INDEX fee_plan_assignments_active_unique ON fee_plan_assignments (curriculum_id, academic_year_id, session_id) WHERE status = \'active\' AND deleted_at IS NULL');
     }
 };

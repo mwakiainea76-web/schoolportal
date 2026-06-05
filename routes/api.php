@@ -31,11 +31,11 @@ Route::middleware('auth')->group(function () {
         Route::get('/{id}/reuse-preview', [FeePlanController::class, 'reusePreview']);
     });
 
-    Route::get('/course-versions/{id}/assignments', [FeeAssignmentController::class, 'curriculumAssignments']);
-    Route::get('/course-versions/{id}/assignments', [FeeAssignmentController::class, 'curriculumAssignments']);
+    Route::get('/curriculums/{id}/assignments', [FeeAssignmentController::class, 'curriculumAssignments']);
+    Route::get('/curriculums/{id}/assignments', [FeeAssignmentController::class, 'curriculumAssignments']);
     Route::patch('/assignments/{id}/cancel', [FeeAssignmentController::class, 'cancel']);
     Route::get('/academic-years/{id}/sessions/{sid}/unassigned-curricula', [FeeAssignmentController::class, 'unassignedCurricula']);
-    Route::get('/academic-years/{id}/sessions/{sid}/unassigned-course-versions', [FeeAssignmentController::class, 'unassignedCurricula']);
+    Route::get('/academic-years/{id}/sessions/{sid}/unassigned-curriculums', [FeeAssignmentController::class, 'unassignedCurricula']);
 });
 
 Route::middleware(['web', 'auth', 'non_student'])
@@ -51,8 +51,8 @@ Route::middleware(['web', 'auth', 'non_student'])
     ->group(function () {
         Route::get('/departments', [AcademicLookupController::class, 'departments'])->name('departments');
         Route::get('/courses', [AcademicLookupController::class, 'courses'])->name('courses');
-        Route::get('/course-versions', [AcademicLookupController::class, 'courseVersions'])->name('course-versions');
-        Route::get('/course-version-mappings', [AcademicLookupController::class, 'courseVersionMappings'])->name('course-version-mappings');
+        Route::get('/curriculums', [AcademicLookupController::class, 'curriculums'])->name('curriculums');
+        Route::get('/curriculum-mappings', [AcademicLookupController::class, 'curriculumMappings'])->name('curriculum-mappings');
         Route::get('/units', [AcademicLookupController::class, 'units'])->name('units');
         Route::get('/exam-bodies', [AcademicLookupController::class, 'examBodies'])->name('exam-bodies');
         Route::get('/certification-levels', [AcademicLookupController::class, 'certificationLevels'])->name('certification-levels');

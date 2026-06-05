@@ -13,8 +13,8 @@ return new class extends Migration
             $table->foreignId('student_id')->constrained('students')->cascadeOnUpdate()->cascadeOnDelete();
             $table->foreignId('old_course_enrollment_id')->nullable()->constrained('course_enrollments')->nullOnDelete();
             $table->foreignId('new_course_enrollment_id')->nullable()->constrained('course_enrollments')->nullOnDelete();
-            $table->foreignId('old_course_version_mapping_id')->constrained('course_version_mappings')->cascadeOnUpdate()->restrictOnDelete();
-            $table->foreignId('new_course_version_mapping_id')->constrained('course_version_mappings')->cascadeOnUpdate()->restrictOnDelete();
+            $table->foreignId('old_curriculum_mapping_id')->constrained('curriculum_mappings')->cascadeOnUpdate()->restrictOnDelete();
+            $table->foreignId('new_curriculum_mapping_id')->constrained('curriculum_mappings')->cascadeOnUpdate()->restrictOnDelete();
             $table->string('old_registration_number');
             $table->string('new_registration_number');
             $table->foreignId('old_user_id')->nullable()->constrained('users')->nullOnDelete();

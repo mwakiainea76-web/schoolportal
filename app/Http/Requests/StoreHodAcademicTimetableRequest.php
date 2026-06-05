@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use App\Models\AcademicTimetable;
 use App\Models\LectureRoom;
-use App\Models\CourseVersionUnit;
+use App\Models\CurriculumUnit;
 use App\Models\Staff;
 
 class StoreHodAcademicTimetableRequest extends StoreAcademicTimetableRequest
@@ -23,7 +23,7 @@ class StoreHodAcademicTimetableRequest extends StoreAcademicTimetableRequest
     public function rules(): array
     {
         return array_merge(parent::rules(), [
-            'course_version_mapping_id' => ['required', 'exists:course_version_mappings,id'],
+            'curriculum_mapping_id' => ['required', 'exists:curriculum_mappings,id'],
             'module_number' => ['required', 'integer', 'min:1'],
         ]);
     }
@@ -43,9 +43,9 @@ class StoreHodAcademicTimetableRequest extends StoreAcademicTimetableRequest
             $trainerId = (int) $this->integer('trainer_staff_id');
             $lectureRoomId = (int) $this->integer('lecture_room_id');
             $academicSessionId = $this->resolveCurrentAcademicSessionId();
-            $courseVersionMappingId = (int) $this->integer('course_version_mapping_id');
+            $curriculumMappingId = (int) $this->integer('curriculum_mapping_id');
             $moduleNumber = (int) $this->integer('module_number');
-            $courseVersionUnitIds = collect($this->input('course_version_unit_ids', []))
+            $curriculumUnitIds = collect($this->input('curriculum_unit_ids', []))
                 ->map(fn ($id) => (int) $id)
                 ->filter()
                 ->values();
@@ -76,10 +76,10 @@ class StoreHodAcademicTimetableRequest extends StoreAcademicTimetableRequest
                 $validator->errors()->add('lecture_room_id', 'Selected lecture room must belong to your department.');
             }
 
-            $courseVersionUnits = CourseVersionUnit::query()
+            $curriculumUnits = CurriculumUnit::query()
                 ->with([
-                    'courseVersionMapping.course:id,department_id',
-                    'courseVersionMapping.courseVersion:id,is_active',
+                    'curriculumMapping.course:id,department_id',
+                    'curriculumMapping.curriculum:id,is_active',
                 ])
                 ->withCount([
                     'timetableSessions as scoped_timetable_sessions_count' => function ($query) use ($academicSessionId) {
@@ -88,37 +88,37 @@ class StoreHodAcademicTimetableRequest extends StoreAcademicTimetableRequest
                         }
                     },
                 ])
-                ->whereIn('id', $courseVersionUnitIds)
+                ->whereIn('id', $curriculumUnitIds)
                 ->get()
                 ->keyBy('id');
 
-            foreach ($courseVersionUnitIds as $courseVersionUnitId) {
-                $courseVersionUnit = $courseVersionUnits->get($courseVersionUnitId);
+            foreach ($curriculumUnitIds as $curriculumUnitId) {
+                $curriculumUnit = $curriculumUnits->get($curriculumUnitId);
 
-                if (! $courseVersionUnit) {
-                    $validator->errors()->add('course_version_unit_ids', 'One or more selected curriculum units could not be found.');
+                if (! $curriculumUnit) {
+                    $validator->errors()->add('curriculum_unit_ids', 'One or more selected curriculum units could not be found.');
 
                     break;
                 }
 
-                $mapping = $courseVersionUnit->courseVersionMapping;
+                $mapping = $curriculumUnit->curriculumMapping;
                 $course = $mapping?->course;
-                $courseVersion = $mapping?->courseVersion;
+                $curriculum = $mapping?->curriculum;
 
                 if (
                     (int) ($course?->department_id ?? 0) !== $staffDepartmentId
-                    || (int) ($mapping?->id ?? 0) !== $courseVersionMappingId
-                    || (int) ($courseVersionUnit->module_taught ?? 0) !== $moduleNumber
+                    || (int) ($mapping?->id ?? 0) !== $curriculumMappingId
+                    || (int) ($curriculumUnit->module_taught ?? 0) !== $moduleNumber
                     || ! $mapping?->is_active
-                    || ! $courseVersion?->is_active
+                    || ! $curriculum?->is_active
                 ) {
-                    $validator->errors()->add('course_version_unit_ids', 'Selected curriculum units must match your department, chosen versioned course, and selected module.');
+                    $validator->errors()->add('curriculum_unit_ids', 'Selected curriculum units must match your department, chosen versioned course, and selected module.');
 
                     break;
                 }
 
-                if ((int) $courseVersionUnit->scoped_timetable_sessions_count > 0) {
-                    $validator->errors()->add('course_version_unit_ids', 'One or more selected curriculum units have already been assigned to a timetable.');
+                if ((int) $curriculumUnit->scoped_timetable_sessions_count > 0) {
+                    $validator->errors()->add('curriculum_unit_ids', 'One or more selected curriculum units have already been assigned to a timetable.');
 
                     break;
                 }
@@ -145,9 +145,9 @@ class StoreHodAcademicTimetableRequest extends StoreAcademicTimetableRequest
 
                 $classOverlap = $this->overlappingConflictsFor($existingConflicts, $session)
                     ->filter(fn (AcademicTimetable $timetable) => (int) $timetable->department_id === $departmentId)
-                    ->contains(function (AcademicTimetable $timetable) use ($courseVersionMappingId, $moduleNumber) {
-                        return $timetable->courseVersionUnits->contains(function ($unit) use ($courseVersionMappingId, $moduleNumber) {
-                            return (int) $unit->course_version_mapping_id === $courseVersionMappingId
+                    ->contains(function (AcademicTimetable $timetable) use ($curriculumMappingId, $moduleNumber) {
+                        return $timetable->curriculumUnits->contains(function ($unit) use ($curriculumMappingId, $moduleNumber) {
+                            return (int) $unit->curriculum_mapping_id === $curriculumMappingId
                                 && (int) $unit->module_taught === $moduleNumber;
                         });
                     });

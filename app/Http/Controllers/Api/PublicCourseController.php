@@ -3,29 +3,29 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\CourseVersion;
-use App\Models\CourseVersionMapping;
+use App\Models\Curriculum;
+use App\Models\CurriculumMapping;
 use App\Support\ApiResponse;
 
 class PublicCourseController extends Controller
 {
     public function index()
     {
-        $activeCourseVersion = CourseVersion::query()
+        $activeCurriculum = Curriculum::query()
             ->active()
             ->first(['id', 'name', 'start_date', 'end_date']);
 
-        $courses = CourseVersionMapping::query()
+        $courses = CurriculumMapping::query()
             ->active()
-            ->whereHas('courseVersion', fn ($query) => $query->active())
+            ->whereHas('curriculum', fn ($query) => $query->active())
             ->with([
                 'course:id,code,name,certification_level_id',
                 'course.certificationLevel:id,name,duration_in_months',
-                'courseVersion:id,name',
+                'curriculum:id,name',
             ])
             ->orderBy('course_id')
             ->get()
-            ->map(function (CourseVersionMapping $mapping) {
+            ->map(function (CurriculumMapping $mapping) {
                 $course = $mapping->course;
                 $certificationLevel = $course?->certificationLevel?->name;
 
@@ -34,7 +34,7 @@ class PublicCourseController extends Controller
                     'code' => $course?->code,
                     'course_name' => $course?->name,
                     'certification_level' => $certificationLevel,
-                    'course_version_name' => $mapping->courseVersion?->name,
+                    'curriculum_name' => $mapping->curriculum?->name,
                     'duration_in_months' => $course?->certificationLevel?->duration_in_months,
                 ];
             })

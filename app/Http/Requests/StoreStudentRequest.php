@@ -31,16 +31,16 @@ class StoreStudentRequest extends FormRequest
             'previous_school' => ['required', 'string', 'max:255'],
             'course_id' => ['required', 'exists:courses,id'],
             'exam_body_id' => ['required', 'exists:exam_bodies,id'],
-            'course_version_id' => [
+            'curriculum_id' => [
                 'required',
-                Rule::exists('course_versions', 'id')
+                Rule::exists('curricula', 'id')
                     ->where('exam_body_id', $this->input('exam_body_id')),
             ],
-            'course_curriculum_id' => [
+            'curriculum_mapping_id' => [
                 'required',
-                Rule::exists('course_version_mappings', 'id')
+                Rule::exists('curriculum_mappings', 'id')
                     ->where('course_id', $this->input('course_id'))
-                    ->where('course_version_id', $this->input('course_version_id')),
+                    ->where('curriculum_id', $this->input('curriculum_id')),
             ],
             'current_module' => ['required', 'string'],
             'study_mode' => ['nullable', Rule::in(['fulltime', 'parttime'])],

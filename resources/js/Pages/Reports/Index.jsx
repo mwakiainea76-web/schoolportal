@@ -2751,7 +2751,7 @@ export default function ReportsIndex({
                                         Assignment Count
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
-                                        CourseVersion Count
+                                        Curriculum Count
                                     </th>
                                 </tr>
                             </thead>

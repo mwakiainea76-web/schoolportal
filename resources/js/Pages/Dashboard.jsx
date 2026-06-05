@@ -370,8 +370,8 @@ function StudentDashboard({ dashboard, fullName }) {
 
                         <div className="mt-3 rounded-2xl bg-[#F8F9FA] px-4 py-3 text-xs text-zinc-500">
                             {dashboard.all_units_count
-                                ? `${dashboard.all_units_count} total unit(s) are mapped to your course version.`
-                                : "Your full unit list will appear once units are mapped to your course version."}
+                                ? `${dashboard.all_units_count} total unit(s) are mapped to your curriculum.`
+                                : "Your full unit list will appear once units are mapped to your curriculum."}
                         </div>
                     </div>
                 </div>
@@ -389,7 +389,7 @@ function StudentDashboard({ dashboard, fullName }) {
 
                         <div className="mt-6 space-y-4 text-sm">
                             <div className="rounded-2xl bg-zinc-50 px-4 py-3">
-                                <p className="text-zinc-500">Course Version</p>
+                                <p className="text-zinc-500">Curriculum</p>
                                 <p className="mt-1 font-semibold text-zinc-900">
                                     {dashboard.program?.version ??
                                         "Not assigned"}
@@ -617,7 +617,7 @@ function StaffDashboard({ dashboard }) {
             tone: "bg-emerald-50 text-emerald-600",
         },
         {
-            label: "Course Versions",
+            label: "Curriculums",
             value: dashboard.stats?.[1]?.value ?? 0,
             icon: GraduationCap,
             tone: "bg-sky-50 text-sky-600",
@@ -799,7 +799,7 @@ function StaffDashboard({ dashboard }) {
                 Academic Overview
             </h1>
             <p className="mt-1 text-zinc-500">
-                Manage courses, course versions, and institutional scheduling
+                Manage courses, curriculums, and institutional scheduling
                 from one place.
             </p>
 

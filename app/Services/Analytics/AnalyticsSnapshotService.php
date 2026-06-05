@@ -38,7 +38,7 @@ class AnalyticsSnapshotService
             'academic_session_id' => $activeSession?->id,
             'department_id' => null,
             'course_id' => null,
-            'course_version_id' => null,
+            'curriculum_id' => null,
             'snapshot_generated_at' => $generatedAt,
             'created_at' => $generatedAt,
             'updated_at' => $generatedAt,
@@ -111,7 +111,7 @@ class AnalyticsSnapshotService
                 'academic_session_id',
                 'department_id',
                 'course_id',
-                'course_version_id',
+                'curriculum_id',
                 'metric_key',
             ],
             ['metric_value', 'snapshot_generated_at', 'updated_at']

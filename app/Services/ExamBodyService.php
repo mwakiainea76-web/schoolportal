@@ -2,13 +2,35 @@
 
 namespace App\Services;
 
+use App\Models\Curriculum;
 use App\Models\ExamBody;
+use Illuminate\Support\Facades\DB;
 
 class ExamBodyService
 {
     public function create(array $data): ExamBody
     {
-        return ExamBody::create($data);
+        return DB::transaction(function () use ($data) {
+            $examBody = ExamBody::create($data);
+
+            Curriculum::firstOrCreate(
+                [
+                    'exam_body_id' => $examBody->id,
+                    'name' => trim($examBody->code.' Default'),
+                ],
+                [
+                    'course_id' => null,
+                    'is_active' => true,
+                    'description' => 'Default curriculum for '.$examBody->name,
+                    'start_date' => now()->toDateString(),
+                    'end_date' => null,
+                    'created_by' => auth()->id(),
+                    'updated_by' => auth()->id(),
+                ]
+            );
+
+            return $examBody;
+        });
     }
 
     public function update(ExamBody $examBody, array $data): ExamBody

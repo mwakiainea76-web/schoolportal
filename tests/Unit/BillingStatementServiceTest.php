@@ -12,8 +12,8 @@ use App\Models\Payment;
 use App\Models\PaymentAllocation;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
-use App\Models\CourseVersion;
-use App\Models\CourseVersionMapping;
+use App\Models\Curriculum;
+use App\Models\CurriculumMapping;
 use App\Models\Student;
 use App\Models\StudentInvoice;
 use App\Models\User;
@@ -293,13 +293,13 @@ class BillingStatementServiceTest extends TestCase
     private function makeCourseEnrollment(): CourseEnrollment
     {
         $program = new Course(['name' => 'Business Management']);
-        $courseVersion = new CourseVersion(['name' => 'May 2026 Cohort']);
-        $mapping = new CourseVersionMapping();
+        $curriculum = new Curriculum(['name' => 'May 2026 Cohort']);
+        $mapping = new CurriculumMapping();
         $mapping->setRelation('program', $program);
-        $mapping->setRelation('courseVersion', $courseVersion);
+        $mapping->setRelation('curriculum', $curriculum);
 
         $courseEnrollment = new CourseEnrollment();
-        $courseEnrollment->setRelation('courseVersionMapping', $mapping);
+        $courseEnrollment->setRelation('curriculumMapping', $mapping);
 
         return $courseEnrollment;
     }

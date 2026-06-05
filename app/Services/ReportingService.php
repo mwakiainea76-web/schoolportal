@@ -56,8 +56,8 @@ class ReportingService
         )
         ->join('academic_session_enrollments', 'student_invoices.enrollment_id', '=', 'academic_session_enrollments.id')
         ->join('course_enrollments', 'academic_session_enrollments.course_enrollment_id', '=', 'course_enrollments.id')
-        ->join('course_version_mappings', 'course_enrollments.course_version_mapping_id', '=', 'course_version_mappings.id')
-        ->join('courses', 'course_version_mappings.course_id', '=', 'courses.id')
+        ->join('curriculum_mappings', 'course_enrollments.curriculum_mapping_id', '=', 'curriculum_mappings.id')
+        ->join('courses', 'curriculum_mappings.course_id', '=', 'courses.id')
         ->join('departments', 'courses.department_id', '=', 'departments.id')
         ->whereIn('student_invoices.status', ['issued', 'partial', 'paid'])
         ->where('student_invoices.approval_status', '!=', 'rejected')
@@ -115,7 +115,7 @@ class ReportingService
             'fee_assignments.year_of_study',
             'fee_assignments.session_number',
             DB::raw('COUNT(fee_assignments.id) as assignment_count'),
-            DB::raw('COUNT(DISTINCT fee_assignments.course_version_mapping_id) as curriculum_count')
+            DB::raw('COUNT(DISTINCT fee_assignments.curriculum_mapping_id) as curriculum_count')
         )
         ->join('fee_plans', 'fee_assignments.fee_plan_id', '=', 'fee_plans.id')
         ->where('fee_assignments.approval_status', '!=', 'rejected')

@@ -13,13 +13,13 @@ return new class extends Migration
             $table->foreignId('academic_session_enrollment_id')
                 ->constrained('academic_session_enrollments')
                 ->cascadeOnDelete();
-            $table->foreignId('course_version_unit_id')
-                ->constrained('course_version_units')
+            $table->foreignId('curriculum_unit_id')
+                ->constrained('curriculum_units')
                 ->cascadeOnDelete();
             $table->timestamps();
 
             $table->unique(
-                ['academic_session_enrollment_id', 'course_version_unit_id'],
+                ['academic_session_enrollment_id', 'curriculum_unit_id'],
                 'student_unit_registration_unique'
             );
         });

@@ -38,11 +38,11 @@ export default function Show({ invoice, sessionSummary }) {
     }`.trim();
 
     const course =
-        invoice.enrollment?.course_enrollment?.course_version_mapping?.course
+        invoice.enrollment?.course_enrollment?.curriculum_mapping?.course
             ?.name ?? "Not linked";
-    const courseVersion =
-        invoice.enrollment?.course_enrollment?.course_version_mapping
-            ?.course_version?.name ?? "Not linked";
+    const curriculum =
+        invoice.enrollment?.course_enrollment?.curriculum_mapping
+            ?.curriculum?.name ?? "Not linked";
     const session =
         invoice.enrollment?.academic_session?.display_name ??
         invoice.academic_session?.display_name ??
@@ -110,7 +110,7 @@ export default function Show({ invoice, sessionSummary }) {
                             </h2>
                             <p className="mt-2 text-sm text-slate-300">
                                 {invoice.student?.registration_number ?? "N/A"} |{" "}
-                                {course} | {courseVersion}
+                                {course} | {curriculum}
                             </p>
                             <p className="mt-2 text-sm text-slate-300">
                                 {session}
@@ -200,8 +200,8 @@ export default function Show({ invoice, sessionSummary }) {
                             />
                             <InfoCard label="Course" value={course} />
                             <InfoCard
-                                label="Course Version"
-                                value={courseVersion}
+                                label="Curriculum"
+                                value={curriculum}
                             />
                             <InfoCard label="Session" value={session} />
                             <InfoCard

@@ -2,11 +2,11 @@
 
 namespace App\Providers;
 
-use App\Repositories\FeeManagement\Contracts\CourseVersionRepositoryInterface;
+use App\Repositories\FeeManagement\Contracts\CurriculumRepositoryInterface;
 use App\Repositories\FeeManagement\Contracts\FeeComponentRepositoryInterface;
 use App\Repositories\FeeManagement\Contracts\FeePlanAssignmentRepositoryInterface;
 use App\Repositories\FeeManagement\Contracts\FeePlanRepositoryInterface;
-use App\Repositories\FeeManagement\Eloquent\EloquentCourseVersionRepository;
+use App\Repositories\FeeManagement\Eloquent\EloquentCurriculumRepository;
 use App\Repositories\FeeManagement\Eloquent\EloquentFeeComponentRepository;
 use App\Repositories\FeeManagement\Eloquent\EloquentFeePlanAssignmentRepository;
 use App\Repositories\FeeManagement\Eloquent\EloquentFeePlanRepository;
@@ -28,7 +28,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(FeePlanRepositoryInterface::class, EloquentFeePlanRepository::class);
         $this->app->bind(FeeComponentRepositoryInterface::class, EloquentFeeComponentRepository::class);
         $this->app->bind(FeePlanAssignmentRepositoryInterface::class, EloquentFeePlanAssignmentRepository::class);
-        $this->app->bind(CourseVersionRepositoryInterface::class, EloquentCourseVersionRepository::class);
+        $this->app->bind(CurriculumRepositoryInterface::class, EloquentCurriculumRepository::class);
     }
 
     /**

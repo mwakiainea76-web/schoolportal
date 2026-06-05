@@ -15,14 +15,14 @@ export default function Edit({
 }) {
     const hasAcademicYears = academicYear.length > 0;
     const hasFeePlans = feePlans.length > 0;
-    const hasCourseVersions = curriculums.length > 0;
+    const hasCurriculums = curriculums.length > 0;
     const canUpdateAssignment =
-        !!assignment && hasAcademicYears && hasFeePlans && hasCourseVersions;
+        !!assignment && hasAcademicYears && hasFeePlans && hasCurriculums;
 
     const { data, setData, put, processing, errors } = useForm({
         fee_plan_id: assignment.fee_plan_id || "",
         academic_year_id: assignment.academic_year_id || "",
-        course_curriculum_id: assignment.course_curriculum_id || "",
+        curriculum_mapping_id: assignment.curriculum_mapping_id || "",
         year_of_study: assignment.year_of_study || "",
         session_number: assignment.session_number || "",
     });
@@ -42,13 +42,13 @@ export default function Edit({
             <div className="mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
                 <div className="overflow-hidden rounded-lg border border-zinc-100 bg-white shadow-sm">
                     <div className="bg-slate-400 py-2 text-center text-sm font-medium text-white">
-                        Edit Course Version Fee Assignment
+                        Edit Curriculum Fee Assignment
                     </div>
 
                     <form className="space-y-8 p-10" onSubmit={submit}>
                         {!canUpdateAssignment ? (
                             <div className="rounded border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
-                                You cannot update this fee assignment until an academic year, a fee plan, and a course version mapping are available.
+                                You cannot update this fee assignment until an academic year, a fee plan, and a curriculum mapping are available.
                             </div>
                         ) : null}
                         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
@@ -91,23 +91,23 @@ export default function Edit({
                             </div>
 
                             <div>
-                                <InputLabel value="Course Version" />
+                                <InputLabel value="Curriculum" />
                                 <SearchSelect
                                     defaultOptions={curriculums}
-                                    value={data.course_curriculum_id}
-                                    placeholder="Select course version..."
-                                    disabled={!hasCourseVersions}
+                                    value={data.curriculum_mapping_id}
+                                    placeholder="Select curriculum..."
+                                    disabled={!hasCurriculums}
                                     onChange={(item) =>
-                                        setData("course_curriculum_id", item.id)
+                                        setData("curriculum_mapping_id", item.id)
                                     }
                                 />
-                                {!hasCourseVersions ? (
+                                {!hasCurriculums ? (
                                     <p className="mt-1 text-xs text-amber-600">
-                                        Create a course version mapping first to continue.
+                                        Create a curriculum mapping first to continue.
                                     </p>
                                 ) : null}
                                 <InputError
-                                    message={errors.course_curriculum_id}
+                                    message={errors.curriculum_mapping_id}
                                 />
                             </div>
 

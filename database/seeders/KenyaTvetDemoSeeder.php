@@ -22,9 +22,9 @@ use App\Models\HostelRoom;
 use App\Models\NextOfKin;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
-use App\Models\CourseVersion;
-use App\Models\CourseVersionMapping;
-use App\Models\CourseVersionUnit;
+use App\Models\Curriculum;
+use App\Models\CurriculumMapping;
+use App\Models\CurriculumUnit;
 use App\Models\AcademicTimetable;
 use App\Models\Staff;
 use App\Models\Student;
@@ -48,7 +48,7 @@ class KenyaTvetDemoSeeder extends Seeder
             $departments = $this->seedDepartments();
             $users = app(DemoStaffSeeder::class)->seed($roles);
             $calendar = app(DemoAcademicCalendarSeeder::class)->seed();
-            $versions = $this->seedCourseVersions($users['admin']);
+            $versions = $this->seedCurriculums($users['admin']);
             $courses = $this->seedCourses($departments, $levels);
             $mappings = $this->seedCourseMappings($courses, $versions, $users['admin']);
             $this->seedUnitsAndMappings($mappings);
@@ -379,9 +379,9 @@ class KenyaTvetDemoSeeder extends Seeder
         ];
     }
 
-    protected function seedCourseVersions(User $admin): array
+    protected function seedCurriculums(User $admin): array
     {
-        $cycle2 = CourseVersion::firstOrCreate(
+        $cycle2 = Curriculum::firstOrCreate(
             ['name' => 'Cycle 2'],
             [
                 'description' => 'Archived TVET cycle for historical cohorts.',
@@ -393,7 +393,7 @@ class KenyaTvetDemoSeeder extends Seeder
             ]
         );
 
-        $cycle3 = CourseVersion::firstOrCreate(
+        $cycle3 = Curriculum::firstOrCreate(
             ['name' => 'Cycle 3'],
             [
                 'description' => 'Recently completed intake cycle.',
@@ -405,7 +405,7 @@ class KenyaTvetDemoSeeder extends Seeder
             ]
         );
 
-        $cycle4 = CourseVersion::firstOrCreate(
+        $cycle4 = Curriculum::firstOrCreate(
             ['name' => 'Cycle 4'],
             [
                 'description' => 'Current active TVET courseme version.',
@@ -490,10 +490,10 @@ class KenyaTvetDemoSeeder extends Seeder
         $mappings = [];
 
         foreach ($courses as $key => $course) {
-            $mapping = CourseVersionMapping::firstOrCreate(
+            $mapping = CurriculumMapping::firstOrCreate(
                 [
                     'course_id' => $course->id,
-                    'course_version_id' => $versions['active']->id,
+                    'curriculum_id' => $versions['active']->id,
                 ],
                 [
                     'is_active' => true,
@@ -507,10 +507,10 @@ class KenyaTvetDemoSeeder extends Seeder
         }
 
         foreach (['ict_l4', 'electrical_l4'] as $legacyKey) {
-            CourseVersionMapping::firstOrCreate(
+            CurriculumMapping::firstOrCreate(
                 [
                     'course_id' => $courses[$legacyKey]->id,
-                    'course_version_id' => $versions['old_2']->id,
+                    'curriculum_id' => $versions['old_2']->id,
                 ],
                 [
                     'is_active' => false,
@@ -611,21 +611,21 @@ class KenyaTvetDemoSeeder extends Seeder
             foreach ($modules as $module => $unitCodes) {
                 foreach ($unitCodes as $unitCode) {
                     // Skip if this combination already exists (handles duplicates across multiple mappings)
-                    if (CourseVersionUnit::where([
-                        'course_version_id' => $mappings[$mappingKey]->course_version_id,
+                    if (CurriculumUnit::where([
+                        'curriculum_id' => $mappings[$mappingKey]->curriculum_id,
                         'unit_id' => $units[$unitCode]->id,
                         'module_taught' => $module,
                     ])->exists()) {
                         continue;
                     }
 
-                    CourseVersionUnit::firstOrCreate(
+                    CurriculumUnit::firstOrCreate(
                         [
-                            'course_version_mapping_id' => $mappings[$mappingKey]->id,
+                            'curriculum_mapping_id' => $mappings[$mappingKey]->id,
                             'unit_id' => $units[$unitCode]->id,
                         ],
                         [
-                            'course_version_id' => $mappings[$mappingKey]->course_version_id,
+                            'curriculum_id' => $mappings[$mappingKey]->curriculum_id,
                             'module_taught' => $module,
                         ]
                     );
@@ -755,7 +755,7 @@ class KenyaTvetDemoSeeder extends Seeder
 
             $courseEnrollment = CourseEnrollment::firstOrCreate([
                 'student_id' => $student->id,
-                'course_version_mapping_id' => $mappings[$row['course_key']]->id,
+                'curriculum_mapping_id' => $mappings[$row['course_key']]->id,
             ]);
 
             $students[$row['registration']] = [
@@ -812,13 +812,13 @@ class KenyaTvetDemoSeeder extends Seeder
     {
         $ictTrainer = $users['hod_staff'];
 
-        $ictMainUnit = CourseVersionUnit::query()
-            ->where('course_version_mapping_id', $mappings['ict_l4']->id)
+        $ictMainUnit = CurriculumUnit::query()
+            ->where('curriculum_mapping_id', $mappings['ict_l4']->id)
             ->whereHas('unit', fn ($query) => $query->where('code', 'ICT101'))
             ->first();
 
-        $ictSharedTheoryUnit = CourseVersionUnit::query()
-            ->where('course_version_mapping_id', $mappings['ict_l4']->id)
+        $ictSharedTheoryUnit = CurriculumUnit::query()
+            ->where('curriculum_mapping_id', $mappings['ict_l4']->id)
             ->whereHas('unit', fn ($query) => $query->where('code', 'COM101'))
             ->first();
 
@@ -836,12 +836,12 @@ class KenyaTvetDemoSeeder extends Seeder
                 'end_time' => '10:00:00',
             ],
             [
-                'course_version_unit_id' => $ictMainUnit->id,
+                'curriculum_unit_id' => $ictMainUnit->id,
                 'created_by' => $ictTrainer->id,
                 'updated_by' => $ictTrainer->id,
             ]
         );
-        $mondaySession->courseVersionUnits()->syncWithoutDetaching([
+        $mondaySession->curriculumUnits()->syncWithoutDetaching([
             $ictMainUnit->id,
             $ictSharedTheoryUnit->id,
         ]);
@@ -856,12 +856,12 @@ class KenyaTvetDemoSeeder extends Seeder
                 'end_time' => '13:00:00',
             ],
             [
-                'course_version_unit_id' => $ictMainUnit->id,
+                'curriculum_unit_id' => $ictMainUnit->id,
                 'created_by' => $ictTrainer->id,
                 'updated_by' => $ictTrainer->id,
             ]
         );
-        $wednesdaySession->courseVersionUnits()->syncWithoutDetaching([
+        $wednesdaySession->curriculumUnits()->syncWithoutDetaching([
             $ictMainUnit->id,
         ]);
     }
@@ -1026,7 +1026,7 @@ class KenyaTvetDemoSeeder extends Seeder
             FeeAssignment::updateOrCreate(
                 [
                     'academic_year_id' => $activeYear->id,
-                    'course_version_mapping_id' => $mappings[$mappingKey]->id,
+                    'curriculum_mapping_id' => $mappings[$mappingKey]->id,
                     'year_of_study' => 1,
                     'session_number' => 1,
                 ],
@@ -1044,7 +1044,7 @@ class KenyaTvetDemoSeeder extends Seeder
         }
     }
 
-    protected function seedModernFeePlanAssignments(array $feePlans, CourseVersion $activeVersion, AcademicYear $activeYear, AcademicSession $activeSession, User $bursarUser): void
+    protected function seedModernFeePlanAssignments(array $feePlans, Curriculum $activeVersion, AcademicYear $activeYear, AcademicSession $activeSession, User $bursarUser): void
     {
         $plan = $feePlans['level4'];
         $components = $plan->feeComponents()->orderBy('display_order')->get();
@@ -1052,7 +1052,7 @@ class KenyaTvetDemoSeeder extends Seeder
         DB::table('fee_plan_assignments')->insertOrIgnore([
             'id' => (string) Str::uuid(),
             'fee_plan_id' => $plan->id,
-            'course_version_id' => $activeVersion->id,
+            'curriculum_id' => $activeVersion->id,
             'academic_year_id' => $activeYear->id,
             'session_id' => $activeSession->id,
             'plan_type_context' => 'original',
@@ -1095,19 +1095,19 @@ class KenyaTvetDemoSeeder extends Seeder
             );
 
             // Create unit registrations for module 1
-            $units = CourseVersionUnit::query()
-                ->where('course_version_mapping_id', $record['mapping']->id)
+            $units = CurriculumUnit::query()
+                ->where('curriculum_mapping_id', $record['mapping']->id)
                 ->where('module_taught', 1)
                 ->get();
 
             foreach ($units as $unit) {
                 StudentUnitRegistration::firstOrCreate([
                     'academic_session_enrollment_id' => $enrollment->id,
-                    'course_version_unit_id' => $unit->id,
+                    'curriculum_unit_id' => $unit->id,
                 ]);
             }
 
-            $enrollments[$registration] = $enrollment->fresh(['academicSession', 'courseEnrollment.courseVersionMapping.course', 'courseEnrollment.courseVersionMapping.courseVersion']);
+            $enrollments[$registration] = $enrollment->fresh(['academicSession', 'courseEnrollment.curriculumMapping.course', 'courseEnrollment.curriculumMapping.curriculum']);
         }
 
         return $enrollments;

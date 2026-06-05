@@ -12,7 +12,7 @@ export default function Marksheet({
     blocker,
 }) {
     const filterForm = useForm({
-        course_version_unit_code: filters.course_version_unit_code || "",
+        curriculum_unit_code: filters.curriculum_unit_code || "",
         session_number: filters.session_number || "",
         year_of_study: filters.year_of_study || "",
         registration_number: filters.registration_number || "",
@@ -23,8 +23,8 @@ export default function Marksheet({
         router.get(
             route("academic.marks.marksheet.index"),
             {
-                course_version_unit_code:
-                    filterForm.data.course_version_unit_code,
+                curriculum_unit_code:
+                    filterForm.data.curriculum_unit_code,
                 session_number: filterForm.data.session_number,
                 year_of_study: filterForm.data.year_of_study,
                 registration_number: filterForm.data.registration_number,
@@ -143,11 +143,11 @@ export default function Marksheet({
                             <input
                                 type="text"
                                 value={
-                                    filterForm.data.course_version_unit_code
+                                    filterForm.data.curriculum_unit_code
                                 }
                                 onChange={(e) =>
                                     filterForm.setData(
-                                        "course_version_unit_code",
+                                        "curriculum_unit_code",
                                         e.target.value.toUpperCase(),
                                     )
                                 }
@@ -156,7 +156,7 @@ export default function Marksheet({
                             />
                             <InputError
                                 message={
-                                    filterForm.errors.course_version_unit_code
+                                    filterForm.errors.curriculum_unit_code
                                 }
                                 className="mt-2"
                             />

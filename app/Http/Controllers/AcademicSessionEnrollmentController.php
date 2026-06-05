@@ -6,7 +6,7 @@ use App\Http\Requests\StoreAcademicSessionEnrollmentRequest;
 use App\Models\AcademicSession;
 use App\Models\AcademicSessionEnrollment;
 use App\Models\CourseEnrollment;
-use App\Models\CourseVersionUnit;
+use App\Models\CurriculumUnit;
 use App\Models\Student;
 use App\Models\StudentUnitRegistration;
 use App\Services\BillingService;
@@ -25,8 +25,8 @@ class AcademicSessionEnrollmentController extends Controller
     {
         $enrollments = AcademicSessionEnrollment::with([
             'courseEnrollment.student.user',
-            'courseEnrollment.courseVersionMapping.courseVersion',
-            'courseEnrollment.courseVersionMapping.course',
+            'courseEnrollment.curriculumMapping.curriculum',
+            'courseEnrollment.curriculumMapping.course',
             'academicSession.academicYear',
         ])
             ->when($request->search, function ($q) use ($request) {
@@ -52,8 +52,8 @@ class AcademicSessionEnrollmentController extends Controller
             'session' => $e->academicSession
                 ? "{$e->academicSession->academicYear->academic_year} - Session {$e->academicSession->session_No}"
                 : 'N/A',
-            'course' => $e->courseEnrollment?->courseVersionMapping?->course?->name ?? 'N/A',
-            'curriculum' => $e->courseEnrollment?->courseVersionMapping?->courseVersion?->name ?? 'N/A',
+            'course' => $e->courseEnrollment?->curriculumMapping?->course?->name ?? 'N/A',
+            'curriculum' => $e->courseEnrollment?->curriculumMapping?->curriculum?->name ?? 'N/A',
             'module' => $e->module,
             'year_of_study' => $e->year_of_study,
             'status' => $e->status,
@@ -142,7 +142,7 @@ class AcademicSessionEnrollmentController extends Controller
         try {
             $result = $this->registerUnitsForCurrentStudent(
                 $student,
-                collect($request->input('course_version_unit_ids', []))
+                collect($request->input('curriculum_unit_ids', []))
             );
         } catch (ValidationException $e) {
             return back()->withErrors($this->normalizeUnitRegistrationErrors($e));
@@ -157,8 +157,8 @@ class AcademicSessionEnrollmentController extends Controller
     {
         $e = $academicSessionEnrollment->load([
             'courseEnrollment.student.user',
-            'courseEnrollment.courseVersionMapping.courseVersion',
-            'courseEnrollment.courseVersionMapping.course',
+            'courseEnrollment.curriculumMapping.curriculum',
+            'courseEnrollment.curriculumMapping.course',
             'academicSession.academicYear',
         ]);
 
@@ -173,8 +173,8 @@ class AcademicSessionEnrollmentController extends Controller
                 'session' => $e->academicSession
                     ? "{$e->academicSession->academicYear->academic_year} - Session {$e->academicSession->session_No}"
                     : 'N/A',
-                'course' => $e->courseEnrollment?->courseVersionMapping?->course?->name ?? 'N/A',
-                'curriculum' => $e->courseEnrollment?->courseVersionMapping?->courseVersion?->name ?? 'N/A',
+                'course' => $e->courseEnrollment?->curriculumMapping?->course?->name ?? 'N/A',
+                'curriculum' => $e->courseEnrollment?->curriculumMapping?->curriculum?->name ?? 'N/A',
                 'module' => $e->module,
                 'year_of_study' => $e->year_of_study,
                 'status' => $e->status,
@@ -295,11 +295,11 @@ class AcademicSessionEnrollmentController extends Controller
             ]);
         }
 
-        $moduleUnits = CourseVersionUnit::query()
+        $moduleUnits = CurriculumUnit::query()
             ->when(
-                $courseEnrollment->course_version_id,
-                fn ($query) => $query->where('course_version_id', $courseEnrollment->course_version_id),
-                fn ($query) => $query->where('course_version_mapping_id', $courseEnrollment->course_version_mapping_id)
+                $courseEnrollment->curriculum_id,
+                fn ($query) => $query->where('curriculum_id', $courseEnrollment->curriculum_id),
+                fn ($query) => $query->where('curriculum_mapping_id', $courseEnrollment->curriculum_mapping_id)
             )
             ->where(function ($query) use ($sessionEnrollment) {
                 $query->where('module', $sessionEnrollment->module)
@@ -340,9 +340,9 @@ class AcademicSessionEnrollmentController extends Controller
                 ->delete();
 
             StudentUnitRegistration::query()->insert(
-                $expectedIds->map(fn (int $courseVersionUnitId) => [
+                $expectedIds->map(fn (int $curriculumUnitId) => [
                     'academic_session_enrollment_id' => $sessionEnrollment->id,
-                    'course_version_unit_id' => $courseVersionUnitId,
+                    'curriculum_unit_id' => $curriculumUnitId,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ])->all()

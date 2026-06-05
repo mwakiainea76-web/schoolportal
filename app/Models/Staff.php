@@ -61,8 +61,8 @@ class Staff extends Model
         return $this->hasMany(AcademicTimetable::class, 'created_by');
     }
 
-    public function approvedCourseVersionTransfers()
+    public function approvedCurriculumTransfers()
     {
-        return $this->hasMany(CourseVersionTransfer::class, 'approved_by');
+        return $this->hasMany(CurriculumTransfer::class, 'approved_by');
     }
 }

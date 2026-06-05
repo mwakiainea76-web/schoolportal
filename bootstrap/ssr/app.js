@@ -17,13 +17,14 @@ function useRbac() {
   const hasRole = (role) => normalizedRoles.includes(String(role).toLowerCase());
   return { permissions, roles, can, cannot, hasRole };
 }
-function NavLink({ href, label, active, onClick }) {
+function NavLink({ href, label, active, onClick, depth = 0 }) {
+  const paddingClass = depth > 0 ? "pl-16" : "pl-12";
   return /* @__PURE__ */ jsxs(
     Link,
     {
       href,
       onClick,
-      className: `flex min-h-9 items-center gap-3 px-4 pl-12 text-sm leading-5 transition ${active ? "text-emerald-400 font-semibold" : "text-zinc-500 hover:text-zinc-200"}`,
+      className: `flex min-h-9 items-center gap-3 px-4 ${paddingClass} text-sm leading-5 transition ${active ? "text-emerald-400 font-semibold" : "text-zinc-500 hover:text-zinc-200"}`,
       children: [
         /* @__PURE__ */ jsx(
           "span",
@@ -66,14 +67,14 @@ const STAFF_NAV_ITEMS = [
       "certification.levels.create",
       "courses.view",
       "courses.create",
-      "course-versions.view",
-      "course-versions.create",
-      "courses.course-version-mappings.view",
-      "courses.course-version-mappings.create",
+      "curriculums.view",
+      "curriculums.create",
+      "courses.curriculum-mappings.view",
+      "courses.curriculum-mappings.create",
       "units.view",
       "units.create",
-      "units.course-version-units.view",
-      "units.course-version-units.create",
+      "units.curriculum-units.view",
+      "units.curriculum-units.create",
       "students.view"
     ],
     children: [
@@ -97,22 +98,10 @@ const STAFF_NAV_ITEMS = [
         ]
       },
       {
-        key: "course-catalog",
-        label: "Course Catalog",
+        key: "courses",
+        label: "Courses",
         icon: "courses",
         children: [
-          {
-            routeName: "course-versions.index",
-            fallback: "/course-versions",
-            label: "Course Versions",
-            permission: "course-versions.view"
-          },
-          {
-            routeName: "course-versions.create",
-            fallback: "/course-versions/create",
-            label: "Add Course Version",
-            permission: "course-versions.create"
-          },
           {
             routeName: "courses.index",
             fallback: "/courses",
@@ -126,22 +115,41 @@ const STAFF_NAV_ITEMS = [
             permission: "courses.create"
           },
           {
-            routeName: "courses.course-version-mappings.index",
-            fallback: "/courses/course-versions",
-            label: "Course Version Mapping",
-            permission: "courses.course-version-mappings.view"
-          },
-          {
-            routeName: "courses.course-version-mappings.create",
-            fallback: "/courses/course-versions/create",
-            label: "Add Course Version Mapping",
-            permission: "courses.course-version-mappings.create"
-          },
-          {
             routeName: "courses.enrollments.index",
             fallback: "/courses/enrollments",
             label: "Course Enrollments",
             permission: "students.view"
+          }
+        ]
+      },
+      {
+        key: "curriculum",
+        label: "Curriculum",
+        icon: "book",
+        children: [
+          {
+            routeName: "curriculums.index",
+            fallback: "/curriculums",
+            label: "Curriculums",
+            permission: "curriculums.view"
+          },
+          {
+            routeName: "curriculums.create",
+            fallback: "/curriculums/create",
+            label: "Add Curriculum",
+            permission: "curriculums.create"
+          },
+          {
+            routeName: "courses.curriculum-mappings.index",
+            fallback: "/courses/curriculums",
+            label: "Curriculum Mapping",
+            permission: "courses.curriculum-mappings.view"
+          },
+          {
+            routeName: "courses.curriculum-mappings.create",
+            fallback: "/courses/curriculums/create",
+            label: "Add Curriculum Mapping",
+            permission: "courses.curriculum-mappings.create"
           }
         ]
       },
@@ -163,16 +171,16 @@ const STAFF_NAV_ITEMS = [
             permission: "units.create"
           },
           {
-            routeName: "units.course-version-units.index",
-            fallback: "/units/course-version-units",
-            label: "Course Version Units",
-            permission: "units.course-version-units.view"
+            routeName: "units.curriculum-units.index",
+            fallback: "/units/curriculum-units",
+            label: "Curriculum Units",
+            permission: "units.curriculum-units.view"
           },
           {
-            routeName: "units.course-version-units.create",
-            fallback: "/units/course-version-units/create",
-            label: "Add Course Version Unit",
-            permission: "units.course-version-units.create"
+            routeName: "units.curriculum-units.create",
+            fallback: "/units/curriculum-units/create",
+            label: "Add Curriculum Unit",
+            permission: "units.curriculum-units.create"
           }
         ]
       },
@@ -849,6 +857,41 @@ function Sidebar({
   };
   const toggleMenu = (key) => setOpenMenu((prev) => prev === key ? null : key);
   const isDashboardActive = isRouteCurrent("dashboard", "/dashboard", url) || isRouteCurrent(dashboardRouteName, dashboardFallback, url);
+  const renderSidebarChildren = (items, depth = 0) => items.map((child) => {
+    if (child.children) {
+      const headingIndent = depth > 0 ? "pl-12" : "pl-8";
+      return /* @__PURE__ */ jsxs("div", { className: "py-2", children: [
+        /* @__PURE__ */ jsxs(
+          "p",
+          {
+            className: `flex min-h-6 items-center gap-2 px-4 ${headingIndent} pr-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500 [&_svg]:h-3.5 [&_svg]:w-3.5 [&_svg]:shrink-0`,
+            children: [
+              child.icon ? ICONS[child.icon] : null,
+              /* @__PURE__ */ jsx("span", { className: "truncate", children: child.label })
+            ]
+          }
+        ),
+        renderSidebarChildren(child.children, depth + 1)
+      ] }, child.key ?? child.label);
+    }
+    const { routeName, fallback, label: childLabel } = child;
+    return /* @__PURE__ */ jsx(
+      NavLink,
+      {
+        href: safeRoute(routeName, fallback),
+        label: childLabel,
+        active: isRouteCurrent(
+          routeName,
+          fallback,
+          url,
+          child.activeRouteNames
+        ),
+        depth: Math.max(0, depth - 1),
+        onClick: handleSidebarLinkClick
+      },
+      routeName
+    );
+  });
   const renderNestedSection = ({ key, label, icon, basePath, children }) => {
     const isOpen = openMenu === key;
     const parentActive = isSectionActive({ basePath, children });
@@ -894,49 +937,7 @@ function Sidebar({
         "div",
         {
           className: `overflow-hidden transition-all duration-300 ${isOpen && !collapsed ? "max-h-[80rem] opacity-100" : "max-h-0 opacity-0"}`,
-          children: children.map((child) => {
-            if (child.children) {
-              return /* @__PURE__ */ jsxs("div", { className: "py-2", children: [
-                /* @__PURE__ */ jsxs("p", { className: "flex min-h-6 items-center gap-2 px-4 pl-8 pr-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500 [&_svg]:h-3.5 [&_svg]:w-3.5 [&_svg]:shrink-0", children: [
-                  child.icon ? ICONS[child.icon] : null,
-                  /* @__PURE__ */ jsx("span", { className: "truncate", children: child.label })
-                ] }),
-                child.children.map(
-                  ({ routeName: routeName2, fallback: fallback2, label: childLabel2, activeRouteNames }) => /* @__PURE__ */ jsx(
-                    NavLink,
-                    {
-                      href: safeRoute(routeName2, fallback2),
-                      label: childLabel2,
-                      active: isRouteCurrent(
-                        routeName2,
-                        fallback2,
-                        url,
-                        activeRouteNames
-                      ),
-                      onClick: handleSidebarLinkClick
-                    },
-                    routeName2
-                  )
-                )
-              ] }, child.key ?? child.label);
-            }
-            const { routeName, fallback, label: childLabel } = child;
-            return /* @__PURE__ */ jsx(
-              NavLink,
-              {
-                href: safeRoute(routeName, fallback),
-                label: childLabel,
-                active: isRouteCurrent(
-                  routeName,
-                  fallback,
-                  url,
-                  child.activeRouteNames
-                ),
-                onClick: handleSidebarLinkClick
-              },
-              routeName
-            );
-          })
+          children: renderSidebarChildren(children)
         }
       )
     ] }, key);
@@ -1336,7 +1337,7 @@ createInertiaApp({
   title: (title) => `${title} - ${appName}`,
   resolve: (name) => resolvePageComponent(
     `./Pages/${name}.jsx`,
-    /* @__PURE__ */ Object.assign({ "./Pages/Academic/Exams.jsx": () => import("./assets/Exams-B1m8nPBN.js"), "./Pages/Academic/Schedules.jsx": () => import("./assets/Schedules-dezb1yBk.js"), "./Pages/Academic/Timetables/Create.jsx": () => import("./assets/Create-T42auL8e.js"), "./Pages/Academic/Timetables/CreateHod.jsx": () => import("./assets/CreateHod-Dex4Pk-B.js"), "./Pages/Academic/Timetables/Edit.jsx": () => import("./assets/Edit-GSOzp60m.js"), "./Pages/Academic/Timetables/Index.jsx": () => import("./assets/Index-BV8SaWar.js"), "./Pages/AcademicSessionEnrollments/Create.jsx": () => import("./assets/Create-BCmpV9bR.js"), "./Pages/AcademicSessionEnrollments/Edit.jsx": () => import("./assets/Edit-DrMik-k4.js"), "./Pages/AcademicSessionEnrollments/Index.jsx": () => import("./assets/Index-Cmj7ycGq.js"), "./Pages/AcademicSessions/Create.jsx": () => import("./assets/Create-ukL_Dqqs.js"), "./Pages/AcademicSessions/Edit.jsx": () => import("./assets/Edit-DhK3Ulye.js"), "./Pages/AcademicSessions/Index.jsx": () => import("./assets/Index-Jqo9-tvx.js"), "./Pages/AcademicYears/Create.jsx": () => import("./assets/Create-Ch8SMVNZ.js"), "./Pages/AcademicYears/Edit.jsx": () => import("./assets/Edit-D-Qt62Uk.js"), "./Pages/AcademicYears/Index.jsx": () => import("./assets/Index-DB4SRLhh.js"), "./Pages/Auth/ConfirmPassword.jsx": () => import("./assets/ConfirmPassword-1ZGPxF5n.js"), "./Pages/Auth/ForgotPassword.jsx": () => import("./assets/ForgotPassword-wdpr9QK9.js"), "./Pages/Auth/Login.jsx": () => import("./assets/Login-CTvY0kss.js"), "./Pages/Auth/Register.jsx": () => import("./assets/Register-BybKZBmQ.js"), "./Pages/Auth/ResetPassword.jsx": () => import("./assets/ResetPassword-pobg1EMW.js"), "./Pages/Auth/VerifyEmail.jsx": () => import("./assets/VerifyEmail-BH-rQcLd.js"), "./Pages/Billing/BulkOperations.jsx": () => import("./assets/BulkOperations-QMj9YLW4.js"), "./Pages/Billing/InvoiceCreate.jsx": () => import("./assets/InvoiceCreate-CKqDoIJw.js"), "./Pages/Billing/InvoiceIndex.jsx": () => import("./assets/InvoiceIndex-m5GZOBt5.js"), "./Pages/Billing/InvoiceShow.jsx": () => import("./assets/InvoiceShow-DwKeE6Uh.js"), "./Pages/Billing/LedgerIndex.jsx": () => import("./assets/LedgerIndex--C8ZWjqS.js"), "./Pages/Billing/ManualOperations/ActionCard.jsx": () => import("./assets/ActionCard-BqjP59Fa.js"), "./Pages/Billing/ManualOperations/AdditionalInvoice.jsx": () => import("./assets/AdditionalInvoice-DKhbB1tc.js"), "./Pages/Billing/ManualOperations/AdditionalInvoiceForm.jsx": () => import("./assets/AdditionalInvoiceForm-DiHfGv3A.js"), "./Pages/Billing/ManualOperations/ApplyAdjustment.jsx": () => import("./assets/ApplyAdjustment-n9-bXE3Y.js"), "./Pages/Billing/ManualOperations/ApplyAdjustmentForm.jsx": () => import("./assets/ApplyAdjustmentForm--k9NWWrx.js"), "./Pages/Billing/ManualOperations/Fields.jsx": () => import("./assets/Fields-CKoWvqxo.js"), "./Pages/Billing/ManualOperations/FormScaffold.jsx": () => import("./assets/FormScaffold-pJj3vvjR.js"), "./Pages/Billing/ManualOperations/Index.jsx": () => import("./assets/Index-0kDLJb9F.js"), "./Pages/Billing/ManualOperations/PostPenalty.jsx": () => import("./assets/PostPenalty-DwOyG7t2.js"), "./Pages/Billing/ManualOperations/PostPenaltyForm.jsx": () => import("./assets/PostPenaltyForm-EsMiyZ33.js"), "./Pages/Billing/ManualOperations/RecordPayment.jsx": () => import("./assets/RecordPayment-DfPMnhH1.js"), "./Pages/Billing/ManualOperations/RecordPaymentForm.jsx": () => import("./assets/RecordPaymentForm-B5ZnjX-E.js"), "./Pages/Billing/StudentStatements/Index.jsx": () => import("./assets/Index-_VEkGCeO.js"), "./Pages/Billing/StudentStatements/Show.jsx": () => import("./assets/Show-B6ltZWor.js"), "./Pages/CertificationLevels/Create.jsx": () => import("./assets/Create-Cq39Bsiw.js"), "./Pages/CertificationLevels/Edit.jsx": () => import("./assets/Edit-CNtHERpV.js"), "./Pages/CertificationLevels/Index.jsx": () => import("./assets/Index-BvURJCp6.js"), "./Pages/CourseEnrollments/Index.jsx": () => import("./assets/Index-CnDm9pfa.js"), "./Pages/CourseVersionMappings/Create.jsx": () => import("./assets/Create-5dDkM8vi.js"), "./Pages/CourseVersionMappings/Edit.jsx": () => import("./assets/Edit-BLlEhkn3.js"), "./Pages/CourseVersionMappings/Index.jsx": () => import("./assets/Index-D90AfQt2.js"), "./Pages/CourseVersionUnits/Create.jsx": () => import("./assets/Create-CoAJSdTv.js"), "./Pages/CourseVersionUnits/Edit.jsx": () => import("./assets/Edit-lOZnUacq.js"), "./Pages/CourseVersionUnits/Index.jsx": () => import("./assets/Index-Dhs3JbAU.js"), "./Pages/CourseVersionUnits/StudentIndex.jsx": () => import("./assets/StudentIndex-DEz0AkPS.js"), "./Pages/CourseVersions/Create.jsx": () => import("./assets/Create-BR4VQngc.js"), "./Pages/CourseVersions/Edit.jsx": () => import("./assets/Edit-qfWnul8I.js"), "./Pages/CourseVersions/Index.jsx": () => import("./assets/Index-CQ_dLlP3.js"), "./Pages/Courses/Create.jsx": () => import("./assets/Create-BjB6XcxG.js"), "./Pages/Courses/Edit.jsx": () => import("./assets/Edit-B7dJSGhm.js"), "./Pages/Courses/Index.jsx": () => import("./assets/Index-DZ6pR0Bs.js"), "./Pages/Courses/Reports.jsx": () => import("./assets/AssignRole-DvSMr2cA.js").then((n) => n.R), "./Pages/Dashboard.jsx": () => import("./assets/Dashboard-BZCDNBOI.js"), "./Pages/Dashboard/AdminDashboard.jsx": () => import("./assets/AdminDashboard-BHc0zbdp.js"), "./Pages/Dashboard/StudentDashboard.jsx": () => import("./assets/StudentDashboard-BHc0zbdp.js"), "./Pages/Dashboard/TrainerDashboard.jsx": () => import("./assets/TrainerDashboard-BuNEBn27.js"), "./Pages/Departments/Create.jsx": () => import("./assets/Create-j2FjZyPz.js"), "./Pages/Departments/Edit.jsx": () => import("./assets/Edit-COqaWPYg.js"), "./Pages/Departments/Index.jsx": () => import("./assets/Index-CvnXWTCF.js"), "./Pages/Error.jsx": () => import("./assets/Error-DR4jYpLA.js"), "./Pages/ExamBodies/Create.jsx": () => import("./assets/Create-FTTa6Wdi.js"), "./Pages/ExamBodies/Edit.jsx": () => import("./assets/Edit-wKjrIYKD.js"), "./Pages/ExamBodies/Index.jsx": () => import("./assets/Index-B8I9UADB.js"), "./Pages/ExamBodies/Reports.jsx": () => import("./assets/Reports-ChPBgaDh.js"), "./Pages/ExamBodies/Workspace.jsx": () => import("./assets/Workspace-mhPWz6j8.js"), "./Pages/Fees/FeeAssignments/BulkAssign.jsx": () => import("./assets/BulkAssign-D9PUESLf.js"), "./Pages/Fees/FeeAssignments/BulkPreview.jsx": () => import("./assets/BulkPreview-CMFKO_CH.js"), "./Pages/Fees/FeeAssignments/Create.jsx": () => import("./assets/Create-Bpa3-qe9.js"), "./Pages/Fees/FeeAssignments/Edit.jsx": () => import("./assets/Edit-BTpa0DM2.js"), "./Pages/Fees/FeeAssignments/Index.jsx": () => import("./assets/Index-EvD-XH0Q.js"), "./Pages/Fees/FeePlanItems/Create.jsx": () => import("./assets/Create-JxbJYoAO.js"), "./Pages/Fees/FeePlanItems/Edit.jsx": () => import("./assets/Edit-B_Jdv06A.js"), "./Pages/Fees/FeePlanItems/EditModal.jsx": () => import("./assets/EditModal-CQT9p4iR.js"), "./Pages/Fees/FeePlanItems/Index.jsx": () => import("./assets/Index-CFk2hv68.js"), "./Pages/Fees/FeePlans/Create.jsx": () => import("./assets/Create-vPp1ifbI.js"), "./Pages/Fees/FeePlans/Edit.jsx": () => import("./assets/Edit-DL3oIb0O.js"), "./Pages/Fees/FeePlans/Index.jsx": () => import("./assets/Index-ZguRCOZV.js"), "./Pages/Grades/Index.jsx": () => import("./assets/Index-BR4BUztg.js"), "./Pages/Grades/Marksheet.jsx": () => import("./assets/Marksheet-B4wn0mwb.js"), "./Pages/Grades/Publish.jsx": () => import("./assets/Publish-DaK0Abq7.js"), "./Pages/Grades/StudentResults.jsx": () => import("./assets/StudentResults-Bn_UEpEp.js"), "./Pages/Home.jsx": () => import("./assets/Home-Cucyz_fC.js"), "./Pages/HostelAllocations/Create.jsx": () => import("./assets/Create-Do-HHZNC.js"), "./Pages/HostelAllocations/Edit.jsx": () => import("./assets/Edit-0uIAvLiW.js"), "./Pages/HostelAllocations/Form.jsx": () => import("./assets/Form-DulB3vP7.js"), "./Pages/HostelAllocations/Index.jsx": () => import("./assets/Index-BFAZgcCe.js"), "./Pages/Hostels/Create.jsx": () => import("./assets/Create-Bz5z_FUs.js"), "./Pages/Hostels/Edit.jsx": () => import("./assets/Edit-CLAMWadh.js"), "./Pages/Hostels/Form.jsx": () => import("./assets/Form-CHozdKvX.js"), "./Pages/Hostels/Index.jsx": () => import("./assets/Index--2Mzrke-.js"), "./Pages/LectureRooms/Create.jsx": () => import("./assets/Create-DfBoEaHt.js"), "./Pages/LectureRooms/Edit.jsx": () => import("./assets/Edit-BMsTwwjs.js"), "./Pages/LectureRooms/Index.jsx": () => import("./assets/Index-4m4aaXfW.js"), "./Pages/Permissions/Create.jsx": () => import("./assets/Create-C-DUp2aL.js"), "./Pages/Permissions/Edit.jsx": () => import("./assets/Edit-O8boCzgR.js"), "./Pages/Permissions/Index.jsx": () => import("./assets/Index-COgpo6RV.js"), "./Pages/Profile/Edit.jsx": () => import("./assets/Edit-D1GLSxeE.js"), "./Pages/Profile/Partials/DeleteUserForm.jsx": () => import("./assets/DeleteUserForm-CCDeHVdY.js"), "./Pages/Profile/Partials/UpdatePasswordForm.jsx": () => import("./assets/UpdatePasswordForm-DG2MrccK.js"), "./Pages/Profile/Partials/UpdateProfileInformationForm.jsx": () => import("./assets/UpdateProfileInformationForm-nHAZAOXH.js"), "./Pages/Reports/Index.jsx": () => import("./assets/Index-VtvngmSd.js"), "./Pages/Roles/AssignRole.jsx": () => import("./assets/AssignRole-DvSMr2cA.js").then((n) => n.A), "./Pages/Roles/Create.jsx": () => import("./assets/Create-C31OTo5z.js"), "./Pages/Roles/Edit.jsx": () => import("./assets/Edit-CTKAplPK.js"), "./Pages/Roles/EditPermissions.jsx": () => import("./assets/EditPermissions-BSflAzLn.js"), "./Pages/Roles/Index.jsx": () => import("./assets/Index-Bgs5LRmk.js"), "./Pages/Settings/LogViewer.jsx": () => import("./assets/LogViewer-BLuGIVGy.js"), "./Pages/Settings/PerformanceDashboard.jsx": () => import("./assets/PerformanceDashboard-9GG_bptN.js"), "./Pages/Settings/SecurityMonitoring.jsx": () => import("./assets/SecurityMonitoring-BZlUF7xa.js"), "./Pages/Settings/UserMonitor.jsx": () => import("./assets/UserMonitor-LToLyFmU.js"), "./Pages/Staff/Dashboard.jsx": () => import("./assets/Dashboard-DrsYoyuP.js"), "./Pages/Staffs/Create.jsx": () => import("./assets/Create-Cu9Qx-3S.js"), "./Pages/Staffs/Edit.jsx": () => import("./assets/Edit-DBJLLddM.js"), "./Pages/Staffs/Forms/EmploymentDetails.jsx": () => import("./assets/EmploymentDetails-DUdUghJS.js"), "./Pages/Staffs/Forms/KinDetails.jsx": () => import("./assets/KinDetails-CWBx3Arp.js"), "./Pages/Staffs/Forms/PersonalDetails.jsx": () => import("./assets/PersonalDetails-BjXfDzu7.js"), "./Pages/Staffs/Index.jsx": () => import("./assets/Index-D39pYyHp.js"), "./Pages/Units/Create.jsx": () => import("./assets/Create-Dl7g0MTd.js"), "./Pages/Units/Edit.jsx": () => import("./assets/Edit-DuEO53Ei.js"), "./Pages/Units/Index.jsx": () => import("./assets/Index-2qQKHqOW.js"), "./Pages/students/CourseChange.jsx": () => import("./assets/CourseChange-CecwQRFY.js"), "./Pages/students/Create.jsx": () => import("./assets/Create-CdGogR7R.js"), "./Pages/students/Edit.jsx": () => import("./assets/Edit-6pBcqcQn.js"), "./Pages/students/Index.jsx": () => import("./assets/Index-CDs_PafS.js") })
+    /* @__PURE__ */ Object.assign({ "./Pages/Academic/Exams.jsx": () => import("./assets/Exams-B1m8nPBN.js"), "./Pages/Academic/Schedules.jsx": () => import("./assets/Schedules-dezb1yBk.js"), "./Pages/Academic/Timetables/Create.jsx": () => import("./assets/Create-DNxYJ9B4.js"), "./Pages/Academic/Timetables/CreateHod.jsx": () => import("./assets/CreateHod-B3UzvSMK.js"), "./Pages/Academic/Timetables/Edit.jsx": () => import("./assets/Edit-CrYjtdMC.js"), "./Pages/Academic/Timetables/Index.jsx": () => import("./assets/Index-B6_VlHKC.js"), "./Pages/AcademicSessionEnrollments/Create.jsx": () => import("./assets/Create-BCmpV9bR.js"), "./Pages/AcademicSessionEnrollments/Edit.jsx": () => import("./assets/Edit-DJ_8kRvW.js"), "./Pages/AcademicSessionEnrollments/Index.jsx": () => import("./assets/Index-nRQmxxQ4.js"), "./Pages/AcademicSessions/Create.jsx": () => import("./assets/Create-ukL_Dqqs.js"), "./Pages/AcademicSessions/Edit.jsx": () => import("./assets/Edit-BLEcU61e.js"), "./Pages/AcademicSessions/Index.jsx": () => import("./assets/Index-CP3OVkB1.js"), "./Pages/AcademicYears/Create.jsx": () => import("./assets/Create-Ch8SMVNZ.js"), "./Pages/AcademicYears/Edit.jsx": () => import("./assets/Edit-B0jXWpWP.js"), "./Pages/AcademicYears/Index.jsx": () => import("./assets/Index-0Hvf0R-3.js"), "./Pages/Auth/ConfirmPassword.jsx": () => import("./assets/ConfirmPassword-1ZGPxF5n.js"), "./Pages/Auth/ForgotPassword.jsx": () => import("./assets/ForgotPassword-wdpr9QK9.js"), "./Pages/Auth/Login.jsx": () => import("./assets/Login-CTvY0kss.js"), "./Pages/Auth/Register.jsx": () => import("./assets/Register-BybKZBmQ.js"), "./Pages/Auth/ResetPassword.jsx": () => import("./assets/ResetPassword-pobg1EMW.js"), "./Pages/Auth/VerifyEmail.jsx": () => import("./assets/VerifyEmail-BH-rQcLd.js"), "./Pages/Billing/BulkOperations.jsx": () => import("./assets/BulkOperations-DAIBBx4Q.js"), "./Pages/Billing/InvoiceCreate.jsx": () => import("./assets/InvoiceCreate-B-6KTBFj.js"), "./Pages/Billing/InvoiceIndex.jsx": () => import("./assets/InvoiceIndex-BTU0-xRr.js"), "./Pages/Billing/InvoiceShow.jsx": () => import("./assets/InvoiceShow-B1REb4dK.js"), "./Pages/Billing/LedgerIndex.jsx": () => import("./assets/LedgerIndex-BLD3xu6-.js"), "./Pages/Billing/ManualOperations/ActionCard.jsx": () => import("./assets/ActionCard-BqjP59Fa.js"), "./Pages/Billing/ManualOperations/AdditionalInvoice.jsx": () => import("./assets/AdditionalInvoice-DKhbB1tc.js"), "./Pages/Billing/ManualOperations/AdditionalInvoiceForm.jsx": () => import("./assets/AdditionalInvoiceForm-DiHfGv3A.js"), "./Pages/Billing/ManualOperations/ApplyAdjustment.jsx": () => import("./assets/ApplyAdjustment-n9-bXE3Y.js"), "./Pages/Billing/ManualOperations/ApplyAdjustmentForm.jsx": () => import("./assets/ApplyAdjustmentForm--k9NWWrx.js"), "./Pages/Billing/ManualOperations/Fields.jsx": () => import("./assets/Fields-CKoWvqxo.js"), "./Pages/Billing/ManualOperations/FormScaffold.jsx": () => import("./assets/FormScaffold-pJj3vvjR.js"), "./Pages/Billing/ManualOperations/Index.jsx": () => import("./assets/Index-0kDLJb9F.js"), "./Pages/Billing/ManualOperations/PostPenalty.jsx": () => import("./assets/PostPenalty-DwOyG7t2.js"), "./Pages/Billing/ManualOperations/PostPenaltyForm.jsx": () => import("./assets/PostPenaltyForm-EsMiyZ33.js"), "./Pages/Billing/ManualOperations/RecordPayment.jsx": () => import("./assets/RecordPayment-DfPMnhH1.js"), "./Pages/Billing/ManualOperations/RecordPaymentForm.jsx": () => import("./assets/RecordPaymentForm-B5ZnjX-E.js"), "./Pages/Billing/StudentStatements/Index.jsx": () => import("./assets/Index-_VEkGCeO.js"), "./Pages/Billing/StudentStatements/Show.jsx": () => import("./assets/Show-B6ltZWor.js"), "./Pages/CertificationLevels/Create.jsx": () => import("./assets/Create-BiRjhe6T.js"), "./Pages/CertificationLevels/Edit.jsx": () => import("./assets/Edit-BT1Y6OMo.js"), "./Pages/CertificationLevels/Index.jsx": () => import("./assets/Index-D6uqGViq.js"), "./Pages/CourseEnrollments/Index.jsx": () => import("./assets/Index-BcObWNkh.js"), "./Pages/Courses/Create.jsx": () => import("./assets/Create-CeHy2hcp.js"), "./Pages/Courses/Edit.jsx": () => import("./assets/Edit-Dvxna0B7.js"), "./Pages/Courses/Index.jsx": () => import("./assets/Index-D73FDXBp.js"), "./Pages/Courses/Reports.jsx": () => import("./assets/AssignRole-DvSMr2cA.js").then((n) => n.R), "./Pages/CurriculumMappings/Create.jsx": () => import("./assets/Create-CNG3n7ya.js"), "./Pages/CurriculumMappings/Edit.jsx": () => import("./assets/Edit-o-A5ozij.js"), "./Pages/CurriculumMappings/Index.jsx": () => import("./assets/Index-Bppdr__x.js"), "./Pages/CurriculumUnits/Create.jsx": () => import("./assets/Create-BlqopQp9.js"), "./Pages/CurriculumUnits/Edit.jsx": () => import("./assets/Edit-BwCy5SYi.js"), "./Pages/CurriculumUnits/Index.jsx": () => import("./assets/Index-CzNnXJCO.js"), "./Pages/CurriculumUnits/StudentIndex.jsx": () => import("./assets/StudentIndex-BzhiDmTz.js"), "./Pages/Curriculums/Create.jsx": () => import("./assets/Create-Bn7-OjuX.js"), "./Pages/Curriculums/Edit.jsx": () => import("./assets/Edit-DWWzECKv.js"), "./Pages/Curriculums/Index.jsx": () => import("./assets/Index-4aeFsnt6.js"), "./Pages/Dashboard.jsx": () => import("./assets/Dashboard-DItTx9av.js"), "./Pages/Dashboard/AdminDashboard.jsx": () => import("./assets/AdminDashboard-CYIhQyqK.js"), "./Pages/Dashboard/StudentDashboard.jsx": () => import("./assets/StudentDashboard-CYIhQyqK.js"), "./Pages/Dashboard/TrainerDashboard.jsx": () => import("./assets/TrainerDashboard-BuNEBn27.js"), "./Pages/Departments/Create.jsx": () => import("./assets/Create-Bxb3n4cV.js"), "./Pages/Departments/Edit.jsx": () => import("./assets/Edit-3v56oUZA.js"), "./Pages/Departments/Index.jsx": () => import("./assets/Index-BoPw5-ba.js"), "./Pages/Error.jsx": () => import("./assets/Error-DR4jYpLA.js"), "./Pages/ExamBodies/Create.jsx": () => import("./assets/Create-FTTa6Wdi.js"), "./Pages/ExamBodies/Edit.jsx": () => import("./assets/Edit-wKjrIYKD.js"), "./Pages/ExamBodies/Index.jsx": () => import("./assets/Index-_RHYjKeL.js"), "./Pages/ExamBodies/Reports.jsx": () => import("./assets/Reports-CplBxbNQ.js"), "./Pages/ExamBodies/Workspace.jsx": () => import("./assets/Workspace-Dh1CGCru.js"), "./Pages/Fees/FeeAssignments/BulkAssign.jsx": () => import("./assets/BulkAssign-Ch6IpI7t.js"), "./Pages/Fees/FeeAssignments/BulkPreview.jsx": () => import("./assets/BulkPreview-B1RxeLEq.js"), "./Pages/Fees/FeeAssignments/Create.jsx": () => import("./assets/Create-BLlOLeXD.js"), "./Pages/Fees/FeeAssignments/Edit.jsx": () => import("./assets/Edit-iICSKLvo.js"), "./Pages/Fees/FeeAssignments/Index.jsx": () => import("./assets/Index-Cx3su8mn.js"), "./Pages/Fees/FeePlanItems/Create.jsx": () => import("./assets/Create-CeSut3Rh.js"), "./Pages/Fees/FeePlanItems/Edit.jsx": () => import("./assets/Edit-D00NlRS9.js"), "./Pages/Fees/FeePlanItems/EditModal.jsx": () => import("./assets/EditModal-DtcAsXDh.js"), "./Pages/Fees/FeePlanItems/Index.jsx": () => import("./assets/Index-DxFzzbpw.js"), "./Pages/Fees/FeePlans/Create.jsx": () => import("./assets/Create-vPp1ifbI.js"), "./Pages/Fees/FeePlans/Edit.jsx": () => import("./assets/Edit-DL3oIb0O.js"), "./Pages/Fees/FeePlans/Index.jsx": () => import("./assets/Index-CMJ9XL2H.js"), "./Pages/Grades/Index.jsx": () => import("./assets/Index-DJvTUzYJ.js"), "./Pages/Grades/Marksheet.jsx": () => import("./assets/Marksheet-CoaHzP37.js"), "./Pages/Grades/Publish.jsx": () => import("./assets/Publish-iaePmo5I.js"), "./Pages/Grades/StudentResults.jsx": () => import("./assets/StudentResults-Bn_UEpEp.js"), "./Pages/Home.jsx": () => import("./assets/Home-Cucyz_fC.js"), "./Pages/HostelAllocations/Create.jsx": () => import("./assets/Create-BCQNxfjs.js"), "./Pages/HostelAllocations/Edit.jsx": () => import("./assets/Edit-DKBsFUoc.js"), "./Pages/HostelAllocations/Form.jsx": () => import("./assets/Form-DIg5RwBF.js"), "./Pages/HostelAllocations/Index.jsx": () => import("./assets/Index-DgufHOV4.js"), "./Pages/Hostels/Create.jsx": () => import("./assets/Create-Bz5z_FUs.js"), "./Pages/Hostels/Edit.jsx": () => import("./assets/Edit-CLAMWadh.js"), "./Pages/Hostels/Form.jsx": () => import("./assets/Form-CHozdKvX.js"), "./Pages/Hostels/Index.jsx": () => import("./assets/Index-DtOO2aEG.js"), "./Pages/LectureRooms/Create.jsx": () => import("./assets/Create-BIetaPvY.js"), "./Pages/LectureRooms/Edit.jsx": () => import("./assets/Edit-CQgWl1nE.js"), "./Pages/LectureRooms/Index.jsx": () => import("./assets/Index-BrGnqzw-.js"), "./Pages/Permissions/Create.jsx": () => import("./assets/Create-C-DUp2aL.js"), "./Pages/Permissions/Edit.jsx": () => import("./assets/Edit-O8boCzgR.js"), "./Pages/Permissions/Index.jsx": () => import("./assets/Index-B6PGwdqM.js"), "./Pages/Profile/Edit.jsx": () => import("./assets/Edit-D1GLSxeE.js"), "./Pages/Profile/Partials/DeleteUserForm.jsx": () => import("./assets/DeleteUserForm-CCDeHVdY.js"), "./Pages/Profile/Partials/UpdatePasswordForm.jsx": () => import("./assets/UpdatePasswordForm-DG2MrccK.js"), "./Pages/Profile/Partials/UpdateProfileInformationForm.jsx": () => import("./assets/UpdateProfileInformationForm-nHAZAOXH.js"), "./Pages/Reports/Index.jsx": () => import("./assets/Index-tbJlFw5a.js"), "./Pages/Roles/AssignRole.jsx": () => import("./assets/AssignRole-DvSMr2cA.js").then((n) => n.A), "./Pages/Roles/Create.jsx": () => import("./assets/Create-C31OTo5z.js"), "./Pages/Roles/Edit.jsx": () => import("./assets/Edit-CTKAplPK.js"), "./Pages/Roles/EditPermissions.jsx": () => import("./assets/EditPermissions-m7iTzhuK.js"), "./Pages/Roles/Index.jsx": () => import("./assets/Index-B-iXQaDc.js"), "./Pages/Settings/LogViewer.jsx": () => import("./assets/LogViewer-BLuGIVGy.js"), "./Pages/Settings/PerformanceDashboard.jsx": () => import("./assets/PerformanceDashboard-9GG_bptN.js"), "./Pages/Settings/SecurityMonitoring.jsx": () => import("./assets/SecurityMonitoring-BZlUF7xa.js"), "./Pages/Settings/UserMonitor.jsx": () => import("./assets/UserMonitor-LToLyFmU.js"), "./Pages/Staff/Dashboard.jsx": () => import("./assets/Dashboard-DrsYoyuP.js"), "./Pages/Staffs/Create.jsx": () => import("./assets/Create-OFyV-LyF.js"), "./Pages/Staffs/Edit.jsx": () => import("./assets/Edit-BAvNdLw9.js"), "./Pages/Staffs/Forms/EmploymentDetails.jsx": () => import("./assets/EmploymentDetails-CSwJ7CS6.js"), "./Pages/Staffs/Forms/KinDetails.jsx": () => import("./assets/KinDetails-CjAPDu_s.js"), "./Pages/Staffs/Forms/PersonalDetails.jsx": () => import("./assets/PersonalDetails-CMD9LfN-.js"), "./Pages/Staffs/Index.jsx": () => import("./assets/Index-hk5caKAk.js"), "./Pages/Units/Create.jsx": () => import("./assets/Create-Dl7g0MTd.js"), "./Pages/Units/Edit.jsx": () => import("./assets/Edit-DuEO53Ei.js"), "./Pages/Units/Index.jsx": () => import("./assets/Index-CD4ZtXvv.js"), "./Pages/students/CourseChange.jsx": () => import("./assets/CourseChange-6BR7YhxC.js"), "./Pages/students/Create.jsx": () => import("./assets/Create-C10-d3m3.js"), "./Pages/students/Edit.jsx": () => import("./assets/Edit-Ce7-nWlh.js"), "./Pages/students/Index.jsx": () => import("./assets/Index-DR_24220.js") })
   ).then((module) => {
     const page = module.default;
     if (!page.layout && shouldUseAuthenticatedLayout(name)) {

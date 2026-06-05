@@ -184,6 +184,43 @@ export default function Sidebar({
     const isDashboardActive =
         isRouteCurrent("dashboard", "/dashboard", url) ||
         isRouteCurrent(dashboardRouteName, dashboardFallback, url);
+    const renderSidebarChildren = (items, depth = 0) =>
+        items.map((child) => {
+            if (child.children) {
+                const headingIndent = depth > 0 ? "pl-12" : "pl-8";
+
+                return (
+                    <div key={child.key ?? child.label} className="py-2">
+                        <p
+                            className={`flex min-h-6 items-center gap-2 px-4 ${headingIndent} pr-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500 [&_svg]:h-3.5 [&_svg]:w-3.5 [&_svg]:shrink-0`}
+                        >
+                            {child.icon ? ICONS[child.icon] : null}
+                            <span className="truncate">{child.label}</span>
+                        </p>
+                        {renderSidebarChildren(child.children, depth + 1)}
+                    </div>
+                );
+            }
+
+            const { routeName, fallback, label: childLabel } = child;
+
+            return (
+                <NavLink
+                    key={routeName}
+                    href={safeRoute(routeName, fallback)}
+                    label={childLabel}
+                    active={isRouteCurrent(
+                        routeName,
+                        fallback,
+                        url,
+                        child.activeRouteNames,
+                    )}
+                    depth={Math.max(0, depth - 1)}
+                    onClick={handleSidebarLinkClick}
+                />
+            );
+        });
+
     const renderNestedSection = ({ key, label, icon, basePath, children }) => {
         const isOpen = openMenu === key;
         const parentActive = isSectionActive({ basePath, children });
@@ -242,51 +279,7 @@ export default function Sidebar({
                             : "max-h-0 opacity-0"
                     }`}
                 >
-                    {children.map((child) => {
-                        if (child.children) {
-                            return (
-                                <div key={child.key ?? child.label} className="py-2">
-                                    <p className="flex min-h-6 items-center gap-2 px-4 pl-8 pr-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500 [&_svg]:h-3.5 [&_svg]:w-3.5 [&_svg]:shrink-0">
-                                        {child.icon ? ICONS[child.icon] : null}
-                                        <span className="truncate">{child.label}</span>
-                                    </p>
-                                    {child.children.map(
-                                        ({ routeName, fallback, label: childLabel, activeRouteNames }) => (
-                                            <NavLink
-                                                key={routeName}
-                                                href={safeRoute(routeName, fallback)}
-                                                label={childLabel}
-                                                active={isRouteCurrent(
-                                                    routeName,
-                                                    fallback,
-                                                    url,
-                                                    activeRouteNames,
-                                                )}
-                                                onClick={handleSidebarLinkClick}
-                                            />
-                                        ),
-                                    )}
-                                </div>
-                            );
-                        }
-
-                        const { routeName, fallback, label: childLabel } = child;
-
-                        return (
-                            <NavLink
-                                key={routeName}
-                                href={safeRoute(routeName, fallback)}
-                                label={childLabel}
-                                active={isRouteCurrent(
-                                    routeName,
-                                    fallback,
-                                    url,
-                                    child.activeRouteNames,
-                                )}
-                                onClick={handleSidebarLinkClick}
-                            />
-                        );
-                    })}
+                    {renderSidebarChildren(children)}
                 </div>
             </div>
         );

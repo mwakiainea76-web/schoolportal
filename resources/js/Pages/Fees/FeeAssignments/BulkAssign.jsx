@@ -20,8 +20,8 @@ export default function BulkAssign({ feePlans, academicYear, departments }) {
         certification_level_id: "",
         year_of_study: "",
         session_number: "",
-        selected_course_curriculum_ids: [],
-        visible_course_curriculum_ids: [],
+        selected_curriculum_mapping_ids: [],
+        visible_curriculum_mapping_ids: [],
     });
 
     const [certificationLevels, setCertificationLevels] = useState([]);
@@ -37,8 +37,8 @@ export default function BulkAssign({ feePlans, academicYear, departments }) {
             setCertificationLevels([]);
             setRows([]);
             setData("certification_level_id", "");
-            setData("selected_course_curriculum_ids", []);
-            setData("visible_course_curriculum_ids", []);
+            setData("selected_curriculum_mapping_ids", []);
+            setData("visible_curriculum_mapping_ids", []);
             return;
         }
 
@@ -74,12 +74,12 @@ export default function BulkAssign({ feePlans, academicYear, departments }) {
             !data.session_number
         ) {
             setRows([]);
-            setData("selected_course_curriculum_ids", []);
-            setData("visible_course_curriculum_ids", []);
+            setData("selected_curriculum_mapping_ids", []);
+            setData("visible_curriculum_mapping_ids", []);
             return;
         }
 
-        const loadCourseVersions = async () => {
+        const loadCurriculums = async () => {
             setLoadingRows(true);
 
             try {
@@ -98,11 +98,11 @@ export default function BulkAssign({ feePlans, academicYear, departments }) {
 
                 setRows(loadedRows);
                 setData(
-                    "visible_course_curriculum_ids",
+                    "visible_curriculum_mapping_ids",
                     loadedRows.map((row) => row.id),
                 );
                 setData(
-                    "selected_course_curriculum_ids",
+                    "selected_curriculum_mapping_ids",
                     loadedRows
                         .filter((row) => row.is_assigned)
                         .map((row) => row.id),
@@ -110,14 +110,14 @@ export default function BulkAssign({ feePlans, academicYear, departments }) {
             } catch (error) {
                 console.error("Failed to load curriculums", error);
                 setRows([]);
-                setData("selected_course_curriculum_ids", []);
-                setData("visible_course_curriculum_ids", []);
+                setData("selected_curriculum_mapping_ids", []);
+                setData("visible_curriculum_mapping_ids", []);
             } finally {
                 setLoadingRows(false);
             }
         };
 
-        loadCourseVersions();
+        loadCurriculums();
     }, [
         data.fee_plan_id,
         data.academic_year_id,
@@ -127,25 +127,25 @@ export default function BulkAssign({ feePlans, academicYear, departments }) {
         data.session_number,
     ]);
 
-    const selectedIds = data.selected_course_curriculum_ids.map(String);
+    const selectedIds = data.selected_curriculum_mapping_ids.map(String);
     const allVisibleSelected =
         rows.length > 0 &&
         rows.every((row) => selectedIds.includes(String(row.id)));
 
-    const toggleCourseVersion = (id) => {
+    const toggleCurriculum = (id) => {
         const normalizedId = String(id);
         const updated = selectedIds.includes(normalizedId)
-            ? data.selected_course_curriculum_ids.filter(
+            ? data.selected_curriculum_mapping_ids.filter(
                   (item) => String(item) !== normalizedId,
               )
-            : [...data.selected_course_curriculum_ids, id];
+            : [...data.selected_curriculum_mapping_ids, id];
 
-        setData("selected_course_curriculum_ids", updated);
+        setData("selected_curriculum_mapping_ids", updated);
     };
 
     const toggleAll = () => {
         setData(
-            "selected_course_curriculum_ids",
+            "selected_curriculum_mapping_ids",
             allVisibleSelected ? [] : rows.map((row) => row.id),
         );
     };
@@ -166,7 +166,7 @@ export default function BulkAssign({ feePlans, academicYear, departments }) {
             <div className="mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
                 <div className="overflow-hidden rounded-lg border bg-white shadow-sm">
                     <div className="bg-slate-600 py-2 text-center text-sm font-medium text-white">
-                        Course Version Fee Assignment
+                        Curriculum Fee Assignment
                     </div>
 
                     <form className="space-y-8 p-8" onSubmit={submit}>
@@ -313,7 +313,7 @@ export default function BulkAssign({ feePlans, academicYear, departments }) {
                             <div className="flex items-center justify-between border-b bg-slate-50 px-4 py-3">
                                 <div>
                                     <h2 className="text-sm font-semibold text-slate-800">
-                                        Course Versions
+                                        Curriculums
                                     </h2>
                                     <p className="text-xs text-slate-500">
                                         Existing assignments for the selected
@@ -348,8 +348,8 @@ export default function BulkAssign({ feePlans, academicYear, departments }) {
                                     data.certification_level_id &&
                                     data.year_of_study &&
                                     data.session_number
-                                        ? "No course versions found for the selected department and certification level."
-                                        : "Select fee plan, academic year, department, certification level, year of study, and session number to load course versions."}
+                                        ? "No curriculums found for the selected department and certification level."
+                                        : "Select fee plan, academic year, department, certification level, year of study, and session number to load curriculums."}
                                 </div>
                             ) : (
                                 <div className="overflow-x-auto">
@@ -369,7 +369,7 @@ export default function BulkAssign({ feePlans, academicYear, departments }) {
                                                     Course
                                                 </th>
                                                 <th className="px-4 py-3 text-left font-semibold text-slate-700">
-                                                    Course Version
+                                                    Curriculum
                                                 </th>
                                                 <th className="px-4 py-3 text-left font-semibold text-slate-700">
                                                     Certification Level
@@ -402,7 +402,7 @@ export default function BulkAssign({ feePlans, academicYear, departments }) {
                                                                     checked
                                                                 }
                                                                 onChange={() =>
-                                                                    toggleCourseVersion(
+                                                                    toggleCurriculum(
                                                                         row.id,
                                                                     )
                                                                 }
@@ -459,10 +459,10 @@ export default function BulkAssign({ feePlans, academicYear, departments }) {
                         </div>
 
                         <InputError
-                            message={errors.visible_course_curriculum_ids}
+                            message={errors.visible_curriculum_mapping_ids}
                         />
                         <InputError
-                            message={errors.selected_course_curriculum_ids}
+                            message={errors.selected_curriculum_mapping_ids}
                         />
 
                         <div className="flex justify-between pt-4">
@@ -477,7 +477,7 @@ export default function BulkAssign({ feePlans, academicYear, departments }) {
                                 disabled={
                                     processing ||
                                     !canStartBulkAssignment ||
-                                    !data.visible_course_curriculum_ids.length
+                                    !data.visible_curriculum_mapping_ids.length
                                 }
                                 type="submit"
                                 className="rounded bg-emerald-600 px-4 py-2 text-white hover:bg-slate-800 disabled:opacity-50"
@@ -488,7 +488,7 @@ export default function BulkAssign({ feePlans, academicYear, departments }) {
                                         className="mx-auto"
                                     />
                                 ) : (
-                                    "Save Course Version Assignments"
+                                    "Save Curriculum Assignments"
                                 )}
                             </button>
                         </div>

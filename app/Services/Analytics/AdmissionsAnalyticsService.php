@@ -53,8 +53,8 @@ class AdmissionsAnalyticsService
                 $join->on('course_enrollments.student_id', '=', 'students.id')
                     ->whereNull('course_enrollments.deleted_at');
             })
-            ->leftJoin('course_version_mappings', 'course_version_mappings.id', '=', 'course_enrollments.course_version_mapping_id')
-            ->leftJoin('courses', 'courses.id', '=', 'course_version_mappings.course_id')
+            ->leftJoin('curriculum_mappings', 'curriculum_mappings.id', '=', 'course_enrollments.curriculum_mapping_id')
+            ->leftJoin('courses', 'courses.id', '=', 'curriculum_mappings.course_id')
             ->leftJoin('departments', 'departments.id', '=', 'courses.department_id')
             ->whereNull('students.deleted_at')
             ->whereNull('users.deleted_at')
@@ -75,8 +75,8 @@ class AdmissionsAnalyticsService
                 $join->on('course_enrollments.student_id', '=', 'students.id')
                     ->whereNull('course_enrollments.deleted_at');
             })
-            ->leftJoin('course_version_mappings', 'course_version_mappings.id', '=', 'course_enrollments.course_version_mapping_id')
-            ->leftJoin('courses', 'courses.id', '=', 'course_version_mappings.course_id')
+            ->leftJoin('curriculum_mappings', 'curriculum_mappings.id', '=', 'course_enrollments.curriculum_mapping_id')
+            ->leftJoin('courses', 'courses.id', '=', 'curriculum_mappings.course_id')
             ->whereNull('students.deleted_at')
             ->whereNull('users.deleted_at')
             ->selectRaw("COALESCE(courses.name, 'Unassigned') as course_name")

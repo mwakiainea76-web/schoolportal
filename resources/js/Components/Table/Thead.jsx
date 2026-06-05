@@ -1,7 +1,7 @@
-const Thead = ({ children }) => {
+const Thead = ({ children, className = "", ...props }) => {
     return (
-        <thead>
-            <tr className="bg-zinc-200">{children}</tr>
+        <thead {...props}>
+            <tr className={`bg-zinc-200 ${className}`}>{children}</tr>
         </thead>
     );
 };

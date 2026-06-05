@@ -32,7 +32,7 @@ export default function coursesIndex({
         department_id: pageFilters.department_id || "",
         exam_body_id: pageFilters.exam_body_id || "",
         certification_level_id: pageFilters.certification_level_id || "",
-        course_version_id: pageFilters.course_version_id || "",
+        curriculum_id: pageFilters.curriculum_id || "",
     });
 
     const setFilter = (key, value) => {
@@ -47,24 +47,8 @@ export default function coursesIndex({
         department_id: form.department_id,
         exam_body_id: form.exam_body_id,
         certification_level_id: form.certification_level_id,
-        course_version_id: form.course_version_id,
+        curriculum_id: form.curriculum_id,
     });
-
-    const setCourseVersionFilter = (version) => {
-        setForm((current) => ({
-            ...current,
-            course_version_id: version.id,
-            course_id: "",
-        }));
-    };
-
-    const setExamBodyFilter = (examBody) => {
-        setForm((current) => ({
-            ...current,
-            exam_body_id: examBody.id,
-            certification_level_id: "",
-        }));
-    };
 
     const handleSort = (field) => {
         const direction =
@@ -107,7 +91,7 @@ export default function coursesIndex({
             department_id: "",
             exam_body_id: "",
             certification_level_id: "",
-            course_version_id: "",
+            curriculum_id: "",
         });
 
         router.get(
@@ -139,37 +123,29 @@ export default function coursesIndex({
                             <InputLabel value="Course Name" />
                             <SearchSelect
                                 routeName="courses.search"
-                                routeParams={{
-                                    course_version_id:
-                                        form.course_version_id,
-                                }}
                                 defaultOptions={[]}
                                 value={form.course_id}
                                 selectedLabel={selectedFilters.course}
                                 placeholder="Select active course..."
-                                disabled={!form.course_version_id}
                                 preloadOptions
                                 onChange={(course) =>
                                     setFilter("course_id", course.id)
                                 }
                             />
-                            {!form.course_version_id ? (
-                                <p className="mt-1 text-xs text-amber-600">
-                                    Select a course version first.
-                                </p>
-                            ) : null}
                         </div>
 
                         <div>
-                            <InputLabel value="Course Version" />
+                            <InputLabel value="Curriculum" />
                             <SearchSelect
-                                routeName="course-versions.search"
+                                routeName="curriculums.search"
                                 defaultOptions={[]}
-                                value={form.course_version_id}
-                                selectedLabel={selectedFilters.course_version}
-                                placeholder="Select version..."
+                                value={form.curriculum_id}
+                                selectedLabel={selectedFilters.curriculum}
+                                placeholder="Select curriculum..."
                                 preloadOptions
-                                onChange={setCourseVersionFilter}
+                                onChange={(curriculum) =>
+                                    setFilter("curriculum_id", curriculum.id)
+                                }
                             />
                         </div>
 
@@ -197,7 +173,9 @@ export default function coursesIndex({
                                 selectedLabel={selectedFilters.exam_body}
                                 placeholder="Type to search exam body..."
                                 preloadOptions
-                                onChange={setExamBodyFilter}
+                                onChange={(examBody) =>
+                                    setFilter("exam_body_id", examBody.id)
+                                }
                             />
                         </div>
 
@@ -205,16 +183,12 @@ export default function coursesIndex({
                             <InputLabel value="Certification Level" />
                             <SearchSelect
                                 routeName="certification-levels.search"
-                                routeParams={{
-                                    exam_body_id: form.exam_body_id,
-                                }}
                                 defaultOptions={[]}
                                 value={form.certification_level_id}
                                 selectedLabel={
                                     selectedFilters.certification_level
                                 }
                                 placeholder="Type to search level..."
-                                disabled={!form.exam_body_id}
                                 preloadOptions
                                 onChange={(level) =>
                                     setFilter(
@@ -223,11 +197,6 @@ export default function coursesIndex({
                                     )
                                 }
                             />
-                            {!form.exam_body_id ? (
-                                <p className="mt-1 text-xs text-amber-600">
-                                    Select an exam body first.
-                                </p>
-                            ) : null}
                         </div>
                     </div>
 
@@ -285,7 +254,7 @@ export default function coursesIndex({
                         >
                             Department {renderArrow("department_id")}
                         </THdata>
-                        <THdata>Current Course Version</THdata>
+                        <THdata>Current Curriculum</THdata>
                         <THdata
                             onClick={() => handleSort("created_at")}
                             className="cursor-pointer"

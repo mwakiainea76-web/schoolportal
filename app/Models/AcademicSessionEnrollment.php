@@ -94,45 +94,40 @@ class AcademicSessionEnrollment extends Model
         );
     }
 
-    public function courseVersionMapping()
+    public function curriculumMapping()
     {
         return $this->hasOneThrough(
-            CourseVersionMapping::class,
+            CurriculumMapping::class,
             CourseEnrollment::class,
             'id',
             'id',
             'course_enrollment_id',
-            'course_version_mapping_id'
+            'curriculum_mapping_id'
         );
-    }
-
-    public function getCourseVersionAttribute()
-    {
-        if (! $this->relationLoaded('courseVersionMapping')) {
-            return null;
-        }
-
-        $mapping = $this->getRelation('courseVersionMapping');
-
-        if (! $mapping || ! $mapping->relationLoaded('courseVersion')) {
-            return null;
-        }
-
-        return $mapping->getRelation('courseVersion');
     }
 
     public function getCurriculumAttribute()
     {
-        return $this->getCourseVersionAttribute();
-    }
-
-    public function getcourseAttribute()
-    {
-        if (! $this->relationLoaded('courseVersionMapping')) {
+        if (! $this->relationLoaded('curriculumMapping')) {
             return null;
         }
 
-        $mapping = $this->getRelation('courseVersionMapping');
+        $mapping = $this->getRelation('curriculumMapping');
+
+        if (! $mapping || ! $mapping->relationLoaded('curriculum')) {
+            return null;
+        }
+
+        return $mapping->getRelation('curriculum');
+    }
+
+    public function getCourseAttribute()
+    {
+        if (! $this->relationLoaded('curriculumMapping')) {
+            return null;
+        }
+
+        $mapping = $this->getRelation('curriculumMapping');
 
         if (! $mapping || ! $mapping->relationLoaded('course')) {
             return null;
@@ -167,7 +162,7 @@ class AcademicSessionEnrollment extends Model
         );
         $registration = $student?->registration_number ?? 'N/A';
         $session = $academicSession?->session_No ?? $academicSession?->name ?? 'No Session';
-        $curriculum = $this->curriculum?->name ?? 'No CourseVersion';
+        $curriculum = $this->curriculum?->name ?? 'No Curriculum';
         $course = $this->course?->name ?? 'No Course';
 
         return "{$studentName} ({$registration}) - {$session} - {$curriculum} - {$course} - Year {$this->year_of_study} - Module {$this->module}";
@@ -208,4 +203,3 @@ class AcademicSessionEnrollment extends Model
         return $this->hasMany(StudentMark::class, 'academic_session_enrollment_id');
     }
 }
-

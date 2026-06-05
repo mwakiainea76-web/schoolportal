@@ -1,5 +1,7 @@
-import React, { useRef } from "react";
+import React, { useCallback, useMemo, useRef } from "react";
 import TFooter from "./Tfooter";
+
+const ACTIONS_HEADER = "actions";
 
 const escapeCsvValue = (value) => {
     const normalized = `${value ?? ""}`.replace(/\r?\n|\r/g, " ").trim();
@@ -31,9 +33,12 @@ const DirectoryTable = ({
     exportable = true,
 }) => {
     const tableRef = useRef(null);
-    const hasRows = (pagination?.data?.length ?? 0) > 0;
+    const hasRows = useMemo(
+        () => (pagination?.data?.length ?? 0) > 0,
+        [pagination?.data?.length],
+    );
 
-    const exportToCsv = () => {
+    const exportToCsv = useCallback(() => {
         const table = tableRef.current;
 
         if (!table) {
@@ -41,22 +46,23 @@ const DirectoryTable = ({
         }
 
         const headers = Array.from(table.querySelectorAll("thead th"))
-            .map((cell) => cell.textContent.replace(/\s+/g, " ").trim())
-            .filter(Boolean);
+            .map((cell, index) => ({
+                index,
+                value: cell.textContent.replace(/\s+/g, " ").trim(),
+            }))
+            .filter(({ value }) => value);
 
-        const headerIndexesToSkip = headers.reduce((indexes, header, index) => {
-            if (header.toLowerCase() === "actions") {
-                indexes.push(index);
-            }
-
-            return indexes;
-        }, []);
+        const headerIndexesToSkip = new Set(
+            headers
+                .filter(({ value }) => value.toLowerCase() === ACTIONS_HEADER)
+                .map(({ index }) => index),
+        );
 
         const rows = Array.from(table.querySelectorAll("tbody tr"))
             .map((row) =>
                 Array.from(row.querySelectorAll("td"))
                     .map((cell, index) => ({ index, value: cell.textContent }))
-                    .filter(({ index }) => !headerIndexesToSkip.includes(index))
+                    .filter(({ index }) => !headerIndexesToSkip.has(index))
                     .map(({ value }) => escapeCsvValue(value))
             )
             .filter((row) => row.length > 0);
@@ -65,9 +71,9 @@ const DirectoryTable = ({
             return;
         }
 
-        const filteredHeaders = headers.filter(
-            (_, index) => !headerIndexesToSkip.includes(index),
-        );
+        const filteredHeaders = headers
+            .filter(({ index }) => !headerIndexesToSkip.has(index))
+            .map(({ value }) => escapeCsvValue(value));
 
         const csvContent = [filteredHeaders, ...rows]
             .map((row) => row.join(","))
@@ -85,10 +91,10 @@ const DirectoryTable = ({
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
-    };
+    }, []);
 
     return (
-        <div className=" py-6 font-sans">
+        <div className="py-6 font-sans">
             {(print || exportable) && (
                 <div className="mb-4 flex flex-wrap justify-end gap-3">
                     {exportable && (
@@ -114,17 +120,15 @@ const DirectoryTable = ({
                 </div>
             )}
 
-            {/* Table Container */}
-            <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md printable-table min-w-full">
-                <div className="overflow-x-auto min-w-full">
+            <div className="min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md printable-table">
+                <div className="w-full overflow-x-auto">
                     <table
                         ref={tableRef}
-                        className="w-full table-auto border-collapse text-left"
+                        className="min-w-max w-full table-auto border-collapse text-left"
                     >
                         {children}
                     </table>
                 </div>
-                {/* Footer visible on screen but hidden in print */}
 
                 {pagination ? (
                     <TFooter pagination={pagination} />

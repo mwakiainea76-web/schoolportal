@@ -40,19 +40,19 @@ class BillingService
 
             $assignment = $this->feeAssignmentService->resolveActiveAssignment(
                 $enrollment->academicSession?->academic_year_id ?? 0,
-                $enrollment->courseEnrollment?->course_version_mapping_id ?? null,
+                $enrollment->courseEnrollment?->curriculum_mapping_id ?? null,
                 $enrollment->year_of_study,
                 $enrollment->session_number ?: ($enrollment->academicSession?->session_number ?? $enrollment->academicSession?->session_No ?? null),
                 $issueDate
             );
 
             if (! $assignment) {
-                $courseName = $enrollment->courseEnrollment?->courseVersionMapping?->course?->name ?? 'your course';
-                $courseVersionName = $enrollment->courseEnrollment?->courseVersionMapping?->courseVersion?->name ?? 'your course version';
+                $courseName = $enrollment->courseEnrollment?->curriculumMapping?->course?->name ?? 'your course';
+                $curriculumName = $enrollment->courseEnrollment?->curriculumMapping?->curriculum?->name ?? 'your curriculum';
                 $sessionLabel = $enrollment->academicSession?->display_name ?? 'this session';
 
                 throw ValidationException::withMessages([
-                    'assignment' => "No active fee assignment exists for {$courseName} - {$courseVersionName} in {$sessionLabel}. Assign a fee plan to this course version before session registration.",
+                    'assignment' => "No active fee assignment exists for {$courseName} - {$curriculumName} in {$sessionLabel}. Assign a fee plan to this curriculum before session registration.",
                 ]);
             }
 

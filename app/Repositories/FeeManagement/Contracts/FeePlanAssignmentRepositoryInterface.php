@@ -16,7 +16,7 @@ interface FeePlanAssignmentRepositoryInterface
 
     public function assignmentsForPlan(FeePlan $feePlan): Collection;
 
-    public function assignmentsForCourseVersion(int $curriculumId): Collection;
+    public function assignmentsForCurriculum(int $curriculumId): Collection;
 
     public function findById(string $id): ?FeePlanAssignment;
 

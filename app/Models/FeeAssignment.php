@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Services\FeeAssignmentService;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -13,14 +12,10 @@ class FeeAssignment extends Model
     /** @use HasFactory<\Database\Factories\FeeAssignmentFactory> */
     use HasFactory, SoftDeletes;
 
-    protected $appends = [
-        'course_curriculum_id',
-    ];
-
     protected $fillable = [
         'fee_plan_id',
         'academic_year_id',
-        'course_version_mapping_id',
+        'curriculum_mapping_id',
         'year_of_study',
         'session_number',
         'created_by',
@@ -52,19 +47,9 @@ class FeeAssignment extends Model
         return $this->belongsTo(AcademicYear::class, 'academic_year_id');
     }
 
-    public function courseCourseVersion()
+    public function curriculumMapping()
     {
-        return $this->belongsTo(CourseVersionMapping::class, 'course_version_mapping_id');
-    }
-
-    public function courseVersionMapping()
-    {
-        return $this->belongsTo(CourseVersionMapping::class, 'course_version_mapping_id');
-    }
-
-    public function courseCurriculum()
-    {
-        return $this->belongsTo(CourseVersionMapping::class, 'course_version_mapping_id');
+        return $this->belongsTo(CurriculumMapping::class, 'curriculum_mapping_id');
     }
 
     public function createdBy()
@@ -77,9 +62,4 @@ class FeeAssignment extends Model
         return $query->where('is_active', true);
     }
 
-    protected function courseCurriculumId(): Attribute
-    {
-        return Attribute::get(fn () => $this->course_version_mapping_id);
-    }
 }
-

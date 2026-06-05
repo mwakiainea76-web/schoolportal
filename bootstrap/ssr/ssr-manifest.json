@@ -6,7 +6,7 @@
     "/build/assets/GuestLayout-DaSCEquR.js"
   ],
   "resources/js/Components/Checkbox.jsx": [
-    "/build/assets/Dashboard-BZCDNBOI.js"
+    "/build/assets/Dashboard-DItTx9av.js"
   ],
   "resources/js/Components/DangerButton.jsx": [
     "/build/assets/DeleteUserForm-CCDeHVdY.js"
@@ -30,7 +30,7 @@
     "/build/assets/PrimaryButton-DsDrFqHJ.js"
   ],
   "resources/js/Components/SearchSelect.jsx": [
-    "/build/assets/SearchSelect-DFX8pDhT.js"
+    "/build/assets/SearchSelect-DbLPTvUh.js"
   ],
   "resources/js/Components/SecondaryButton.jsx": [
     "/build/assets/DeleteUserForm-CCDeHVdY.js"
@@ -41,25 +41,25 @@
   "resources/js/Components/SideBarLink.jsx": [],
   "resources/js/Components/Sidebar.jsx": [],
   "resources/js/Components/Table/THdata.jsx": [
-    "/build/assets/Tdata--sq9P0k3.js"
+    "/build/assets/Tdata-ezyKIspX.js"
   ],
   "resources/js/Components/Table/Table.jsx": [
-    "/build/assets/Tdata--sq9P0k3.js"
+    "/build/assets/Tdata-ezyKIspX.js"
   ],
   "resources/js/Components/Table/Tbody.jsx": [
-    "/build/assets/Tdata--sq9P0k3.js"
+    "/build/assets/Tdata-ezyKIspX.js"
   ],
   "resources/js/Components/Table/Tdata.jsx": [
-    "/build/assets/Tdata--sq9P0k3.js"
+    "/build/assets/Tdata-ezyKIspX.js"
   ],
   "resources/js/Components/Table/Tfooter.jsx": [
-    "/build/assets/Tdata--sq9P0k3.js"
+    "/build/assets/Tdata-ezyKIspX.js"
   ],
   "resources/js/Components/Table/Thead.jsx": [
-    "/build/assets/Tdata--sq9P0k3.js"
+    "/build/assets/Tdata-ezyKIspX.js"
   ],
   "resources/js/Components/Table/Trow.jsx": [
-    "/build/assets/Tdata--sq9P0k3.js"
+    "/build/assets/Tdata-ezyKIspX.js"
   ],
   "resources/js/Components/TextArea.jsx": [
     "/build/assets/TextArea-DrH8CNbm.js"
@@ -82,43 +82,43 @@
     "/build/assets/Schedules-dezb1yBk.js"
   ],
   "resources/js/Pages/Academic/Timetables/Create.jsx": [
-    "/build/assets/Create-T42auL8e.js"
+    "/build/assets/Create-DNxYJ9B4.js"
   ],
   "resources/js/Pages/Academic/Timetables/CreateHod.jsx": [
-    "/build/assets/CreateHod-Dex4Pk-B.js"
+    "/build/assets/CreateHod-B3UzvSMK.js"
   ],
   "resources/js/Pages/Academic/Timetables/Edit.jsx": [
-    "/build/assets/Edit-GSOzp60m.js"
+    "/build/assets/Edit-CrYjtdMC.js"
   ],
   "resources/js/Pages/Academic/Timetables/Index.jsx": [
-    "/build/assets/Index-BV8SaWar.js"
+    "/build/assets/Index-B6_VlHKC.js"
   ],
   "resources/js/Pages/AcademicSessionEnrollments/Create.jsx": [
     "/build/assets/Create-BCmpV9bR.js"
   ],
   "resources/js/Pages/AcademicSessionEnrollments/Edit.jsx": [
-    "/build/assets/Edit-DrMik-k4.js"
+    "/build/assets/Edit-DJ_8kRvW.js"
   ],
   "resources/js/Pages/AcademicSessionEnrollments/Index.jsx": [
-    "/build/assets/Index-Cmj7ycGq.js"
+    "/build/assets/Index-nRQmxxQ4.js"
   ],
   "resources/js/Pages/AcademicSessions/Create.jsx": [
     "/build/assets/Create-ukL_Dqqs.js"
   ],
   "resources/js/Pages/AcademicSessions/Edit.jsx": [
-    "/build/assets/Edit-DhK3Ulye.js"
+    "/build/assets/Edit-BLEcU61e.js"
   ],
   "resources/js/Pages/AcademicSessions/Index.jsx": [
-    "/build/assets/Index-Jqo9-tvx.js"
+    "/build/assets/Index-CP3OVkB1.js"
   ],
   "resources/js/Pages/AcademicYears/Create.jsx": [
     "/build/assets/Create-Ch8SMVNZ.js"
   ],
   "resources/js/Pages/AcademicYears/Edit.jsx": [
-    "/build/assets/Edit-D-Qt62Uk.js"
+    "/build/assets/Edit-B0jXWpWP.js"
   ],
   "resources/js/Pages/AcademicYears/Index.jsx": [
-    "/build/assets/Index-DB4SRLhh.js"
+    "/build/assets/Index-0Hvf0R-3.js"
   ],
   "resources/js/Pages/Auth/ConfirmPassword.jsx": [
     "/build/assets/ConfirmPassword-1ZGPxF5n.js"
@@ -139,19 +139,19 @@
     "/build/assets/VerifyEmail-BH-rQcLd.js"
   ],
   "resources/js/Pages/Billing/BulkOperations.jsx": [
-    "/build/assets/BulkOperations-QMj9YLW4.js"
+    "/build/assets/BulkOperations-DAIBBx4Q.js"
   ],
   "resources/js/Pages/Billing/InvoiceCreate.jsx": [
-    "/build/assets/InvoiceCreate-CKqDoIJw.js"
+    "/build/assets/InvoiceCreate-B-6KTBFj.js"
   ],
   "resources/js/Pages/Billing/InvoiceIndex.jsx": [
-    "/build/assets/InvoiceIndex-m5GZOBt5.js"
+    "/build/assets/InvoiceIndex-BTU0-xRr.js"
   ],
   "resources/js/Pages/Billing/InvoiceShow.jsx": [
-    "/build/assets/InvoiceShow-DwKeE6Uh.js"
+    "/build/assets/InvoiceShow-B1REb4dK.js"
   ],
   "resources/js/Pages/Billing/LedgerIndex.jsx": [
-    "/build/assets/LedgerIndex--C8ZWjqS.js"
+    "/build/assets/LedgerIndex-BLD3xu6-.js"
   ],
   "resources/js/Pages/Billing/ManualOperations/ActionCard.jsx": [
     "/build/assets/ActionCard-BqjP59Fa.js"
@@ -196,79 +196,79 @@
     "/build/assets/Show-B6ltZWor.js"
   ],
   "resources/js/Pages/CertificationLevels/Create.jsx": [
-    "/build/assets/Create-Cq39Bsiw.js"
+    "/build/assets/Create-BiRjhe6T.js"
   ],
   "resources/js/Pages/CertificationLevels/Edit.jsx": [
-    "/build/assets/Edit-CNtHERpV.js"
+    "/build/assets/Edit-BT1Y6OMo.js"
   ],
   "resources/js/Pages/CertificationLevels/Index.jsx": [
-    "/build/assets/Index-BvURJCp6.js"
+    "/build/assets/Index-D6uqGViq.js"
   ],
   "resources/js/Pages/CourseEnrollments/Index.jsx": [
-    "/build/assets/Index-CnDm9pfa.js"
-  ],
-  "resources/js/Pages/CourseVersionMappings/Create.jsx": [
-    "/build/assets/Create-5dDkM8vi.js"
-  ],
-  "resources/js/Pages/CourseVersionMappings/Edit.jsx": [
-    "/build/assets/Edit-BLlEhkn3.js"
-  ],
-  "resources/js/Pages/CourseVersionMappings/Index.jsx": [
-    "/build/assets/Index-D90AfQt2.js"
-  ],
-  "resources/js/Pages/CourseVersionUnits/Create.jsx": [
-    "/build/assets/Create-CoAJSdTv.js"
-  ],
-  "resources/js/Pages/CourseVersionUnits/Edit.jsx": [
-    "/build/assets/Edit-lOZnUacq.js"
-  ],
-  "resources/js/Pages/CourseVersionUnits/Index.jsx": [
-    "/build/assets/Index-Dhs3JbAU.js"
-  ],
-  "resources/js/Pages/CourseVersionUnits/StudentIndex.jsx": [
-    "/build/assets/StudentIndex-DEz0AkPS.js"
-  ],
-  "resources/js/Pages/CourseVersions/Create.jsx": [
-    "/build/assets/Create-BR4VQngc.js"
-  ],
-  "resources/js/Pages/CourseVersions/Edit.jsx": [
-    "/build/assets/Edit-qfWnul8I.js"
-  ],
-  "resources/js/Pages/CourseVersions/Index.jsx": [
-    "/build/assets/Index-CQ_dLlP3.js"
+    "/build/assets/Index-BcObWNkh.js"
   ],
   "resources/js/Pages/Courses/Create.jsx": [
-    "/build/assets/Create-BjB6XcxG.js"
+    "/build/assets/Create-CeHy2hcp.js"
   ],
   "resources/js/Pages/Courses/Edit.jsx": [
-    "/build/assets/Edit-B7dJSGhm.js"
+    "/build/assets/Edit-Dvxna0B7.js"
   ],
   "resources/js/Pages/Courses/Index.jsx": [
-    "/build/assets/Index-DZ6pR0Bs.js"
+    "/build/assets/Index-D73FDXBp.js"
   ],
   "resources/js/Pages/Courses/Reports.jsx": [
     "/build/assets/AssignRole-DvSMr2cA.js"
   ],
+  "resources/js/Pages/CurriculumMappings/Create.jsx": [
+    "/build/assets/Create-CNG3n7ya.js"
+  ],
+  "resources/js/Pages/CurriculumMappings/Edit.jsx": [
+    "/build/assets/Edit-o-A5ozij.js"
+  ],
+  "resources/js/Pages/CurriculumMappings/Index.jsx": [
+    "/build/assets/Index-Bppdr__x.js"
+  ],
+  "resources/js/Pages/CurriculumUnits/Create.jsx": [
+    "/build/assets/Create-BlqopQp9.js"
+  ],
+  "resources/js/Pages/CurriculumUnits/Edit.jsx": [
+    "/build/assets/Edit-BwCy5SYi.js"
+  ],
+  "resources/js/Pages/CurriculumUnits/Index.jsx": [
+    "/build/assets/Index-CzNnXJCO.js"
+  ],
+  "resources/js/Pages/CurriculumUnits/StudentIndex.jsx": [
+    "/build/assets/StudentIndex-BzhiDmTz.js"
+  ],
+  "resources/js/Pages/Curriculums/Create.jsx": [
+    "/build/assets/Create-Bn7-OjuX.js"
+  ],
+  "resources/js/Pages/Curriculums/Edit.jsx": [
+    "/build/assets/Edit-DWWzECKv.js"
+  ],
+  "resources/js/Pages/Curriculums/Index.jsx": [
+    "/build/assets/Index-4aeFsnt6.js"
+  ],
   "resources/js/Pages/Dashboard.jsx": [
-    "/build/assets/Dashboard-BZCDNBOI.js"
+    "/build/assets/Dashboard-DItTx9av.js"
   ],
   "resources/js/Pages/Dashboard/AdminDashboard.jsx": [
-    "/build/assets/AdminDashboard-BHc0zbdp.js"
+    "/build/assets/AdminDashboard-CYIhQyqK.js"
   ],
   "resources/js/Pages/Dashboard/StudentDashboard.jsx": [
-    "/build/assets/StudentDashboard-BHc0zbdp.js"
+    "/build/assets/StudentDashboard-CYIhQyqK.js"
   ],
   "resources/js/Pages/Dashboard/TrainerDashboard.jsx": [
     "/build/assets/TrainerDashboard-BuNEBn27.js"
   ],
   "resources/js/Pages/Departments/Create.jsx": [
-    "/build/assets/Create-j2FjZyPz.js"
+    "/build/assets/Create-Bxb3n4cV.js"
   ],
   "resources/js/Pages/Departments/Edit.jsx": [
-    "/build/assets/Edit-COqaWPYg.js"
+    "/build/assets/Edit-3v56oUZA.js"
   ],
   "resources/js/Pages/Departments/Index.jsx": [
-    "/build/assets/Index-CvnXWTCF.js"
+    "/build/assets/Index-BoPw5-ba.js"
   ],
   "resources/js/Pages/Error.jsx": [
     "/build/assets/Error-DR4jYpLA.js"
@@ -280,40 +280,40 @@
     "/build/assets/Edit-wKjrIYKD.js"
   ],
   "resources/js/Pages/ExamBodies/Index.jsx": [
-    "/build/assets/Index-B8I9UADB.js"
+    "/build/assets/Index-_RHYjKeL.js"
   ],
   "resources/js/Pages/ExamBodies/Reports.jsx": [
-    "/build/assets/Reports-ChPBgaDh.js"
+    "/build/assets/Reports-CplBxbNQ.js"
   ],
   "resources/js/Pages/ExamBodies/Workspace.jsx": [
-    "/build/assets/Workspace-mhPWz6j8.js"
+    "/build/assets/Workspace-Dh1CGCru.js"
   ],
   "resources/js/Pages/Fees/FeeAssignments/BulkAssign.jsx": [
-    "/build/assets/BulkAssign-D9PUESLf.js"
+    "/build/assets/BulkAssign-Ch6IpI7t.js"
   ],
   "resources/js/Pages/Fees/FeeAssignments/BulkPreview.jsx": [
-    "/build/assets/BulkPreview-CMFKO_CH.js"
+    "/build/assets/BulkPreview-B1RxeLEq.js"
   ],
   "resources/js/Pages/Fees/FeeAssignments/Create.jsx": [
-    "/build/assets/Create-Bpa3-qe9.js"
+    "/build/assets/Create-BLlOLeXD.js"
   ],
   "resources/js/Pages/Fees/FeeAssignments/Edit.jsx": [
-    "/build/assets/Edit-BTpa0DM2.js"
+    "/build/assets/Edit-iICSKLvo.js"
   ],
   "resources/js/Pages/Fees/FeeAssignments/Index.jsx": [
-    "/build/assets/Index-EvD-XH0Q.js"
+    "/build/assets/Index-Cx3su8mn.js"
   ],
   "resources/js/Pages/Fees/FeePlanItems/Create.jsx": [
-    "/build/assets/Create-JxbJYoAO.js"
+    "/build/assets/Create-CeSut3Rh.js"
   ],
   "resources/js/Pages/Fees/FeePlanItems/Edit.jsx": [
-    "/build/assets/Edit-B_Jdv06A.js"
+    "/build/assets/Edit-D00NlRS9.js"
   ],
   "resources/js/Pages/Fees/FeePlanItems/EditModal.jsx": [
-    "/build/assets/EditModal-CQT9p4iR.js"
+    "/build/assets/EditModal-DtcAsXDh.js"
   ],
   "resources/js/Pages/Fees/FeePlanItems/Index.jsx": [
-    "/build/assets/Index-CFk2hv68.js"
+    "/build/assets/Index-DxFzzbpw.js"
   ],
   "resources/js/Pages/Fees/FeePlans/Create.jsx": [
     "/build/assets/Create-vPp1ifbI.js"
@@ -322,16 +322,16 @@
     "/build/assets/Edit-DL3oIb0O.js"
   ],
   "resources/js/Pages/Fees/FeePlans/Index.jsx": [
-    "/build/assets/Index-ZguRCOZV.js"
+    "/build/assets/Index-CMJ9XL2H.js"
   ],
   "resources/js/Pages/Grades/Index.jsx": [
-    "/build/assets/Index-BR4BUztg.js"
+    "/build/assets/Index-DJvTUzYJ.js"
   ],
   "resources/js/Pages/Grades/Marksheet.jsx": [
-    "/build/assets/Marksheet-B4wn0mwb.js"
+    "/build/assets/Marksheet-CoaHzP37.js"
   ],
   "resources/js/Pages/Grades/Publish.jsx": [
-    "/build/assets/Publish-DaK0Abq7.js"
+    "/build/assets/Publish-iaePmo5I.js"
   ],
   "resources/js/Pages/Grades/StudentResults.jsx": [
     "/build/assets/StudentResults-Bn_UEpEp.js"
@@ -340,16 +340,16 @@
     "/build/assets/Home-Cucyz_fC.js"
   ],
   "resources/js/Pages/HostelAllocations/Create.jsx": [
-    "/build/assets/Create-Do-HHZNC.js"
+    "/build/assets/Create-BCQNxfjs.js"
   ],
   "resources/js/Pages/HostelAllocations/Edit.jsx": [
-    "/build/assets/Edit-0uIAvLiW.js"
+    "/build/assets/Edit-DKBsFUoc.js"
   ],
   "resources/js/Pages/HostelAllocations/Form.jsx": [
-    "/build/assets/Form-DulB3vP7.js"
+    "/build/assets/Form-DIg5RwBF.js"
   ],
   "resources/js/Pages/HostelAllocations/Index.jsx": [
-    "/build/assets/Index-BFAZgcCe.js"
+    "/build/assets/Index-DgufHOV4.js"
   ],
   "resources/js/Pages/Hostels/Create.jsx": [
     "/build/assets/Create-Bz5z_FUs.js"
@@ -361,16 +361,16 @@
     "/build/assets/Form-CHozdKvX.js"
   ],
   "resources/js/Pages/Hostels/Index.jsx": [
-    "/build/assets/Index--2Mzrke-.js"
+    "/build/assets/Index-DtOO2aEG.js"
   ],
   "resources/js/Pages/LectureRooms/Create.jsx": [
-    "/build/assets/Create-DfBoEaHt.js"
+    "/build/assets/Create-BIetaPvY.js"
   ],
   "resources/js/Pages/LectureRooms/Edit.jsx": [
-    "/build/assets/Edit-BMsTwwjs.js"
+    "/build/assets/Edit-CQgWl1nE.js"
   ],
   "resources/js/Pages/LectureRooms/Index.jsx": [
-    "/build/assets/Index-4m4aaXfW.js"
+    "/build/assets/Index-BrGnqzw-.js"
   ],
   "resources/js/Pages/Permissions/Create.jsx": [
     "/build/assets/Create-C-DUp2aL.js"
@@ -379,7 +379,7 @@
     "/build/assets/Edit-O8boCzgR.js"
   ],
   "resources/js/Pages/Permissions/Index.jsx": [
-    "/build/assets/Index-COgpo6RV.js"
+    "/build/assets/Index-B6PGwdqM.js"
   ],
   "resources/js/Pages/Profile/Edit.jsx": [
     "/build/assets/Edit-D1GLSxeE.js"
@@ -394,7 +394,7 @@
     "/build/assets/UpdateProfileInformationForm-nHAZAOXH.js"
   ],
   "resources/js/Pages/Reports/Index.jsx": [
-    "/build/assets/Index-VtvngmSd.js"
+    "/build/assets/Index-tbJlFw5a.js"
   ],
   "resources/js/Pages/Roles/AssignRole.jsx": [
     "/build/assets/AssignRole-DvSMr2cA.js"
@@ -406,10 +406,10 @@
     "/build/assets/Edit-CTKAplPK.js"
   ],
   "resources/js/Pages/Roles/EditPermissions.jsx": [
-    "/build/assets/EditPermissions-BSflAzLn.js"
+    "/build/assets/EditPermissions-m7iTzhuK.js"
   ],
   "resources/js/Pages/Roles/Index.jsx": [
-    "/build/assets/Index-Bgs5LRmk.js"
+    "/build/assets/Index-B-iXQaDc.js"
   ],
   "resources/js/Pages/Settings/LogViewer.jsx": [
     "/build/assets/LogViewer-BLuGIVGy.js"
@@ -427,22 +427,22 @@
     "/build/assets/Dashboard-DrsYoyuP.js"
   ],
   "resources/js/Pages/Staffs/Create.jsx": [
-    "/build/assets/Create-Cu9Qx-3S.js"
+    "/build/assets/Create-OFyV-LyF.js"
   ],
   "resources/js/Pages/Staffs/Edit.jsx": [
-    "/build/assets/Edit-DBJLLddM.js"
+    "/build/assets/Edit-BAvNdLw9.js"
   ],
   "resources/js/Pages/Staffs/Forms/EmploymentDetails.jsx": [
-    "/build/assets/EmploymentDetails-DUdUghJS.js"
+    "/build/assets/EmploymentDetails-CSwJ7CS6.js"
   ],
   "resources/js/Pages/Staffs/Forms/KinDetails.jsx": [
-    "/build/assets/KinDetails-CWBx3Arp.js"
+    "/build/assets/KinDetails-CjAPDu_s.js"
   ],
   "resources/js/Pages/Staffs/Forms/PersonalDetails.jsx": [
-    "/build/assets/PersonalDetails-BjXfDzu7.js"
+    "/build/assets/PersonalDetails-CMD9LfN-.js"
   ],
   "resources/js/Pages/Staffs/Index.jsx": [
-    "/build/assets/Index-D39pYyHp.js"
+    "/build/assets/Index-hk5caKAk.js"
   ],
   "resources/js/Pages/Units/Create.jsx": [
     "/build/assets/Create-Dl7g0MTd.js"
@@ -451,19 +451,19 @@
     "/build/assets/Edit-DuEO53Ei.js"
   ],
   "resources/js/Pages/Units/Index.jsx": [
-    "/build/assets/Index-2qQKHqOW.js"
+    "/build/assets/Index-CD4ZtXvv.js"
   ],
   "resources/js/Pages/students/CourseChange.jsx": [
-    "/build/assets/CourseChange-CecwQRFY.js"
+    "/build/assets/CourseChange-6BR7YhxC.js"
   ],
   "resources/js/Pages/students/Create.jsx": [
-    "/build/assets/Create-CdGogR7R.js"
+    "/build/assets/Create-C10-d3m3.js"
   ],
   "resources/js/Pages/students/Edit.jsx": [
-    "/build/assets/Edit-6pBcqcQn.js"
+    "/build/assets/Edit-Ce7-nWlh.js"
   ],
   "resources/js/Pages/students/Index.jsx": [
-    "/build/assets/Index-CDs_PafS.js"
+    "/build/assets/Index-DR_24220.js"
   ],
   "resources/js/app.jsx": [],
   "resources/js/bootstrap.js": [],

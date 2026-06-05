@@ -8,7 +8,7 @@ export default function CourseChange({
     filters,
     student,
     lookupError,
-    courseCurricula,
+    curriculumMappings,
     latestTransfer,
 }) {
     const [showConfirm, setShowConfirm] = useState(false);
@@ -17,7 +17,7 @@ export default function CourseChange({
     });
     const transferForm = useForm({
         registration_number: filters.registration_number || "",
-        new_course_version_mapping_id: "",
+        new_curriculum_mapping_id: "",
         notes: "",
     });
 
@@ -25,15 +25,15 @@ export default function CourseChange({
         transferForm.setData("registration_number", filters.registration_number || "");
     }, [filters.registration_number]);
 
-    const selectedCourse = courseCurricula.find(
+    const selectedCourse = curriculumMappings.find(
         (course) =>
             String(course.id) ===
-            String(transferForm.data.new_course_version_mapping_id),
+            String(transferForm.data.new_curriculum_mapping_id),
     );
     const isSameCourse =
         student &&
         selectedCourse &&
-        Number(student.current_course_version_mapping_id) ===
+        Number(student.current_curriculum_mapping_id) ===
             Number(selectedCourse.id);
 
     const lookupStudent = (e) => {
@@ -57,7 +57,7 @@ export default function CourseChange({
             preserveScroll: true,
             onSuccess: () => {
                 setShowConfirm(false);
-                transferForm.reset("new_course_version_mapping_id", "notes");
+                transferForm.reset("new_curriculum_mapping_id", "notes");
                 lookupForm.reset("registration_number");
             },
         });
@@ -144,10 +144,10 @@ export default function CourseChange({
                             <div>
                                 <InputLabel value="New Course" required />
                                 <select
-                                    value={transferForm.data.new_course_version_mapping_id}
+                                    value={transferForm.data.new_curriculum_mapping_id}
                                     onChange={(e) => {
                                         transferForm.setData(
-                                            "new_course_version_mapping_id",
+                                            "new_curriculum_mapping_id",
                                             e.target.value,
                                         );
                                         setShowConfirm(false);
@@ -155,13 +155,13 @@ export default function CourseChange({
                                     className="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none transition focus:border-emerald-400"
                                 >
                                     <option value="">Select a new course</option>
-                                    {courseCurricula.map((course) => (
+                                    {curriculumMappings.map((course) => (
                                         <option key={course.id} value={course.id}>
                                             {course.name}
                                         </option>
                                     ))}
                                 </select>
-                                <InputError message={transferForm.errors.new_course_version_mapping_id} className="mt-2" />
+                                <InputError message={transferForm.errors.new_curriculum_mapping_id} className="mt-2" />
                                 {isSameCourse ? (
                                     <p className="mt-2 text-sm text-red-600">
                                         New course must differ from current course.

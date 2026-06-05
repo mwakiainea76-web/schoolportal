@@ -4,7 +4,7 @@ namespace App\Services;
 
 use App\Models\CertificationLevel;
 use App\Models\Course;
-use App\Models\CourseVersionMapping;
+use App\Models\CurriculumMapping;
 use App\Models\Unit;
 use Illuminate\Support\Facades\DB;
 
@@ -25,7 +25,7 @@ class CourseService
                 'department_id' => $data['department_id'],
             ]);
 
-            $this->ensureCourseVersionMapping($course, (int) $data['course_version_id']);
+            $this->ensureCurriculumMapping($course, (int) $data['curriculum_id']);
 
             return $course;
         });
@@ -46,9 +46,7 @@ class CourseService
                 'department_id' => $data['department_id'],
             ]);
 
-            if (! empty($data['course_version_id'])) {
-                $this->ensureCourseVersionMapping($course, (int) $data['course_version_id']);
-            }
+            $this->ensureCurriculumMapping($course, (int) $data['curriculum_id']);
         });
 
         return $course;
@@ -92,12 +90,12 @@ class CourseService
             ]);
     }
 
-    protected function ensureCourseVersionMapping(Course $course, int $courseVersionId): CourseVersionMapping
+    protected function ensureCurriculumMapping(Course $course, int $curriculumId): CurriculumMapping
     {
-        return CourseVersionMapping::firstOrCreate(
+        return CurriculumMapping::firstOrCreate(
             [
                 'course_id' => $course->id,
-                'course_version_id' => $courseVersionId,
+                'curriculum_id' => $curriculumId,
             ],
             [
                 'is_active' => true,

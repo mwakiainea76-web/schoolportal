@@ -7,7 +7,7 @@ use App\Http\Requests\StorecourseRequest;
 use App\Http\Requests\UpdatecourseRequest;
 use App\Models\CertificationLevel;
 use App\Models\Course;
-use App\Models\CourseVersion;
+use App\Models\Curriculum;
 use App\Models\Department;
 use App\Models\ExamBody;
 use App\Services\courseService;
@@ -32,12 +32,8 @@ class CourseController extends Controller
             'department_id',
             'exam_body_id',
             'certification_level_id',
-            'course_version_id',
+            'curriculum_id',
         ]);
-
-        if (empty($filters['exam_body_id'])) {
-            unset($filters['certification_level_id']);
-        }
 
         $courses = Course::query()
             ->with([
@@ -87,20 +83,24 @@ class CourseController extends Controller
     {
         $course->load([
             'department:id,name',
-            'certificationLevel:id,name',
-            'courseVersionMappings:id,course_id,course_version_id,is_active',
-            'courseVersionMappings.courseVersion:id,name',
+            'certificationLevel:id,exam_body_id,name',
+            'certificationLevel.examBody:id,code,name',
+            'curriculumMappings:id,course_id,curriculum_id,is_active',
+            'curriculumMappings.curriculum:id,name',
         ]);
 
-        $selectedMapping = $course->courseVersionMappings
+        $selectedMapping = $course->curriculumMappings
             ->firstWhere('is_active', true)
-            ?? $course->courseVersionMappings->first();
+            ?? $course->curriculumMappings->first();
 
         return inertia('Courses/Edit', [
             'selected_filters' => [
                 'department' => $course->department?->name,
+                'exam_body' => $course->certificationLevel?->examBody
+                    ? trim($course->certificationLevel->examBody->code.' - '.$course->certificationLevel->examBody->name, ' -')
+                    : null,
                 'certification_level' => $course->certificationLevel?->name,
-                'course_version' => $selectedMapping?->courseVersion?->name,
+                'curriculum' => $selectedMapping?->curriculum?->name,
             ],
             'course' => $course,
         ]);
@@ -142,11 +142,11 @@ class CourseController extends Controller
             ->with('certificationLevel:id,name')
             ->when($departmentId, fn ($builder) => $builder->where('department_id', $departmentId))
             ->when($versionedOnly, function ($builder) {
-                $builder->whereHas('courseVersionMappings', function ($mappingQuery) {
+                $builder->whereHas('curriculumMappings', function ($mappingQuery) {
                     $mappingQuery
                         ->where('is_active', true)
-                        ->whereHas('courseVersion', fn ($courseVersionQuery) => $courseVersionQuery->where('is_active', true))
-                        ->whereHas('courseVersionUnits');
+                        ->whereHas('curriculum', fn ($curriculumQuery) => $curriculumQuery->where('is_active', true))
+                        ->whereHas('curriculumUnits');
                 });
             })
             ->when($query !== '', function ($builder) use ($query) {
@@ -182,8 +182,8 @@ class CourseController extends Controller
         $examBody = ! empty($filters['exam_body_id'])
             ? ExamBody::select('id', 'code', 'name')->find($filters['exam_body_id'])
             : null;
-        $courseVersion = ! empty($filters['course_version_id'])
-            ? CourseVersion::select('id', 'name')->find($filters['course_version_id'])
+        $curriculum = ! empty($filters['curriculum_id'])
+            ? Curriculum::select('id', 'name')->find($filters['curriculum_id'])
             : null;
 
         return [
@@ -195,7 +195,7 @@ class CourseController extends Controller
                 ? trim($examBody->code.' - '.$examBody->name, ' -')
                 : null,
             'certification_level' => $certificationLevel?->name,
-            'course_version' => $courseVersion?->name,
+            'curriculum' => $curriculum?->name,
         ];
     }
 

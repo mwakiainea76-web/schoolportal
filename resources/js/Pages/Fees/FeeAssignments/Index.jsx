@@ -69,15 +69,15 @@ export default function FeeAssignmentsIndex({ assignments, filters }) {
 
     const courseCertificationLabel = (assignment) => {
         const courseName =
-            assignment.course_version_mapping?.course?.name ||
-            assignment.course_curriculum?.course?.name;
+            assignment.curriculum_mapping?.course?.name ||
+            assignment.curriculum_mapping?.course?.name;
         const certificationName =
-            assignment.course_version_mapping?.course?.certificationLevel
+            assignment.curriculum_mapping?.course?.certificationLevel
                 ?.name ||
-            assignment.course_version_mapping?.course?.certification_level
+            assignment.curriculum_mapping?.course?.certification_level
                 ?.name ||
-            assignment.course_curriculum?.course?.certificationLevel?.name ||
-            assignment.course_curriculum?.course?.certification_level?.name;
+            assignment.curriculum_mapping?.course?.certificationLevel?.name ||
+            assignment.curriculum_mapping?.course?.certification_level?.name;
 
         if (!courseName && !certificationName) {
             return "-";
@@ -150,10 +150,10 @@ export default function FeeAssignmentsIndex({ assignments, filters }) {
                 >
                     <Thead>
                         <THdata
-                            onClick={() => handleSort("course_curriculum_id")}
+                            onClick={() => handleSort("curriculum_mapping_id")}
                         >
                             Course / Certification{" "}
-                            {renderArrow("course_curriculum_id")}
+                            {renderArrow("curriculum_mapping_id")}
                         </THdata>
 
                         <THdata onClick={() => handleSort("fee_plan_id")}>

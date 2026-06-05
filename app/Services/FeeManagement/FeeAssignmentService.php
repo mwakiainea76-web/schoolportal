@@ -6,7 +6,7 @@ use App\Exceptions\ApiException;
 use App\Models\AcademicSession;
 use App\Models\AcademicYear;
 use App\Models\FeePlanAssignment;
-use App\Repositories\FeeManagement\Contracts\CourseVersionRepositoryInterface;
+use App\Repositories\FeeManagement\Contracts\CurriculumRepositoryInterface;
 use App\Repositories\FeeManagement\Contracts\FeePlanAssignmentRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -18,7 +18,7 @@ class FeeAssignmentService
         protected FeePlanService $plans,
         protected FeeComponentService $components,
         protected FeePlanAssignmentRepositoryInterface $assignments,
-        protected CourseVersionRepositoryInterface $curricula
+        protected CurriculumRepositoryInterface $curricula
     ) {}
 
     public function assign(int $planId, array $data, int $userId): FeePlanAssignment
@@ -42,7 +42,7 @@ class FeeAssignmentService
         if ($conflict) {
             throw new ApiException(
                 'ASSIGNMENT_CONFLICT',
-                'An active fee assignment already exists for this course version, academic year, and session.',
+                'An active fee assignment already exists for this curriculum, academic year, and session.',
                 409,
                 $this->conflictDetails($conflict)
             );
@@ -102,7 +102,7 @@ class FeeAssignmentService
                     'force' => false,
                     'conflicts' => $conflicts->map(fn (FeePlanAssignment $assignment) => [
                         'curriculum_id' => $assignment->curriculum_id,
-                        'course_version_name' => $assignment->curriculum?->name,
+                        'curriculum_name' => $assignment->curriculum?->name,
                         'current_plan_name' => $assignment->feePlan?->name,
                         'assigned_date' => optional($assignment->assigned_at)->toIso8601String(),
                     ])->values()->all(),
@@ -113,7 +113,7 @@ class FeeAssignmentService
         if (($data['plan_type_context'] ?? 'original') === 'revised' && $conflicts->count() !== $curricula->count()) {
             throw new ApiException(
                 'ASSIGNMENT_BULK_CONFLICT',
-                'Bulk revised assignments require an existing assignment for every targeted course-versions.',
+                'Bulk revised assignments require an existing assignment for every targeted curriculums.',
                 422,
                 ['force' => false]
             );
@@ -131,14 +131,14 @@ class FeeAssignmentService
                 }
             }
 
-            $conflictsByCourseVersion = $conflicts->keyBy('curriculum_id');
+            $conflictsByCurriculum = $conflicts->keyBy('curriculum_id');
             $rows = [];
 
             foreach ($curricula as $curriculum) {
                 $revisionTarget = null;
 
                 if (($data['plan_type_context'] ?? 'original') === 'revised') {
-                    $revisionTarget = $conflictsByCourseVersion->get($curriculum->id)?->id;
+                    $revisionTarget = $conflictsByCurriculum->get($curriculum->id)?->id;
                 }
 
                 $rows[] = [
@@ -178,9 +178,9 @@ class FeeAssignmentService
         return $this->assignments->assignmentsForPlan($plan);
     }
 
-    public function assignmentsForCourseVersion(int $curriculumId): Collection
+    public function assignmentsForCurriculum(int $curriculumId): Collection
     {
-        return $this->assignments->assignmentsForCourseVersion($curriculumId);
+        return $this->assignments->assignmentsForCurriculum($curriculumId);
     }
 
     public function cancel(string $assignmentId, string $reason, int $userId): FeePlanAssignment
@@ -284,7 +284,7 @@ class FeeAssignmentService
         return [
             'assignment_id' => $conflict->id,
             'curriculum_id' => $conflict->curriculum_id,
-            'course_version_name' => $conflict->curriculum?->name,
+            'curriculum_name' => $conflict->curriculum?->name,
             'academic_year_id' => $conflict->academic_year_id,
             'session_id' => $conflict->session_id,
             'fee_plan_id' => $conflict->fee_plan_id,

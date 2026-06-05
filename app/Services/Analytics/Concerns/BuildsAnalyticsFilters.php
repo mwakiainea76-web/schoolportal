@@ -13,7 +13,7 @@ trait BuildsAnalyticsFilters
             'academic_session_id' => $filters['academic_session_id'] ?? null,
             'department_id' => $filters['department_id'] ?? null,
             'course_id' => $filters['course_id'] ?? null,
-            'course_version_id' => $filters['course_version_id'] ?? null,
+            'curriculum_id' => $filters['curriculum_id'] ?? null,
             'student_status' => $filters['student_status'] ?? null,
             'module' => $filters['module'] ?? null,
             'year_of_study' => $filters['year_of_study'] ?? null,

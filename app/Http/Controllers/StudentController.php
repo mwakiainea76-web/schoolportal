@@ -8,8 +8,8 @@ use App\Http\Requests\UpdateStudentRequest;
 use App\Models\CourseEnrollment;
 use App\Models\Course;
 use App\Models\ExamBody;
-use App\Models\CourseVersion;
-use App\Models\CourseVersionMapping;
+use App\Models\Curriculum;
+use App\Models\CurriculumMapping;
 use App\Models\Student;
 use App\Models\User;
 use Carbon\Carbon;
@@ -56,12 +56,12 @@ class StudentController extends Controller
             ],
             2 => [
                 'previous_school' => ['required', 'string', 'max:255'],
-                'course_version_id' => $request->filled('_student_id')
-                    ? ['nullable', 'exists:course_versions,id']
-                    : ['required', 'exists:course_versions,id'],
-                'course_curriculum_id' => $request->filled('_student_id')
-                    ? ['nullable', 'exists:course_version_mappings,id']
-                    : ['required', 'exists:course_version_mappings,id'],
+                'curriculum_id' => $request->filled('_student_id')
+                    ? ['nullable', 'exists:curricula,id']
+                    : ['required', 'exists:curricula,id'],
+                'curriculum_mapping_id' => $request->filled('_student_id')
+                    ? ['nullable', 'exists:curriculum_mappings,id']
+                    : ['required', 'exists:curriculum_mappings,id'],
                 'current_module' => ['required', 'string'],
                 'fee_discount_percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
             ],
@@ -149,9 +149,9 @@ class StudentController extends Controller
     public function create()
     {
         return inertia('students/Create', [
-            'courseVersions' => [],
+            'curriculums' => [],
             'coursesForVersion' => [],
-            'courseCurricula' => [],
+            'curriculumMappings' => [],
         ]);
     }
 
@@ -217,9 +217,9 @@ class StudentController extends Controller
             $courseEnrollment = new CourseEnrollment;
             $courseEnrollment->student_id = $student->id;
             $courseEnrollment->course_id = $request->course_id;
-            $courseEnrollment->course_version_id = $request->course_version_id;
+            $courseEnrollment->curriculum_id = $request->curriculum_id;
             $courseEnrollment->exam_body_id = $request->exam_body_id;
-            $courseEnrollment->course_version_mapping_id = $request->course_curriculum_id;
+            $courseEnrollment->curriculum_mapping_id = $request->curriculum_mapping_id;
             $courseEnrollment->enrollment_date = now()->toDateString();
             $courseEnrollment->intake_year = now()->year;
             $courseEnrollment->intake_period = $this->intakePeriod();
@@ -250,21 +250,21 @@ class StudentController extends Controller
         $student->load([
             'user.nextofkin',
             'courseEnrollment.course',
-            'courseEnrollment.courseVersion',
+            'courseEnrollment.curriculum',
             'courseEnrollment.examBody',
-            'courseEnrollment.courseVersionMapping.course',
-            'courseEnrollment.courseVersionMapping.courseVersion',
+            'courseEnrollment.curriculumMapping.course',
+            'courseEnrollment.curriculumMapping.curriculum',
         ]);
 
         return inertia('students/Edit', [
             'student' => $student,
-            'courseVersions' => $student->courseEnrollment?->exam_body_id
-                ? $this->activeCourseVersionOptionsForExamBody($student->courseEnrollment->exam_body_id)
+            'curriculums' => $student->courseEnrollment?->exam_body_id
+                ? $this->activeCurriculumOptionsForExamBody($student->courseEnrollment->exam_body_id)
                 : [],
-            'coursesForVersion' => $student->courseEnrollment?->course_version_id
-                ? $this->courseOptionsForCourseVersion($student->courseEnrollment->course_version_id)
+            'coursesForVersion' => $student->courseEnrollment?->curriculum_id
+                ? $this->courseOptionsForCurriculum($student->courseEnrollment->curriculum_id)
                 : [],
-            'courseCurricula' => [],
+            'curriculumMappings' => [],
         ]);
     }
 
@@ -272,20 +272,20 @@ class StudentController extends Controller
     {
         $student->loadMissing([
             'user',
-            'courseEnrollment.courseVersionMapping.course.department',
-            'courseEnrollment.courseVersionMapping.course.certificationLevel',
-            'courseEnrollment.courseVersionMapping.courseVersion',
+            'courseEnrollment.curriculumMapping.course.department',
+            'courseEnrollment.curriculumMapping.course.certificationLevel',
+            'courseEnrollment.curriculumMapping.curriculum',
         ]);
 
-        $mapping = $student->courseEnrollment?->courseVersionMapping;
+        $mapping = $student->courseEnrollment?->curriculumMapping;
         $course = $mapping?->course;
-        $courseVersion = $mapping?->courseVersion;
+        $curriculum = $mapping?->curriculum;
 
         return view('students.admission-letter', [
             'student' => $student,
             'user' => $student->user,
             'program' => $course,
-            'courseVersion' => $courseVersion,
+            'curriculum' => $curriculum,
             'department' => $course?->department,
             'certificationLevel' => $course?->certificationLevel,
         ]);
@@ -298,9 +298,9 @@ class StudentController extends Controller
     public function update(UpdateStudentRequest $request, Student $student)
     {
         DB::transaction(function () use ($request, $student) {
-            $courseVersionMappingId =
-                $request->course_curriculum_id
-                ?? $student->courseEnrollment?->course_version_mapping_id;
+            $curriculumMappingId =
+                $request->curriculum_mapping_id
+                ?? $student->courseEnrollment?->curriculum_mapping_id;
 
             $student->user->update([
                 'first_name' => $request->first_name,
@@ -333,16 +333,16 @@ class StudentController extends Controller
             $courseEnrollment = $student->courseEnrollment()->firstOrNew([
                 'student_id' => $student->id,
             ]);
-            if (! $courseEnrollment->exists && $courseVersionMappingId) {
-                $mapping = CourseVersionMapping::query()
+            if (! $courseEnrollment->exists && $curriculumMappingId) {
+                $mapping = CurriculumMapping::query()
                     ->with('course.certificationLevel:id,exam_body_id')
-                    ->find($courseVersionMappingId);
+                    ->find($curriculumMappingId);
 
                 $courseEnrollment->course_id = $request->course_id ?? $mapping?->course_id;
-                $courseEnrollment->course_version_id = $request->course_version_id ?? $mapping?->course_version_id;
+                $courseEnrollment->curriculum_id = $request->curriculum_id ?? $mapping?->curriculum_id;
                 $courseEnrollment->exam_body_id = $request->exam_body_id ?? $mapping?->course?->certificationLevel?->exam_body_id;
-                $courseEnrollment->course_version_mapping_id =
-                    $courseVersionMappingId;
+                $courseEnrollment->curriculum_mapping_id =
+                    $curriculumMappingId;
                 $courseEnrollment->enrollment_date = now()->toDateString();
                 $courseEnrollment->intake_year = now()->year;
                 $courseEnrollment->intake_period = $this->intakePeriod();
@@ -415,51 +415,51 @@ class StudentController extends Controller
             ]);
     }
 
-    public function cycleCourses(CourseVersion $courseVersion): JsonResponse
+    public function cycleCourses(Curriculum $curriculum): JsonResponse
     {
-        return response()->json($this->courseOptionsForCourseVersion($courseVersion->id));
+        return response()->json($this->courseOptionsForCurriculum($curriculum->id));
     }
 
-    public function examBodyCourseVersions(ExamBody $examBody): JsonResponse
+    public function examBodyCurriculums(ExamBody $examBody): JsonResponse
     {
-        return response()->json($this->activeCourseVersionOptionsForExamBody($examBody->id));
+        return response()->json($this->activeCurriculumOptionsForExamBody($examBody->id));
     }
 
-    public function courseCurricula(Course $course): JsonResponse
+    public function curriculumMappings(Course $course): JsonResponse
     {
         return response()->json($this->curriculumOptionsForCourse($course->id));
     }
 
-    private function courseVersionOptions()
+    private function curriculumOptions()
     {
-        return CourseVersion::query()
-            ->whereHas('courseVersionMappings')
+        return Curriculum::query()
+            ->whereHas('curriculumMappings')
             ->orderByDesc('id')
             ->get(['id', 'name'])
-            ->map(fn (CourseVersion $courseVersion) => [
-                'id' => $courseVersion->id,
-                'name' => $courseVersion->name,
+            ->map(fn (Curriculum $curriculum) => [
+                'id' => $curriculum->id,
+                'name' => $curriculum->name,
             ])
             ->values();
     }
 
-    private function courseOptionsForCourseVersion(?int $courseVersionId)
+    private function courseOptionsForCurriculum(?int $curriculumId)
     {
-        if (! $courseVersionId) {
+        if (! $curriculumId) {
             return collect();
         }
 
-        return CourseVersionMapping::query()
+        return CurriculumMapping::query()
             ->with([
                 'course:id,name,code,certification_level_id',
                 'course.certificationLevel:id,name,exam_body_id',
                 'course.certificationLevel.examBody:id,code,name',
             ])
             ->active()
-            ->where('course_version_id', $courseVersionId)
+            ->where('curriculum_id', $curriculumId)
             ->orderByDesc('id')
-            ->get(['id', 'course_id', 'course_version_id'])
-            ->map(function (CourseVersionMapping $mapping) {
+            ->get(['id', 'course_id', 'curriculum_id'])
+            ->map(function (CurriculumMapping $mapping) {
                 $course = $mapping->course;
                 $level = $course?->certificationLevel;
                 $examBody = $level?->examBody;
@@ -467,8 +467,8 @@ class StudentController extends Controller
                 return [
                     'id' => $mapping->id,
                     'course_id' => $mapping->course_id,
-                    'course_version_id' => $mapping->course_version_id,
-                    'course_version_mapping_id' => $mapping->id,
+                    'curriculum_id' => $mapping->curriculum_id,
+                    'curriculum_mapping_id' => $mapping->id,
                     'name' => collect([
                         $course?->display_name ?? $course?->name ?? 'Course',
                         $examBody?->code,
@@ -495,11 +495,11 @@ class StudentController extends Controller
 
         $examBodyId = $course->certificationLevel?->exam_body_id;
 
-        return CourseVersion::query()
+        return Curriculum::query()
             ->with([
-                'activeCourseVersionMapping' => fn ($query) => $query
+                'activeCurriculumMapping' => fn ($query) => $query
                     ->where('course_id', $course->id)
-                    ->select('id', 'course_id', 'course_version_id'),
+                    ->select('id', 'course_id', 'curriculum_id'),
             ])
             ->where('is_active', true)
             ->whereDate('start_date', '<=', Carbon::today())
@@ -508,28 +508,28 @@ class StudentController extends Controller
                 $query->whereNull('end_date')
                     ->orWhereDate('end_date', '>=', Carbon::today());
             })
-            ->whereHas('activeCourseVersionMapping', fn ($query) => $query->where('course_id', $course->id))
+            ->whereHas('activeCurriculumMapping', fn ($query) => $query->where('course_id', $course->id))
             ->orderByDesc('id')
             ->get(['id', 'course_id', 'exam_body_id', 'name'])
-            ->map(function (CourseVersion $courseVersion) {
+            ->map(function (Curriculum $curriculum) {
                 return [
-                    'id' => $courseVersion->id,
-                    'course_id' => $courseVersion->course_id,
-                    'exam_body_id' => $courseVersion->exam_body_id,
-                    'course_version_mapping_id' => $courseVersion->activeCourseVersionMapping?->id,
-                    'name' => $courseVersion->name,
+                    'id' => $curriculum->id,
+                    'course_id' => $curriculum->course_id,
+                    'exam_body_id' => $curriculum->exam_body_id,
+                    'curriculum_mapping_id' => $curriculum->activeCurriculumMapping?->id,
+                    'name' => $curriculum->name,
                 ];
             })
             ->values();
     }
 
-    private function activeCourseVersionOptionsForExamBody(?int $examBodyId)
+    private function activeCurriculumOptionsForExamBody(?int $examBodyId)
     {
         if (! $examBodyId) {
             return collect();
         }
 
-        return CourseVersion::query()
+        return Curriculum::query()
             ->where('exam_body_id', $examBodyId)
             ->where('is_active', true)
             ->whereDate('start_date', '<=', Carbon::today())
@@ -539,10 +539,10 @@ class StudentController extends Controller
             })
             ->orderBy('name')
             ->get(['id', 'exam_body_id', 'name'])
-            ->map(fn (CourseVersion $courseVersion) => [
-                'id' => $courseVersion->id,
-                'exam_body_id' => $courseVersion->exam_body_id,
-                'name' => $courseVersion->name,
+            ->map(fn (Curriculum $curriculum) => [
+                'id' => $curriculum->id,
+                'exam_body_id' => $curriculum->exam_body_id,
+                'name' => $curriculum->name,
             ])
             ->values();
     }

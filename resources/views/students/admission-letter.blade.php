@@ -231,7 +231,7 @@
                     <div class="label">Course</div>
                     <div>{{ $program?->name ?? 'Not assigned' }}</div>
                     <div class="label">Version</div>
-                    <div>{{ $courseVersion?->name ?? 'Not assigned' }}</div>
+                    <div>{{ $curriculum?->name ?? 'Not assigned' }}</div>
                     <div class="label">Department</div>
                     <div>{{ $department?->name ?? 'Not assigned' }}</div>
                     <div class="label">Level</div>

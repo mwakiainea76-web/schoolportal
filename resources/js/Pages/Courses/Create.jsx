@@ -8,8 +8,9 @@ import SearchSelect from "@/Components/SearchSelect";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 
 export default function Createcourse() {
-    const { data, setData, post, processing, errors, reset } = useForm({
-        course_version_id: "",
+    const { data, setData, post, processing, errors } = useForm({
+        exam_body_id: "",
+        curriculum_id: "",
         code: "",
         name: "",
         description: "",
@@ -23,7 +24,9 @@ export default function Createcourse() {
         post(route("courses.store"), {
             preserveScroll: true,
             onSuccess: () => {
-                setData("course_version_id", "");
+                setData("exam_body_id", "");
+                setData("curriculum_id", "");
+                setData("certification_level_id", "");
                 setData("code", "");
                 setData("name", "");
                 setData("description", "");
@@ -110,22 +113,54 @@ export default function Createcourse() {
                             </div>
                             <div>
                                 <InputLabel
-                                    htmlFor="course_version_id"
-                                    value="Course Version"
+                                    htmlFor="exam_body_id"
+                                    value="Exam Body"
                                 />
                                 <SearchSelect
-                                    routeName="course-versions.search"
+                                    routeName="exam-bodies.search"
                                     defaultOptions={[]}
-                                    placeholder="Select course version..."
-                                    value={data.course_version_id}
+                                    placeholder="Select exam body..."
+                                    value={data.exam_body_id}
                                     preloadOptions
-                                    onChange={(version) =>
-                                        setData("course_version_id", version.id)
-                                    }
-                                    error={errors.course_version_id}
+                                    onChange={(examBody) => {
+                                        setData({
+                                            ...data,
+                                            exam_body_id: examBody.id,
+                                            curriculum_id: "",
+                                            certification_level_id: "",
+                                        });
+                                    }}
+                                    error={errors.exam_body_id}
                                 />
                                 <InputError
-                                    message={errors.course_version_id}
+                                    message={errors.exam_body_id}
+                                    className="mt-2"
+                                />
+                            </div>
+
+                            <div>
+                                <InputLabel
+                                    htmlFor="curriculum_id"
+                                    value="Curriculum"
+                                />
+                                <SearchSelect
+                                    routeName="curriculums.search"
+                                    routeParams={{
+                                        exam_body_id: data.exam_body_id,
+                                    }}
+                                    defaultOptions={[]}
+                                    placeholder="Select curriculum..."
+                                    value={data.curriculum_id}
+                                    preloadOptions
+                                    minSearchLength={0}
+                                    disabled={!data.exam_body_id}
+                                    onChange={(curriculum) =>
+                                        setData("curriculum_id", curriculum.id)
+                                    }
+                                    error={errors.curriculum_id}
+                                />
+                                <InputError
+                                    message={errors.curriculum_id}
                                     className="mt-2"
                                 />
                             </div>
@@ -159,10 +194,15 @@ export default function Createcourse() {
                                 />
                                 <SearchSelect
                                     routeName="certification-levels.search"
+                                    routeParams={{
+                                        exam_body_id: data.exam_body_id,
+                                    }}
                                     defaultOptions={[]}
-                                    placeholder="Type in certification name ..."
+                                    placeholder="Select certification level..."
                                     value={data.certification_level_id}
                                     preloadOptions
+                                    minSearchLength={0}
+                                    disabled={!data.exam_body_id}
                                     onChange={(level) =>
                                         setData(
                                             "certification_level_id",

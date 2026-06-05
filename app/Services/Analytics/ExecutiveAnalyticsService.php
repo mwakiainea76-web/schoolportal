@@ -147,10 +147,10 @@ class ExecutiveAnalyticsService
             : 0.0;
 
         $topcourses = CourseEnrollment::query()
-            ->join('course_version_mappings', 'course_version_mappings.id', '=', 'course_enrollments.course_version_mapping_id')
-            ->join('courses', 'courses.id', '=', 'course_version_mappings.course_id')
+            ->join('curriculum_mappings', 'curriculum_mappings.id', '=', 'course_enrollments.curriculum_mapping_id')
+            ->join('courses', 'courses.id', '=', 'curriculum_mappings.course_id')
             ->whereNull('course_enrollments.deleted_at')
-            ->whereNull('course_version_mappings.deleted_at')
+            ->whereNull('curriculum_mappings.deleted_at')
             ->whereNull('courses.deleted_at')
             ->select('courses.id', 'courses.name')
             ->selectRaw('COUNT(DISTINCT course_enrollments.student_id) as student_count')

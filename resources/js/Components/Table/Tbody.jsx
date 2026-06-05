@@ -1,4 +1,8 @@
-const TBody = ({ children }) => {
-    return <tbody className="divide-y divide-slate-100">{children}</tbody>;
+const TBody = ({ children, className = "", ...props }) => {
+    return (
+        <tbody {...props} className={`divide-y divide-slate-100 ${className}`}>
+            {children}
+        </tbody>
+    );
 };
 export default TBody;

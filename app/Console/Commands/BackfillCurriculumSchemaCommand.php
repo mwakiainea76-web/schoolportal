@@ -3,9 +3,9 @@
 namespace App\Console\Commands;
 
 use App\Models\CourseEnrollment;
-use App\Models\CourseVersion;
-use App\Models\CourseVersionMapping;
-use App\Models\CourseVersionUnit;
+use App\Models\Curriculum;
+use App\Models\CurriculumMapping;
+use App\Models\CurriculumUnit;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -14,7 +14,7 @@ class BackfillCurriculumSchemaCommand extends Command
 {
     protected $signature = 'academics:backfill-curriculum-schema {--dry-run : Report changes without writing them}';
 
-    protected $description = 'Backfill course_versions, course_version_units, and course_enrollments for the existing curriculum schema.';
+    protected $description = 'Backfill curricula, curriculum_units, and course_enrollments for the existing curriculum schema.';
 
     public function handle(): int
     {
@@ -22,21 +22,21 @@ class BackfillCurriculumSchemaCommand extends Command
 
         $this->info('Backfilling existing curriculum schema tables...');
 
-        $courseVersionsUpdated = $this->backfillCourseVersions($dryRun);
-        $courseVersionUnitsUpdated = $this->backfillCourseVersionUnits($dryRun);
+        $curriculumsUpdated = $this->backfillCurriculums($dryRun);
+        $curriculumUnitsUpdated = $this->backfillCurriculumUnits($dryRun);
         $courseEnrollmentsUpdated = $this->backfillCourseEnrollments($dryRun);
-        $duplicates = $this->duplicateCourseVersionUnits();
+        $duplicates = $this->duplicateCurriculumUnits();
 
-        $this->line("course_versions updated: {$courseVersionsUpdated}");
-        $this->line("course_version_units updated: {$courseVersionUnitsUpdated}");
+        $this->line("curricula updated: {$curriculumsUpdated}");
+        $this->line("curriculum_units updated: {$curriculumUnitsUpdated}");
         $this->line("course_enrollments updated: {$courseEnrollmentsUpdated}");
 
         if ($duplicates->isNotEmpty()) {
-            $this->warn('Duplicate course_version_units found for (course_version_id, unit_id). These must be reviewed before enforcing uniqueness:');
+            $this->warn('Duplicate curriculum_units found for (curriculum_id, unit_id). These must be reviewed before enforcing uniqueness:');
             $this->table(
-                ['course_version_id', 'unit_id', 'duplicate_count'],
+                ['curriculum_id', 'unit_id', 'duplicate_count'],
                 $duplicates->map(fn ($row) => [
-                    $row->course_version_id,
+                    $row->curriculum_id,
                     $row->unit_id,
                     $row->duplicate_count,
                 ])->all()
@@ -48,27 +48,27 @@ class BackfillCurriculumSchemaCommand extends Command
         return self::SUCCESS;
     }
 
-    private function backfillCourseVersions(bool $dryRun): int
+    private function backfillCurriculums(bool $dryRun): int
     {
         $updated = 0;
 
-        CourseVersion::query()
+        Curriculum::query()
             ->where(function ($query) {
                 $query->whereNull('program_id')
                     ->orWhereNull('exam_body_id');
             })
             ->orderBy('id')
-            ->chunkById(100, function ($courseVersions) use ($dryRun, &$updated) {
-                foreach ($courseVersions as $courseVersion) {
-                    $mapping = CourseVersionMapping::query()
+            ->chunkById(100, function ($curriculums) use ($dryRun, &$updated) {
+                foreach ($curriculums as $curriculum) {
+                    $mapping = CurriculumMapping::query()
                         ->with('course.certificationLevel:id,exam_body_id')
-                        ->where('course_version_id', $courseVersion->id)
+                        ->where('curriculum_id', $curriculum->id)
                         ->where('is_active', true)
                         ->latest('id')
                         ->first()
-                        ?? CourseVersionMapping::query()
+                        ?? CurriculumMapping::query()
                             ->with('course.certificationLevel:id,exam_body_id')
-                            ->where('course_version_id', $courseVersion->id)
+                            ->where('curriculum_id', $curriculum->id)
                             ->latest('id')
                             ->first();
 
@@ -82,7 +82,7 @@ class BackfillCurriculumSchemaCommand extends Command
                     ];
 
                     if (! $dryRun) {
-                        $courseVersion->forceFill($payload)->save();
+                        $curriculum->forceFill($payload)->save();
                     }
 
                     $updated++;
@@ -92,33 +92,33 @@ class BackfillCurriculumSchemaCommand extends Command
         return $updated;
     }
 
-    private function backfillCourseVersionUnits(bool $dryRun): int
+    private function backfillCurriculumUnits(bool $dryRun): int
     {
         $updated = 0;
 
-        CourseVersionUnit::query()
+        CurriculumUnit::query()
             ->where(function ($query) {
-                $query->whereNull('course_version_id')
+                $query->whereNull('curriculum_id')
                     ->orWhereNull('module');
             })
-            ->with('courseVersionMapping:id,course_version_id')
+            ->with('curriculumMapping:id,curriculum_id')
             ->orderBy('id')
-            ->chunkById(100, function ($courseVersionUnits) use ($dryRun, &$updated) {
-                foreach ($courseVersionUnits as $courseVersionUnit) {
-                    $courseVersionId = $courseVersionUnit->course_version_id
-                        ?? $courseVersionUnit->courseVersionMapping?->course_version_id;
+            ->chunkById(100, function ($curriculumUnits) use ($dryRun, &$updated) {
+                foreach ($curriculumUnits as $curriculumUnit) {
+                    $curriculumId = $curriculumUnit->curriculum_id
+                        ?? $curriculumUnit->curriculumMapping?->curriculum_id;
 
-                    if (! $courseVersionId) {
+                    if (! $curriculumId) {
                         continue;
                     }
 
                     $payload = [
-                        'course_version_id' => $courseVersionId,
-                        'module' => $courseVersionUnit->module ?? $courseVersionUnit->module_taught,
+                        'curriculum_id' => $curriculumId,
+                        'module' => $curriculumUnit->module ?? $curriculumUnit->module_taught,
                     ];
 
                     if (! $dryRun) {
-                        $courseVersionUnit->forceFill($payload)->save();
+                        $curriculumUnit->forceFill($payload)->save();
                     }
 
                     $updated++;
@@ -135,29 +135,29 @@ class BackfillCurriculumSchemaCommand extends Command
         CourseEnrollment::query()
             ->where(function ($query) {
                 $query->whereNull('program_id')
-                    ->orWhereNull('course_version_id')
+                    ->orWhereNull('curriculum_id')
                     ->orWhereNull('exam_body_id')
                     ->orWhereNull('enrollment_date');
             })
-            ->with('courseVersionMapping.course.certificationLevel:id,exam_body_id')
+            ->with('curriculumMapping.course.certificationLevel:id,exam_body_id')
             ->orderBy('id')
             ->chunkById(100, function ($courseEnrollments) use ($dryRun, &$updated) {
                 foreach ($courseEnrollments as $courseEnrollment) {
-                    $mapping = $courseEnrollment->courseVersionMapping;
+                    $mapping = $courseEnrollment->curriculumMapping;
                     $createdAt = $courseEnrollment->created_at
                         ? Carbon::parse($courseEnrollment->created_at)
                         : now();
 
                     $payload = [
                         'program_id' => $courseEnrollment->program_id ?? $mapping?->program_id,
-                        'course_version_id' => $courseEnrollment->course_version_id ?? $mapping?->course_version_id,
+                        'curriculum_id' => $courseEnrollment->curriculum_id ?? $mapping?->curriculum_id,
                         'exam_body_id' => $courseEnrollment->exam_body_id ?? $mapping?->program?->certificationLevel?->exam_body_id,
                         'enrollment_date' => $courseEnrollment->enrollment_date ?? $createdAt->toDateString(),
                         'intake_year' => $courseEnrollment->intake_year ?? (int) $createdAt->format('Y'),
                         'study_mode' => $courseEnrollment->study_mode ?? 'full_time',
                     ];
 
-                    if (! $payload['program_id'] || ! $payload['course_version_id'] || ! $payload['exam_body_id']) {
+                    if (! $payload['program_id'] || ! $payload['curriculum_id'] || ! $payload['exam_body_id']) {
                         continue;
                     }
 
@@ -172,14 +172,14 @@ class BackfillCurriculumSchemaCommand extends Command
         return $updated;
     }
 
-    private function duplicateCourseVersionUnits()
+    private function duplicateCurriculumUnits()
     {
-        return DB::table('course_version_units')
-            ->select('course_version_id', 'unit_id', DB::raw('COUNT(*) as duplicate_count'))
-            ->whereNotNull('course_version_id')
-            ->groupBy('course_version_id', 'unit_id')
+        return DB::table('curriculum_units')
+            ->select('curriculum_id', 'unit_id', DB::raw('COUNT(*) as duplicate_count'))
+            ->whereNotNull('curriculum_id')
+            ->groupBy('curriculum_id', 'unit_id')
             ->havingRaw('COUNT(*) > 1')
-            ->orderBy('course_version_id')
+            ->orderBy('curriculum_id')
             ->orderBy('unit_id')
             ->get();
     }

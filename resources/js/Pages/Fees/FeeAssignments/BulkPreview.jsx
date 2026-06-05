@@ -104,7 +104,7 @@ export default function BulkPreview({ affected, toFeePlan, criteria }) {
                                         #
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                                        Course Version
+                                        Curriculum
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                                         Year / Session
@@ -124,7 +124,7 @@ export default function BulkPreview({ affected, toFeePlan, criteria }) {
                                             {index + 1}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-700">
-                                            {assignment.courseCourseVersion?.name}
+                                            {assignment.curriculumMapping?.name}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-700">
                                             Year {assignment.year_of_study}, Session{" "}

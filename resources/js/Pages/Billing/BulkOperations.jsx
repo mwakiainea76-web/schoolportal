@@ -296,7 +296,7 @@ export default function BulkOperations({ enrollments, students }) {
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900">
                                                     {
                                                         enrollment
-                                                            .courseCourseVersion
+                                                            .curriculumMapping
                                                             ?.course?.name
                                                     }
                                                 </td>

@@ -4,8 +4,8 @@ use App\Models\CertificationLevel;
 use App\Models\Department;
 use App\Models\ExamBody;
 use App\Models\Course;
-use App\Models\CourseVersion;
-use App\Models\CourseVersionMapping;
+use App\Models\Curriculum;
+use App\Models\CurriculumMapping;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -32,7 +32,7 @@ it('returns courses offered for the active program version with certification le
         'entry_grade' => 'D',
     ]);
 
-    $activeVersion = CourseVersion::query()->create([
+    $activeVersion = Curriculum::query()->create([
         'name' => 'September 2026 Intake',
         'description' => 'Active intake',
         'is_active' => true,
@@ -41,7 +41,7 @@ it('returns courses offered for the active program version with certification le
         'created_by' => $user->id,
     ]);
 
-    $inactiveVersion = CourseVersion::query()->create([
+    $inactiveVersion = Curriculum::query()->create([
         'name' => 'Archived Intake',
         'description' => 'Inactive intake',
         'is_active' => false,
@@ -70,17 +70,17 @@ it('returns courses offered for the active program version with certification le
         'department_id' => $department->id,
     ]);
 
-    CourseVersionMapping::query()->create([
+    CurriculumMapping::query()->create([
         'program_id' => $ictTechnician->id,
-        'course_version_id' => $activeVersion->id,
+        'curriculum_id' => $activeVersion->id,
         'is_active' => true,
         'description' => 'Currently offered',
         'created_by' => $user->id,
     ]);
 
-    CourseVersionMapping::query()->create([
+    CurriculumMapping::query()->create([
         'program_id' => $electrical->id,
-        'course_version_id' => $inactiveVersion->id,
+        'curriculum_id' => $inactiveVersion->id,
         'is_active' => true,
         'description' => 'Should not be returned',
         'created_by' => $user->id,

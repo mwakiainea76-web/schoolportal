@@ -75,11 +75,11 @@ class DataQualityAnalyticsService
             ->whereNull('academic_sessions.deleted_at')
             ->where('academic_sessions.is_active', true);
 
-        $multipleActivecourseMappingsBase = DB::table('course_version_mappings')
-            ->join('courses', 'courses.id', '=', 'course_version_mappings.course_id')
-            ->join('course_versions', 'course_versions.id', '=', 'course_version_mappings.course_version_id')
-            ->whereNull('course_version_mappings.deleted_at')
-            ->where('course_version_mappings.is_active', true);
+        $multipleActivecourseMappingsBase = DB::table('curriculum_mappings')
+            ->join('courses', 'courses.id', '=', 'curriculum_mappings.course_id')
+            ->join('curricula', 'curricula.id', '=', 'curriculum_mappings.curriculum_id')
+            ->whereNull('curriculum_mappings.deleted_at')
+            ->where('curriculum_mappings.is_active', true);
 
         $invoiceStudentMismatchBase = DB::table('student_invoices')
             ->join('academic_session_enrollments', 'academic_session_enrollments.id', '=', 'student_invoices.enrollment_id')
@@ -147,8 +147,8 @@ class DataQualityAnalyticsService
             : [];
 
         $multipleActivecourseMappings = (clone $multipleActivecourseMappingsBase)
-            ->groupBy('course_version_mappings.course_id', 'courses.name')
-            ->select('course_version_mappings.course_id', 'courses.name as course_name')
+            ->groupBy('curriculum_mappings.course_id', 'courses.name')
+            ->select('curriculum_mappings.course_id', 'courses.name as course_name')
             ->selectRaw('COUNT(*) as active_mapping_count')
             ->havingRaw('COUNT(*) > 1')
             ->orderByDesc('active_mapping_count')

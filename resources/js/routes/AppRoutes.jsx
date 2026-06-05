@@ -91,36 +91,36 @@ const CoursesEdit = lazy(() => import("../Pages/Courses/Edit"));
 const CourseEnrollmentsIndex = lazy(
     () => import("../Pages/CourseEnrollments/Index"),
 );
-const CourseVersionsIndex = lazy(
-    () => import("../Pages/CourseVersions/Index"),
+const CurriculumsIndex = lazy(
+    () => import("../Pages/Curriculums/Index"),
 );
-const CourseVersionsCreate = lazy(
-    () => import("../Pages/CourseVersions/Create"),
+const CurriculumsCreate = lazy(
+    () => import("../Pages/Curriculums/Create"),
 );
-const CourseVersionsEdit = lazy(() => import("../Pages/CourseVersions/Edit"));
-const CourseVersionMappingsIndex = lazy(
-    () => import("../Pages/CourseVersionMappings/Index"),
+const CurriculumsEdit = lazy(() => import("../Pages/Curriculums/Edit"));
+const CurriculumMappingsIndex = lazy(
+    () => import("../Pages/CurriculumMappings/Index"),
 );
-const CourseVersionMappingsCreate = lazy(
-    () => import("../Pages/CourseVersionMappings/Create"),
+const CurriculumMappingsCreate = lazy(
+    () => import("../Pages/CurriculumMappings/Create"),
 );
-const CourseVersionMappingsEdit = lazy(
-    () => import("../Pages/CourseVersionMappings/Edit"),
+const CurriculumMappingsEdit = lazy(
+    () => import("../Pages/CurriculumMappings/Edit"),
 );
 const UnitsIndex = lazy(() => import("../Pages/Units/Index"));
 const UnitsCreate = lazy(() => import("../Pages/Units/Create"));
 const UnitsEdit = lazy(() => import("../Pages/Units/Edit"));
-const CourseVersionUnitsIndex = lazy(
-    () => import("../Pages/CourseVersionUnits/Index"),
+const CurriculumUnitsIndex = lazy(
+    () => import("../Pages/CurriculumUnits/Index"),
 );
-const CourseVersionUnitsCreate = lazy(
-    () => import("../Pages/CourseVersionUnits/Create"),
+const CurriculumUnitsCreate = lazy(
+    () => import("../Pages/CurriculumUnits/Create"),
 );
-const CourseVersionUnitsEdit = lazy(
-    () => import("../Pages/CourseVersionUnits/Edit"),
+const CurriculumUnitsEdit = lazy(
+    () => import("../Pages/CurriculumUnits/Edit"),
 );
-const CourseVersionUnitsStudentIndex = lazy(
-    () => import("../Pages/CourseVersionUnits/StudentIndex"),
+const CurriculumUnitsStudentIndex = lazy(
+    () => import("../Pages/CurriculumUnits/StudentIndex"),
 );
 const LectureRoomsIndex = lazy(() => import("../Pages/LectureRooms/Index"));
 const LectureRoomsCreate = lazy(() => import("../Pages/LectureRooms/Create"));
@@ -230,13 +230,13 @@ const pagePropAliases = {
         item: "certification_level",
     },
     "/api/courses": { list: "courses", item: "Course" },
-    "/api/course-versions": { list: "curriculums", item: "curriculum" },
-    "/api/course-version-mappings": {
-        list: "courseVersionMappings",
-        item: "courseVersionMapping",
+    "/api/curriculums": { list: "curriculums", item: "curriculum" },
+    "/api/curriculum-mappings": {
+        list: "curriculumMappings",
+        item: "curriculumMapping",
     },
     "/api/units": { list: "units", item: "unit" },
-    "/api/course-version-units": {
+    "/api/curriculum-units": {
         list: "curriculum_units",
         item: "curriculum_unit",
     },

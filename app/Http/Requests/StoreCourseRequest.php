@@ -28,8 +28,22 @@ class StorecourseRequest extends FormRequest
             ],
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'course_version_id' => 'required|exists:course_versions,id',
-            'certification_level_id' => 'required|exists:certification_levels,id',
+            'exam_body_id' => [
+                'required',
+                'exists:exam_bodies,id',
+            ],
+            'curriculum_id' => [
+                'required',
+                Rule::exists('curricula', 'id')
+                    ->where(fn ($query) => $query
+                        ->where('exam_body_id', $this->input('exam_body_id'))
+                        ->where('is_active', true)),
+            ],
+            'certification_level_id' => [
+                'required',
+                Rule::exists('certification_levels', 'id')
+                    ->where(fn ($query) => $query->where('exam_body_id', $this->input('exam_body_id'))),
+            ],
             'department_id' => 'required|exists:departments,id',
         ];
     }

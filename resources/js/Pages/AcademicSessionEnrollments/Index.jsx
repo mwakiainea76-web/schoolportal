@@ -114,7 +114,7 @@ export default function Index({ enrollments }) {
                         <THdata>Student</THdata>
                         <THdata>Reg No.</THdata>
                         <THdata>Session</THdata>
-                        <THdata>Course Version</THdata>
+                        <THdata>Curriculum</THdata>
                         <THdata>Course</THdata>
                         <THdata>Year Of Study</THdata>
                         <THdata>Module</THdata>

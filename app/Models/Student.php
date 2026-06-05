@@ -38,9 +38,9 @@ class Student extends Model
         return $this->hasMany(CourseChangeLog::class);
     }
 
-    public function courseVersionTransfers()
+    public function curriculumTransfers()
     {
-        return $this->hasMany(CourseVersionTransfer::class);
+        return $this->hasMany(CurriculumTransfer::class);
     }
 
     public function enrollments()

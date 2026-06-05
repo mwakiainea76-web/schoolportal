@@ -1,8 +1,8 @@
-const THdata = ({ children, ...props }) => {
+const THdata = ({ children, className = "", ...props }) => {
     return (
         <th
             {...props}
-            className="p-2 text-left text-xs  text-zinc-500  bg-zinc-0 border/90 cursor-pointer tracking-wider"
+            className={`whitespace-nowrap bg-zinc-0 p-2 text-left text-xs text-zinc-500 border/90 cursor-pointer tracking-wider ${className}`}
         >
             {children}
         </th>

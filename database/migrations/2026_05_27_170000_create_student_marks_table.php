@@ -19,8 +19,8 @@ return new class extends Migration
             $table->foreignId('student_id')
                 ->constrained('students')
                 ->cascadeOnDelete();
-            $table->foreignId('course_version_unit_id')
-                ->constrained('course_version_units')
+            $table->foreignId('curriculum_unit_id')
+                ->constrained('curriculum_units')
                 ->cascadeOnDelete();
             $table->string('assessment_type', 20);
             $table->unsignedInteger('assessment_number');
@@ -35,18 +35,18 @@ return new class extends Migration
             $table->unique(
                 [
                     'student_id',
-                    'course_version_unit_id',
+                    'curriculum_unit_id',
                     'assessment_type',
                     'assessment_number',
                 ],
                 'student_marks_unique_assessment'
             );
             $table->index(['academic_session_id', 'recorded_by_staff_id']);
-            $table->index(['course_version_unit_id', 'academic_session_id']);
+            $table->index(['curriculum_unit_id', 'academic_session_id']);
             $table->index('academic_session_enrollment_id');
             $table->index(
                 [
-                    'course_version_unit_id',
+                    'curriculum_unit_id',
                     'assessment_type',
                     'assessment_number',
                     'academic_session_id',

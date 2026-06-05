@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AcademicTimetable;
 use App\Models\AcademicSession;
-use App\Models\CourseVersionUnit;
+use App\Models\CurriculumUnit;
 use App\Models\Staff;
 use App\Models\StudentInvoice;
 use App\Models\StudentMark;
@@ -41,9 +41,9 @@ class DashboardController extends Controller
         $courseEnrollment = $this->studentAcademicContextService
             ->currentCourseEnrollmentForStudent($student);
 
-        $courseVersionMapping = $courseEnrollment?->courseVersionMapping;
-        $courseVersionId = $courseEnrollment?->course_version_id
-            ?? $courseVersionMapping?->course_version_id;
+        $curriculumMapping = $courseEnrollment?->curriculumMapping;
+        $curriculumId = $courseEnrollment?->curriculum_id
+            ?? $curriculumMapping?->curriculum_id;
 
         // ── Active session: select only columns actually used ────────────────
         $activeSession = AcademicSession::select(
@@ -59,7 +59,7 @@ class DashboardController extends Controller
         $activeFeeAssignment = ($activeSession && $courseEnrollment)
             ? $this->feeAssignmentService->resolveActiveAssignment(
                 $activeSession->academic_year_id,
-                $courseEnrollment->course_version_mapping_id,
+                $courseEnrollment->curriculum_mapping_id,
                 $activeYearOfStudy,
                 $activeSessionNumber
             )
@@ -80,12 +80,12 @@ class DashboardController extends Controller
 
         // ── Module units ─────────────────────────────────────────────────────
         $moduleUnits = ($courseEnrollment && $currentModule)
-            ? CourseVersionUnit::query()
+            ? CurriculumUnit::query()
                 ->with('unit:id,code,name,credit_factor') // training_hours not used
                 ->when(
-                    $courseVersionId,
-                    fn ($query) => $query->where('course_version_id', $courseVersionId),
-                    fn ($query) => $query->where('course_version_mapping_id', $courseEnrollment->course_version_mapping_id)
+                    $curriculumId,
+                    fn ($query) => $query->where('curriculum_id', $curriculumId),
+                    fn ($query) => $query->where('curriculum_mapping_id', $courseEnrollment->curriculum_mapping_id)
                 )
                 ->where(function ($query) use ($currentModule) {
                     $query->where('module', $currentModule)
@@ -98,15 +98,15 @@ class DashboardController extends Controller
         $registeredUnitIds = $currentEnrollment
             ? StudentUnitRegistration::query()
                 ->where('academic_session_enrollment_id', $currentEnrollment->id)
-                ->pluck('course_version_unit_id')
+                ->pluck('curriculum_unit_id')
             : collect();
 
         $allUnitsCount = $courseEnrollment
-            ? CourseVersionUnit::query()
+            ? CurriculumUnit::query()
                 ->when(
-                    $courseVersionId,
-                    fn ($query) => $query->where('course_version_id', $courseVersionId),
-                    fn ($query) => $query->where('course_version_mapping_id', $courseEnrollment->course_version_mapping_id)
+                    $curriculumId,
+                    fn ($query) => $query->where('curriculum_id', $curriculumId),
+                    fn ($query) => $query->where('curriculum_mapping_id', $courseEnrollment->curriculum_mapping_id)
                 )
                 ->count()
             : 0;
@@ -138,11 +138,11 @@ class DashboardController extends Controller
                 ] : null,
                 'course' => [
                     'name' => $courseEnrollment?->course?->name
-                        ?? $courseVersionMapping?->course?->name,
-                    'version' => $courseEnrollment?->courseVersion?->name
-                        ?? $courseVersionMapping?->courseVersion?->name,
+                        ?? $curriculumMapping?->course?->name,
+                    'version' => $courseEnrollment?->curriculum?->name
+                        ?? $curriculumMapping?->curriculum?->name,
                 ],
-                'module_units' => $moduleUnits->map(fn (CourseVersionUnit $pvu) => [
+                'module_units' => $moduleUnits->map(fn (CurriculumUnit $pvu) => [
                     'id' => $pvu->id,
                     'code' => $pvu->unit?->code,
                     'name' => $pvu->unit?->name,
@@ -160,11 +160,11 @@ class DashboardController extends Controller
                 'session_registration' => [
                     'can_register' => (bool) ($activeSession && $courseEnrollment && $activeFeeAssignment),
                     'blocker' => ! $courseEnrollment
-                        ? 'You are not yet enrolled in a course version.'
+                        ? 'You are not yet enrolled in a curriculum.'
                         : (! $activeSession
                             ? 'No active academic session is currently available.'
                             : (! $activeFeeAssignment
-                                ? 'No fee plan has been assigned to your course version for the current session yet.'
+                                ? 'No fee plan has been assigned to your curriculum for the current session yet.'
                                 : null)),
                 ],
                 'unit_registration' => [
@@ -317,7 +317,7 @@ class DashboardController extends Controller
         $stats = DB::selectOne(<<<'SQL'
             select
                 (select count(*) from courses where deleted_at is null) as courses_count,
-                (select count(*) from course_versions where deleted_at is null) as course_versions_count,
+                (select count(*) from curricula where deleted_at is null) as curricula_count,
                 (select count(*) from departments where deleted_at is null) as departments_count,
                 (select count(*) from academic_years where deleted_at is null) as academic_years_count
         SQL);
@@ -328,8 +328,8 @@ class DashboardController extends Controller
                 'value' => (int) ($stats->courses_count ?? 0),
             ],
             [
-                'label' => 'Course Versions',
-                'value' => (int) ($stats->course_versions_count ?? 0),
+                'label' => 'Curriculums',
+                'value' => (int) ($stats->curricula_count ?? 0),
             ],
             [
                 'label' => 'Departments',

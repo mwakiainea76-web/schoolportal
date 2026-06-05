@@ -11,14 +11,14 @@ class FeeAssignmentService
     /**
      * Resolve the active fee assignment for a student enrollment.
      * 
-     * Uses course version mapping-based model:
-     * - course_version_mapping_id
+     * Uses curriculum mapping-based model:
+     * - curriculum_mapping_id
      * - year_of_study
      * - session_number
      * - academic_year_id
      *
      * @param int $academicYearId The academic year
-     * @param int|null $courseCourseVersionId The course version mapping
+     * @param int|null $curriculumMappingId The curriculum mapping
      * @param int|null $yearOfStudy The year of study
      * @param int|null $sessionNumber The session number within the year
      * @param string|null $effectiveDate The date to check validity (defaults to today)
@@ -26,19 +26,19 @@ class FeeAssignmentService
      */
     public function resolveActiveAssignment(
         int $academicYearId,
-        ?int $courseCourseVersionId = null,
+        ?int $curriculumMappingId = null,
         ?int $yearOfStudy = null,
         ?int $sessionNumber = null,
         ?string $effectiveDate = null
     ): ?FeeAssignment {
-        if (! $courseCourseVersionId || ! $yearOfStudy || ! $sessionNumber) {
+        if (! $curriculumMappingId || ! $yearOfStudy || ! $sessionNumber) {
             return null;
         }
 
         $effectiveDate = $effectiveDate ? Carbon::parse($effectiveDate)->toDateString() : now()->toDateString();
 
         return FeeAssignment::query()
-            ->where('course_version_mapping_id', $courseCourseVersionId)
+            ->where('curriculum_mapping_id', $curriculumMappingId)
             ->where('year_of_study', $yearOfStudy)
             ->where('session_number', $sessionNumber)
             ->where('academic_year_id', $academicYearId)
@@ -52,7 +52,7 @@ class FeeAssignmentService
     }
 
     /**
-     * Resolve a query to get the most recent active course version mapping assignment.
+     * Resolve a query to get the most recent active curriculum mapping assignment.
      * Used by the model for backward compatibility.
      *
      * @param Builder $query The query builder
@@ -61,7 +61,7 @@ class FeeAssignmentService
     public function resolveQuery(Builder $query): ?FeeAssignment
     {
         return $query
-            ->whereNotNull('course_version_mapping_id')
+            ->whereNotNull('curriculum_mapping_id')
             ->orderBy('created_at', 'desc')
             ->first();
     }

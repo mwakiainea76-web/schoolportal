@@ -72,7 +72,7 @@ export default function Edit({ enrollment, statuses }) {
                             </p>
                         </div>
                         <div>
-                            <InputLabel value="Course Version" />
+                            <InputLabel value="Curriculum" />
                             <p className="mt-1 px-3 py-2 bg-gray-50 border rounded text-sm text-gray-700">
                                 {enrollment.curriculum}
                             </p>

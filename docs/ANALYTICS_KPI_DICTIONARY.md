@@ -186,7 +186,7 @@ All analytics code should follow these definitions unless a later approved revis
 ### timetable_completion_rate
 
 - Meaning: Share of expected unit delivery that has timetable coverage.
-- Source tables: `course_version_units`, `academic_timetables`
+- Source tables: `curriculum_units`, `academic_timetables`
 - Formula: timetabled mapped units divided by expected mapped units for active scope
 - Time field: session or timetable period
 - Default exclusions: soft-deleted rows

@@ -40,7 +40,7 @@ class FeePlanAssignment extends Model
 
     public function curriculum()
     {
-        return $this->belongsTo(CourseVersion::class);
+        return $this->belongsTo(Curriculum::class);
     }
 
     public function academicYear()

@@ -13,18 +13,19 @@ const Edit = ({
     selected_filters = {},
 }) => {
     const activecourse = course || null;
-    const activeMapping = course?.course_version_mappings?.find(
+    const activeMapping = course?.curriculum_mappings?.find(
         (mapping) => mapping.is_active,
     );
     const selectedMapping =
-        activeMapping || course?.course_version_mappings?.[0] || null;
+        activeMapping || course?.curriculum_mappings?.[0] || null;
     const hasInitialized = useRef(false);
 
     const { data, setData, put, processing, errors } = useForm({
         code: "",
         name: "",
         description: "",
-        course_version_id: "",
+        exam_body_id: "",
+        curriculum_id: "",
         certification_level_id: "",
         department_id: "",
         initials: "",
@@ -38,7 +39,8 @@ const Edit = ({
                 code: "",
                 name: "",
                 description: "",
-                course_version_id: "",
+                exam_body_id: "",
+                curriculum_id: "",
                 certification_level_id: "",
                 department_id: "",
                 initials: "",
@@ -50,7 +52,8 @@ const Edit = ({
             code: course.code ?? "",
             name: course.name ?? "",
             description: course.description ?? "",
-            course_version_id: selectedMapping?.course_version_id ?? "",
+            exam_body_id: course.certification_level?.exam_body_id ?? "",
+            curriculum_id: selectedMapping?.curriculum_id ?? "",
             certification_level_id: course.certification_level_id ?? "",
             department_id: course.department_id ?? "",
             initials: course.initials ?? "",
@@ -79,22 +82,57 @@ const Edit = ({
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
                             <div>
                                 <InputLabel
-                                    htmlFor="course_version_id"
-                                    value="Course Version"
+                                    htmlFor="exam_body_id"
+                                    value="Exam Body"
                                 />
                                 <SearchSelect
-                                    routeName="course-versions.search"
+                                    routeName="exam-bodies.search"
                                     defaultOptions={[]}
-                                    value={data.course_version_id}
-                                    selectedLabel={selected_filters.course_version}
-                                    placeholder="Select course version..."
+                                    value={data.exam_body_id}
+                                    selectedLabel={selected_filters.exam_body}
+                                    placeholder="Select exam body..."
                                     preloadOptions
-                                    onChange={(version) =>
-                                        setData("course_version_id", version.id)
+                                    onChange={(examBody) =>
+                                        setData({
+                                            ...data,
+                                            exam_body_id: examBody.id,
+                                            curriculum_id: "",
+                                            certification_level_id: "",
+                                        })
                                     }
                                 />
                                 <InputError
-                                    message={errors.course_version_id}
+                                    message={errors.exam_body_id}
+                                    className="mt-2"
+                                />
+                            </div>
+
+                            <div>
+                                <InputLabel
+                                    htmlFor="curriculum_id"
+                                    value="Curriculum"
+                                />
+                                <SearchSelect
+                                    routeName="curriculums.search"
+                                    routeParams={{
+                                        exam_body_id: data.exam_body_id,
+                                    }}
+                                    defaultOptions={[]}
+                                    value={data.curriculum_id}
+                                    selectedLabel={selected_filters.curriculum}
+                                    placeholder="Select curriculum..."
+                                    preloadOptions
+                                    minSearchLength={0}
+                                    disabled={!data.exam_body_id}
+                                    onChange={(curriculum) =>
+                                        setData(
+                                            "curriculum_id",
+                                            curriculum.id,
+                                        )
+                                    }
+                                />
+                                <InputError
+                                    message={errors.curriculum_id}
                                     className="mt-2"
                                 />
                             </div>
@@ -128,13 +166,18 @@ const Edit = ({
                                 />
                                 <SearchSelect
                                     routeName="certification-levels.search"
+                                    routeParams={{
+                                        exam_body_id: data.exam_body_id,
+                                    }}
                                     defaultOptions={[]}
                                     value={data.certification_level_id}
                                     selectedLabel={
                                         selected_filters.certification_level
                                     }
-                                    placeholder="Type in certification name ..."
+                                    placeholder="Select certification level..."
                                     preloadOptions
+                                    minSearchLength={0}
+                                    disabled={!data.exam_body_id}
                                     onChange={(level) =>
                                         setData(
                                             "certification_level_id",

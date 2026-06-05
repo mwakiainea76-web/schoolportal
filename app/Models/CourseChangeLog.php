@@ -14,8 +14,8 @@ class CourseChangeLog extends Model
         'student_id',
         'old_course_enrollment_id',
         'new_course_enrollment_id',
-        'old_course_version_mapping_id',
-        'new_course_version_mapping_id',
+        'old_curriculum_mapping_id',
+        'new_curriculum_mapping_id',
         'old_registration_number',
         'new_registration_number',
         'old_user_id',
@@ -34,14 +34,14 @@ class CourseChangeLog extends Model
         return $this->belongsTo(Student::class);
     }
 
-    public function oldCourseVersionMapping(): BelongsTo
+    public function oldCurriculumMapping(): BelongsTo
     {
-        return $this->belongsTo(CourseVersionMapping::class, 'old_course_version_mapping_id');
+        return $this->belongsTo(CurriculumMapping::class, 'old_curriculum_mapping_id');
     }
 
-    public function newCourseVersionMapping(): BelongsTo
+    public function newCurriculumMapping(): BelongsTo
     {
-        return $this->belongsTo(CourseVersionMapping::class, 'new_course_version_mapping_id');
+        return $this->belongsTo(CurriculumMapping::class, 'new_curriculum_mapping_id');
     }
 
     public function processedBy(): BelongsTo

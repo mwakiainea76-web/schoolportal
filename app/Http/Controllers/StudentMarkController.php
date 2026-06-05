@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\CourseVersionUnit;
+use App\Models\CurriculumUnit;
 use App\Models\Student;
 use App\Models\StudentMark;
 use App\Models\StudentUnitRegistration;
@@ -40,7 +40,7 @@ class StudentMarkController extends Controller
                 ? $this->filterOptions($selectedUnit->id, $type, $number, $year)
                 : ['modules' => [], 'academic_years' => []],
             'blocker' => $unitCode && ! $selectedUnit
-                ? 'No course version unit was found for the entered code.'
+                ? 'No curriculum unit was found for the entered code.'
                 : null,
         ]);
     }
@@ -52,7 +52,7 @@ class StudentMarkController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'course_version_unit_code' => ['required', 'string'],
+            'curriculum_unit_code' => ['required', 'string'],
             'assessment_type' => ['required', 'in:theory,practical'],
             'assessment_number' => ['required', 'integer', 'min:1'],
             'entries' => ['required', 'array', 'min:1'],
@@ -60,12 +60,12 @@ class StudentMarkController extends Controller
             'entries.*.marks' => ['required', 'integer', 'min:0', 'max:100'],
         ]);
 
-        $unitCode = trim($validated['course_version_unit_code']);
+        $unitCode = trim($validated['curriculum_unit_code']);
         $unit = $this->resolveUnit($unitCode);
 
         if (! $unit) {
             throw ValidationException::withMessages([
-                'course_version_unit_code' => 'No course version unit was found for the entered code.',
+                'curriculum_unit_code' => 'No curriculum unit was found for the entered code.',
             ]);
         }
 
@@ -101,7 +101,7 @@ class StudentMarkController extends Controller
             ->join('academic_session_enrollments as ase', 'ase.id', '=', 'student_unit_registrations.academic_session_enrollment_id')
             ->join('course_enrollments as pe', 'pe.id', '=', 'ase.course_enrollment_id')
             ->with('academicSessionEnrollment')
-            ->where('course_version_unit_id', $unit->id)
+            ->where('curriculum_unit_id', $unit->id)
             ->whereIn('pe.student_id', $students->pluck('id')->all())
             ->orderByDesc('ase.academic_session_id')
             ->orderByDesc('ase.id')
@@ -131,7 +131,7 @@ class StudentMarkController extends Controller
                 StudentMark::updateOrCreate(
                     [
                         'student_id' => $student->id,
-                        'course_version_unit_id' => $unit->id,
+                        'curriculum_unit_id' => $unit->id,
                         'assessment_type' => $validated['assessment_type'],
                         'assessment_number' => $validated['assessment_number'],
                     ],
@@ -147,7 +147,7 @@ class StudentMarkController extends Controller
         });
 
         return to_route('academic.marks.index', [
-            'course_version_unit_code' => $unitCode,
+            'curriculum_unit_code' => $unitCode,
             'assessment_type' => $validated['assessment_type'],
             'assessment_number' => $validated['assessment_number'],
         ])->with('success', 'Marks saved as unpublished successfully.');
@@ -174,7 +174,7 @@ class StudentMarkController extends Controller
         return Inertia::render('Grades/Publish', [
             // Publish frontend only uses these 3 filter fields
             'filters' => [
-                'course_version_unit_code' => $unitCode,
+                'curriculum_unit_code' => $unitCode,
                 'academic_year' => $year ?? '',
                 'module' => $module ? (string) $module : '',
             ],
@@ -184,7 +184,7 @@ class StudentMarkController extends Controller
                 ? $this->publishFilterOptions($selectedUnit->id, $year)
                 : ['modules' => [], 'academic_years' => []],
             'blocker' => $unitCode && ! $selectedUnit
-                ? 'No course version unit was found for the entered code.'
+                ? 'No curriculum unit was found for the entered code.'
                 : null,
         ]);
     }
@@ -198,7 +198,7 @@ class StudentMarkController extends Controller
         $this->authorizeHod($request);
 
         $validated = $request->validate([
-            'course_version_unit_code' => ['required', 'string'],
+            'curriculum_unit_code' => ['required', 'string'],
             'assessment_type' => ['nullable', 'in:theory,practical'],
             'assessment_number' => ['nullable', 'integer', 'min:1'],
             'academic_year' => ['nullable', 'string'],
@@ -206,11 +206,11 @@ class StudentMarkController extends Controller
             'action' => ['required', 'in:publish,unpublish'],
         ]);
 
-        $unit = $this->resolveUnit(trim($validated['course_version_unit_code']));
+        $unit = $this->resolveUnit(trim($validated['curriculum_unit_code']));
 
         if (! $unit) {
             throw ValidationException::withMessages([
-                'course_version_unit_code' => 'No course version unit was found for the entered code.',
+                'curriculum_unit_code' => 'No curriculum unit was found for the entered code.',
             ]);
         }
 
@@ -219,7 +219,7 @@ class StudentMarkController extends Controller
         $module = isset($validated['module']) ? (int) $validated['module'] : null;
 
         $query = StudentMark::query()
-            ->where('course_version_unit_id', $unit->id)
+            ->where('curriculum_unit_id', $unit->id)
             ->when(! empty($validated['assessment_type']), fn ($q) => $q->where('assessment_type', $validated['assessment_type']))
             ->when(! empty($validated['assessment_number']), fn ($q) => $q->where('assessment_number', $validated['assessment_number']));
 
@@ -237,7 +237,7 @@ class StudentMarkController extends Controller
         };
 
         return to_route('academic.marks.publish.index', [
-            'course_version_unit_code' => $validated['course_version_unit_code'],
+            'curriculum_unit_code' => $validated['curriculum_unit_code'],
             'academic_year' => $year,
             'module' => $module,
         ])->with('success', $msg);
@@ -270,13 +270,13 @@ class StudentMarkController extends Controller
     public function marksheetIndex(Request $request): Response
     {
         $validated = $request->validate([
-            'course_version_unit_code' => ['nullable', 'string'],
+            'curriculum_unit_code' => ['nullable', 'string'],
             'session_number' => ['nullable', 'integer', 'min:1'],
             'year_of_study' => ['nullable', 'integer', 'min:1'],
             'registration_number' => ['nullable', 'string'],
         ]);
 
-        $unitCode = trim((string) ($validated['course_version_unit_code'] ?? ''));
+        $unitCode = trim((string) ($validated['curriculum_unit_code'] ?? ''));
         $sessionNumber = isset($validated['session_number']) ? (int) $validated['session_number'] : null;
         $yearOfStudy = isset($validated['year_of_study']) ? (int) $validated['year_of_study'] : null;
         $registrationNumber = trim((string) ($validated['registration_number'] ?? ''));
@@ -293,7 +293,7 @@ class StudentMarkController extends Controller
             // ── Sessions: JOIN instead of loading all marks into memory ──────
             $availableSessions = StudentMark::query()
                 ->join('academic_sessions as acs', 'acs.id', '=', 'student_marks.academic_session_id')
-                ->where('student_marks.course_version_unit_id', $selectedUnit->id)
+                ->where('student_marks.curriculum_unit_id', $selectedUnit->id)
                 ->distinct()
                 ->orderBy('acs.session_number')
                 ->pluck('acs.session_number')
@@ -306,7 +306,7 @@ class StudentMarkController extends Controller
 
             $availableYears = StudentMark::query()
                 ->join('academic_session_enrollments as ase', 'ase.id', '=', 'student_marks.academic_session_enrollment_id')
-                ->where('student_marks.course_version_unit_id', $selectedUnit->id)
+                ->where('student_marks.curriculum_unit_id', $selectedUnit->id)
                 ->distinct()
                 ->orderBy('ase.year_of_study')
                 ->pluck('ase.year_of_study')
@@ -325,7 +325,7 @@ class StudentMarkController extends Controller
 
         return Inertia::render('Grades/Marksheet', [
             'filters' => [
-                'course_version_unit_code' => $unitCode,
+                'curriculum_unit_code' => $unitCode,
                 'session_number' => $sessionNumber ? (string) $sessionNumber : '',
                 'year_of_study' => $yearOfStudy ? (string) $yearOfStudy : '',
                 'registration_number' => $registrationNumber,
@@ -339,7 +339,7 @@ class StudentMarkController extends Controller
             'available_years' => $availableYears,
             'marksheet_data' => $marksheetData,
             'blocker' => $unitCode !== '' && ! $selectedUnit
-                ? 'No course version unit was found for the entered code.'
+                ? 'No curriculum unit was found for the entered code.'
                 : null,
         ]);
     }
@@ -375,10 +375,10 @@ class StudentMarkController extends Controller
             ->where('is_published', true);
 
         $availableModules = (clone $baseMarks)
-            ->join('course_version_units', 'student_marks.course_version_unit_id', '=', 'course_version_units.id')
+            ->join('curriculum_units', 'student_marks.curriculum_unit_id', '=', 'curriculum_units.id')
             ->distinct()
-            ->orderBy('course_version_units.module_taught')
-            ->pluck('course_version_units.module_taught')
+            ->orderBy('curriculum_units.module_taught')
+            ->pluck('curriculum_units.module_taught')
             ->filter()
             ->map(fn ($m) => (int) $m)
             ->values();
@@ -398,16 +398,16 @@ class StudentMarkController extends Controller
         $filteredQuery = (clone $baseMarks)
             ->with([
                 'academicSessionEnrollment:id,year_of_study',
-                'courseVersionUnit:id,unit_id,module_taught',
-                'courseVersionUnit.unit:id,code,name',
+                'curriculumUnit:id,unit_id,module_taught',
+                'curriculumUnit.unit:id,code,name',
             ])
             ->orderByDesc('academic_session_id')
-            ->orderBy('course_version_unit_id')
+            ->orderBy('curriculum_unit_id')
             ->orderBy('assessment_type')
             ->orderBy('assessment_number');
 
         if ($selectedModule) {
-            $filteredQuery->whereHas('courseVersionUnit', fn ($q) => $q->where('module_taught', $selectedModule)
+            $filteredQuery->whereHas('curriculumUnit', fn ($q) => $q->where('module_taught', $selectedModule)
             );
         }
 
@@ -422,9 +422,9 @@ class StudentMarkController extends Controller
 
         $paginator->setCollection(
             $paginator->getCollection()->map(fn (StudentMark $mark) => [
-                'unit_code' => $mark->courseVersionUnit?->unit?->code,
-                'unit_name' => $mark->courseVersionUnit?->unit?->name,
-                'module' => $mark->courseVersionUnit?->module_taught,
+                'unit_code' => $mark->curriculumUnit?->unit?->code,
+                'unit_name' => $mark->curriculumUnit?->unit?->name,
+                'module' => $mark->curriculumUnit?->module_taught,
                 'year_of_study' => $mark->academicSessionEnrollment?->year_of_study,
                 'mark_type' => $mark->assessment_type,
                 'marks' => $mark->marks,
@@ -475,7 +475,7 @@ class StudentMarkController extends Controller
         $year = trim($request->string('academic_year')->toString());
 
         return [
-            trim($request->string('course_version_unit_code')->toString()),
+            trim($request->string('curriculum_unit_code')->toString()),
             $request->string('assessment_type')->toString() ?: 'theory',
             max(1, $request->integer('assessment_number') ?: 1),
             $request->integer('module') ?: null,
@@ -494,7 +494,7 @@ class StudentMarkController extends Controller
         ?string $year,
     ): array {
         return [
-            'course_version_unit_code' => $unitCode,
+            'curriculum_unit_code' => $unitCode,
             'assessment_type' => $type,
             'assessment_number' => (string) $number,
             'module' => $module ? (string) $module : '',
@@ -503,36 +503,36 @@ class StudentMarkController extends Controller
     }
 
     /**
-     * Resolve a CourseVersionUnit by unit code.
+     * Resolve a CurriculumUnit by unit code.
      * Eager-loads everything unitPayload() needs.
      */
-    private function resolveUnit(string $unitCode): ?CourseVersionUnit
+    private function resolveUnit(string $unitCode): ?CurriculumUnit
     {
         if ($unitCode === '') {
             return null;
         }
 
-        return CourseVersionUnit::query()
+        return CurriculumUnit::query()
             ->select([
-                'course_version_units.*',
+                'curriculum_units.*',
                 'units.code as resolved_unit_code',
                 'units.name as resolved_unit_name',
                 'courses.name as resolved_course_name',
-                'course_versions.name as resolved_version_name',
+                'curricula.name as resolved_version_name',
             ])
-            ->join('units', 'units.id', '=', 'course_version_units.unit_id')
+            ->join('units', 'units.id', '=', 'curriculum_units.unit_id')
             ->join(
-                'course_version_mappings',
-                'course_version_mappings.id',
+                'curriculum_mappings',
+                'curriculum_mappings.id',
                 '=',
-                'course_version_units.course_version_mapping_id'
+                'curriculum_units.curriculum_mapping_id'
             )
-            ->join('courses', 'courses.id', '=', 'course_version_mappings.course_id')
+            ->join('courses', 'courses.id', '=', 'curriculum_mappings.course_id')
             ->join(
-                'course_versions',
-                'course_versions.id',
+                'curricula',
+                'curricula.id',
                 '=',
-                'course_version_mappings.course_version_id'
+                'curriculum_mappings.curriculum_id'
             )
             ->where('units.code', $unitCode)
             ->orderBy('id')
@@ -540,10 +540,10 @@ class StudentMarkController extends Controller
     }
 
     /**
-     * Shape a CourseVersionUnit into the full payload used by Index and Publish.
+     * Shape a CurriculumUnit into the full payload used by Index and Publish.
      * Marksheet uses its own slimmer shape (code + name only).
      */
-    private function unitPayload(?CourseVersionUnit $unit): ?array
+    private function unitPayload(?CurriculumUnit $unit): ?array
     {
         if (! $unit) {
             return null;
@@ -554,8 +554,8 @@ class StudentMarkController extends Controller
             'code' => $unit->resolved_unit_code ?? $unit->unit?->code,
             'name' => $unit->resolved_unit_name ?? $unit->unit?->name,
             'module' => $unit->module_taught,
-            'course' => $unit->resolved_course_name ?? $unit->courseVersionMapping?->course?->name,
-            'version' => $unit->resolved_version_name ?? $unit->courseVersionMapping?->courseVersion?->name,
+            'course' => $unit->resolved_course_name ?? $unit->curriculumMapping?->course?->name,
+            'version' => $unit->resolved_version_name ?? $unit->curriculumMapping?->curriculum?->name,
         ];
     }
 
@@ -575,9 +575,9 @@ class StudentMarkController extends Controller
             ->with([
                 'student:id,registration_number,user_id',
                 'student.user:id,first_name,last_name',
-                'courseVersionUnit.unit:id,name',
+                'curriculumUnit.unit:id,name',
             ])
-            ->where('course_version_unit_id', $unitId)
+            ->where('curriculum_unit_id', $unitId)
             ->where('assessment_type', $type)
             ->where('assessment_number', $number)
             ->when($year, function ($q) use ($year, $module) {
@@ -606,7 +606,7 @@ class StudentMarkController extends Controller
                     ($mark->student?->user?->first_name ?? '').' '.
                     ($mark->student?->user?->last_name ?? '')
                 ),
-                'unit_name' => $mark->courseVersionUnit?->unit?->name,
+                'unit_name' => $mark->curriculumUnit?->unit?->name,
                 'marks' => (int) $mark->marks,
                 'is_published' => (bool) $mark->is_published,
             ])
@@ -635,9 +635,9 @@ class StudentMarkController extends Controller
             ->with([
                 'student:id,registration_number,user_id',
                 'student.user:id,first_name,last_name',
-                'courseVersionUnit.unit:id,name',
+                'curriculumUnit.unit:id,name',
             ])
-            ->where('course_version_unit_id', $unitId);
+            ->where('curriculum_unit_id', $unitId);
 
         $this->applyYearModuleFilters($query, $year, $module);
 
@@ -656,7 +656,7 @@ class StudentMarkController extends Controller
                     ($mark->student?->user?->first_name ?? '').' '.
                     ($mark->student?->user?->last_name ?? '')
                 ),
-                'unit_name' => $mark->courseVersionUnit?->unit?->name,
+                'unit_name' => $mark->curriculumUnit?->unit?->name,
                 'marks' => (int) $mark->marks,
                 'is_published' => (bool) $mark->is_published,
             ])
@@ -680,7 +680,7 @@ class StudentMarkController extends Controller
         $years = StudentMark::query()
             ->join('academic_sessions as acs', 'acs.id', '=', 'student_marks.academic_session_id')
             ->join('academic_years as ay', 'ay.id', '=', 'acs.academic_year_id')
-            ->where('student_marks.course_version_unit_id', $unitId)
+            ->where('student_marks.curriculum_unit_id', $unitId)
             ->where('student_marks.assessment_type', $type)
             ->where('student_marks.assessment_number', $number)
             ->distinct()
@@ -694,7 +694,7 @@ class StudentMarkController extends Controller
             ->join('academic_session_enrollments as ase', 'ase.id', '=', 'student_marks.academic_session_enrollment_id')
             ->join('academic_sessions as acs2', 'acs2.id', '=', 'student_marks.academic_session_id')
             ->join('academic_years as ay2', 'ay2.id', '=', 'acs2.academic_year_id')
-            ->where('student_marks.course_version_unit_id', $unitId)
+            ->where('student_marks.curriculum_unit_id', $unitId)
             ->where('student_marks.assessment_type', $type)
             ->where('student_marks.assessment_number', $number);
 
@@ -721,7 +721,7 @@ class StudentMarkController extends Controller
         $years = StudentMark::query()
             ->join('academic_sessions as acs', 'acs.id', '=', 'student_marks.academic_session_id')
             ->join('academic_years as ay', 'ay.id', '=', 'acs.academic_year_id')
-            ->where('student_marks.course_version_unit_id', $unitId)
+            ->where('student_marks.curriculum_unit_id', $unitId)
             ->distinct()
             ->orderByDesc('ay.academic_year')
             ->pluck('ay.academic_year')
@@ -733,7 +733,7 @@ class StudentMarkController extends Controller
             ->join('academic_session_enrollments as ase', 'ase.id', '=', 'student_marks.academic_session_enrollment_id')
             ->join('academic_sessions as acs', 'acs.id', '=', 'student_marks.academic_session_id')
             ->join('academic_years as ay', 'ay.id', '=', 'acs.academic_year_id')
-            ->where('student_marks.course_version_unit_id', $unitId);
+            ->where('student_marks.curriculum_unit_id', $unitId);
 
         if ($selectedYear !== null) {
             $modulesQuery->where('ay.academic_year', $selectedYear);
@@ -762,7 +762,7 @@ class StudentMarkController extends Controller
         string $registrationNumber,
     ): array {
         $baseQuery = StudentMark::query()
-            ->where('course_version_unit_id', $unitId)
+            ->where('curriculum_unit_id', $unitId)
             ->where('assessment_type', $assessmentType)
             ->when($sessionNumber, fn ($q) => $q->whereHas('academicSession', fn ($q2) => $q2->where('session_number', $sessionNumber)
                 ->orWhere('session_No', $sessionNumber)

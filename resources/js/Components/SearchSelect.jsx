@@ -4,12 +4,12 @@ import { route } from "ziggy-js";
 const API_LOOKUP_ROUTES = {
     "departments.search": "/api/lookups/departments",
     "programs.search": "/api/lookups/courses",
-    "course-versions.search": "/api/lookups/course-versions",
-    "programs.course-version-mappings.search": "/api/lookups/course-versions",
-    "course-version-mappings.search": "/api/lookups/course-version-mappings",
+    "curriculums.search": "/api/lookups/curriculums",
+    "programs.curriculum-mappings.search": "/api/lookups/curriculums",
+    "curriculum-mappings.search": "/api/lookups/curriculum-mappings",
     "units.search": "/api/lookups/units",
     "exam-bodies.search": "/api/lookups/exam-bodies",
-    "programs.course-version-mappings.program-search": "/api/lookups/exam-bodies",
+    "programs.curriculum-mappings.program-search": "/api/lookups/exam-bodies",
     "certification-levels.search": "/api/lookups/certification-levels",
     "staffs.search": "/api/lookups/staffs",
 };
@@ -119,7 +119,11 @@ export default function SearchSelect({
                 const trimmedText = text.trim();
 
                 if (!trimmedText) {
-                    setOptions(initialOptions);
+                    if (isApiLookup && preloadOptions) {
+                        await fetchOptions("");
+                    } else {
+                        setOptions(initialOptions);
+                    }
                     onChange?.({ id: "", name: "" });
                     return;
                 }

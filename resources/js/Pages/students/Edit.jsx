@@ -18,37 +18,37 @@ import {
 
 export default function EditStudent({
     student,
-    courseVersions = [],
+    curriculums = [],
     coursesForVersion = [],
 }) {
-    const existingCourseVersionMappingId =
-        student.course_enrollment?.course_version_mapping_id ||
-        student.courseEnrollment?.course_version_mapping_id ||
+    const existingCurriculumMappingId =
+        student.course_enrollment?.curriculum_mapping_id ||
+        student.courseEnrollment?.curriculum_mapping_id ||
         "";
 
     const existingcourseId =
         student.course_enrollment?.course_id ||
         student.courseEnrollment?.course_id ||
-        student.course_enrollment?.course_version_mapping?.course?.id ||
-        student.courseEnrollment?.courseVersionMapping?.course?.id ||
+        student.course_enrollment?.curriculum_mapping?.course?.id ||
+        student.courseEnrollment?.curriculumMapping?.course?.id ||
         "";
 
     const existingExamBodyId =
         student.course_enrollment?.exam_body_id ||
         student.courseEnrollment?.exam_body_id ||
-        student.course_enrollment?.course_version_mapping?.course
+        student.course_enrollment?.curriculum_mapping?.course
             ?.certification_level?.exam_body_id ||
-        student.courseEnrollment?.courseVersionMapping?.course
+        student.courseEnrollment?.curriculumMapping?.course
             ?.certificationLevel?.exam_body_id ||
         "";
 
-    const existingCourseVersionId =
-        student.course_enrollment?.course_version_mapping
-            ?.course_version_id ||
-        student.courseEnrollment?.courseVersionMapping?.course_version_id ||
-        student.course_enrollment?.course_version_mapping?.courseVersion
+    const existingCurriculumId =
+        student.course_enrollment?.curriculum_mapping
+            ?.curriculum_id ||
+        student.courseEnrollment?.curriculumMapping?.curriculum_id ||
+        student.course_enrollment?.curriculum_mapping?.curriculum
             ?.id ||
-        student.courseEnrollment?.courseVersionMapping?.courseVersion?.id ||
+        student.courseEnrollment?.curriculumMapping?.curriculum?.id ||
         "";
 
     const selectedExamBodyLabel =
@@ -76,8 +76,8 @@ export default function EditStudent({
         previous_school: student.previous_school || "",
         course_id: existingcourseId,
         exam_body_id: existingExamBodyId,
-        course_version_id: existingCourseVersionId,
-        course_curriculum_id: existingCourseVersionMappingId,
+        curriculum_id: existingCurriculumId,
+        curriculum_mapping_id: existingCurriculumMappingId,
         study_mode:
             student.course_enrollment?.study_mode ||
             student.courseEnrollment?.study_mode ||
@@ -94,49 +94,49 @@ export default function EditStudent({
             student.user?.nextofkin?.alternate_phone_number || "",
         kin_email: student.user?.nextofkin?.email || "",
     });
-    const [courseVersionOptions, setCourseVersionOptions] =
-        useState(courseVersions);
+    const [curriculumOptions, setCurriculumOptions] =
+        useState(curriculums);
     const [courseOptions, setCourseOptions] = useState(coursesForVersion);
-    const [loadingCourseVersions, setLoadingCourseVersions] = useState(false);
+    const [loadingCurriculums, setLoadingCurriculums] = useState(false);
     const [loadingCourses, setLoadingCourses] = useState(false);
-    const hasCourseVersionMappings = courseOptions.length > 0;
-    const hasLockedCourseEnrollment = Boolean(existingCourseVersionId);
+    const hasCurriculumMappings = courseOptions.length > 0;
+    const hasLockedCourseEnrollment = Boolean(existingCurriculumId);
     const selectedcourseLabel =
         student.course_enrollment?.course?.display_name ||
         student.courseEnrollment?.course?.display_name ||
         student.course_enrollment?.course?.name ||
         student.courseEnrollment?.course?.name ||
-        student.course_enrollment?.course_version_mapping?.course?.name ||
-        student.courseEnrollment?.courseVersionMapping?.course?.name ||
+        student.course_enrollment?.curriculum_mapping?.course?.name ||
+        student.courseEnrollment?.curriculumMapping?.course?.name ||
         "";
-    const selectedCourseVersionLabel =
-        student.course_enrollment?.course_version?.name ||
-        student.courseEnrollment?.courseVersion?.name ||
-        student.course_enrollment?.course_version_mapping?.course_version
+    const selectedCurriculumLabel =
+        student.course_enrollment?.curriculum?.name ||
+        student.courseEnrollment?.curriculum?.name ||
+        student.course_enrollment?.curriculum_mapping?.curriculum
             ?.name ||
-        student.courseEnrollment?.courseVersionMapping?.courseVersion?.name ||
+        student.courseEnrollment?.curriculumMapping?.curriculum?.name ||
         "";
     const handleChange = (e) => setData(e.target.name, e.target.value);
 
     useEffect(() => {
-        if (!data.course_version_id && existingCourseVersionId) {
-            setData("course_version_id", existingCourseVersionId);
+        if (!data.curriculum_id && existingCurriculumId) {
+            setData("curriculum_id", existingCurriculumId);
         }
 
-        if (!data.course_curriculum_id && existingCourseVersionMappingId) {
-            setData("course_curriculum_id", existingCourseVersionMappingId);
+        if (!data.curriculum_mapping_id && existingCurriculumMappingId) {
+            setData("curriculum_mapping_id", existingCurriculumMappingId);
         }
     }, [
-        data.course_version_id,
-        data.course_curriculum_id,
-        existingCourseVersionId,
-        existingCourseVersionMappingId,
+        data.curriculum_id,
+        data.curriculum_mapping_id,
+        existingCurriculumId,
+        existingCurriculumMappingId,
         setData,
     ]);
 
     useEffect(() => {
-        setCourseVersionOptions(courseVersions);
-    }, [courseVersions]);
+        setCurriculumOptions(curriculums);
+    }, [curriculums]);
 
     useEffect(() => {
         setCourseOptions(coursesForVersion);
@@ -148,39 +148,39 @@ export default function EditStudent({
         }
 
         if (!data.exam_body_id) {
-            setCourseVersionOptions([]);
+            setCurriculumOptions([]);
             setCourseOptions([]);
             setData({
                 ...data,
-                course_version_id: "",
-                course_curriculum_id: "",
+                curriculum_id: "",
+                curriculum_mapping_id: "",
                 course_id: "",
             });
             return;
         }
 
-        setLoadingCourseVersions(true);
+        setLoadingCurriculums(true);
         axios
             .get(
-                route("students.exam-body-course-versions", data.exam_body_id),
+                route("students.exam-body-curriculums", data.exam_body_id),
             )
             .then((response) => {
                 const versions = response.data ?? [];
-                setCourseVersionOptions(versions);
+                setCurriculumOptions(versions);
 
                 const selectedVersionStillExists = versions.some(
-                    (courseVersion) =>
-                        String(courseVersion.id) ===
-                        String(data.course_version_id),
+                    (curriculum) =>
+                        String(curriculum.id) ===
+                        String(data.curriculum_id),
                 );
 
                 if (versions.length === 1) {
-                    const courseVersion = versions[0];
+                    const curriculum = versions[0];
 
                     setData({
                         ...data,
-                        course_version_id: courseVersion.id,
-                        course_curriculum_id: "",
+                        curriculum_id: curriculum.id,
+                        curriculum_mapping_id: "",
                         course_id: "",
                     });
                     return;
@@ -189,13 +189,13 @@ export default function EditStudent({
                 if (!selectedVersionStillExists) {
                     setData({
                         ...data,
-                        course_version_id: "",
-                        course_curriculum_id: "",
+                        curriculum_id: "",
+                        curriculum_mapping_id: "",
                         course_id: "",
                     });
                 }
             })
-            .finally(() => setLoadingCourseVersions(false));
+            .finally(() => setLoadingCurriculums(false));
     }, [data.exam_body_id, hasLockedCourseEnrollment]);
 
     useEffect(() => {
@@ -203,11 +203,11 @@ export default function EditStudent({
             return;
         }
 
-        if (!data.course_version_id) {
+        if (!data.curriculum_id) {
             setCourseOptions([]);
             setData({
                 ...data,
-                course_curriculum_id: "",
+                curriculum_mapping_id: "",
                 course_id: "",
             });
             return;
@@ -215,14 +215,14 @@ export default function EditStudent({
 
         setLoadingCourses(true);
         axios
-            .get(route("students.cycle-courses", data.course_version_id))
+            .get(route("students.cycle-courses", data.curriculum_id))
             .then((response) => {
                 const courses = response.data ?? [];
                 setCourseOptions(courses);
 
                 const selectedCourseStillExists = courses.some(
                     (course) =>
-                        String(course.id) === String(data.course_curriculum_id),
+                        String(course.id) === String(data.curriculum_mapping_id),
                 );
 
                 if (courses.length === 1) {
@@ -230,7 +230,7 @@ export default function EditStudent({
 
                     setData({
                         ...data,
-                        course_curriculum_id: course.id,
+                        curriculum_mapping_id: course.id,
                         course_id: course.course_id ?? "",
                     });
                     return;
@@ -239,13 +239,13 @@ export default function EditStudent({
                 if (!selectedCourseStillExists) {
                     setData({
                         ...data,
-                        course_curriculum_id: "",
+                        curriculum_mapping_id: "",
                         course_id: "",
                     });
                 }
             })
             .finally(() => setLoadingCourses(false));
-    }, [data.course_version_id, hasLockedCourseEnrollment]);
+    }, [data.curriculum_id, hasLockedCourseEnrollment]);
 
     const submit = (e) => {
         e.preventDefault();
@@ -454,7 +454,7 @@ export default function EditStudent({
                                 <div className="p-4">
                                     <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
                                         {data.exam_body_id &&
-                                        !hasCourseVersionMappings &&
+                                        !hasCurriculumMappings &&
                                         !loadingCourses &&
                                         !hasLockedCourseEnrollment ? (
                                             <div className="rounded border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 md:col-span-2 xl:col-span-3">
@@ -496,8 +496,8 @@ export default function EditStudent({
                                                         setData({
                                                             ...data,
                                                             exam_body_id: examBody.id,
-                                                            course_version_id: "",
-                                                            course_curriculum_id: "",
+                                                            curriculum_id: "",
+                                                            curriculum_mapping_id: "",
                                                             course_id: "",
                                                         })
                                                     }
@@ -509,51 +509,51 @@ export default function EditStudent({
                                         </div>
 
                                         <div>
-                                            <InputLabel value="Course Version" required />
+                                            <InputLabel value="Curriculum" required />
                                             {hasLockedCourseEnrollment ? (
                                                 <TextInput
-                                                    value={selectedCourseVersionLabel}
+                                                    value={selectedCurriculumLabel}
                                                     disabled
                                                     className="cursor-not-allowed bg-gray-100"
                                                 />
                                             ) : (
                                                 <SearchSelect
-                                                    key={`course-version-${data.exam_body_id || data.course_version_id}-${courseVersionOptions.length}`}
-                                                    defaultOptions={courseVersionOptions}
-                                                    value={data.course_version_id}
+                                                    key={`curriculum-${data.exam_body_id || data.curriculum_id}-${curriculumOptions.length}`}
+                                                    defaultOptions={curriculumOptions}
+                                                    value={data.curriculum_id}
                                                     disabled={
                                                         !data.exam_body_id ||
-                                                        loadingCourseVersions
+                                                        loadingCurriculums
                                                     }
-                                                    onChange={(courseVersion) =>
+                                                    onChange={(curriculum) =>
                                                         setData({
                                                             ...data,
-                                                            course_version_id:
-                                                                courseVersion.id,
-                                                            course_curriculum_id: "",
+                                                            curriculum_id:
+                                                                curriculum.id,
+                                                            curriculum_mapping_id: "",
                                                             course_id: "",
                                                         })
                                                     }
                                                     placeholder={
-                                                        loadingCourseVersions
-                                                            ? "Loading course versions..."
-                                                            : "Select course version..."
+                                                        loadingCurriculums
+                                                            ? "Loading curriculums..."
+                                                            : "Select curriculum..."
                                                     }
-                                                    error={errors.course_version_id}
+                                                    error={errors.curriculum_id}
                                                 />
                                             )}
                                             {hasLockedCourseEnrollment ? (
                                                 <p className="mt-1 text-xs text-slate-500">
-                                                    Enrollment exam body and course version are locked after admission.
+                                                    Enrollment exam body and curriculum are locked after admission.
                                                 </p>
                                             ) : data.exam_body_id &&
-                                              courseVersionOptions.length > 1 ? (
+                                              curriculumOptions.length > 1 ? (
                                                 <p className="mt-1 text-xs text-amber-600">
-                                                    Multiple active course versions exist. Select one for this student.
+                                                    Multiple active curriculums exist. Select one for this student.
                                                 </p>
                                             ) : null}
                                             <InputError
-                                                message={errors.course_version_id}
+                                                message={errors.curriculum_id}
                                             />
                                         </div>
 
@@ -567,17 +567,17 @@ export default function EditStudent({
                                                 />
                                             ) : (
                                                 <SearchSelect
-                                                    key={`course-${data.course_version_id || data.course_curriculum_id}-${courseOptions.length}`}
+                                                    key={`course-${data.curriculum_id || data.curriculum_mapping_id}-${courseOptions.length}`}
                                                     defaultOptions={courseOptions}
-                                                    value={data.course_curriculum_id}
+                                                    value={data.curriculum_mapping_id}
                                                     disabled={
-                                                        !data.course_version_id ||
+                                                        !data.curriculum_id ||
                                                         loadingCourses
                                                     }
                                                     onChange={(course) =>
                                                         setData({
                                                             ...data,
-                                                            course_curriculum_id:
+                                                            curriculum_mapping_id:
                                                                 course.id,
                                                             course_id:
                                                                 course.course_id ?? "",
@@ -588,20 +588,20 @@ export default function EditStudent({
                                                             ? "Loading courses..."
                                                             : "Select course..."
                                                     }
-                                                    error={errors.course_curriculum_id}
+                                                    error={errors.curriculum_mapping_id}
                                                 />
                                             )}
                                             {!hasLockedCourseEnrollment &&
-                                            data.course_version_id &&
-                                            !hasCourseVersionMappings &&
+                                            data.curriculum_id &&
+                                            !hasCurriculumMappings &&
                                             !loadingCourses ? (
                                                 <p className="mt-1 text-xs text-amber-600">
                                                     No active courses are mapped to
-                                                    this course version yet.
+                                                    this curriculum yet.
                                                 </p>
                                             ) : null}
                                             <InputError message={errors.course_id} />
-                                            <InputError message={errors.course_curriculum_id} />
+                                            <InputError message={errors.curriculum_mapping_id} />
                                         </div>
 
                                         <div>

@@ -6,7 +6,7 @@ use App\Models\AcademicSession;
 use App\Models\AcademicSessionEnrollment;
 use App\Models\AcademicTimetable;
 use App\Models\LectureRoom;
-use App\Models\CourseVersionUnit;
+use App\Models\CurriculumUnit;
 use App\Models\Student;
 use App\Services\Analytics\Concerns\BuildsAnalyticsFilters;
 use Illuminate\Support\Facades\DB;
@@ -117,10 +117,10 @@ class AcademicAnalyticsService
             ])
             ->all();
 
-        $mappedUnitsCount = CourseVersionUnit::query()->count();
-        $unitsWithTimetableCount = DB::table('academic_timetable_course_version_unit')
+        $mappedUnitsCount = CurriculumUnit::query()->count();
+        $unitsWithTimetableCount = DB::table('academic_timetable_curriculum_unit')
             ->distinct()
-            ->count('course_version_unit_id');
+            ->count('curriculum_unit_id');
         $timetableCompletionRate = $mappedUnitsCount > 0
             ? round(($unitsWithTimetableCount / $mappedUnitsCount) * 100, 2)
             : 0.0;
@@ -163,27 +163,27 @@ class AcademicAnalyticsService
             ])
             ->all();
 
-        $unitsWithoutTimetable = CourseVersionUnit::query()
-            ->leftJoin('academic_timetable_course_version_unit', 'academic_timetable_course_version_unit.course_version_unit_id', '=', 'course_version_units.id')
-            ->join('units', 'units.id', '=', 'course_version_units.unit_id')
-            ->join('course_version_mappings', 'course_version_mappings.id', '=', 'course_version_units.course_version_mapping_id')
-            ->join('courses', 'courses.id', '=', 'course_version_mappings.course_id')
-            ->join('course_versions', 'course_versions.id', '=', 'course_version_mappings.course_version_id')
-            ->whereNull('academic_timetable_course_version_unit.course_version_unit_id')
+        $unitsWithoutTimetable = CurriculumUnit::query()
+            ->leftJoin('academic_timetable_curriculum_unit', 'academic_timetable_curriculum_unit.curriculum_unit_id', '=', 'curriculum_units.id')
+            ->join('units', 'units.id', '=', 'curriculum_units.unit_id')
+            ->join('curriculum_mappings', 'curriculum_mappings.id', '=', 'curriculum_units.curriculum_mapping_id')
+            ->join('courses', 'courses.id', '=', 'curriculum_mappings.course_id')
+            ->join('curricula', 'curricula.id', '=', 'curriculum_mappings.curriculum_id')
+            ->whereNull('academic_timetable_curriculum_unit.curriculum_unit_id')
             ->select(
-                'course_version_units.id',
-                'course_version_units.module_taught',
+                'curriculum_units.id',
+                'curriculum_units.module_taught',
                 'units.code as unit_code',
                 'units.name as unit_name',
                 'courses.name as course_name',
-                'course_versions.name as version_name'
+                'curricula.name as version_name'
             )
             ->orderBy('courses.name')
-            ->orderBy('course_version_units.module_taught')
+            ->orderBy('curriculum_units.module_taught')
             ->limit(10)
             ->get()
             ->map(fn ($row) => [
-                'course_version_unit_id' => (int) $row->id,
+                'curriculum_unit_id' => (int) $row->id,
                 'course_name' => $row->course_name,
                 'version_name' => $row->version_name,
                 'module_taught' => (int) $row->module_taught,

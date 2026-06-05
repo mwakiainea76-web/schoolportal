@@ -35,7 +35,7 @@ return new class extends Migration
             $table->foreignId('academic_session_id')->nullable()->constrained('academic_sessions')->nullOnDelete();
             $table->foreignId('department_id')->nullable()->constrained('departments')->nullOnDelete();
             $table->foreignId('course_id')->nullable()->constrained('courses')->nullOnDelete();
-            $table->foreignId('course_version_id')->nullable()->constrained('course_versions')->nullOnDelete();
+            $table->foreignId('curriculum_id')->nullable()->constrained('curricula')->nullOnDelete();
             $table->string('metric_key');
             $table->decimal('metric_value', 20, 4)->default(0);
             $table->timestamp('snapshot_generated_at');
@@ -49,7 +49,7 @@ return new class extends Migration
                     'academic_session_id',
                     'department_id',
                     'course_id',
-                    'course_version_id',
+                    'curriculum_id',
                     'metric_key',
                 ],
                 $tableName.'_metric_unique'

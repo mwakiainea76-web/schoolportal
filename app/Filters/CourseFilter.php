@@ -24,10 +24,10 @@ class CourseFilter
                 $q->whereHas('certificationLevel', fn ($levelQuery) => $levelQuery->where('exam_body_id', $examBodyId));
             })
             ->when($filters['certification_level_id'] ?? null, fn ($q, $levelId) => $q->where('certification_level_id', $levelId))
-            ->when($filters['course_version_id'] ?? null, function ($q, $courseVersionId) {
-                $q->whereHas('courseVersionMappings', function ($mappingQuery) use ($courseVersionId) {
+            ->when($filters['curriculum_id'] ?? null, function ($q, $curriculumId) {
+                $q->whereHas('curriculumMappings', function ($mappingQuery) use ($curriculumId) {
                     $mappingQuery
-                        ->where('course_version_id', $courseVersionId)
+                        ->where('curriculum_id', $curriculumId)
                         ->where('is_active', true);
                 });
             })

@@ -9,14 +9,14 @@ export default function Edit({
     departments,
     trainers,
     lecture_rooms,
-    course_version_units,
+    curriculum_units,
     days,
 }) {
     const { data, setData, put, processing, errors } = useForm({
         department_id: timetable.department_id || "",
         trainer_staff_id: timetable.trainer_staff_id || "",
         lecture_room_id: timetable.lecture_room_id || "",
-        course_version_unit_ids: timetable.course_version_unit_ids || [],
+        curriculum_unit_ids: timetable.curriculum_unit_ids || [],
         day_of_week: timetable.day_of_week || "monday",
         start_time: timetable.start_time || "",
         end_time: timetable.end_time || "",
@@ -27,8 +27,8 @@ export default function Edit({
         : trainers;
 
     const filteredUnits = data.department_id
-        ? course_version_units.filter((unit) => unit.department_id === data.department_id)
-        : course_version_units;
+        ? curriculum_units.filter((unit) => unit.department_id === data.department_id)
+        : curriculum_units;
 
     const filteredRooms = data.department_id
         ? lecture_rooms.filter((room) => room.department_id === data.department_id)
@@ -36,16 +36,16 @@ export default function Edit({
 
     const toggleUnit = (unitId, checked) => {
         if (checked) {
-            setData("course_version_unit_ids", [
-                ...data.course_version_unit_ids,
+            setData("curriculum_unit_ids", [
+                ...data.curriculum_unit_ids,
                 unitId,
             ]);
             return;
         }
 
         setData(
-            "course_version_unit_ids",
-            data.course_version_unit_ids.filter((id) => id !== unitId),
+            "curriculum_unit_ids",
+            data.curriculum_unit_ids.filter((id) => id !== unitId),
         );
     };
 
@@ -95,7 +95,7 @@ export default function Edit({
                                     setData("department_id", department.id);
                                     setData("trainer_staff_id", "");
                                     setData("lecture_room_id", "");
-                                    setData("course_version_unit_ids", []);
+                                    setData("curriculum_unit_ids", []);
                                 }}
                                 error={errors.department_id}
                             />
@@ -155,13 +155,13 @@ export default function Edit({
                         </div>
 
                         <InputError
-                            message={errors.course_version_unit_ids}
+                            message={errors.curriculum_unit_ids}
                             className="mt-1"
                         />
 
                         <div className="grid gap-3 md:grid-cols-2">
                             {filteredUnits.map((unit) => {
-                                const checked = data.course_version_unit_ids.includes(
+                                const checked = data.curriculum_unit_ids.includes(
                                     unit.id,
                                 );
 

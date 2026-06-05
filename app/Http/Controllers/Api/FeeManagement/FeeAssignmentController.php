@@ -30,7 +30,7 @@ class FeeAssignmentController extends Controller
     public function curriculumAssignments(int $id)
     {
         return ApiResponse::success([
-            'data' => $this->assignments->assignmentsForCourseVersion($id),
+            'data' => $this->assignments->assignmentsForCurriculum($id),
         ]);
     }
 

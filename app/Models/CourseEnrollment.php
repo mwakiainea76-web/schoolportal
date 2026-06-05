@@ -16,9 +16,9 @@ class CourseEnrollment extends Model
     protected $fillable = [
         'student_id',
         'course_id',
-        'course_version_id',
+        'curriculum_id',
         'exam_body_id',
-        'course_version_mapping_id',
+        'curriculum_mapping_id',
         'enrollment_date',
         'intake_year',
         'intake_period',
@@ -40,9 +40,9 @@ class CourseEnrollment extends Model
         return $this->belongsTo(Student::class);
     }
 
-    public function courseVersionMapping()
+    public function curriculumMapping()
     {
-        return $this->belongsTo(CourseVersionMapping::class);
+        return $this->belongsTo(CurriculumMapping::class);
     }
 
     public function course()
@@ -50,9 +50,9 @@ class CourseEnrollment extends Model
         return $this->belongsTo(Course::class);
     }
 
-    public function courseVersion()
+    public function curriculum()
     {
-        return $this->belongsTo(CourseVersion::class);
+        return $this->belongsTo(Curriculum::class);
     }
 
     public function examBody()
@@ -63,19 +63,6 @@ class CourseEnrollment extends Model
     public function academicSessionEnrollments()
     {
         return $this->hasMany(AcademicSessionEnrollment::class);
-    }
-
-    public function curriculum()
-    {
-        if ($this->relationLoaded('courseVersion')) {
-            return $this->getRelation('courseVersion');
-        }
-
-        if (! $this->relationLoaded('courseVersionMapping')) {
-            return null;
-        }
-
-        return $this->getRelation('courseVersionMapping')?->courseVersion();
     }
 
 }

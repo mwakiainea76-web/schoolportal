@@ -1,7 +1,8 @@
-const Trow = ({ children }) => {
+const Trow = ({ children, className = "", ...props }) => {
     return (
         <tr
-            className="group transition-all duration-200 hover:bg-indigo-50/40 cursor-default"
+            {...props}
+            className={`group cursor-default transition-all duration-200 hover:bg-indigo-50/40 ${className}`}
             data-te-table-row-ref=""
         >
             {children}

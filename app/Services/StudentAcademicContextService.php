@@ -19,10 +19,10 @@ class StudentAcademicContextService
             ->with([
                 'academicSession.academicYear',
                 'courseEnrollment.course',
-                'courseEnrollment.courseVersion',
+                'courseEnrollment.curriculum',
                 'courseEnrollment.examBody',
-                'courseEnrollment.courseVersionMapping.course',
-                'courseEnrollment.courseVersionMapping.courseVersion',
+                'courseEnrollment.curriculumMapping.course',
+                'courseEnrollment.curriculumMapping.curriculum',
             ])
             ->whereHas('courseEnrollment', fn ($query) => $query->where('student_id', $student->id))
             ->latest('academic_session_id')
@@ -39,10 +39,10 @@ class StudentAcademicContextService
         return CourseEnrollment::query()
             ->with([
                 'course',
-                'courseVersion',
+                'curriculum',
                 'examBody',
-                'courseVersionMapping.course',
-                'courseVersionMapping.courseVersion',
+                'curriculumMapping.course',
+                'curriculumMapping.curriculum',
             ])
             ->where('student_id', $student->id)
             ->latest('id')
@@ -67,10 +67,10 @@ class StudentAcademicContextService
         }
 
         $invoice->loadMissing('enrollment.courseEnrollment.course');
-        $invoice->loadMissing('enrollment.courseEnrollment.courseVersion');
+        $invoice->loadMissing('enrollment.courseEnrollment.curriculum');
         $invoice->loadMissing('enrollment.courseEnrollment.examBody');
-        $invoice->loadMissing('enrollment.courseEnrollment.courseVersionMapping.course');
-        $invoice->loadMissing('enrollment.courseEnrollment.courseVersionMapping.courseVersion');
+        $invoice->loadMissing('enrollment.courseEnrollment.curriculumMapping.course');
+        $invoice->loadMissing('enrollment.courseEnrollment.curriculumMapping.curriculum');
 
         if ($invoice->enrollment?->courseEnrollment) {
             return $invoice->enrollment->courseEnrollment;

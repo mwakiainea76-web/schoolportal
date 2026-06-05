@@ -23,9 +23,9 @@ return new class extends Migration
                     ->constrained('courses')
                     ->nullOnDelete()
                     ->cascadeOnUpdate();
-                $table->foreignId('course_version_id')
+                $table->foreignId('curriculum_id')
                     ->nullable()
-                    ->constrained('course_versions')
+                    ->constrained('curricula')
                     ->nullOnDelete()
                     ->cascadeOnUpdate();
                 $table->foreignId('exam_body_id')
@@ -33,8 +33,8 @@ return new class extends Migration
                     ->constrained('exam_bodies')
                     ->nullOnDelete()
                     ->cascadeOnUpdate();
-                $table->foreignId('course_version_mapping_id')
-                    ->constrained('course_version_mappings', 'id')
+                $table->foreignId('curriculum_mapping_id')
+                    ->constrained('curriculum_mappings', 'id')
                     ->cascadeOnUpdate()
                     ->cascadeOnDelete();
                 $table->date('enrollment_date')->nullable();
@@ -49,8 +49,8 @@ return new class extends Migration
                 $table->timestamps();
 
                 $table->index(['student_id', 'id']);
-                $table->index(['course_id', 'course_version_id', 'exam_body_id']);
-                $table->index('course_version_mapping_id');
+                $table->index(['course_id', 'curriculum_id', 'exam_body_id']);
+                $table->index('curriculum_mapping_id');
             });
         }
     }

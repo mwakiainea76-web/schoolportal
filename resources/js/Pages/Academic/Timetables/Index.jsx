@@ -35,12 +35,12 @@ export default function Index({
 
         if (field === "department_id") {
             nextFilters.trainer_staff_id = "";
-            nextFilters.course_version_unit_id = "";
-            nextFilters.course_version_mapping_id = "";
+            nextFilters.curriculum_unit_id = "";
+            nextFilters.curriculum_mapping_id = "";
             nextFilters.module_number = "";
         }
 
-        if (field === "course_version_mapping_id") {
+        if (field === "curriculum_mapping_id") {
             nextFilters.module_number = "";
         }
 
@@ -59,7 +59,7 @@ export default function Index({
                 session_options.find((session) => session.is_active)?.id || "",
             department_id: is_hod || is_trainer ? current_department_id || "" : "",
             trainer_staff_id: is_trainer ? filters.trainer_staff_id : "",
-            course_version_mapping_id: "",
+            curriculum_mapping_id: "",
             module_number: "",
             day_of_week: "",
         });
@@ -69,7 +69,7 @@ export default function Index({
         ? Boolean(current_department_id)
         : Boolean(
               filters.department_id &&
-                  filters.course_version_mapping_id &&
+                  filters.curriculum_mapping_id &&
                   filters.module_number,
           );
 
@@ -83,7 +83,7 @@ export default function Index({
               filters.academic_session_id &&
                   filters.department_id &&
                   (filters.trainer_staff_id ||
-                      (filters.course_version_mapping_id &&
+                      (filters.curriculum_mapping_id &&
                           filters.module_number)),
           );
 
@@ -93,7 +93,7 @@ export default function Index({
         boardSessions.map((item) => item.trainer_staff_id),
     ).size;
     const totalUnits = new Set(
-        boardSessions.flatMap((item) => item.course_version_unit_ids || []),
+        boardSessions.flatMap((item) => item.curriculum_unit_ids || []),
     ).size;
     const handleDownloadPdf = () => {
         window.print();
@@ -276,10 +276,10 @@ export default function Index({
                             </label>
                             {is_hod || is_trainer ? (
                                 <select
-                                    value={filters.course_version_mapping_id}
+                                    value={filters.curriculum_mapping_id}
                                     onChange={(e) =>
                                         onFilterChange(
-                                            "course_version_mapping_id",
+                                            "curriculum_mapping_id",
                                             e.target.value,
                                         )
                                     }
@@ -303,7 +303,7 @@ export default function Index({
                                         limit: 4,
                                     }}
                                     defaultOptions={course_options}
-                                    value={filters.course_version_mapping_id}
+                                    value={filters.curriculum_mapping_id}
                                     placeholder={
                                         filters.department_id
                                             ? "Search versioned course..."
@@ -311,7 +311,7 @@ export default function Index({
                                     }
                                     onChange={(item) =>
                                         onFilterChange(
-                                            "course_version_mapping_id",
+                                            "curriculum_mapping_id",
                                             item.id,
                                         )
                                     }
@@ -329,7 +329,7 @@ export default function Index({
                                 onChange={(e) =>
                                     onFilterChange("module_number", e.target.value)
                                 }
-                                disabled={!filters.course_version_mapping_id}
+                                disabled={!filters.curriculum_mapping_id}
                                 className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none transition focus:border-emerald-400 disabled:cursor-not-allowed disabled:bg-zinc-100"
                             >
                                 <option value="">Select module</option>
