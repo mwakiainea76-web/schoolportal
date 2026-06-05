@@ -71,7 +71,7 @@ function StudentDashboard({ dashboard, fullName }) {
         errors: unitRegistrationErrors,
         clearErrors: clearUnitRegistrationErrors,
     } = useForm({
-        program_version_unit_ids: (dashboard.module_units ?? [])
+        curriculum_unit_ids: (dashboard.module_units ?? [])
             .filter((unit) => unit.is_registered)
             .map((unit) => String(unit.id)),
     });
@@ -84,7 +84,7 @@ function StudentDashboard({ dashboard, fullName }) {
 
     useEffect(() => {
         setUnitRegistrationData(
-            "program_version_unit_ids",
+            "curriculum_unit_ids",
             (dashboard.module_units ?? [])
                 .filter((unit) => unit.is_registered)
                 .map((unit) => String(unit.id)),
@@ -108,12 +108,12 @@ function StudentDashboard({ dashboard, fullName }) {
         const value = String(unitId);
 
         setUnitRegistrationData(
-            "program_version_unit_ids",
-            unitRegistrationData.program_version_unit_ids.includes(value)
-                ? unitRegistrationData.program_version_unit_ids.filter(
+            "curriculum_unit_ids",
+            unitRegistrationData.curriculum_unit_ids.includes(value)
+                ? unitRegistrationData.curriculum_unit_ids.filter(
                       (id) => id !== value,
                   )
-                : [...unitRegistrationData.program_version_unit_ids, value],
+                : [...unitRegistrationData.curriculum_unit_ids, value],
         );
     };
 
@@ -126,7 +126,7 @@ function StudentDashboard({ dashboard, fullName }) {
     };
 
     const selectedUnitCount =
-        unitRegistrationData.program_version_unit_ids.length;
+        unitRegistrationData.curriculum_unit_ids.length;
     const allModuleUnitsSelected =
         moduleUnitIds.length > 0 && selectedUnitCount === moduleUnitIds.length;
 
@@ -155,7 +155,7 @@ function StudentDashboard({ dashboard, fullName }) {
                                 Course
                             </p>
                             <p className="mt-2 text-sm font-semibold">
-                                {dashboard.program?.name ?? "Not assigned"}
+                                {dashboard.course?.name ?? "Not assigned"}
                             </p>
                         </div>
                         <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur">
@@ -163,7 +163,7 @@ function StudentDashboard({ dashboard, fullName }) {
                                 Version
                             </p>
                             <p className="mt-2 text-sm font-semibold">
-                                {dashboard.program?.version ?? "Not assigned"}
+                                {dashboard.course?.version ?? "Not assigned"}
                             </p>
                         </div>
                         <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur">
@@ -226,7 +226,7 @@ function StudentDashboard({ dashboard, fullName }) {
                             </p>
                         </div>
                         <Link
-                            href={route("student.program-units.index")}
+                            href={route("student.course-units.index")}
                             className="text-sm font-medium text-emerald-700 transition hover:text-emerald-800"
                         >
                             View all units
@@ -280,7 +280,7 @@ function StudentDashboard({ dashboard, fullName }) {
                                                             <td className="px-4 py-3 align-top">
                                                                 <label className="flex cursor-pointer items-center">
                                                                     <Checkbox
-                                                                        checked={unitRegistrationData.program_version_unit_ids.includes(
+                                                                        checked={unitRegistrationData.curriculum_unit_ids.includes(
                                                                             String(
                                                                                 unit.id,
                                                                             ),
@@ -391,7 +391,7 @@ function StudentDashboard({ dashboard, fullName }) {
                             <div className="rounded-2xl bg-zinc-50 px-4 py-3">
                                 <p className="text-zinc-500">Curriculum</p>
                                 <p className="mt-1 font-semibold text-zinc-900">
-                                    {dashboard.program?.version ??
+                                    {dashboard.course?.version ??
                                         "Not assigned"}
                                 </p>
                             </div>
@@ -707,7 +707,7 @@ function StaffDashboard({ dashboard }) {
         {
             label: "Missing Course Enrollment",
             value:
-                admissions.metrics?.students_missing_program_enrollment_count ??
+                admissions.metrics?.students_missing_course_enrollment_count ??
                 0,
         },
         {
@@ -986,13 +986,13 @@ function StaffDashboard({ dashboard }) {
                             items={
                                 loadedSections.admissions
                                     ? (admissions.exceptions
-                                          ?.students_missing_program_enrollment ??
+                                          ?.students_missing_course_enrollment ??
                                       [])
                                     : []
                             }
                             emptyText={
                                 loadedSections.admissions
-                                    ? "No missing program-enrollment cases found."
+                                    ? "No missing course-enrollment cases found."
                                     : "Load Admissions Analytics to view this list."
                             }
                             renderItem={(item) => ({

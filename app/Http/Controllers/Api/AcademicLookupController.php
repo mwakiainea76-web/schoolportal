@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\AcademicSession;
+use App\Models\AcademicYear;
 use App\Models\CertificationLevel;
 use App\Models\Department;
 use App\Models\ExamBody;
@@ -75,7 +77,7 @@ class AcademicLookupController extends Controller
         $curriculumId = $request->integer('curriculum_id') ?: null;
 
         $courses = Course::query()
-            ->with('certificationLevel:id,name')
+            ->with('certificationLevel:id,name,exam_body_id')
             ->when($curriculumId, function ($query) use ($curriculumId) {
                 $query->whereHas('curriculumMappings', function ($mappingQuery) use ($curriculumId) {
                     $mappingQuery
@@ -100,6 +102,65 @@ class AcademicLookupController extends Controller
             ]);
 
         return response()->json($courses);
+    }
+
+    public function academicYears(Request $request): JsonResponse
+    {
+        $q = trim((string) $request->query('q', ''));
+
+        $academicYears = AcademicYear::query()
+            ->when($q !== '', function ($query) use ($q) {
+                $query->where(function ($searchQuery) use ($q) {
+                    $searchQuery
+                        ->where('label', 'like', "%{$q}%")
+                        ->orWhere('academic_year', 'like', "%{$q}%");
+                });
+            })
+            ->orderByDesc('start_date')
+            ->orderByDesc('id')
+            ->limit(10)
+            ->get(['id', 'academic_year', 'label'])
+            ->map(fn (AcademicYear $academicYear) => [
+                'id' => $academicYear->id,
+                'name' => $academicYear->name,
+            ]);
+
+        return response()->json($academicYears);
+    }
+
+    public function academicSessions(Request $request): JsonResponse
+    {
+        $q = trim((string) $request->query('q', ''));
+        $academicYearId = $request->integer('academic_year_id') ?: null;
+
+        $academicSessions = AcademicSession::query()
+            ->with('academicYear:id,academic_year,label')
+            ->when($academicYearId, fn ($query) => $query->where('academic_year_id', $academicYearId))
+            ->when($q !== '', function ($query) use ($q) {
+                $query->where(function ($searchQuery) use ($q) {
+                    $searchQuery
+                        ->where('label', 'like', "%{$q}%")
+                        ->orWhere('session_number', 'like', "%{$q}%")
+                        ->orWhere('session_No', 'like', "%{$q}%")
+                        ->orWhereHas('academicYear', function ($yearQuery) use ($q) {
+                            $yearQuery
+                                ->where('label', 'like', "%{$q}%")
+                                ->orWhere('academic_year', 'like', "%{$q}%");
+                        });
+                });
+            })
+            ->orderByDesc('academic_year_id')
+            ->orderByDesc('session_number')
+            ->orderByDesc('session_No')
+            ->limit(10)
+            ->get(['id', 'academic_year_id', 'session_number', 'session_No', 'label'])
+            ->map(fn (AcademicSession $academicSession) => [
+                'id' => $academicSession->id,
+                'name' => $academicSession->display_name,
+                'academic_year_id' => $academicSession->academic_year_id,
+            ]);
+
+        return response()->json($academicSessions);
     }
 
     public function curriculumMappings(Request $request): JsonResponse

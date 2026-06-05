@@ -54,6 +54,8 @@ Route::middleware(['web', 'auth', 'non_student'])
         Route::get('/curriculums', [AcademicLookupController::class, 'curriculums'])->name('curriculums');
         Route::get('/curriculum-mappings', [AcademicLookupController::class, 'curriculumMappings'])->name('curriculum-mappings');
         Route::get('/units', [AcademicLookupController::class, 'units'])->name('units');
+        Route::get('/academic-years', [AcademicLookupController::class, 'academicYears'])->name('academic-years');
+        Route::get('/academic-sessions', [AcademicLookupController::class, 'academicSessions'])->name('academic-sessions');
         Route::get('/exam-bodies', [AcademicLookupController::class, 'examBodies'])->name('exam-bodies');
         Route::get('/certification-levels', [AcademicLookupController::class, 'certificationLevels'])->name('certification-levels');
         Route::get('/staffs', [AcademicLookupController::class, 'staffs'])->name('staffs');

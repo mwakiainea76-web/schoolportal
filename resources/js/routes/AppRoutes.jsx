@@ -212,7 +212,7 @@ function pageEndpoint(endpoint, params) {
     return typeof endpoint === "function" ? endpoint(params) : endpoint;
 }
 
-const pagePropAliases = {
+const pagePropNames = {
     "/api/academic-years": { list: "academic_years", item: "academic_year" },
     "/api/academic-sessions": {
         list: "academic_sessions",
@@ -229,7 +229,7 @@ const pagePropAliases = {
         list: "certification_levels",
         item: "certification_level",
     },
-    "/api/courses": { list: "courses", item: "Course" },
+    "/api/courses": { list: "courses", item: "course" },
     "/api/curriculums": { list: "curriculums", item: "curriculum" },
     "/api/curriculum-mappings": {
         list: "curriculumMappings",
@@ -338,7 +338,7 @@ function normalisePageProps(payload, endpoint, search = "") {
     }
 
     const props = { ...payload };
-    const alias = aliasForEndpoint(endpoint);
+    const propNames = propNamesForEndpoint(endpoint);
     const data = unwrapApiData(payload);
 
     if (
@@ -350,17 +350,17 @@ function normalisePageProps(payload, endpoint, search = "") {
         Object.assign(props, data);
     }
 
-    if (!alias || props[alias.list] || props[alias.item]) {
+    if (!propNames || props[propNames.list] || props[propNames.item]) {
         return props;
     }
 
     if (Array.isArray(data) && payload.meta) {
-        props[alias.list] = paginationPayload(payload, search);
+        props[propNames.list] = paginationPayload(payload, search);
         return props;
     }
 
     if (data && typeof data === "object") {
-        props[alias.item] = data;
+        props[propNames.item] = data;
     }
 
     return props;
@@ -421,10 +421,10 @@ function PageError({ error }) {
     );
 }
 
-function aliasForEndpoint(endpoint) {
+function propNamesForEndpoint(endpoint) {
     const cleanEndpoint = endpoint.split("?")[0];
 
-    return Object.entries(pagePropAliases)
+    return Object.entries(pagePropNames)
         .sort(([left], [right]) => right.length - left.length)
         .find(
             ([base]) =>

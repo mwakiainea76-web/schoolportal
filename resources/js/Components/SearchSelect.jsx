@@ -3,13 +3,13 @@ import { route } from "ziggy-js";
 
 const API_LOOKUP_ROUTES = {
     "departments.search": "/api/lookups/departments",
-    "programs.search": "/api/lookups/courses",
+    "courses.search": "/api/lookups/courses",
     "curriculums.search": "/api/lookups/curriculums",
-    "programs.curriculum-mappings.search": "/api/lookups/curriculums",
     "curriculum-mappings.search": "/api/lookups/curriculum-mappings",
     "units.search": "/api/lookups/units",
+    "academic-years.search": "/api/lookups/academic-years",
+    "academic-sessions.search": "/api/lookups/academic-sessions",
     "exam-bodies.search": "/api/lookups/exam-bodies",
-    "programs.curriculum-mappings.program-search": "/api/lookups/exam-bodies",
     "certification-levels.search": "/api/lookups/certification-levels",
     "staffs.search": "/api/lookups/staffs",
 };
@@ -82,7 +82,7 @@ export default function SearchSelect({
         }
 
         // 1. match from current options (best case)
-        const selected = defaultOptions.find(
+        const selected = [...defaultOptions, ...options].find(
             (o) => String(o.id) === String(value),
         );
 
@@ -98,10 +98,10 @@ export default function SearchSelect({
         }
 
         // 3. fallback if value is already a string (role_name, gender, etc.)
-        if (typeof value === "string") {
+        if (!isApiLookup && typeof value === "string") {
             setQuery(value);
         }
-    }, [value, selectedLabel, defaultOptions]);
+    }, [value, selectedLabel, defaultOptions, options, isApiLookup]);
 
     // -----------------------------
     // SEARCH (DEBOUNCED)

@@ -80,7 +80,7 @@ class StoreAcademicTimetableRequest extends FormRequest
 
         foreach ($curriculumUnitIds as $curriculumUnitId) {
             $curriculumUnit = $curriculumUnits->get($curriculumUnitId);
-            if (! $curriculumUnit || (int) $curriculumUnit->curriculumMapping?->program?->department_id !== $departmentId) {
+            if (! $curriculumUnit || (int) $curriculumUnit->curriculumMapping?->course?->department_id !== $departmentId) {
                 $validator->errors()->add('curriculum_unit_ids', 'Every selected curriculum unit must belong to the chosen department.');
                 break;
             }

@@ -54,7 +54,7 @@ export default function ReportsIndex({
             overdue_balance: 0,
         },
         breakdowns: {
-            top_programs: [],
+            top_courses: [],
             student_statuses: [],
         },
     };
@@ -468,20 +468,20 @@ export default function ReportsIndex({
                                     Top Courses By Enrollment
                                 </h2>
                                 <div className="space-y-4">
-                                    {executiveSummary.breakdowns.top_programs
+                                    {executiveSummary.breakdowns.top_courses
                                         ?.length ? (
-                                        executiveSummary.breakdowns.top_programs.map(
-                                            (program) => (
+                                        executiveSummary.breakdowns.top_courses.map(
+                                            (course) => (
                                                 <div
-                                                    key={program.id}
+                                                    key={course.id}
                                                     className="rounded-lg border border-zinc-100 bg-zinc-50 px-4 py-3"
                                                 >
                                                     <div className="flex items-center justify-between gap-4">
                                                         <p className="font-medium text-zinc-800">
-                                                            {program.name}
+                                                            {course.name}
                                                         </p>
                                                         <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
-                                                            {program.student_count} students
+                                                            {course.student_count} students
                                                         </span>
                                                     </div>
                                                 </div>
@@ -1182,7 +1182,7 @@ export default function ReportsIndex({
                                             (unit) => (
                                                 <div
                                                     key={
-                                                        unit.program_version_unit_id
+                                                        unit.curriculum_unit_id
                                                     }
                                                     className="rounded-lg border border-zinc-100 bg-zinc-50 px-4 py-3"
                                                 >
@@ -1191,7 +1191,7 @@ export default function ReportsIndex({
                                                         {unit.unit_name}
                                                     </p>
                                                     <p className="mt-1 text-sm text-zinc-500">
-                                                        {unit.program_name} /{" "}
+                                                        {unit.course_name} /{" "}
                                                         {unit.version_name} /
                                                         Module{" "}
                                                         {unit.module_taught}
@@ -1323,7 +1323,7 @@ export default function ReportsIndex({
                                     label="Missing Course Enrollment"
                                     value={
                                         admissionsSummary.metrics
-                                            .students_missing_program_enrollment_count
+                                            .students_missing_course_enrollment_count
                                     }
                                     accent="text-amber-600"
                                 />
@@ -1470,15 +1470,15 @@ export default function ReportsIndex({
                                 </h2>
                                 <div className="space-y-3">
                                     {admissionsSummary.breakdowns
-                                        .admissions_by_program?.length ? (
-                                        admissionsSummary.breakdowns.admissions_by_program.map(
+                                        .admissions_by_course?.length ? (
+                                        admissionsSummary.breakdowns.admissions_by_course.map(
                                             (row) => (
                                                 <div
-                                                    key={row.program_name}
+                                                    key={row.course_name}
                                                     className="flex items-center justify-between rounded-lg bg-zinc-50 px-4 py-3"
                                                 >
                                                     <p className="text-zinc-700">
-                                                        {row.program_name}
+                                                        {row.course_name}
                                                     </p>
                                                     <span className="font-semibold text-zinc-900">
                                                         {row.total}
@@ -1532,9 +1532,9 @@ export default function ReportsIndex({
                                 </h2>
                                 <div className="space-y-4">
                                     {admissionsSummary.exceptions
-                                        .students_missing_program_enrollment
+                                        .students_missing_course_enrollment
                                         ?.length ? (
-                                        admissionsSummary.exceptions.students_missing_program_enrollment.map(
+                                        admissionsSummary.exceptions.students_missing_course_enrollment.map(
                                             (student) => (
                                                 <div
                                                     key={student.student_id}
@@ -2174,7 +2174,7 @@ export default function ReportsIndex({
                                     label="Multi-Active Course Mappings"
                                     value={
                                         dataQualitySummary.metrics
-                                            .multi_active_program_mapping_count
+                                            .multi_active_course_mapping_count
                                     }
                                     accent="text-red-600"
                                 />
@@ -2254,9 +2254,9 @@ export default function ReportsIndex({
                                 </h2>
                                 <div className="space-y-4">
                                     {dataQualitySummary.exceptions
-                                        .students_without_program_enrollment
+                                        .students_without_course_enrollment
                                         ?.length ? (
-                                        dataQualitySummary.exceptions.students_without_program_enrollment.map(
+                                        dataQualitySummary.exceptions.students_without_course_enrollment.map(
                                             (row) => (
                                                 <div
                                                     key={row.student_id}
@@ -2411,16 +2411,16 @@ export default function ReportsIndex({
                                 </h2>
                                 <div className="space-y-4">
                                     {dataQualitySummary.exceptions
-                                        .multiple_active_program_mappings
+                                        .multiple_active_course_mappings
                                         ?.length ? (
-                                        dataQualitySummary.exceptions.multiple_active_program_mappings.map(
+                                        dataQualitySummary.exceptions.multiple_active_course_mappings.map(
                                             (row) => (
                                                 <div
-                                                    key={row.program_id}
+                                                    key={row.course_id}
                                                     className="rounded-lg border border-zinc-100 bg-zinc-50 px-4 py-3"
                                                 >
                                                     <p className="font-medium text-zinc-800">
-                                                        {row.program_name}
+                                                        {row.course_name}
                                                     </p>
                                                     <p className="mt-1 text-sm text-red-600">
                                                         {row.active_mapping_count} active mappings

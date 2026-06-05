@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AcademicSession;
+use App\Models\AcademicYear;
 use App\Models\CourseEnrollment;
 use App\Models\Course;
 use App\Models\Curriculum;
@@ -14,6 +16,8 @@ class CourseEnrollmentController extends Controller
         $filters = $request->only([
             'course_id',
             'curriculum_id',
+            'academic_year_id',
+            'academic_session_id',
             'status',
         ]);
 
@@ -23,6 +27,7 @@ class CourseEnrollmentController extends Controller
             'curriculum:id,name',
             'curriculumMapping.course',
             'curriculumMapping.curriculum',
+            'academicSessionEnrollments.academicSession.academicYear',
         ])
             ->when($filters['course_id'] ?? null, function ($query, $courseId) {
                 $query->where(function ($courseQuery) use ($courseId) {
@@ -38,24 +43,39 @@ class CourseEnrollmentController extends Controller
                         ->orWhereHas('curriculumMapping', fn ($mappingQuery) => $mappingQuery->where('curriculum_id', $curriculumId));
                 });
             })
+            ->when($filters['academic_year_id'] ?? null, function ($query, $academicYearId) {
+                $query->whereHas('academicSessionEnrollments.academicSession', fn ($sessionQuery) => $sessionQuery->where('academic_year_id', $academicYearId));
+            })
+            ->when($filters['academic_session_id'] ?? null, function ($query, $academicSessionId) {
+                $query->whereHas('academicSessionEnrollments', fn ($sessionEnrollmentQuery) => $sessionEnrollmentQuery->where('academic_session_id', $academicSessionId));
+            })
             ->when($filters['status'] ?? null, fn ($query, $status) => $query->where('status', $status))
             ->latest()
             ->paginate(20)
             ->withQueryString()
-            ->through(fn (CourseEnrollment $enrollment) => [
-                'id' => $enrollment->id,
-                'student_name' => trim(
-                    ($enrollment->student?->user?->first_name ?? '').' '.
-                    ($enrollment->student?->user?->last_name ?? '')
-                ),
-                'registration_number' => $enrollment->student?->registration_number,
-                'course' => $enrollment->course?->name
-                    ?? $enrollment->curriculumMapping?->course?->name,
-                'curriculum' => $enrollment->curriculum?->name
-                    ?? $enrollment->curriculumMapping?->curriculum?->name,
-                'status' => $enrollment->status,
-                'created_at' => $enrollment->created_at,
-            ]);
+            ->through(function (CourseEnrollment $enrollment) {
+                $sessionEnrollment = $enrollment->academicSessionEnrollments
+                    ->sortByDesc('academic_session_id')
+                    ->first();
+                $academicSession = $sessionEnrollment?->academicSession;
+
+                return [
+                    'id' => $enrollment->id,
+                    'student_name' => trim(
+                        ($enrollment->student?->user?->first_name ?? '').' '.
+                        ($enrollment->student?->user?->last_name ?? '')
+                    ),
+                    'registration_number' => $enrollment->student?->registration_number,
+                    'course' => $enrollment->course?->name
+                        ?? $enrollment->curriculumMapping?->course?->name,
+                    'curriculum' => $enrollment->curriculum?->name
+                        ?? $enrollment->curriculumMapping?->curriculum?->name,
+                    'academic_year' => $academicSession?->academicYear?->name,
+                    'academic_session' => $academicSession?->display_name,
+                    'status' => $enrollment->status,
+                    'created_at' => $enrollment->created_at,
+                ];
+            });
 
         return inertia('CourseEnrollments/Index', [
             'courseEnrollments' => $courseEnrollments,
@@ -85,9 +105,21 @@ class CourseEnrollmentController extends Controller
             ? Curriculum::select('id', 'name')->find($filters['curriculum_id'])
             : null;
 
+        $academicYear = ! empty($filters['academic_year_id'])
+            ? AcademicYear::select('id', 'academic_year', 'label')->find($filters['academic_year_id'])
+            : null;
+
+        $academicSession = ! empty($filters['academic_session_id'])
+            ? AcademicSession::with('academicYear:id,academic_year,label')
+                ->select('id', 'academic_year_id', 'session_number', 'session_No', 'label')
+                ->find($filters['academic_session_id'])
+            : null;
+
         return [
             'course' => $course?->display_name ?? $course?->name,
             'curriculum' => $curriculum?->name,
+            'academic_year' => $academicYear?->name,
+            'academic_session' => $academicSession?->display_name,
         ];
     }
 }

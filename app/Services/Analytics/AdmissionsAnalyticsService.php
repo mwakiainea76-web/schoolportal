@@ -69,7 +69,7 @@ class AdmissionsAnalyticsService
             ])
             ->all();
 
-        $admissionsBycourse = Student::query()
+        $admissionsByCourse = Student::query()
             ->join('users', 'users.id', '=', 'students.user_id')
             ->leftJoin('course_enrollments', function ($join) {
                 $join->on('course_enrollments.student_id', '=', 'students.id')
@@ -266,7 +266,7 @@ class AdmissionsAnalyticsService
             'breakdowns' => [
                 'intake_trend' => $intakeTrend,
                 'admissions_by_department' => $admissionsByDepartment,
-                'admissions_by_course' => $admissionsBycourse,
+                'admissions_by_course' => $admissionsByCourse,
                 'admissions_by_county' => $admissionsByCounty,
                 'admissions_by_gender' => $admissionsByGender,
             ],

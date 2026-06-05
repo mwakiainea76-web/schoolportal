@@ -38,11 +38,6 @@ class CurriculumMapping extends Model
         return $this->belongsTo(Course::class);
     }
 
-    public function courseAlias()
-    {
-        return $this->course();
-    }
-
     public function curriculum()
     {
         return $this->belongsTo(Curriculum::class);

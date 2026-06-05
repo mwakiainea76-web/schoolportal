@@ -53,7 +53,7 @@ class FeeAssignmentService
 
     /**
      * Resolve a query to get the most recent active curriculum mapping assignment.
-     * Used by the model for backward compatibility.
+     * Used by the model to resolve the current assignment query.
      *
      * @param Builder $query The query builder
      * @return FeeAssignment|null The most recent assignment or null
@@ -66,4 +66,3 @@ class FeeAssignmentService
             ->first();
     }
 }
-

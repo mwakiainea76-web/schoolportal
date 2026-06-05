@@ -118,7 +118,7 @@ export default function coursesIndex({
 
             <div className="max-w-6xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
                 <form className="mb-4 rounded-lg border border-zinc-100 bg-white p-4 shadow-sm" onSubmit={submit}>
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                         <div>
                             <InputLabel value="Course Name" />
                             <SearchSelect

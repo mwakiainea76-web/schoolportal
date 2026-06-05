@@ -37,6 +37,8 @@ export default function Index({
     const [form, setForm] = useState({
         course_id: pageFilters.course_id || "",
         curriculum_id: pageFilters.curriculum_id || "",
+        academic_year_id: pageFilters.academic_year_id || "",
+        academic_session_id: pageFilters.academic_session_id || "",
         status: pageFilters.status || "",
     });
 
@@ -61,6 +63,8 @@ export default function Index({
         const emptyFilters = {
             course_id: "",
             curriculum_id: "",
+            academic_year_id: "",
+            academic_session_id: "",
             status: "",
         };
 
@@ -114,6 +118,48 @@ export default function Index({
                         </div>
 
                         <div>
+                            <InputLabel value="Academic Year" />
+                            <SearchSelect
+                                routeName="academic-years.search"
+                                defaultOptions={[]}
+                                value={form.academic_year_id}
+                                selectedLabel={selectedFilters.academic_year}
+                                placeholder="Select academic year..."
+                                preloadOptions
+                                onChange={(academicYear) => {
+                                    setForm((current) => ({
+                                        ...current,
+                                        academic_year_id: academicYear.id,
+                                        academic_session_id: "",
+                                    }));
+                                }}
+                            />
+                        </div>
+
+                        <div>
+                            <InputLabel value="Academic Session" />
+                            <SearchSelect
+                                routeName="academic-sessions.search"
+                                routeParams={{
+                                    academic_year_id: form.academic_year_id,
+                                }}
+                                defaultOptions={[]}
+                                value={form.academic_session_id}
+                                selectedLabel={
+                                    selectedFilters.academic_session
+                                }
+                                placeholder="Select academic session..."
+                                preloadOptions
+                                onChange={(academicSession) =>
+                                    setFilter(
+                                        "academic_session_id",
+                                        academicSession.id,
+                                    )
+                                }
+                            />
+                        </div>
+
+                        <div>
                             <InputLabel value="Status" />
                             <select
                                 value={form.status}
@@ -155,6 +201,8 @@ export default function Index({
                         <THdata>Reg No</THdata>
                         <THdata>Course</THdata>
                         <THdata>Curriculum</THdata>
+                        <THdata>Academic Year</THdata>
+                        <THdata>Academic Session</THdata>
                         <THdata>Status</THdata>
                         <THdata>Admitted</THdata>
                     </Thead>
@@ -170,6 +218,10 @@ export default function Index({
                                     </Tdata>
                                     <Tdata>{item.course ?? "-"}</Tdata>
                                     <Tdata>{item.curriculum ?? "-"}</Tdata>
+                                    <Tdata>{item.academic_year ?? "-"}</Tdata>
+                                    <Tdata>
+                                        {item.academic_session ?? "-"}
+                                    </Tdata>
                                     <Tdata>
                                         <span
                                             className={`rounded px-2 py-0.5 text-xs ${STATUS_STYLES[item.status] ?? "bg-gray-100 text-gray-600"}`}
@@ -182,7 +234,7 @@ export default function Index({
                             ))
                         ) : (
                             <Trow>
-                                <Tdata colSpan="6" className="text-center py-6">
+                                <Tdata colSpan="8" className="text-center py-6">
                                     No course enrollments found.
                                 </Tdata>
                             </Trow>

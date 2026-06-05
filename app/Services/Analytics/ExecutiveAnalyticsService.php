@@ -146,7 +146,7 @@ class ExecutiveAnalyticsService
             ? round(($occupiedBeds / $activeBeds) * 100, 2)
             : 0.0;
 
-        $topcourses = CourseEnrollment::query()
+        $topCourses = CourseEnrollment::query()
             ->join('curriculum_mappings', 'curriculum_mappings.id', '=', 'course_enrollments.curriculum_mapping_id')
             ->join('courses', 'courses.id', '=', 'curriculum_mappings.course_id')
             ->whereNull('course_enrollments.deleted_at')
@@ -201,7 +201,7 @@ class ExecutiveAnalyticsService
                 'active_beds' => (int) $activeBeds,
             ],
             'breakdowns' => [
-                'top_courses' => $topcourses,
+                'top_courses' => $topCourses,
                 'student_statuses' => $studentStatusBreakdown,
             ],
             'policy' => [

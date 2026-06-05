@@ -54,7 +54,7 @@ class BackfillCurriculumSchemaCommand extends Command
 
         Curriculum::query()
             ->where(function ($query) {
-                $query->whereNull('program_id')
+                $query->whereNull('course_id')
                     ->orWhereNull('exam_body_id');
             })
             ->orderBy('id')
@@ -72,13 +72,13 @@ class BackfillCurriculumSchemaCommand extends Command
                             ->latest('id')
                             ->first();
 
-                    if (! $mapping?->program) {
+                    if (! $mapping?->course) {
                         continue;
                     }
 
                     $payload = [
-                        'program_id' => $mapping->program_id,
-                        'exam_body_id' => $mapping->program?->certificationLevel?->exam_body_id,
+                        'course_id' => $mapping->course_id,
+                        'exam_body_id' => $mapping->course?->certificationLevel?->exam_body_id,
                     ];
 
                     if (! $dryRun) {
@@ -134,7 +134,7 @@ class BackfillCurriculumSchemaCommand extends Command
 
         CourseEnrollment::query()
             ->where(function ($query) {
-                $query->whereNull('program_id')
+                $query->whereNull('course_id')
                     ->orWhereNull('curriculum_id')
                     ->orWhereNull('exam_body_id')
                     ->orWhereNull('enrollment_date');
@@ -149,15 +149,15 @@ class BackfillCurriculumSchemaCommand extends Command
                         : now();
 
                     $payload = [
-                        'program_id' => $courseEnrollment->program_id ?? $mapping?->program_id,
+                        'course_id' => $courseEnrollment->course_id ?? $mapping?->course_id,
                         'curriculum_id' => $courseEnrollment->curriculum_id ?? $mapping?->curriculum_id,
-                        'exam_body_id' => $courseEnrollment->exam_body_id ?? $mapping?->program?->certificationLevel?->exam_body_id,
+                        'exam_body_id' => $courseEnrollment->exam_body_id ?? $mapping?->course?->certificationLevel?->exam_body_id,
                         'enrollment_date' => $courseEnrollment->enrollment_date ?? $createdAt->toDateString(),
                         'intake_year' => $courseEnrollment->intake_year ?? (int) $createdAt->format('Y'),
                         'study_mode' => $courseEnrollment->study_mode ?? 'full_time',
                     ];
 
-                    if (! $payload['program_id'] || ! $payload['curriculum_id'] || ! $payload['exam_body_id']) {
+                    if (! $payload['course_id'] || ! $payload['curriculum_id'] || ! $payload['exam_body_id']) {
                         continue;
                     }
 
