@@ -21,6 +21,6 @@ class StudentUnitRegistration extends Model
 
     public function curriculumUnit()
     {
-        return $this->belongsTo(CurriculumUnit::class);
+        return $this->belongsTo(Unit::class, 'curriculum_unit_id');
     }
 }

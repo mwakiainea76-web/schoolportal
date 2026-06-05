@@ -6,7 +6,7 @@ use App\Models\AcademicSession;
 use App\Models\AcademicSessionEnrollment;
 use App\Models\AcademicTimetable;
 use App\Models\LectureRoom;
-use App\Models\CurriculumUnit;
+use App\Models\Unit;
 use App\Models\Student;
 use App\Services\Analytics\Concerns\BuildsAnalyticsFilters;
 use Illuminate\Support\Facades\DB;
@@ -117,7 +117,7 @@ class AcademicAnalyticsService
             ])
             ->all();
 
-        $mappedUnitsCount = CurriculumUnit::query()->count();
+        $mappedUnitsCount = Unit::query()->count();
         $unitsWithTimetableCount = DB::table('academic_timetable_curriculum_unit')
             ->distinct()
             ->count('curriculum_unit_id');
@@ -163,23 +163,22 @@ class AcademicAnalyticsService
             ])
             ->all();
 
-        $unitsWithoutTimetable = CurriculumUnit::query()
-            ->leftJoin('academic_timetable_curriculum_unit', 'academic_timetable_curriculum_unit.curriculum_unit_id', '=', 'curriculum_units.id')
-            ->join('units', 'units.id', '=', 'curriculum_units.unit_id')
-            ->join('curriculum_mappings', 'curriculum_mappings.id', '=', 'curriculum_units.curriculum_mapping_id')
+        $unitsWithoutTimetable = Unit::query()
+            ->leftJoin('academic_timetable_curriculum_unit', 'academic_timetable_curriculum_unit.curriculum_unit_id', '=', 'units.id')
+            ->join('curriculum_mappings', 'curriculum_mappings.id', '=', 'units.curriculum_mapping_id')
             ->join('courses', 'courses.id', '=', 'curriculum_mappings.course_id')
             ->join('curricula', 'curricula.id', '=', 'curriculum_mappings.curriculum_id')
             ->whereNull('academic_timetable_curriculum_unit.curriculum_unit_id')
             ->select(
-                'curriculum_units.id',
-                'curriculum_units.module_taught',
+                'units.id',
+                'units.module_taught',
                 'units.code as unit_code',
                 'units.name as unit_name',
                 'courses.name as course_name',
                 'curricula.name as version_name'
             )
             ->orderBy('courses.name')
-            ->orderBy('curriculum_units.module_taught')
+            ->orderBy('units.module_taught')
             ->limit(10)
             ->get()
             ->map(fn ($row) => [

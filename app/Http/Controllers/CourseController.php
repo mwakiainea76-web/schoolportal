@@ -146,7 +146,7 @@ class CourseController extends Controller
                     $mappingQuery
                         ->where('is_active', true)
                         ->whereHas('curriculum', fn ($curriculumQuery) => $curriculumQuery->where('is_active', true))
-                        ->whereHas('curriculumUnits');
+                        ->whereHas('units');
                 });
             })
             ->when($query !== '', function ($builder) use ($query) {

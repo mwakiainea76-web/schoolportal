@@ -4,7 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\AcademicSession;
 use App\Models\AcademicTimetable;
-use App\Models\CurriculumUnit;
+use App\Models\Unit;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Schema;
 
@@ -18,14 +18,14 @@ class DemoTimetableSeeder extends Seeder
             return;
         }
 
-        $ictMainUnit = CurriculumUnit::query()
+        $ictMainUnit = Unit::query()
             ->where('curriculum_mapping_id', $mappings['ict_l4']->id)
-            ->whereHas('unit', fn ($query) => $query->where('code', 'ICT101'))
+            ->where('code', 'ICT101')
             ->first();
 
-        $ictSharedTheoryUnit = CurriculumUnit::query()
+        $ictSharedTheoryUnit = Unit::query()
             ->where('curriculum_mapping_id', $mappings['ict_l4']->id)
-            ->whereHas('unit', fn ($query) => $query->where('code', 'COM101'))
+            ->where('code', 'COM101')
             ->first();
 
         if (! $ictMainUnit || ! $ictSharedTheoryUnit) {

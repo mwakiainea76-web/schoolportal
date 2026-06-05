@@ -19,7 +19,7 @@ return new class extends Migration
                 ->constrained('academic_sessions')
                 ->nullOnDelete();
             $table->foreignId('curriculum_unit_id')
-                ->constrained('curriculum_units', 'id')
+                ->constrained('units', 'id')
                 ->cascadeOnUpdate()
                 ->cascadeOnDelete();
             $table->foreignId('trainer_staff_id')
@@ -61,7 +61,7 @@ return new class extends Migration
                 ->cascadeOnUpdate()
                 ->cascadeOnDelete();
             $table->foreignId('curriculum_unit_id')
-                ->constrained('curriculum_units', 'id')
+                ->constrained('units', 'id')
                 ->cascadeOnUpdate()
                 ->cascadeOnDelete();
             $table->timestamps();

@@ -10,7 +10,7 @@ use App\Models\AcademicTimetable;
 use App\Models\Department;
 use App\Models\LectureRoom;
 use App\Models\CurriculumMapping;
-use App\Models\CurriculumUnit;
+use App\Models\Unit;
 use App\Models\Staff;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -71,19 +71,19 @@ class AcademicTimetableController extends Controller
         if ($shouldLoadTimetable && $request->filled('curriculum_unit_id')) {
             $curriculumUnitId = $request->integer('curriculum_unit_id');
             $query->whereHas('curriculumUnits', function ($builder) use ($curriculumUnitId) {
-                $builder->where('curriculum_units.id', $curriculumUnitId);
+                $builder->where('units.id', $curriculumUnitId);
             });
         }
 
         if ($shouldLoadTimetable && $selectedCurriculumMappingId) {
             $query->whereHas('curriculumUnits', function ($builder) use ($selectedCurriculumMappingId) {
-                $builder->where('curriculum_units.curriculum_mapping_id', $selectedCurriculumMappingId);
+                $builder->where('units.curriculum_mapping_id', $selectedCurriculumMappingId);
             });
         }
 
         if ($shouldLoadTimetable && $selectedModuleNumber) {
             $query->whereHas('curriculumUnits', function ($builder) use ($selectedModuleNumber) {
-                $builder->where('curriculum_units.module_taught', $selectedModuleNumber);
+                $builder->where('units.module_taught', $selectedModuleNumber);
             });
         }
 
@@ -277,7 +277,7 @@ class AcademicTimetableController extends Controller
                 ->where('is_active', true)
                 ->whereHas('course', fn ($courseQuery) => $courseQuery->where('department_id', $departmentId))
                 ->whereHas('curriculum', fn ($curriculumQuery) => $curriculumQuery->where('is_active', true))
-                ->whereHas('curriculumUnits')
+                ->whereHas('units')
                 ->when($query !== '', function ($builder) use ($query) {
                     $builder->where(function ($mappingQuery) use ($query) {
                         $mappingQuery
@@ -318,7 +318,7 @@ class AcademicTimetableController extends Controller
                 ->where('is_active', true)
                 ->whereHas('course', fn ($courseQuery) => $courseQuery->where('department_id', $departmentId))
                 ->whereHas('curriculum', fn ($curriculumQuery) => $curriculumQuery->where('is_active', true))
-                ->whereHas('curriculumUnits')
+                ->whereHas('units')
                 ->when($query !== '', function ($builder) use ($query) {
                     $builder->where(function ($mappingQuery) use ($query) {
                         $mappingQuery
@@ -346,8 +346,8 @@ class AcademicTimetableController extends Controller
             'department:id,name',
             'trainer.user:id,first_name,last_name',
             'lectureRoom:id,name,code,department_id',
-            'curriculumUnit.unit:id,name,code',
-            'curriculumUnits.unit:id,name,code',
+            'curriculumUnit:id,name,code',
+            'curriculumUnits:id,name,code',
             'curriculumUnits.curriculumMapping.course:id,name,department_id',
             'curriculumUnits.curriculumMapping.curriculum:id,name',
             'curriculumUnit.curriculumMapping.course:id,name,department_id',
@@ -402,8 +402,8 @@ class AcademicTimetableController extends Controller
             'department:id,name',
             'trainer.user:id,first_name,last_name',
             'lectureRoom:id,name,code,department_id',
-            'curriculumUnit.unit:id,name,code',
-            'curriculumUnits.unit:id,name,code',
+            'curriculumUnit:id,name,code',
+            'curriculumUnits:id,name,code',
             'curriculumUnits.curriculumMapping.course:id,name,department_id',
             'curriculumUnits.curriculumMapping.curriculum:id,name',
             'curriculumUnit.curriculumMapping.course:id,name,department_id',
@@ -432,16 +432,16 @@ class AcademicTimetableController extends Controller
             'start_time' => substr((string) $entry->start_time, 0, 5),
             'end_time' => substr((string) $entry->end_time, 0, 5),
             'time_range' => substr((string) $entry->start_time, 0, 5).' - '.substr((string) $entry->end_time, 0, 5),
-            'unit_name' => $entry->curriculumUnit?->unit?->name,
-            'unit_code' => $entry->curriculumUnit?->unit?->code,
+            'unit_name' => $entry->curriculumUnit?->name,
+            'unit_code' => $entry->curriculumUnit?->code,
             'module_taught' => $entry->curriculumUnit?->module_taught,
             'course_name' => $entry->curriculumUnit?->curriculumMapping?->course?->name,
             'curriculum_name' => $entry->curriculumUnit?->curriculumMapping?->curriculum?->name,
             'merged_units' => $entry->curriculumUnits
-                ->map(fn (CurriculumUnit $unit) => [
+                ->map(fn (Unit $unit) => [
                     'id' => (string) $unit->id,
-                    'name' => $unit->unit?->name,
-                    'code' => $unit->unit?->code,
+                    'name' => $unit->name,
+                    'code' => $unit->code,
                     'course_name' => $unit->curriculumMapping?->course?->name,
                     'curriculum_name' => $unit->curriculumMapping?->curriculum?->name,
                     'module_taught' => $unit->module_taught,
@@ -451,9 +451,9 @@ class AcademicTimetableController extends Controller
                         ' / Module '.
                         ($unit->module_taught ?? '').
                         ' / '.
-                        ($unit->unit?->code ?? '').
+                        ($unit->code ?? '').
                         ' - '.
-                        ($unit->unit?->name ?? ''),
+                        ($unit->name ?? ''),
                 ])
                 ->values()
                 ->all(),
@@ -464,9 +464,9 @@ class AcademicTimetableController extends Controller
                 ' / Module '.
                 ($entry->curriculumUnit?->module_taught ?? '').
                 ' / '.
-                ($entry->curriculumUnit?->unit?->code ?? '').
+                ($entry->curriculumUnit?->code ?? '').
                 ' - '.
-                ($entry->curriculumUnit?->unit?->name ?? '')
+                ($entry->curriculumUnit?->name ?? '')
             ),
         ];
     }
@@ -503,9 +503,8 @@ class AcademicTimetableController extends Controller
 
     protected function curriculumUnitOptions(?int $departmentId = null): array
     {
-        return CurriculumUnit::query()
+        return Unit::query()
             ->with([
-                'unit:id,name,code',
                 'curriculumMapping.course:id,name,department_id',
                 'curriculumMapping.curriculum:id,name',
             ])
@@ -513,7 +512,7 @@ class AcademicTimetableController extends Controller
                 $query->whereHas('curriculumMapping.course', fn ($courseQuery) => $courseQuery->where('department_id', $departmentId));
             })
             ->get()
-            ->map(fn (CurriculumUnit $unit) => [
+            ->map(fn (Unit $unit) => [
                 'id' => (string) $unit->id,
                 'name' => ($unit->curriculumMapping?->curriculum?->name ?? 'No Version').
                     ' / '.
@@ -521,9 +520,9 @@ class AcademicTimetableController extends Controller
                     ' / Module '.
                     ($unit->module_taught ?? '').
                     ' / '.
-                    ($unit->unit?->code ?? '').
+                    ($unit->code ?? '').
                     ' - '.
-                    ($unit->unit?->name ?? 'No Unit'),
+                    ($unit->name ?? 'No Unit'),
                 'department_id' => (string) ($unit->curriculumMapping?->course?->department_id ?? ''),
             ])
             ->sortBy('name')
@@ -577,7 +576,7 @@ class AcademicTimetableController extends Controller
             ->where('is_active', true)
             ->whereHas('course', fn ($courseQuery) => $courseQuery->where('department_id', $departmentId))
             ->whereHas('curriculum', fn ($curriculumQuery) => $curriculumQuery->where('is_active', true))
-            ->whereHas('curriculumUnits')
+            ->whereHas('units')
             ->latest('curriculum_mappings.id')
             ->limit(4)
             ->get(['id', 'course_id', 'curriculum_id']);
@@ -594,7 +593,7 @@ class AcademicTimetableController extends Controller
                 ->where('is_active', true)
                 ->whereHas('course', fn ($courseQuery) => $courseQuery->where('department_id', $departmentId))
                 ->whereHas('curriculum', fn ($curriculumQuery) => $curriculumQuery->where('is_active', true))
-                ->whereHas('curriculumUnits')
+                ->whereHas('units')
                 ->where('id', $selectedCurriculumMappingId)
                 ->first(['id', 'course_id', 'curriculum_id']);
 
@@ -619,9 +618,9 @@ class AcademicTimetableController extends Controller
             return [];
         }
 
-        return CurriculumUnit::query()
-            ->select('curriculum_units.module_taught')
-            ->join('curriculum_mappings', 'curriculum_mappings.id', '=', 'curriculum_units.curriculum_mapping_id')
+        return Unit::query()
+            ->select('units.module_taught')
+            ->join('curriculum_mappings', 'curriculum_mappings.id', '=', 'units.curriculum_mapping_id')
             ->join('courses', 'courses.id', '=', 'curriculum_mappings.course_id')
             ->join('curricula', 'curricula.id', '=', 'curriculum_mappings.curriculum_id')
             ->where('courses.department_id', $departmentId)
@@ -629,8 +628,8 @@ class AcademicTimetableController extends Controller
             ->where('curriculum_mappings.is_active', true)
             ->where('curricula.is_active', true)
             ->distinct()
-            ->orderBy('curriculum_units.module_taught')
-            ->pluck('curriculum_units.module_taught')
+            ->orderBy('units.module_taught')
+            ->pluck('units.module_taught')
             ->filter()
             ->map(fn ($moduleNumber) => [
                 'id' => (string) (int) $moduleNumber,
@@ -653,9 +652,8 @@ class AcademicTimetableController extends Controller
             ? $this->currentAcademicSession()?->id
             : null;
 
-        return CurriculumUnit::query()
+        return Unit::query()
             ->with([
-                'unit:id,name,code',
                 'curriculumMapping.course:id,name,department_id',
                 'curriculumMapping.curriculum:id,name,is_active',
             ])
@@ -673,7 +671,7 @@ class AcademicTimetableController extends Controller
                     ->whereHas('curriculum', fn ($curriculumQuery) => $curriculumQuery->where('is_active', true));
             })
             ->get()
-            ->map(fn (CurriculumUnit $unit) => [
+            ->map(fn (Unit $unit) => [
                 'id' => (string) $unit->id,
                 'name' => ($unit->curriculumMapping?->curriculum?->name ?? 'No Version').
                     ' / '.
@@ -681,9 +679,9 @@ class AcademicTimetableController extends Controller
                     ' / Module '.
                     ($unit->module_taught ?? '').
                     ' / '.
-                    ($unit->unit?->code ?? '').
+                    ($unit->code ?? '').
                     ' - '.
-                    ($unit->unit?->name ?? 'No Unit'),
+                    ($unit->name ?? 'No Unit'),
             ])
             ->sortBy('name')
             ->values()

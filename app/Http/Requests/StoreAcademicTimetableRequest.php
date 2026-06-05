@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use App\Models\AcademicSession;
 use App\Models\AcademicTimetable;
-use App\Models\CurriculumUnit;
+use App\Models\Unit;
 use App\Models\Staff;
 use App\Models\LectureRoom;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
@@ -26,7 +26,7 @@ class StoreAcademicTimetableRequest extends FormRequest
             'trainer_staff_id' => ['required', 'exists:staffs,id'],
             'lecture_room_id' => ['required', 'exists:lecture_rooms,id'],
             'curriculum_unit_ids' => ['required', 'array', 'min:1'],
-            'curriculum_unit_ids.*' => ['required', 'distinct', 'exists:curriculum_units,id'],
+            'curriculum_unit_ids.*' => ['required', 'distinct', 'exists:units,id'],
             'sessions' => ['required', 'array', 'min:1'],
             'sessions.*.day_of_week' => ['required', 'in:monday,tuesday,wednesday,thursday,friday,saturday,sunday'],
             'sessions.*.start_time' => ['required', 'date_format:H:i'],
@@ -72,7 +72,7 @@ class StoreAcademicTimetableRequest extends FormRequest
             $validator->errors()->add('lecture_room_id', 'Selected lecture room must belong to the chosen department.');
         }
 
-        $curriculumUnits = CurriculumUnit::query()
+        $curriculumUnits = Unit::query()
             ->with('curriculumMapping.course:id,department_id')
             ->whereIn('id', $curriculumUnitIds)
             ->get()

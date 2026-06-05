@@ -25,7 +25,6 @@ use App\Http\Controllers\CourseController;
 use App\Http\Controllers\CourseEnrollmentController;
 use App\Http\Controllers\CurriculumController;
 use App\Http\Controllers\CurriculumMappingController;
-use App\Http\Controllers\CurriculumUnitController;
 use App\Http\Controllers\ReportingController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SecurityMonitoringController;
@@ -56,7 +55,7 @@ Route::middleware(['auth', 'verified', 'role:student'])->group(function () {
         ->name('student.dashboard.register-session');
     Route::post('/student/dashboard/register-units', [AcademicSessionEnrollmentController::class, 'registerCurrentStudentUnits'])
         ->name('student.dashboard.register-units');
-    Route::get('/student/course-units', [CurriculumUnitController::class, 'studentIndex'])
+    Route::get('/student/course-units', [UnitController::class, 'studentIndex'])
         ->name('student.course-units.index');
     Route::get('/student/results', [StudentMarkController::class, 'studentResultsIndex'])
         ->name('student.results.index');
@@ -205,11 +204,21 @@ Route::middleware(['auth', 'non_student'])->group(function () {
                 Route::patch('/{curriculumMapping}/activate', [CurriculumMappingController::class, 'activate'])->name('activate');
                 Route::patch('/{curriculumMapping}/deactivate', [CurriculumMappingController::class, 'deactivate'])->name('deactivate');
                 Route::delete('/{curriculumMapping}', [CurriculumMappingController::class, 'destroy'])->name('destroy');
+
             });
 
             Route::get('/{course}/edit', [CourseController::class, 'edit'])->name('edit');
             Route::put('/{course}', [CourseController::class, 'update'])->name('update');
             Route::delete('/{course}', [CourseController::class, 'destroy'])->name('destroy');
+        });
+
+        Route::prefix('units')->name('units.')->group(function () {
+            Route::get('/', [UnitController::class, 'index'])->name('index');
+            Route::get('/create', [UnitController::class, 'create'])->name('create');
+            Route::post('/', [UnitController::class, 'store'])->name('store');
+            Route::get('/{unit}/edit', [UnitController::class, 'edit'])->name('edit');
+            Route::put('/{unit}', [UnitController::class, 'update'])->name('update');
+            Route::delete('/{unit}', [UnitController::class, 'destroy'])->name('destroy');
         });
 
         Route::prefix('curriculums')->name('curriculums.')->group(function () {
@@ -224,39 +233,6 @@ Route::middleware(['auth', 'non_student'])->group(function () {
             Route::put('/{curriculum}', [CurriculumController::class, 'update'])->name('update');
             Route::delete('/{curriculum}', [CurriculumController::class, 'destroy'])->name('destroy');
         });
-    });
-
-    /*
-    |--------------------------------------------------------------------------
-    | UNITS
-    |--------------------------------------------------------------------------
-    */
-    Route::prefix('units')->name('units.')->group(function () {
-        Route::get('/', [UnitController::class, 'index'])->name('index');
-        Route::get('/create', [UnitController::class, 'create'])->name('create');
-        Route::post('/', [UnitController::class, 'store'])->name('store');
-
-        Route::get('/edit', [UnitController::class, 'edit'])->name('editpage');
-        Route::get('/{unit?}/edit', [UnitController::class, 'edit'])->name('edit');
-
-        Route::put('/{unit}', [UnitController::class, 'update'])->name('update');
-        Route::delete('/{unit}', [UnitController::class, 'destroy'])->name('destroy');
-
-        Route::get('/search', [UnitController::class, 'search'])->name('search');
-    });
-
-    Route::prefix('units/curriculums')->name('units.curriculum-units.')->group(function () {
-        Route::get('/', [CurriculumUnitController::class, 'index'])->name('index');
-        Route::get('/create', [CurriculumUnitController::class, 'create'])->name('create');
-        Route::post('/', [CurriculumUnitController::class, 'store'])->name('store');
-
-        Route::get('/edit', [CurriculumUnitController::class, 'edit'])->name('editpage');
-        Route::get('/{curriculum_unit?}/edit', [CurriculumUnitController::class, 'edit'])->name('edit');
-
-        Route::put('/{curriculum_unit}', [CurriculumUnitController::class, 'update'])->name('update');
-        Route::delete('/{curriculum_unit}', [CurriculumUnitController::class, 'destroy'])->name('destroy');
-
-        Route::get('/search', [CurriculumUnitController::class, 'search'])->name('search');
     });
 
     /*

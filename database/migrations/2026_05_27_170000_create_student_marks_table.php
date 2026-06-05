@@ -20,7 +20,7 @@ return new class extends Migration
                 ->constrained('students')
                 ->cascadeOnDelete();
             $table->foreignId('curriculum_unit_id')
-                ->constrained('curriculum_units')
+                ->constrained('units')
                 ->cascadeOnDelete();
             $table->string('assessment_type', 20);
             $table->unsignedInteger('assessment_number');

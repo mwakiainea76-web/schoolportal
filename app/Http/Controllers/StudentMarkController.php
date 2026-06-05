@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\CurriculumUnit;
+use App\Models\Unit;
 use App\Models\Student;
 use App\Models\StudentMark;
 use App\Models\StudentUnitRegistration;
@@ -375,10 +375,10 @@ class StudentMarkController extends Controller
             ->where('is_published', true);
 
         $availableModules = (clone $baseMarks)
-            ->join('curriculum_units', 'student_marks.curriculum_unit_id', '=', 'curriculum_units.id')
+            ->join('units', 'student_marks.curriculum_unit_id', '=', 'units.id')
             ->distinct()
-            ->orderBy('curriculum_units.module_taught')
-            ->pluck('curriculum_units.module_taught')
+            ->orderBy('units.module_taught')
+            ->pluck('units.module_taught')
             ->filter()
             ->map(fn ($m) => (int) $m)
             ->values();
@@ -398,8 +398,7 @@ class StudentMarkController extends Controller
         $filteredQuery = (clone $baseMarks)
             ->with([
                 'academicSessionEnrollment:id,year_of_study',
-                'curriculumUnit:id,unit_id,module_taught',
-                'curriculumUnit.unit:id,code,name',
+                'curriculumUnit:id,module_taught,code,name',
             ])
             ->orderByDesc('academic_session_id')
             ->orderBy('curriculum_unit_id')
@@ -422,8 +421,8 @@ class StudentMarkController extends Controller
 
         $paginator->setCollection(
             $paginator->getCollection()->map(fn (StudentMark $mark) => [
-                'unit_code' => $mark->curriculumUnit?->unit?->code,
-                'unit_name' => $mark->curriculumUnit?->unit?->name,
+                'unit_code' => $mark->curriculumUnit?->code,
+                'unit_name' => $mark->curriculumUnit?->name,
                 'module' => $mark->curriculumUnit?->module_taught,
                 'year_of_study' => $mark->academicSessionEnrollment?->year_of_study,
                 'mark_type' => $mark->assessment_type,
@@ -506,26 +505,25 @@ class StudentMarkController extends Controller
      * Resolve a CurriculumUnit by unit code.
      * Eager-loads everything unitPayload() needs.
      */
-    private function resolveUnit(string $unitCode): ?CurriculumUnit
+    private function resolveUnit(string $unitCode): ?Unit
     {
         if ($unitCode === '') {
             return null;
         }
 
-        return CurriculumUnit::query()
+        return Unit::query()
             ->select([
-                'curriculum_units.*',
+                'units.*',
                 'units.code as resolved_unit_code',
                 'units.name as resolved_unit_name',
                 'courses.name as resolved_course_name',
                 'curricula.name as resolved_version_name',
             ])
-            ->join('units', 'units.id', '=', 'curriculum_units.unit_id')
             ->join(
                 'curriculum_mappings',
                 'curriculum_mappings.id',
                 '=',
-                'curriculum_units.curriculum_mapping_id'
+                'units.curriculum_mapping_id'
             )
             ->join('courses', 'courses.id', '=', 'curriculum_mappings.course_id')
             ->join(
@@ -543,7 +541,7 @@ class StudentMarkController extends Controller
      * Shape a CurriculumUnit into the full payload used by Index and Publish.
      * Marksheet uses its own slimmer shape (code + name only).
      */
-    private function unitPayload(?CurriculumUnit $unit): ?array
+    private function unitPayload(?Unit $unit): ?array
     {
         if (! $unit) {
             return null;
@@ -551,8 +549,8 @@ class StudentMarkController extends Controller
 
         return [
             'id' => $unit->id,
-            'code' => $unit->resolved_unit_code ?? $unit->unit?->code,
-            'name' => $unit->resolved_unit_name ?? $unit->unit?->name,
+            'code' => $unit->resolved_unit_code ?? $unit->code,
+            'name' => $unit->resolved_unit_name ?? $unit->name,
             'module' => $unit->module_taught,
             'course' => $unit->resolved_course_name ?? $unit->curriculumMapping?->course?->name,
             'version' => $unit->resolved_version_name ?? $unit->curriculumMapping?->curriculum?->name,
@@ -575,7 +573,7 @@ class StudentMarkController extends Controller
             ->with([
                 'student:id,registration_number,user_id',
                 'student.user:id,first_name,last_name',
-                'curriculumUnit.unit:id,name',
+                'curriculumUnit:id,name',
             ])
             ->where('curriculum_unit_id', $unitId)
             ->where('assessment_type', $type)
@@ -606,7 +604,7 @@ class StudentMarkController extends Controller
                     ($mark->student?->user?->first_name ?? '').' '.
                     ($mark->student?->user?->last_name ?? '')
                 ),
-                'unit_name' => $mark->curriculumUnit?->unit?->name,
+                'unit_name' => $mark->curriculumUnit?->name,
                 'marks' => (int) $mark->marks,
                 'is_published' => (bool) $mark->is_published,
             ])
@@ -635,7 +633,7 @@ class StudentMarkController extends Controller
             ->with([
                 'student:id,registration_number,user_id',
                 'student.user:id,first_name,last_name',
-                'curriculumUnit.unit:id,name',
+                'curriculumUnit:id,name',
             ])
             ->where('curriculum_unit_id', $unitId);
 
@@ -656,7 +654,7 @@ class StudentMarkController extends Controller
                     ($mark->student?->user?->first_name ?? '').' '.
                     ($mark->student?->user?->last_name ?? '')
                 ),
-                'unit_name' => $mark->curriculumUnit?->unit?->name,
+                'unit_name' => $mark->curriculumUnit?->name,
                 'marks' => (int) $mark->marks,
                 'is_published' => (bool) $mark->is_published,
             ])

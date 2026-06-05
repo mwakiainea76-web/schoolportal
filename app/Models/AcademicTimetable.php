@@ -37,13 +37,13 @@ class AcademicTimetable extends Model
 
     public function curriculumUnit()
     {
-        return $this->belongsTo(CurriculumUnit::class);
+        return $this->belongsTo(Unit::class, 'curriculum_unit_id');
     }
 
     public function curriculumUnits()
     {
         return $this->belongsToMany(
-            CurriculumUnit::class,
+            Unit::class,
             'academic_timetable_curriculum_unit',
             'academic_timetable_id',
             'curriculum_unit_id'

@@ -53,10 +53,6 @@ export const STAFF_NAV_ITEMS = [
             "curriculums.create",
             "courses.curriculum-mappings.view",
             "courses.curriculum-mappings.create",
-            "units.view",
-            "units.create",
-            "units.curriculum-units.view",
-            "units.curriculum-units.create",
             "students.view",
         ],
         children: [
@@ -142,27 +138,15 @@ export const STAFF_NAV_ITEMS = [
                 children: [
                     {
                         routeName: "units.index",
-                        fallback: "/units",
+                        fallback: "/courses/units",
                         label: "Units",
-                        permission: "units.view",
+                        permission: "courses.curriculum-mappings.view",
                     },
                     {
                         routeName: "units.create",
-                        fallback: "/units/create",
+                        fallback: "/courses/units/create",
                         label: "Add Unit",
-                        permission: "units.create",
-                    },
-                    {
-                        routeName: "units.curriculum-units.index",
-                        fallback: "/units/curriculum-units",
-                        label: "Curriculum Units",
-                        permission: "units.curriculum-units.view",
-                    },
-                    {
-                        routeName: "units.curriculum-units.create",
-                        fallback: "/units/curriculum-units/create",
-                        label: "Add Curriculum Unit",
-                        permission: "units.curriculum-units.create",
+                        permission: "courses.curriculum-mappings.create",
                     },
                 ],
             },

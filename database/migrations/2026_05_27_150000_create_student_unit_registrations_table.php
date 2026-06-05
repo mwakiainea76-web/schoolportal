@@ -14,7 +14,7 @@ return new class extends Migration
                 ->constrained('academic_session_enrollments')
                 ->cascadeOnDelete();
             $table->foreignId('curriculum_unit_id')
-                ->constrained('curriculum_units')
+                ->constrained('units')
                 ->cascadeOnDelete();
             $table->timestamps();
 

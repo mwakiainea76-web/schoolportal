@@ -75,14 +75,27 @@ class AcademicLookupController extends Controller
     {
         $q = trim((string) $request->query('q', ''));
         $curriculumId = $request->integer('curriculum_id') ?: null;
+        $examBodyId = $request->integer('exam_body_id') ?: null;
+        $versionedOnly = $request->boolean('versioned_only');
 
         $courses = Course::query()
             ->with('certificationLevel:id,name,exam_body_id')
+            ->when($examBodyId, function ($query) use ($examBodyId) {
+                $query->whereHas('certificationLevel', fn ($levelQuery) => $levelQuery->where('exam_body_id', $examBodyId));
+            })
             ->when($curriculumId, function ($query) use ($curriculumId) {
                 $query->whereHas('curriculumMappings', function ($mappingQuery) use ($curriculumId) {
                     $mappingQuery
                         ->where('curriculum_id', $curriculumId)
                         ->where('is_active', true);
+                });
+            })
+            ->when($versionedOnly, function ($query) {
+                $query->whereHas('curriculumMappings', function ($mappingQuery) {
+                    $mappingQuery
+                        ->where('is_active', true)
+                        ->whereHas('curriculum', fn ($curriculumQuery) => $curriculumQuery->where('is_active', true))
+                        ->whereHas('units');
                 });
             })
             ->when($q !== '', function ($query) use ($q) {
@@ -176,6 +189,7 @@ class AcademicLookupController extends Controller
                 'course.certificationLevel:id,name',
             ])
             ->when($curriculumId, fn ($query) => $query->where('curriculum_id', $curriculumId))
+            ->whereHas('curriculum', fn ($query) => $query->where('is_active', true))
             ->when($q !== '', function ($query) use ($q) {
                 $query->where(function ($searchQuery) use ($q) {
                     $searchQuery
@@ -196,8 +210,7 @@ class AcademicLookupController extends Controller
                 'id' => $mapping->id,
                 'name' => collect([
                     $mapping->curriculum?->name,
-                    $mapping->course?->display_name ?? $mapping->course?->name,
-                    $mapping->course?->certificationLevel?->name,
+                    trim(($mapping->course?->code ?? '').' - '.($mapping->course?->display_name ?? $mapping->course?->name), ' - '),
                 ])->filter()->implode(' - '),
             ]);
 
@@ -207,8 +220,24 @@ class AcademicLookupController extends Controller
     public function units(Request $request): JsonResponse
     {
         $q = trim((string) $request->query('q', ''));
+        $mappingId = $request->integer('curriculum_mapping_id') ?: null;
+        $courseId = $request->integer('course_id') ?: null;
+        $examBodyId = $request->integer('exam_body_id') ?: null;
+        $certificationLevelId = $request->integer('certification_level_id') ?: null;
+        $moduleTaught = $request->integer('module_taught') ?: null;
 
         $units = Unit::query()
+            ->when($mappingId, fn ($query) => $query->where('curriculum_mapping_id', $mappingId))
+            ->when($moduleTaught, fn ($query) => $query->where('module_taught', $moduleTaught))
+            ->when($courseId, function ($query) use ($courseId) {
+                $query->whereHas('curriculumMapping.course', fn ($courseQuery) => $courseQuery->whereKey($courseId));
+            })
+            ->when($examBodyId, function ($query) use ($examBodyId) {
+                $query->whereHas('curriculumMapping.course.certificationLevel', fn ($levelQuery) => $levelQuery->where('exam_body_id', $examBodyId));
+            })
+            ->when($certificationLevelId, function ($query) use ($certificationLevelId) {
+                $query->whereHas('curriculumMapping.course', fn ($courseQuery) => $courseQuery->where('certification_level_id', $certificationLevelId));
+            })
             ->when($q !== '', function ($query) use ($q) {
                 $query->where(function ($searchQuery) use ($q) {
                     $searchQuery
@@ -218,10 +247,17 @@ class AcademicLookupController extends Controller
             })
             ->orderBy('name')
             ->limit(10)
-            ->get(['id', 'name', 'code'])
+            ->get(['id', 'name', 'code', 'module_taught', 'semester', 'module', 'is_compulsory', 'sort_order'])
             ->map(fn (Unit $unit) => [
                 'id' => $unit->id,
-                'name' => trim($unit->code.' - '.$unit->name, ' -'),
+                'name' => trim($unit->code.' - '.$unit->name.' (Module '.$unit->module_taught.')', ' -'),
+                'code' => $unit->code,
+                'unit_name' => $unit->name,
+                'module_taught' => $unit->module_taught,
+                'semester' => $unit->semester,
+                'module' => $unit->module,
+                'is_compulsory' => $unit->is_compulsory,
+                'sort_order' => $unit->sort_order,
             ]);
 
         return response()->json($units);

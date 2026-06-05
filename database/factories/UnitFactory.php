@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Unit;
+use App\Models\CurriculumMapping;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -18,11 +19,17 @@ class UnitFactory extends Factory
     public function definition(): array
     {
         return [
-           'code' => $this->faker->unique()->lexify('UNIT???'),
-            'name' => $this->faker->word,
+            'curriculum_mapping_id' => CurriculumMapping::factory(),
+            'code' => $this->faker->unique()->bothify('UNIT-####'),
+            'name' => $this->faker->sentence(3),
             'credit_factor' => $this->faker->numberBetween(1, 10),
-            'training_hours' => $this->faker->numberBetween(100, 400),
-            'description' => $this->faker->sentence,
+            'training_hours' => $this->faker->numberBetween(10, 100),
+            'description' => $this->faker->paragraph,
+            'module_taught' => $this->faker->numberBetween(1, 6),
+            'semester' => $this->faker->numberBetween(1, 2),
+            'module' => $this->faker->numberBetween(1, 6),
+            'is_compulsory' => true,
+            'sort_order' => 0,
         ];
     }
 }

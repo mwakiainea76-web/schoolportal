@@ -14,7 +14,7 @@ return new class extends Migration
                 ->constrained('departments', 'id')
                 ->cascadeOnUpdate()
                 ->cascadeOnDelete();
-            $table->string('name');
+            $table->string('name')->index();
             $table->string('code')->unique();
             $table->unsignedInteger('capacity')->nullable();
             $table->string('location')->nullable();

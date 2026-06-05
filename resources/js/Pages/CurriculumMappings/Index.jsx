@@ -191,6 +191,18 @@ export default function CurriculumMappingsIndex({
                                         <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
                                             <Link
                                                 href={route(
+                                                    "units.index",
+                                                    {
+                                                        curriculum_mapping_id:
+                                                            mapping.id,
+                                                    },
+                                                )}
+                                                className="text-emerald-600 hover:underline"
+                                            >
+                                                Units
+                                            </Link>
+                                            <Link
+                                                href={route(
                                                     "courses.curriculum-mappings.edit",
                                                     encodeURIComponent(
                                                         mapping.id,

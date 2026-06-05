@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AcademicTimetable;
 use App\Models\AcademicSession;
-use App\Models\CurriculumUnit;
+use App\Models\Unit;
 use App\Models\Staff;
 use App\Models\StudentInvoice;
 use App\Models\StudentMark;
@@ -80,13 +80,8 @@ class DashboardController extends Controller
 
         // ── Module units ─────────────────────────────────────────────────────
         $moduleUnits = ($courseEnrollment && $currentModule)
-            ? CurriculumUnit::query()
-                ->with('unit:id,code,name,credit_factor') // training_hours not used
-                ->when(
-                    $curriculumId,
-                    fn ($query) => $query->where('curriculum_id', $curriculumId),
-                    fn ($query) => $query->where('curriculum_mapping_id', $courseEnrollment->curriculum_mapping_id)
-                )
+            ? Unit::query()
+                ->where('curriculum_mapping_id', $courseEnrollment->curriculum_mapping_id)
                 ->where(function ($query) use ($currentModule) {
                     $query->where('module', $currentModule)
                         ->orWhere('module_taught', $currentModule);
@@ -102,12 +97,8 @@ class DashboardController extends Controller
             : collect();
 
         $allUnitsCount = $courseEnrollment
-            ? CurriculumUnit::query()
-                ->when(
-                    $curriculumId,
-                    fn ($query) => $query->where('curriculum_id', $curriculumId),
-                    fn ($query) => $query->where('curriculum_mapping_id', $courseEnrollment->curriculum_mapping_id)
-                )
+            ? Unit::query()
+                ->where('curriculum_mapping_id', $courseEnrollment->curriculum_mapping_id)
                 ->count()
             : 0;
 
@@ -142,13 +133,13 @@ class DashboardController extends Controller
                     'version' => $courseEnrollment?->curriculum?->name
                         ?? $curriculumMapping?->curriculum?->name,
                 ],
-                'module_units' => $moduleUnits->map(fn (CurriculumUnit $pvu) => [
-                    'id' => $pvu->id,
-                    'code' => $pvu->unit?->code,
-                    'name' => $pvu->unit?->name,
-                    'credit_factor' => $pvu->unit?->credit_factor,
+                'module_units' => $moduleUnits->map(fn (Unit $unit) => [
+                    'id' => $unit->id,
+                    'code' => $unit->code,
+                    'name' => $unit->name,
+                    'credit_factor' => $unit->credit_factor,
                     // training_hours removed — not read by frontend
-                    'is_registered' => $registeredUnitIds->contains($pvu->id),
+                    'is_registered' => $registeredUnitIds->contains($unit->id),
                 ])->values(),
                 'all_units_count' => $allUnitsCount,
                 'latest_session' => $latestSessionEnrollment ? [

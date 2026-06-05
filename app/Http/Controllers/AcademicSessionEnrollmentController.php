@@ -6,7 +6,7 @@ use App\Http\Requests\StoreAcademicSessionEnrollmentRequest;
 use App\Models\AcademicSession;
 use App\Models\AcademicSessionEnrollment;
 use App\Models\CourseEnrollment;
-use App\Models\CurriculumUnit;
+use App\Models\Unit;
 use App\Models\Student;
 use App\Models\StudentUnitRegistration;
 use App\Services\BillingService;
@@ -295,12 +295,8 @@ class AcademicSessionEnrollmentController extends Controller
             ]);
         }
 
-        $moduleUnits = CurriculumUnit::query()
-            ->when(
-                $courseEnrollment->curriculum_id,
-                fn ($query) => $query->where('curriculum_id', $courseEnrollment->curriculum_id),
-                fn ($query) => $query->where('curriculum_mapping_id', $courseEnrollment->curriculum_mapping_id)
-            )
+        $moduleUnits = Unit::query()
+            ->where('curriculum_mapping_id', $courseEnrollment->curriculum_mapping_id)
             ->where(function ($query) use ($sessionEnrollment) {
                 $query->where('module', $sessionEnrollment->module)
                     ->orWhere('module_taught', $sessionEnrollment->module);

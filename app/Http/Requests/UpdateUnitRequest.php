@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -19,20 +18,29 @@ class UpdateUnitRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, ValidationRule|array<mixed>|string>
+     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
-        $unit = $this->route('unit');
-
         return [
-            'code' => ['required', 'string', 'max:255',
-                Rule::unique('units', 'code')->ignore($unit)],
+            'curriculum_mapping_id' => ['required', 'exists:curriculum_mappings,id'],
+            'code' => [
+                'required', 
+                'string', 
+                'max:255',
+                Rule::unique('units')->where(function ($query) {
+                    return $query->where('curriculum_mapping_id', $this->curriculum_mapping_id);
+                })->ignore($this->unit?->id),
+            ],
             'name' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
             'credit_factor' => ['required', 'integer', 'min:1'],
             'training_hours' => ['required', 'integer', 'min:1'],
-
+            'description' => ['nullable', 'string', 'max:255'],
+            'module_taught' => ['required', 'integer', 'min:1', 'max:6'],
+            'semester' => ['nullable', 'integer', 'min:1', 'max:12'],
+            'module' => ['nullable', 'integer', 'min:1', 'max:6'],
+            'is_compulsory' => ['sometimes', 'boolean'],
+            'sort_order' => ['nullable', 'integer', 'min:0'],
         ];
     }
 }

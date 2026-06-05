@@ -4,28 +4,26 @@ namespace Database\Seeders;
 
 use App\Models\AcademicSession;
 use App\Models\AcademicSessionEnrollment;
+use App\Models\AcademicTimetable;
 use App\Models\AcademicYear;
 use App\Models\Approval;
 use App\Models\CertificationLevel;
+use App\Models\Course;
+use App\Models\CourseEnrollment;
+use App\Models\Curriculum;
+use App\Models\CurriculumMapping;
 use App\Models\Department;
 use App\Models\ExamBody;
 use App\Models\FeeAssignment;
 use App\Models\FeeComponent;
 use App\Models\FeePlan;
 use App\Models\FeePlanItem;
-use App\Models\LedgerTransaction;
-use App\Models\LectureRoom;
 use App\Models\Hostel;
 use App\Models\HostelAllocation;
 use App\Models\HostelBed;
 use App\Models\HostelRoom;
+use App\Models\LectureRoom;
 use App\Models\NextOfKin;
-use App\Models\Course;
-use App\Models\CourseEnrollment;
-use App\Models\Curriculum;
-use App\Models\CurriculumMapping;
-use App\Models\CurriculumUnit;
-use App\Models\AcademicTimetable;
 use App\Models\Staff;
 use App\Models\Student;
 use App\Models\StudentUnitRegistration;
@@ -526,7 +524,7 @@ class KenyaTvetDemoSeeder extends Seeder
 
     protected function seedUnitsAndMappings(array $mappings): void
     {
-        $unitDefinitions = [
+        $unitBlueprints = [
             'COM101' => ['Communication Skills', 3, 45, 'Communication for TVET learners'],
             'ENT101' => ['Entrepreneurship Education', 2, 30, 'Enterprise and self-employment skills'],
             'LFS101' => ['Life Skills Education', 2, 30, 'Personal development and life skills'],
@@ -566,19 +564,6 @@ class KenyaTvetDemoSeeder extends Seeder
             'BUS107' => ['Customer Relations', 2, 30, 'Professional communication with clients and suppliers'],
         ];
 
-        $units = [];
-        foreach ($unitDefinitions as $code => [$name, $credit, $hours, $description]) {
-            $units[$code] = Unit::firstOrCreate(
-                ['code' => $code],
-                [
-                    'name' => $name,
-                    'credit_factor' => $credit,
-                    'training_hours' => $hours,
-                    'description' => $description,
-                ]
-            );
-        }
-
         $moduleMap = [
             'ict_l4' => [
                 1 => ['ICT101', 'COM101', 'ENT101'],
@@ -610,22 +595,17 @@ class KenyaTvetDemoSeeder extends Seeder
         foreach ($moduleMap as $mappingKey => $modules) {
             foreach ($modules as $module => $unitCodes) {
                 foreach ($unitCodes as $unitCode) {
-                    // Skip if this combination already exists (handles duplicates across multiple mappings)
-                    if (CurriculumUnit::where([
-                        'curriculum_id' => $mappings[$mappingKey]->curriculum_id,
-                        'unit_id' => $units[$unitCode]->id,
-                        'module_taught' => $module,
-                    ])->exists()) {
-                        continue;
-                    }
-
-                    CurriculumUnit::firstOrCreate(
+                    $blueprint = $unitBlueprints[$unitCode];
+                    Unit::firstOrCreate(
                         [
                             'curriculum_mapping_id' => $mappings[$mappingKey]->id,
-                            'unit_id' => $units[$unitCode]->id,
+                            'code' => $unitCode,
                         ],
                         [
-                            'curriculum_id' => $mappings[$mappingKey]->curriculum_id,
+                            'name' => $blueprint[0],
+                            'credit_factor' => $blueprint[1],
+                            'training_hours' => $blueprint[2],
+                            'description' => $blueprint[3],
                             'module_taught' => $module,
                         ]
                     );
@@ -812,14 +792,14 @@ class KenyaTvetDemoSeeder extends Seeder
     {
         $ictTrainer = $users['hod_staff'];
 
-        $ictMainUnit = CurriculumUnit::query()
+        $ictMainUnit = Unit::query()
             ->where('curriculum_mapping_id', $mappings['ict_l4']->id)
-            ->whereHas('unit', fn ($query) => $query->where('code', 'ICT101'))
+            ->where('code', 'ICT101')
             ->first();
 
-        $ictSharedTheoryUnit = CurriculumUnit::query()
+        $ictSharedTheoryUnit = Unit::query()
             ->where('curriculum_mapping_id', $mappings['ict_l4']->id)
-            ->whereHas('unit', fn ($query) => $query->where('code', 'COM101'))
+            ->where('code', 'COM101')
             ->first();
 
         if (! $ictMainUnit || ! $ictSharedTheoryUnit) {
@@ -1095,7 +1075,7 @@ class KenyaTvetDemoSeeder extends Seeder
             );
 
             // Create unit registrations for module 1
-            $units = CurriculumUnit::query()
+            $units = Unit::query()
                 ->where('curriculum_mapping_id', $record['mapping']->id)
                 ->where('module_taught', 1)
                 ->get();

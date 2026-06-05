@@ -64,9 +64,9 @@ class Curriculum extends Model
         return $this->belongsTo(Course::class, 'course_id');
     }
 
-    public function curriculumUnits()
+    public function units()
     {
-        return $this->hasMany(CurriculumUnit::class);
+        return $this->hasManyThrough(Unit::class, CurriculumMapping::class);
     }
 
     public function courses()

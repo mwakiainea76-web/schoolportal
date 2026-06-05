@@ -65,16 +65,9 @@ class CurriculumMapping extends Model
         );
     }
 
-    public function curriculumUnits()
-    {
-        return $this->hasMany(CurriculumUnit::class, 'curriculum_mapping_id');
-    }
-
     public function units()
     {
-        return $this->belongsToMany(Unit::class, 'curriculum_units', 'curriculum_mapping_id', 'unit_id')
-            ->withPivot('module_taught')
-            ->withTimestamps();
+        return $this->hasMany(Unit::class, 'curriculum_mapping_id');
     }
 
     public function outgoingTransfers()

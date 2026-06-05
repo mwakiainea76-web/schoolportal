@@ -43,7 +43,7 @@ export default function SearchSelect({
     error = false,
     defaultOptions = [],
     disabled = false,
-    minSearchLength = 3,
+    minSearchLength = 2,
     preloadOptions = false,
 }) {
     const [query, setQuery] = useState("");
@@ -51,6 +51,7 @@ export default function SearchSelect({
     const initialOptions = isApiLookup ? [] : defaultOptions;
     const [options, setOptions] = useState(initialOptions);
     const [open, setOpen] = useState(false);
+    const [isTyping, setIsTyping] = useState(false);
 
     const debounceRef = useRef(null);
     const wrapperRef = useRef(null);
@@ -76,7 +77,16 @@ export default function SearchSelect({
     useEffect(() => {
         if (value === null || value === undefined) return;
 
+        if (isTyping && open) {
+            return;
+        }
+
+        // Keep the typed query visible while the user is actively searching.
         if (value === "") {
+            if (open && query.trim() !== "") {
+                return;
+            }
+
             setQuery("");
             return;
         }
@@ -101,12 +111,13 @@ export default function SearchSelect({
         if (!isApiLookup && typeof value === "string") {
             setQuery(value);
         }
-    }, [value, selectedLabel, defaultOptions, options, isApiLookup]);
+    }, [value, selectedLabel, defaultOptions, options, isApiLookup, open, query, isTyping]);
 
     // -----------------------------
     // SEARCH (DEBOUNCED)
     // -----------------------------
     const handleSearch = (text) => {
+        setIsTyping(true);
         setQuery(text);
         setOpen(true);
 
@@ -144,6 +155,7 @@ export default function SearchSelect({
     // SELECT ITEM
     // -----------------------------
     const handleSelect = (item) => {
+        setIsTyping(false);
         setQuery(item.name);
         setOpen(false);
         onChange?.(item);
@@ -155,6 +167,7 @@ export default function SearchSelect({
     useEffect(() => {
         const handleClick = (e) => {
             if (!wrapperRef.current?.contains(e.target)) {
+                setIsTyping(false);
                 setOpen(false);
             }
         };
@@ -195,6 +208,7 @@ export default function SearchSelect({
                 }
                 onFocus={() => {
                     if (!disabled) {
+                        setIsTyping(false);
                         setOpen(true);
                         if (preloadOptions && isApiLookup) {
                             fetchOptions("");

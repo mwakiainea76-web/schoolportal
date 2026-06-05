@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use App\Models\AcademicTimetable;
 use App\Models\LectureRoom;
-use App\Models\CurriculumUnit;
+use App\Models\Unit;
 use App\Models\Staff;
 
 class StoreHodAcademicTimetableRequest extends StoreAcademicTimetableRequest
@@ -76,7 +76,7 @@ class StoreHodAcademicTimetableRequest extends StoreAcademicTimetableRequest
                 $validator->errors()->add('lecture_room_id', 'Selected lecture room must belong to your department.');
             }
 
-            $curriculumUnits = CurriculumUnit::query()
+            $curriculumUnits = Unit::query()
                 ->with([
                     'curriculumMapping.course:id,department_id',
                     'curriculumMapping.curriculum:id,is_active',
