@@ -89,9 +89,6 @@ export default function Marksheet({
         last_page: 1,
         total: rows.length,
     };
-    const displayRows = Array.from({
-        length: Math.max(rows.length, 10),
-    }).map((_, index) => rows[index] || null);
     const meta = marksheet?.meta ?? {};
 
     const goToPage = (page) => {
@@ -132,9 +129,15 @@ export default function Marksheet({
                                         "curriculum_mapping_id",
                                         event.target.value,
                                     );
-                                    filterForm.setData("curriculum_unit_id", "");
+                                    filterForm.setData(
+                                        "curriculum_unit_id",
+                                        "",
+                                    );
                                     filterForm.setData("academic_year_id", "");
-                                    filterForm.setData("academic_session_id", "");
+                                    filterForm.setData(
+                                        "academic_session_id",
+                                        "",
+                                    );
                                     loadUnits(event.target.value);
                                 }}
                                 className="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none transition focus:border-emerald-400"
@@ -147,7 +150,9 @@ export default function Marksheet({
                                 ))}
                             </select>
                             <InputError
-                                message={filterForm.errors.curriculum_mapping_id}
+                                message={
+                                    filterForm.errors.curriculum_mapping_id
+                                }
                                 className="mt-2"
                             />
                         </div>
@@ -159,7 +164,8 @@ export default function Marksheet({
                                     routeName="units.search"
                                     routeParams={{
                                         curriculum_mapping_id:
-                                            filterForm.data.curriculum_mapping_id,
+                                            filterForm.data
+                                                .curriculum_mapping_id,
                                         limit: 10,
                                     }}
                                     defaultOptions={unit_options}
@@ -182,7 +188,9 @@ export default function Marksheet({
                                         )
                                     }
                                     error={filterForm.errors.curriculum_unit_id}
-                                    disabled={!filterForm.data.curriculum_mapping_id}
+                                    disabled={
+                                        !filterForm.data.curriculum_mapping_id
+                                    }
                                 />
                             </div>
                             <InputError
@@ -326,9 +334,14 @@ export default function Marksheet({
                                     <span className="font-semibold">
                                         Term Dates:
                                     </span>{" "}
-                                    From {meta.term_from ? formatDate(meta.term_from) : ""}
-                                    {" "}to{" "}
-                                    {meta.term_to ? formatDate(meta.term_to) : ""}
+                                    From{" "}
+                                    {meta.term_from
+                                        ? formatDate(meta.term_from)
+                                        : ""}{" "}
+                                    to{" "}
+                                    {meta.term_to
+                                        ? formatDate(meta.term_to)
+                                        : ""}
                                 </div>
                                 <div>
                                     <span className="font-semibold">
@@ -357,104 +370,111 @@ export default function Marksheet({
                             </div>
 
                             <div className="overflow-x-auto">
-                                <table className="w-full min-w-[1100px] border-collapse border border-zinc-500 text-[12px]">
+                                <table className="w-full  border-collapse border border-zinc-500 text-[12px]">
                                     <thead>
                                         <tr className="bg-white">
                                             <th
                                                 rowSpan="2"
-                                                className="border border-zinc-500 bg-zinc-50 px-2 py-2 text-left"
+                                                className="border border-zinc-500 bg-zinc-50  text-left"
                                             >
                                                 S/N
                                             </th>
                                             <th
                                                 rowSpan="2"
-                                                className="border border-zinc-500 bg-zinc-50 px-2 py-2 text-left"
+                                                className="border border-zinc-500 bg-zinc-50  text-left"
                                             >
                                                 Candidate&apos;s Reg Code
                                             </th>
                                             <th
                                                 rowSpan="2"
-                                                className="border border-zinc-500 bg-zinc-50 px-2 py-2 text-left"
+                                                className="border border-zinc-500 bg-zinc-50  text-left"
                                             >
                                                 Candidate&apos;s Name
                                             </th>
                                             <th
                                                 colSpan="4"
-                                                className="border border-zinc-500 bg-zinc-200 px-2 py-2 text-center"
+                                                className="border border-zinc-500 bg-zinc-200  text-center"
                                             >
                                                 Continuous Theory (CT) Marks
                                                 (100%)
                                             </th>
                                             <th
                                                 colSpan="4"
-                                                className="border border-zinc-500 bg-orange-100 px-2 py-2 text-center"
+                                                className="border border-zinc-500 bg-orange-100  text-center"
                                             >
                                                 Continuous Practical (CP) Marks
                                                 (100%)
                                             </th>
                                         </tr>
                                         <tr className="bg-white">
-                                            <th className="border border-zinc-500 bg-zinc-100 px-2 py-2 text-center">
+                                            <th className="border border-zinc-500 bg-zinc-100  text-center">
                                                 FA 1
                                             </th>
-                                            <th className="border border-zinc-500 bg-zinc-100 px-2 py-2 text-center">
+                                            <th className="border border-zinc-500 bg-zinc-100  text-center">
                                                 FA 2
                                             </th>
-                                            <th className="border border-zinc-500 bg-zinc-100 px-2 py-2 text-center">
+                                            <th className="border border-zinc-500 bg-zinc-100  text-center">
                                                 FA 3
                                             </th>
-                                            <th className="border border-zinc-500 bg-zinc-200 px-2 py-2 text-center">
+                                            <th className="border border-zinc-500 bg-zinc-200  text-center">
                                                 Average
                                             </th>
-                                            <th className="border border-zinc-500 bg-orange-50 px-2 py-2 text-center">
+                                            <th className="border border-zinc-500 bg-orange-50  text-center">
                                                 Pract 1
                                             </th>
-                                            <th className="border border-zinc-500 bg-orange-50 px-2 py-2 text-center">
+                                            <th className="border border-zinc-500 bg-orange-50  text-center">
                                                 Pract 2
                                             </th>
-                                            <th className="border border-zinc-500 bg-orange-50 px-2 py-2 text-center">
+                                            <th className="border border-zinc-500 bg-orange-50  text-center">
                                                 Pract 3
                                             </th>
-                                            <th className="border border-zinc-500 bg-orange-100 px-2 py-2 text-center">
+                                            <th className="border border-zinc-500 bg-orange-100  text-center">
                                                 Average
                                             </th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {displayRows.map((row, index) => (
-                                            <tr key={row?.registration_number || `blank-${index}`}>
-                                                <td className="border border-zinc-500 px-2 py-2 text-center">
-                                                    {row ? `${index + 1}.` : ""}
+                                        {rows.map((row, index) => (
+                                            <tr
+                                                key={
+                                                    row.registration_number ||
+                                                    index
+                                                }
+                                            >
+                                                <td className="border border-zinc-500  text-center">
+                                                    {`${index + 1}.`}
                                                 </td>
-                                                <td className="border border-zinc-500 px-2 py-2">
-                                                    {row?.registration_number || ""}
+                                                <td className="border border-zinc-500 ">
+                                                    {row.registration_number ||
+                                                        ""}
                                                 </td>
-                                                <td className="border border-zinc-500 px-2 py-2">
-                                                    {row?.student_name || ""}
+                                                <td className="border border-zinc-500 ">
+                                                    {row.student_name || ""}
                                                 </td>
-                                                <td className="border border-zinc-500 px-2 py-2 text-center">
-                                                    {row?.theory?.[1] || ""}
+                                                <td className="border border-zinc-500  text-center">
+                                                    {row.theory?.[1] || ""}
                                                 </td>
-                                                <td className="border border-zinc-500 px-2 py-2 text-center">
-                                                    {row?.theory?.[2] || ""}
+                                                <td className="border border-zinc-500  text-center">
+                                                    {row.theory?.[2] || ""}
                                                 </td>
-                                                <td className="border border-zinc-500 px-2 py-2 text-center">
-                                                    {row?.theory?.[3] || ""}
+                                                <td className="border border-zinc-500  text-center">
+                                                    {row.theory?.[3] || ""}
                                                 </td>
-                                                <td className="border border-zinc-500 bg-zinc-100 px-2 py-2 text-center font-semibold text-rose-700">
-                                                    {row?.theory_average || ""}
+                                                <td className="border border-zinc-500 bg-zinc-100  text-center font-semibold text-rose-700">
+                                                    {row.theory_average || ""}
                                                 </td>
-                                                <td className="border border-zinc-500 px-2 py-2 text-center">
-                                                    {row?.practical?.[1] || ""}
+                                                <td className="border border-zinc-500  text-center">
+                                                    {row.practical?.[1] || ""}
                                                 </td>
-                                                <td className="border border-zinc-500 px-2 py-2 text-center">
-                                                    {row?.practical?.[2] || ""}
+                                                <td className="border border-zinc-500  text-center">
+                                                    {row.practical?.[2] || ""}
                                                 </td>
-                                                <td className="border border-zinc-500 px-2 py-2 text-center">
-                                                    {row?.practical?.[3] || ""}
+                                                <td className="border border-zinc-500  text-center">
+                                                    {row.practical?.[3] || ""}
                                                 </td>
-                                                <td className="border border-zinc-500 bg-orange-50 px-2 py-2 text-center font-semibold text-rose-700">
-                                                    {row?.practical_average || ""}
+                                                <td className="border border-zinc-500 bg-orange-50  text-center font-semibold text-rose-700">
+                                                    {row.practical_average ||
+                                                        ""}
                                                 </td>
                                             </tr>
                                         ))}
@@ -466,8 +486,8 @@ export default function Marksheet({
                                 <div className="flex items-center justify-between pt-3">
                                     <div className="text-sm text-zinc-600">
                                         Page {pagination.current_page} of{" "}
-                                        {pagination.last_page} | {pagination.total}{" "}
-                                        students
+                                        {pagination.last_page} |{" "}
+                                        {pagination.total} students
                                     </div>
                                     <div className="flex gap-2">
                                         <button
