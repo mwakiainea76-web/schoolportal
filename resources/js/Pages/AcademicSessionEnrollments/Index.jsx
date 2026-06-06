@@ -7,6 +7,7 @@ import THdata from "@/Components/Table/THdata";
 import Tbody from "@/Components/Table/Tbody";
 import Trow from "@/Components/Table/Trow";
 import Tdata from "@/Components/Table/Tdata";
+import AcademicCalendarWorkspaceTabs from "@/Pages/Academic/Partials/AcademicCalendarWorkspaceTabs";
 import formatDate from "@/utils/date";
 
 const STATUS_STYLES = {
@@ -68,6 +69,8 @@ export default function Index({ enrollments }) {
             <Head title="Academic Session Enrollments" />
 
             <div className="max-w-7xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <AcademicCalendarWorkspaceTabs activeTab="enrollments" />
+
                 {/* Search */}
                 <form
                     className="w-full relative flex gap-x-7"

@@ -2,6 +2,7 @@ import { useForm, Head, Link } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import InputLabel from "@/Components/InputLabel";
 import InputError from "@/Components/InputError";
+import AcademicCalendarWorkspaceTabs from "@/Pages/Academic/Partials/AcademicCalendarWorkspaceTabs";
 
 const STATUS_STYLES = {
     active: "bg-emerald-100 text-emerald-700",
@@ -27,7 +28,12 @@ export default function Edit({ enrollment, statuses }) {
         <AuthenticatedLayout>
             <Head title="Edit Enrollment" />
 
-            <div className="mx-auto max-w-2xl w-full space-y-6">
+            <div className="mx-auto w-full max-w-5xl space-y-6">
+                <AcademicCalendarWorkspaceTabs
+                    activeTab="edit-enrollment"
+                    enrollmentId={enrollment.id}
+                />
+
                 {/* Header */}
                 <div>
                     <h1 className="text-2xl font-semibold text-gray-800">
@@ -40,7 +46,7 @@ export default function Edit({ enrollment, statuses }) {
 
                 <div className="bg-white border rounded-lg shadow-sm p-8 space-y-6">
                     {/* Read-only info */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                         <div>
                             <InputLabel value="Student" />
                             <p className="mt-1 px-3 py-2 bg-gray-50 border rounded text-sm text-gray-700">

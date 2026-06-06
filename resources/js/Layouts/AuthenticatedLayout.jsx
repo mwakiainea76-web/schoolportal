@@ -274,7 +274,7 @@ export default function AuthenticatedLayout({ header, children }) {
 
                 <div className="flex-1 flex flex-col h-screen overflow-hidden">
                     {/* Header */}
-                    <header className="w-full h-20 shrink-0 bg-white border-b border-zinc-200 flex items-center px-6 sticky top-0 z-20">
+                    <header className="w-full h-14 shrink-0 bg-white border-b border-zinc-200 flex items-center px-6 sticky top-0 z-20">
                         {/* MOBILE BUTTON */}
                         <button
                             onClick={() => setMobileOpen(true)}
@@ -367,7 +367,7 @@ export default function AuthenticatedLayout({ header, children }) {
 
                     {/* Content */}
                     <main className="flex-1 overflow-y-auto mb-8 w-full">
-                        <div className="px-10 pt-4">
+                        <div className="px-10 pt-2 ">
                             {pageHeader && (
                                 <div className="mb-8">{pageHeader}</div>
                             )}

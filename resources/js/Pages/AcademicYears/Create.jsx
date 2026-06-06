@@ -5,6 +5,8 @@ import TextInput from "@/Components/TextInput";
 import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import Modal from "@/Components/Modal";
+import AcademicCalendarWorkspaceTabs from "@/Pages/Academic/Partials/AcademicCalendarWorkspaceTabs";
+
 export default function Create({
     modalMode = false,
     open = false,
@@ -99,6 +101,7 @@ export default function Create({
             <Head title="Create Academic Year" />
 
             <div className="max-w-7xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <AcademicCalendarWorkspaceTabs activeTab="add-year" />
                 {content}
             </div>
         </AuthenticatedLayout>

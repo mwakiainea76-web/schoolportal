@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import SearchSelect from "@/Components/SearchSelect";
 import formatDate from "@/utils/date";
+import AcademicCalendarWorkspaceTabs from "@/Pages/Academic/Partials/AcademicCalendarWorkspaceTabs";
 import AcademicYearCreate from "@/Pages/AcademicYears/Create";
 import AcademicYearEdit from "@/Pages/AcademicYears/Edit";
 import AcademicSessionCreate from "@/Pages/AcademicSessions/Create";
@@ -135,8 +136,7 @@ export default function Index({
                 disabled:
                     Boolean(activeAcademicYearId) &&
                     String(activeAcademicYearId) !== String(year.id),
-                helper:
-                    "You can only reactivate an academic year after ending the previous one.",
+                helper: "You can only reactivate an academic year after ending the previous one.",
             };
         }
 
@@ -148,8 +148,7 @@ export default function Index({
             disabled:
                 Boolean(activeAcademicYearId) &&
                 String(activeAcademicYearId) !== String(year.id),
-            helper:
-                "You can only start an academic year after ending the previous one.",
+            helper: "You can only start an academic year after ending the previous one.",
         };
     };
 
@@ -174,8 +173,7 @@ export default function Index({
                 disabled:
                     Boolean(active_academic_session_id) &&
                     String(active_academic_session_id) !== String(session.id),
-                helper:
-                    "You can only reactivate a session after ending the previous active one.",
+                helper: "You can only reactivate a session after ending the previous active one.",
             };
         }
 
@@ -187,10 +185,8 @@ export default function Index({
             disabled:
                 Boolean(active_academic_session_id) &&
                 String(active_academic_session_id) !== String(session.id),
-            helper:
-                "You can only start session after ending the previous.",
-            title:
-                "You can only start session after ending the previous.",
+            helper: "You can only start session after ending the previous.",
+            title: "You can only start session after ending the previous.",
         };
     };
 
@@ -204,6 +200,8 @@ export default function Index({
             <Head title="Academic Sessions" />
 
             <div className="mx-auto w-full max-w-7xl animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <AcademicCalendarWorkspaceTabs activeTab="sessions" />
+
                 <div className="flex w-full flex-col gap-6 lg:flex-row lg:items-start">
                     <section className="w-full shrink-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:w-[380px] xl:w-[430px]">
                         <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
@@ -213,9 +211,9 @@ export default function Index({
                             <button
                                 type="button"
                                 onClick={() => setAddYearModalOpen(true)}
-                                className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700"
+                                className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700"
                             >
-                                Add Academic Year
+                                + Add Academic Year
                             </button>
                         </div>
 
@@ -226,10 +224,14 @@ export default function Index({
                             >
                                 <SearchSelect
                                     routeName="academic.years.search"
-                                    defaultOptions={academic_years.map((year) => ({
-                                        id: String(year.id),
-                                        name: year.label || year.academic_year,
-                                    }))}
+                                    defaultOptions={academic_years.map(
+                                        (year) => ({
+                                            id: String(year.id),
+                                            name:
+                                                year.label ||
+                                                year.academic_year,
+                                        }),
+                                    )}
                                     value={selected_academic_year_id}
                                     selectedLabel={yearSearchTerm}
                                     placeholder="Search academic years..."
@@ -406,9 +408,9 @@ export default function Index({
                                 type="button"
                                 onClick={() => setAddSessionModalOpen(true)}
                                 disabled={!selectedYear}
-                                className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                                className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
                             >
-                                Add Academic Session
+                                + Add Academic Session
                             </button>
                         </div>
 
@@ -429,7 +431,9 @@ export default function Index({
                                                         <div>
                                                             <p className="text-lg font-semibold text-slate-800">
                                                                 Session{" "}
-                                                                {session.session_No}
+                                                                {
+                                                                    session.session_No
+                                                                }
                                                             </p>
                                                             <div className="mt-2 flex flex-wrap gap-3 text-sm text-slate-500">
                                                                 <span>
