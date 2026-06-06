@@ -161,7 +161,7 @@ class CourseController extends Controller
             ->get(['id', 'name', 'code', 'certification_level_id'])
             ->map(fn (Course $course) => [
                 'id' => (string) $course->id,
-                'name' => $plainName ? $course->name : $course->display_name,
+                'name' => $course->name,
             ])
             ->values();
 

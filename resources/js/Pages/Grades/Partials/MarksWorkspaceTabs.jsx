@@ -8,6 +8,11 @@ const tabs = [
         routeName: "academic.marks.view.index",
     },
     {
+        key: "marksheet",
+        label: "Marksheet",
+        routeName: "academic.marks.marksheet.index",
+    },
+    {
         key: "publish",
         label: "Publish Marks",
         routeName: "academic.marks.publish.index",

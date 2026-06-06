@@ -61,7 +61,7 @@ export default function Add({
                                     value={form.data.curriculum_unit_id}
                                     selectedLabel={
                                         selected_unit
-                                            ? `${selected_unit.course} / Module ${selected_unit.module} / ${selected_unit.code} - ${selected_unit.name}`
+                                            ? selected_unit.display_name
                                             : null
                                     }
                                     placeholder="Search unit..."

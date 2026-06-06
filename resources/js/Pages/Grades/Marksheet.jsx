@@ -3,44 +3,33 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import SearchSelect from "@/Components/SearchSelect";
+import MarksWorkspaceTabs from "@/Pages/Grades/Partials/MarksWorkspaceTabs";
+import formatDate from "@/utils/date";
 
 export default function Marksheet({
     filters,
     selected_unit,
-    available_years,
-    marksheet_data,
+    course_mappings,
+    unit_options,
+    filter_options,
+    marksheet,
     blocker,
+    can_publish,
     selected_filters,
 }) {
     const filterForm = useForm({
-        curriculum_unit_code: filters.curriculum_unit_code || "",
+        curriculum_mapping_id: filters.curriculum_mapping_id || "",
+        curriculum_unit_id: filters.curriculum_unit_id || "",
+        academic_year_id: filters.academic_year_id || "",
         academic_session_id: filters.academic_session_id || "",
-        year_of_study: filters.year_of_study || "",
-        registration_number: filters.registration_number || "",
     });
 
-    const loadMarksheet = (e) => {
-        e.preventDefault();
+    const loadUnits = (mappingId) => {
         router.get(
             route("academic.marks.marksheet.index"),
             {
-                curriculum_unit_code:
-                    filterForm.data.curriculum_unit_code,
-                academic_session_id: filterForm.data.academic_session_id,
-                year_of_study: filterForm.data.year_of_study,
-                registration_number: filterForm.data.registration_number,
+                curriculum_mapping_id: mappingId,
             },
-            {
-                preserveState: true,
-                preserveScroll: true,
-            },
-        );
-    };
-
-    const resetFilters = () => {
-        router.get(
-            route("academic.marks.marksheet.index"),
-            {},
             {
                 preserveState: true,
                 preserveScroll: true,
@@ -49,275 +38,473 @@ export default function Marksheet({
         );
     };
 
-    const performersTable = (performers, assessmentType) => (
-        <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-                <thead>
-                    <tr className="border-b border-zinc-200 bg-zinc-50">
-                        <th className="px-4 py-3 font-semibold text-zinc-900">
-                            Rank
-                        </th>
-                        <th className="px-4 py-3 font-semibold text-zinc-900">
-                            Registration Number
-                        </th>
-                        <th className="px-4 py-3 font-semibold text-zinc-900">
-                            Student Name
-                        </th>
-                        <th className="px-4 py-3 font-semibold text-zinc-900">
-                            Marks
-                        </th>
-                        <th className="px-4 py-3 font-semibold text-zinc-900">
-                            Year of Study
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {performers.length > 0 ? (
-                        performers.map((performer, index) => (
-                            <tr
-                                key={index}
-                                className="border-b border-zinc-100 hover:bg-zinc-50"
-                            >
-                                <td className="px-4 py-3 font-semibold text-zinc-900">
-                                    #{index + 1}
-                                </td>
-                                <td className="px-4 py-3 font-mono text-zinc-700">
-                                    {performer.registration_number}
-                                </td>
-                                <td className="px-4 py-3 text-zinc-700">
-                                    {performer.student_name}
-                                </td>
-                                <td className="px-4 py-3 font-semibold text-emerald-700">
-                                    {performer.marks}
-                                </td>
-                                <td className="px-4 py-3 text-zinc-700">
-                                    Year {performer.year_of_study || "–"}
-                                </td>
-                            </tr>
-                        ))
-                    ) : (
-                        <tr>
-                            <td
-                                colSpan="5"
-                                className="px-4 py-8 text-center text-zinc-500"
-                            >
-                                No {assessmentType.toLowerCase()} marks
-                                available
-                            </td>
-                        </tr>
-                    )}
-                </tbody>
-            </table>
-        </div>
-    );
+    const syncAcademicYear = (academicYear) => {
+        router.get(
+            route("academic.marks.marksheet.index"),
+            {
+                curriculum_mapping_id: filterForm.data.curriculum_mapping_id,
+                curriculum_unit_id: filterForm.data.curriculum_unit_id,
+                academic_year_id: academicYear.id || "",
+                academic_session_id: "",
+            },
+            {
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+            },
+        );
+    };
+
+    const loadMarksheet = (event) => {
+        event.preventDefault();
+
+        router.get(route("academic.marks.marksheet.index"), filterForm.data, {
+            preserveState: true,
+            preserveScroll: true,
+        });
+    };
+
+    const downloadMarksheet = (format) => {
+        const params = new URLSearchParams();
+
+        Object.entries({
+            ...filterForm.data,
+            format,
+        }).forEach(([key, value]) => {
+            if (value !== null && value !== undefined && value !== "") {
+                params.set(key, value);
+            }
+        });
+
+        window.open(
+            `${route("academic.marks.marksheet.export")}?${params.toString()}`,
+            "_blank",
+            "noopener,noreferrer",
+        );
+    };
+
+    const rows = marksheet?.rows ?? [];
+    const pagination = marksheet?.pagination ?? {
+        current_page: 1,
+        last_page: 1,
+        total: rows.length,
+    };
+    const displayRows = Array.from({
+        length: Math.max(rows.length, 10),
+    }).map((_, index) => rows[index] || null);
+    const meta = marksheet?.meta ?? {};
+
+    const goToPage = (page) => {
+        router.get(
+            route("academic.marks.marksheet.index"),
+            {
+                ...filterForm.data,
+                page,
+            },
+            {
+                preserveState: true,
+                preserveScroll: true,
+            },
+        );
+    };
 
     return (
-        <AuthenticatedLayout
-            header={
-                <div>
-                    <h1 className="text-3xl font-semibold text-zinc-900">
-                        Marks Per Unit - Marksheet
-                    </h1>
-                    <p className="mt-2 max-w-3xl text-sm text-zinc-600">
-                        View top performers for a unit. Filter by session, year
-                        of study, or registration number to narrow results.
-                    </p>
-                </div>
-            }
-        >
-            <Head title="Unit Marksheet" />
+        <AuthenticatedLayout>
+            <Head title="FA Marksheet" />
 
             <div className="mx-auto max-w-7xl space-y-8">
-                {/* ── Filter Form ── */}
+                <MarksWorkspaceTabs
+                    activeTab="marksheet"
+                    canPublish={can_publish}
+                />
+
                 <form
                     onSubmit={loadMarksheet}
                     className="space-y-6 rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm"
                 >
-                    <div className="rounded-2xl border border-blue-200 bg-blue-50 px-5 py-4 text-sm text-blue-800">
-                        Enter a unit code to view the marksheet with top 3
-                        performers in theory and practical assessments.
-                    </div>
-
-                    <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-5">
-                        <div className="xl:col-span-2">
-                            <InputLabel value="Unit Code" required />
-                            <input
-                                type="text"
-                                value={
-                                    filterForm.data.curriculum_unit_code
-                                }
-                                onChange={(e) =>
+                    <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+                        <div>
+                            <InputLabel value="Course Mapping" required />
+                            <select
+                                value={filterForm.data.curriculum_mapping_id}
+                                onChange={(event) => {
                                     filterForm.setData(
-                                        "curriculum_unit_code",
-                                        e.target.value.toUpperCase(),
-                                    )
-                                }
-                                className="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none transition focus:border-blue-400"
-                                placeholder="e.g. ICT101"
-                            />
+                                        "curriculum_mapping_id",
+                                        event.target.value,
+                                    );
+                                    filterForm.setData("curriculum_unit_id", "");
+                                    filterForm.setData("academic_year_id", "");
+                                    filterForm.setData("academic_session_id", "");
+                                    loadUnits(event.target.value);
+                                }}
+                                className="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none transition focus:border-emerald-400"
+                            >
+                                <option value="">Select course mapping</option>
+                                {course_mappings.map((mapping) => (
+                                    <option key={mapping.id} value={mapping.id}>
+                                        {mapping.name}
+                                    </option>
+                                ))}
+                            </select>
                             <InputError
-                                message={
-                                    filterForm.errors.curriculum_unit_code
-                                }
+                                message={filterForm.errors.curriculum_mapping_id}
                                 className="mt-2"
                             />
                         </div>
 
                         <div>
-                            <InputLabel value="Academic Session" />
+                            <InputLabel value="Unit" required />
                             <div className="mt-2">
                                 <SearchSelect
-                                    routeName="academic-sessions.search"
-                                    value={filterForm.data.academic_session_id}
+                                    routeName="units.search"
+                                    routeParams={{
+                                        curriculum_mapping_id:
+                                            filterForm.data.curriculum_mapping_id,
+                                        limit: 10,
+                                    }}
+                                    defaultOptions={unit_options}
+                                    value={filterForm.data.curriculum_unit_id}
                                     selectedLabel={
-                                        selected_filters?.academic_session?.name
+                                        selected_unit
+                                            ? selected_unit.display_name
+                                            : null
                                     }
-                                    placeholder="Select academic session..."
-                                    defaultOptions={[]}
+                                    placeholder={
+                                        filterForm.data.curriculum_mapping_id
+                                            ? "Search unit..."
+                                            : "Select course mapping first..."
+                                    }
                                     preloadOptions
-                                    onChange={(academicSession) =>
+                                    onChange={(unit) =>
                                         filterForm.setData(
-                                            "academic_session_id",
-                                            academicSession.id || "",
+                                            "curriculum_unit_id",
+                                            unit.id || "",
                                         )
                                     }
+                                    error={filterForm.errors.curriculum_unit_id}
+                                    disabled={!filterForm.data.curriculum_mapping_id}
+                                />
+                            </div>
+                            <InputError
+                                message={filterForm.errors.curriculum_unit_id}
+                                className="mt-2"
+                            />
+                        </div>
+
+                        <div>
+                            <InputLabel value="Academic Year" />
+                            <div className="mt-2">
+                                <SearchSelect
+                                    routeName="academic.years.search"
+                                    value={filterForm.data.academic_year_id}
+                                    selectedLabel={
+                                        selected_filters?.academic_year?.name
+                                    }
+                                    placeholder="Select academic year..."
+                                    defaultOptions={
+                                        filter_options?.academic_years?.map(
+                                            (year) => ({
+                                                id: year.value,
+                                                name: year.label,
+                                            }),
+                                        ) ?? []
+                                    }
+                                    preloadOptions
+                                    onChange={(academicYear) => {
+                                        filterForm.setData(
+                                            "academic_year_id",
+                                            academicYear.id || "",
+                                        );
+                                        filterForm.setData(
+                                            "academic_session_id",
+                                            "",
+                                        );
+                                        syncAcademicYear(academicYear);
+                                    }}
                                 />
                             </div>
                         </div>
 
                         <div>
-                            <InputLabel value="Year of Study" />
-                            <select
-                                value={filterForm.data.year_of_study}
-                                onChange={(e) =>
-                                    filterForm.setData(
-                                        "year_of_study",
-                                        e.target.value,
-                                    )
-                                }
-                                className="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none transition focus:border-blue-400"
-                            >
-                                <option value="">All years</option>
-                                {available_years.map((option) => (
-                                    <option
-                                        key={option.value}
-                                        value={option.value}
-                                    >
-                                        {option.label}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <div>
-                            <InputLabel value="Registration Number" />
-                            <input
-                                type="text"
-                                value={filterForm.data.registration_number}
-                                onChange={(e) =>
-                                    filterForm.setData(
-                                        "registration_number",
-                                        e.target.value.toUpperCase(),
-                                    )
-                                }
-                                className="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none transition focus:border-blue-400"
-                                placeholder="e.g. REG001"
-                            />
+                            <InputLabel value="Session" />
+                            <div className="mt-2">
+                                <SearchSelect
+                                    routeName="academic.sessions.search"
+                                    routeParams={{
+                                        academic_year_id:
+                                            filterForm.data.academic_year_id,
+                                    }}
+                                    value={filterForm.data.academic_session_id}
+                                    selectedLabel={
+                                        selected_filters?.academic_session?.name
+                                    }
+                                    placeholder={
+                                        filterForm.data.academic_year_id
+                                            ? "Search session..."
+                                            : "Select academic year first..."
+                                    }
+                                    defaultOptions={
+                                        filter_options?.sessions?.map(
+                                            (session) => ({
+                                                id: session.value,
+                                                name: session.label,
+                                            }),
+                                        ) ?? []
+                                    }
+                                    preloadOptions
+                                    onChange={(session) =>
+                                        filterForm.setData(
+                                            "academic_session_id",
+                                            session.id || "",
+                                        )
+                                    }
+                                    disabled={!filterForm.data.academic_year_id}
+                                />
+                            </div>
                         </div>
                     </div>
 
                     <div className="flex gap-4">
                         <button
                             type="submit"
-                            className="rounded-xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
+                            disabled={!filterForm.data.curriculum_unit_id}
+                            className="rounded-xl bg-emerald-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             Load Marksheet
                         </button>
                         <button
                             type="button"
-                            onClick={resetFilters}
-                            className="rounded-xl border border-zinc-200 bg-white px-6 py-3 text-sm font-semibold text-zinc-900 transition hover:bg-zinc-50"
+                            onClick={() => downloadMarksheet("csv")}
+                            disabled={!filterForm.data.curriculum_unit_id}
+                            className="rounded-xl border border-zinc-200 bg-white px-6 py-3 text-sm font-semibold text-zinc-900 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                            Reset Filters
+                            Download CSV
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => downloadMarksheet("excel")}
+                            disabled={!filterForm.data.curriculum_unit_id}
+                            className="rounded-xl border border-zinc-200 bg-white px-6 py-3 text-sm font-semibold text-zinc-900 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            Download Excel
                         </button>
                     </div>
                 </form>
 
-                {/* ── Blocker ── */}
-                {blocker && (
-                    <div className="rounded-3xl border border-red-200 bg-red-50 p-8 text-center">
-                        <p className="text-sm text-red-800">{blocker}</p>
+                {blocker ? (
+                    <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
+                        {blocker}
                     </div>
-                )}
+                ) : null}
 
-                {/* ── Unit Info ── */}
-                {selected_unit && (
-                    <div className="rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
-                        <h2 className="text-xl font-semibold text-zinc-900">
-                            {selected_unit.code}
-                        </h2>
-                        <p className="mt-1 text-sm text-zinc-600">
-                            {selected_unit.name}
-                        </p>
-                    </div>
-                )}
+                {selected_unit && !blocker ? (
+                    <div className="overflow-hidden rounded-3xl border border-zinc-300 bg-white p-6 shadow-sm">
+                        <div className="space-y-4 text-[13px] text-zinc-900">
+                            <div className="text-sm font-semibold">
+                                {meta.session_name || ""}
+                            </div>
 
-                {/* ── Marksheet Results ── */}
-                {selected_unit && !blocker && (
-                    <div className="space-y-8">
-                        {/* Theory */}
-                        <div className="rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
-                            <div className="mb-6 flex items-center justify-between">
+                            <div className="text-center text-base font-bold uppercase tracking-wide text-blue-800 underline">
+                                Formative Assessment (FA) Marksheet Per Unit of
+                                Competency
+                            </div>
+
+                            <div className="grid gap-x-10 gap-y-2 md:grid-cols-3">
                                 <div>
-                                    <h3 className="text-xl font-semibold text-zinc-900">
-                                        Theory Assessment
-                                    </h3>
-                                    <p className="mt-1 text-sm text-zinc-600">
-                                        Top 3 performers
-                                    </p>
+                                    <span className="font-semibold">
+                                        Assessment Center Code:
+                                    </span>{" "}
+                                    {meta.assessment_center_code || ""}
                                 </div>
-                                <div className="text-right">
-                                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
-                                        Average Score
-                                    </p>
-                                    <p className="mt-2 text-3xl font-semibold text-blue-600">
-                                        {marksheet_data.theory?.average ?? 0}
-                                    </p>
+                                <div>
+                                    <span className="font-semibold">
+                                        Assessment Center Name:
+                                    </span>{" "}
+                                    {meta.assessment_center_name || ""}
+                                </div>
+                                <div>
+                                    <span className="font-semibold">
+                                        Term Dates:
+                                    </span>{" "}
+                                    From {meta.term_from ? formatDate(meta.term_from) : ""}
+                                    {" "}to{" "}
+                                    {meta.term_to ? formatDate(meta.term_to) : ""}
+                                </div>
+                                <div>
+                                    <span className="font-semibold">
+                                        Course Code:
+                                    </span>{" "}
+                                    {meta.course_code || ""}
+                                </div>
+                                <div>
+                                    <span className="font-semibold">
+                                        Course Title:
+                                    </span>{" "}
+                                    {meta.course_title || ""}
+                                </div>
+                                <div>
+                                    <span className="font-semibold">
+                                        Unit Code:
+                                    </span>{" "}
+                                    {meta.unit_code || ""}
+                                </div>
+                                <div className="md:col-span-3">
+                                    <span className="font-semibold">
+                                        Unit Title:
+                                    </span>{" "}
+                                    {meta.unit_title || ""}
                                 </div>
                             </div>
-                            {performersTable(
-                                marksheet_data.theory?.top_performers ?? [],
-                                "Theory",
-                            )}
-                        </div>
 
-                        {/* Practical */}
-                        <div className="rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
-                            <div className="mb-6 flex items-center justify-between">
-                                <div>
-                                    <h3 className="text-xl font-semibold text-zinc-900">
-                                        Practical Assessment
-                                    </h3>
-                                    <p className="mt-1 text-sm text-zinc-600">
-                                        Top 3 performers
-                                    </p>
-                                </div>
-                                <div className="text-right">
-                                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
-                                        Average Score
-                                    </p>
-                                    <p className="mt-2 text-3xl font-semibold text-emerald-600">
-                                        {marksheet_data.practical?.average ?? 0}
-                                    </p>
-                                </div>
+                            <div className="overflow-x-auto">
+                                <table className="w-full min-w-[1100px] border-collapse border border-zinc-500 text-[12px]">
+                                    <thead>
+                                        <tr className="bg-white">
+                                            <th
+                                                rowSpan="2"
+                                                className="border border-zinc-500 bg-zinc-50 px-2 py-2 text-left"
+                                            >
+                                                S/N
+                                            </th>
+                                            <th
+                                                rowSpan="2"
+                                                className="border border-zinc-500 bg-zinc-50 px-2 py-2 text-left"
+                                            >
+                                                Candidate&apos;s Reg Code
+                                            </th>
+                                            <th
+                                                rowSpan="2"
+                                                className="border border-zinc-500 bg-zinc-50 px-2 py-2 text-left"
+                                            >
+                                                Candidate&apos;s Name
+                                            </th>
+                                            <th
+                                                colSpan="4"
+                                                className="border border-zinc-500 bg-zinc-200 px-2 py-2 text-center"
+                                            >
+                                                Continuous Theory (CT) Marks
+                                                (100%)
+                                            </th>
+                                            <th
+                                                colSpan="4"
+                                                className="border border-zinc-500 bg-orange-100 px-2 py-2 text-center"
+                                            >
+                                                Continuous Practical (CP) Marks
+                                                (100%)
+                                            </th>
+                                        </tr>
+                                        <tr className="bg-white">
+                                            <th className="border border-zinc-500 bg-zinc-100 px-2 py-2 text-center">
+                                                FA 1
+                                            </th>
+                                            <th className="border border-zinc-500 bg-zinc-100 px-2 py-2 text-center">
+                                                FA 2
+                                            </th>
+                                            <th className="border border-zinc-500 bg-zinc-100 px-2 py-2 text-center">
+                                                FA 3
+                                            </th>
+                                            <th className="border border-zinc-500 bg-zinc-200 px-2 py-2 text-center">
+                                                Average
+                                            </th>
+                                            <th className="border border-zinc-500 bg-orange-50 px-2 py-2 text-center">
+                                                Pract 1
+                                            </th>
+                                            <th className="border border-zinc-500 bg-orange-50 px-2 py-2 text-center">
+                                                Pract 2
+                                            </th>
+                                            <th className="border border-zinc-500 bg-orange-50 px-2 py-2 text-center">
+                                                Pract 3
+                                            </th>
+                                            <th className="border border-zinc-500 bg-orange-100 px-2 py-2 text-center">
+                                                Average
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {displayRows.map((row, index) => (
+                                            <tr key={row?.registration_number || `blank-${index}`}>
+                                                <td className="border border-zinc-500 px-2 py-2 text-center">
+                                                    {row ? `${index + 1}.` : ""}
+                                                </td>
+                                                <td className="border border-zinc-500 px-2 py-2">
+                                                    {row?.registration_number || ""}
+                                                </td>
+                                                <td className="border border-zinc-500 px-2 py-2">
+                                                    {row?.student_name || ""}
+                                                </td>
+                                                <td className="border border-zinc-500 px-2 py-2 text-center">
+                                                    {row?.theory?.[1] || ""}
+                                                </td>
+                                                <td className="border border-zinc-500 px-2 py-2 text-center">
+                                                    {row?.theory?.[2] || ""}
+                                                </td>
+                                                <td className="border border-zinc-500 px-2 py-2 text-center">
+                                                    {row?.theory?.[3] || ""}
+                                                </td>
+                                                <td className="border border-zinc-500 bg-zinc-100 px-2 py-2 text-center font-semibold text-rose-700">
+                                                    {row?.theory_average || ""}
+                                                </td>
+                                                <td className="border border-zinc-500 px-2 py-2 text-center">
+                                                    {row?.practical?.[1] || ""}
+                                                </td>
+                                                <td className="border border-zinc-500 px-2 py-2 text-center">
+                                                    {row?.practical?.[2] || ""}
+                                                </td>
+                                                <td className="border border-zinc-500 px-2 py-2 text-center">
+                                                    {row?.practical?.[3] || ""}
+                                                </td>
+                                                <td className="border border-zinc-500 bg-orange-50 px-2 py-2 text-center font-semibold text-rose-700">
+                                                    {row?.practical_average || ""}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
                             </div>
-                            {performersTable(
-                                marksheet_data.practical?.top_performers ?? [],
-                                "Practical",
-                            )}
+
+                            {pagination.last_page > 1 ? (
+                                <div className="flex items-center justify-between pt-3">
+                                    <div className="text-sm text-zinc-600">
+                                        Page {pagination.current_page} of{" "}
+                                        {pagination.last_page} | {pagination.total}{" "}
+                                        students
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                goToPage(
+                                                    pagination.current_page - 1,
+                                                )
+                                            }
+                                            disabled={
+                                                pagination.current_page === 1
+                                            }
+                                            className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40"
+                                        >
+                                            Prev
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                goToPage(
+                                                    pagination.current_page + 1,
+                                                )
+                                            }
+                                            disabled={
+                                                pagination.current_page ===
+                                                pagination.last_page
+                                            }
+                                            className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40"
+                                        >
+                                            Next
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : null}
                         </div>
                     </div>
-                )}
+                ) : null}
             </div>
         </AuthenticatedLayout>
     );

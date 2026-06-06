@@ -304,8 +304,14 @@ Route::middleware(['auth', 'non_student'])->group(function () {
         Route::get('/add', [StudentMarkController::class, 'addIndex'])->name('add.index');
         Route::post('/add', [StudentMarkController::class, 'store'])->name('add.store');
         Route::get('/view', [StudentMarkController::class, 'viewIndex'])->name('view.index');
+        Route::get('/export', [StudentMarkController::class, 'export'])
+            ->middleware('throttle:4,1')
+            ->name('export');
         Route::get('/marksheet', [StudentMarkController::class, 'marksheetIndex'])
             ->name('marksheet.index');
+        Route::get('/marksheet/export', [StudentMarkController::class, 'marksheetExport'])
+            ->middleware('throttle:4,1')
+            ->name('marksheet.export');
         Route::middleware('role:admin|hod')->group(function () {
             Route::get('/publish', [StudentMarkController::class, 'publishIndex'])
                 ->name('publish.index');

@@ -19,10 +19,10 @@ export default function View({
     const filterForm = useForm({
         curriculum_mapping_id: filters.curriculum_mapping_id || "",
         curriculum_unit_id: filters.curriculum_unit_id || "",
-        assessment_type: filters.assessment_type || "theory",
-        assessment_number: filters.assessment_number || "1",
+        assessment_type: filters.assessment_type || "",
+        assessment_number: filters.assessment_number || "",
         academic_year_id: filters.academic_year_id || "",
-        module: filters.module || "",
+        academic_session_id: filters.academic_session_id || "",
     });
 
     const marks = submitted_marks?.data ?? [];
@@ -62,8 +62,29 @@ export default function View({
                 assessment_type: filterForm.data.assessment_type,
                 assessment_number: filterForm.data.assessment_number,
                 academic_year_id: academicYear.id || "",
+                academic_session_id: "",
             },
             { preserveState: true, preserveScroll: true, replace: true },
+        );
+    };
+
+    const exportMarks = (format) => {
+        const params = new URLSearchParams();
+
+        Object.entries({
+            ...filterForm.data,
+            format,
+            context: "view",
+        }).forEach(([key, value]) => {
+            if (value !== null && value !== undefined && value !== "") {
+                params.set(key, value);
+            }
+        });
+
+        window.open(
+            `${route("academic.marks.export")}?${params.toString()}`,
+            "_blank",
+            "noopener,noreferrer",
         );
     };
 
@@ -90,7 +111,7 @@ export default function View({
                                     );
                                     filterForm.setData("curriculum_unit_id", "");
                                     filterForm.setData("academic_year_id", "");
-                                    filterForm.setData("module", "");
+                                    filterForm.setData("academic_session_id", "");
                                     loadUnits(e.target.value);
                                 }}
                                 className="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none transition focus:border-emerald-400"
@@ -122,7 +143,7 @@ export default function View({
                                     value={filterForm.data.curriculum_unit_id}
                                     selectedLabel={
                                         selected_unit
-                                            ? `${selected_unit.course} / Module ${selected_unit.module} / ${selected_unit.code} - ${selected_unit.name}`
+                                            ? selected_unit.display_name
                                             : null
                                     }
                                     placeholder={
@@ -148,7 +169,7 @@ export default function View({
                         </div>
 
                         <div>
-                            <InputLabel value="Assessment Type" required />
+                            <InputLabel value="Assessment Type" />
                             <select
                                 value={filterForm.data.assessment_type}
                                 onChange={(e) =>
@@ -159,45 +180,74 @@ export default function View({
                                 }
                                 className="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none transition focus:border-emerald-400"
                             >
+                                <option value="">All Assessment Types</option>
                                 <option value="theory">Theory</option>
                                 <option value="practical">Practical</option>
                             </select>
                         </div>
 
                         <div>
-                            <InputLabel value="Assessment Number" required />
+                            <InputLabel value="Assessment Number" />
                             <input
                                 type="number"
                                 min="1"
+                                step="1"
+                                list="view-assessment-number-options"
                                 value={filterForm.data.assessment_number}
-                                onChange={(e) =>
+                                onChange={(e) => {
+                                    const value = e.target.value;
                                     filterForm.setData(
                                         "assessment_number",
-                                        e.target.value,
-                                    )
-                                }
+                                        value === ""
+                                            ? ""
+                                            : value.replace(/\D/g, ""),
+                                    );
+                                }}
+                                placeholder="All Assessments or type a number"
                                 className="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none transition focus:border-emerald-400"
                             />
+                            <datalist id="view-assessment-number-options">
+                                {(filter_options?.assessment_numbers ?? []).map(
+                                    (assessment) => (
+                                        <option
+                                            key={assessment.value}
+                                            value={assessment.value}
+                                        >
+                                            {assessment.label}
+                                        </option>
+                                    ),
+                                )}
+                            </datalist>
                         </div>
 
                         <div>
                             <InputLabel value="Academic Year" />
                             <div className="mt-2">
                                 <SearchSelect
-                                    routeName="academic-years.search"
+                                    routeName="academic.years.search"
                                     value={filterForm.data.academic_year_id}
                                     selectedLabel={
                                         selected_filters?.academic_year?.name
                                     }
                                     placeholder="Select academic year..."
-                                    defaultOptions={[]}
+                                    defaultOptions={
+                                        filter_options?.academic_years?.map(
+                                            (year) => ({
+                                                id: year.value,
+                                                name: year.label,
+                                            }),
+                                        ) ?? []
+                                    }
                                     preloadOptions
                                     onChange={(academicYear) => {
                                         filterForm.setData(
                                             "academic_year_id",
                                             academicYear.id || "",
                                         );
-                                        filterForm.setData("module", "");
+                                        filterForm.setData(
+                                            "academic_session_id",
+                                            "",
+                                        );
                                         syncAcademicYear(academicYear);
                                     }}
                                 />
@@ -205,21 +255,41 @@ export default function View({
                         </div>
 
                         <div>
-                            <InputLabel value="Module" />
-                            <select
-                                value={filterForm.data.module}
-                                onChange={(e) =>
-                                    filterForm.setData("module", e.target.value)
-                                }
-                                className="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none transition focus:border-emerald-400"
-                            >
-                                <option value="">All Modules</option>
-                                {(filter_options?.modules ?? []).map((module) => (
-                                    <option key={module.value} value={module.value}>
-                                        {module.label}
-                                    </option>
-                                ))}
-                            </select>
+                            <InputLabel value="Session" />
+                            <div className="mt-2">
+                                <SearchSelect
+                                    routeName="academic.sessions.search"
+                                    routeParams={{
+                                        academic_year_id:
+                                            filterForm.data.academic_year_id,
+                                    }}
+                                    value={filterForm.data.academic_session_id}
+                                    selectedLabel={
+                                        selected_filters?.academic_session?.name
+                                    }
+                                    placeholder={
+                                        filterForm.data.academic_year_id
+                                            ? "Search session..."
+                                            : "Select academic year first..."
+                                    }
+                                    defaultOptions={
+                                        filter_options?.sessions?.map(
+                                            (session) => ({
+                                                id: session.value,
+                                                name: session.label,
+                                            }),
+                                        ) ?? []
+                                    }
+                                    preloadOptions
+                                    onChange={(session) =>
+                                        filterForm.setData(
+                                            "academic_session_id",
+                                            session.id || "",
+                                        )
+                                    }
+                                    disabled={!filterForm.data.academic_year_id}
+                                />
+                            </div>
                         </div>
                     </div>
 
@@ -245,6 +315,25 @@ export default function View({
                             Search Marks
                         </button>
                     </div>
+
+                    <div className="mt-4 flex flex-wrap gap-3">
+                        <button
+                            type="button"
+                            onClick={() => exportMarks("csv")}
+                            disabled={!filterForm.data.curriculum_unit_id}
+                            className="rounded-xl border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            Export CSV
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => exportMarks("excel")}
+                            disabled={!filterForm.data.curriculum_unit_id}
+                            className="rounded-xl border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            Export Excel
+                        </button>
+                    </div>
                 </div>
 
                 {blocker && (
@@ -258,8 +347,8 @@ export default function View({
                         Submitted Marks
                     </h2>
                     <p className="mt-1 text-sm text-zinc-500">
-                        Results are shown for the selected theory or practical
-                        assessment number.
+                        Results are shown for the selected assessment filters,
+                        with pagination when multiple assessments are included.
                     </p>
 
                     <div className="mt-6 overflow-hidden rounded-2xl border border-zinc-100">
@@ -270,6 +359,9 @@ export default function View({
                                         <th className="px-4 py-3 text-left">Reg. No.</th>
                                         <th className="px-4 py-3 text-left">Student</th>
                                         <th className="px-4 py-3 text-left">Unit</th>
+                                        <th className="px-4 py-3 text-left">Session</th>
+                                        <th className="px-4 py-3 text-left">Type</th>
+                                        <th className="px-4 py-3 text-left">Assessment</th>
                                         <th className="px-4 py-3 text-left">Marks</th>
                                         <th className="px-4 py-3 text-left">Status</th>
                                     </tr>
@@ -286,6 +378,15 @@ export default function View({
                                                 </td>
                                                 <td className="px-4 py-3 text-zinc-700">
                                                     {mark.unit_name || "-"}
+                                                </td>
+                                                <td className="px-4 py-3 text-zinc-700">
+                                                    {mark.session_name || "-"}
+                                                </td>
+                                                <td className="px-4 py-3 text-zinc-700">
+                                                    {mark.assessment_type || "-"}
+                                                </td>
+                                                <td className="px-4 py-3 text-zinc-700">
+                                                    {mark.assessment_number || "-"}
                                                 </td>
                                                 <td className="px-4 py-3 font-semibold text-zinc-900">
                                                     {mark.marks}
@@ -308,11 +409,11 @@ export default function View({
                                     ) : (
                                         <tr>
                                             <td
-                                                colSpan="5"
+                                                colSpan="8"
                                                 className="px-4 py-8 text-center text-sm text-zinc-500"
                                             >
                                                 {submitted_marks
-                                                    ? "No submitted marks found for this assessment."
+                                                    ? "No submitted marks found for the selected filters."
                                                     : "Run a search to view submitted marks."}
                                             </td>
                                         </tr>

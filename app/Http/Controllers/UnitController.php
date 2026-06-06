@@ -203,12 +203,7 @@ class UnitController extends Controller
             ->get(['id', 'curriculum_mapping_id', 'code', 'name', 'module_taught'])
             ->map(fn (Unit $unit) => [
                 'id' => (string) $unit->id,
-                'name' => trim(
-                    ($unit->curriculumMapping?->course?->name ?? '').
-                    ' / Module '.($unit->module_taught ?: '?').
-                    ' / '.($unit->code ?? '').
-                    ' - '.($unit->name ?? '')
-                ),
+                'name' => trim(($unit->code ?? '').' - '.($unit->name ?? ''), ' -'),
             ])
             ->values();
 

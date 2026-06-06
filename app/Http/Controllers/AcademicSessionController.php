@@ -106,10 +106,33 @@ class AcademicSessionController extends Controller
 
     public function search(Request $request)
     {
-        return AcademicSession::active()
-            ->where('session_No', 'like', '%'.$request->get('q').'%')
-            ->orderBy('start_date', 'desc')
-            ->get(['id', 'session_No as name']);
+        $query = trim((string) $request->query('q', ''));
+        $academicYearId = $request->integer('academic_year_id') ?: null;
+
+        return AcademicSession::query()
+            ->with('academicYear:id,label,academic_year')
+            ->when($academicYearId, fn ($builder) => $builder->where('academic_year_id', $academicYearId))
+            ->when($query !== '', function ($builder) use ($query) {
+                $builder->where(function ($sessionQuery) use ($query) {
+                    $sessionQuery
+                        ->where('session_No', 'like', "%{$query}%")
+                        ->orWhere('session_number', 'like', "%{$query}%")
+                        ->orWhere('label', 'like', "%{$query}%")
+                        ->orWhereHas('academicYear', function ($yearQuery) use ($query) {
+                            $yearQuery
+                                ->where('label', 'like', "%{$query}%")
+                                ->orWhere('academic_year', 'like', "%{$query}%");
+                        });
+                });
+            })
+            ->orderByDesc('academic_year_id')
+            ->orderBy('session_No')
+            ->get(['id', 'academic_year_id', 'session_No', 'session_number', 'label'])
+            ->map(fn (AcademicSession $session) => [
+                'id' => (string) $session->id,
+                'name' => $session->display_name,
+            ])
+            ->values();
     }
 
     protected function academicYearsList(Request $request)
