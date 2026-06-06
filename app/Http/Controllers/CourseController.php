@@ -10,14 +10,14 @@ use App\Models\Course;
 use App\Models\Curriculum;
 use App\Models\Department;
 use App\Models\ExamBody;
-use App\Services\courseService;
+use App\Services\CourseService;
 use Illuminate\Http\Request;
 
 class CourseController extends Controller
 {
     protected $service;
 
-    public function __construct(courseService $service)
+    public function __construct(CourseService $service)
     {
         $this->service = $service;
     }
@@ -198,5 +198,4 @@ class CourseController extends Controller
             'curriculum' => $curriculum?->name,
         ];
     }
-
 }
