@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Filters\courseFilter;
+use App\Filters\CourseFilter;
 use App\Http\Requests\StorecourseRequest;
 use App\Http\Requests\UpdatecourseRequest;
 use App\Models\CertificationLevel;
@@ -22,7 +22,7 @@ class CourseController extends Controller
         $this->service = $service;
     }
 
-    public function index(courseFilter $filter)
+    public function index(CourseFilter $filter)
     {
         $filters = request()->only([
             'search',
