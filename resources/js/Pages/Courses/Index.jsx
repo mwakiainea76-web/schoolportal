@@ -10,6 +10,7 @@ import Tdata from "@/Components/Table/Tdata";
 import formatDate from "@/utils/date";
 import SearchSelect from "@/Components/SearchSelect";
 import InputLabel from "@/Components/InputLabel";
+import CourseWorkspaceTabs from "@/Pages/Courses/Partials/CourseWorkspaceTabs";
 
 export default function coursesIndex({
     courses,
@@ -117,6 +118,9 @@ export default function coursesIndex({
             <Head title="Courses" />
 
             <div className="max-w-6xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <div className="mb-6">
+                    <CourseWorkspaceTabs activeTab="courses" />
+                </div>
                 <form className="mb-4 rounded-lg border border-zinc-100 bg-white p-4 shadow-sm" onSubmit={submit}>
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                         <div>

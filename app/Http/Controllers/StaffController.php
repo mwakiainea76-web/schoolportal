@@ -300,4 +300,43 @@ class StaffController extends Controller
     {
         //
     }
+
+    public function search(Request $request)
+    {
+        $limit = min(max($request->integer('limit', 10), 1), 25);
+        $departmentId = $request->integer('department_id') ?: null;
+        $query = trim((string) $request->query('q', ''));
+
+        $staffs = Staff::query()
+            ->with('user:id,first_name,last_name,email')
+            ->where('staff_status', 'active')
+            ->when($departmentId, fn ($builder) => $builder->where('department_id', $departmentId))
+            ->when($query !== '', function ($builder) use ($query) {
+                $builder->where(function ($searchQuery) use ($query) {
+                    $searchQuery
+                        ->where('staff_number', 'like', "%{$query}%")
+                        ->orWhere('designation', 'like', "%{$query}%")
+                        ->orWhereHas('user', function ($userQuery) use ($query) {
+                            $userQuery
+                                ->where('first_name', 'like', "%{$query}%")
+                                ->orWhere('last_name', 'like', "%{$query}%")
+                                ->orWhere('email', 'like', "%{$query}%");
+                        });
+                });
+            })
+            ->orderByDesc('id')
+            ->limit($limit)
+            ->get(['id', 'user_id', 'staff_number', 'designation'])
+            ->map(fn (Staff $staff) => [
+                'id' => (string) $staff->id,
+                'name' => collect([
+                    trim(($staff->user?->first_name ?? '').' '.($staff->user?->last_name ?? '')),
+                    $staff->staff_number,
+                    $staff->designation,
+                ])->filter()->implode(' - '),
+            ])
+            ->values();
+
+        return response()->json($staffs);
+    }
 }

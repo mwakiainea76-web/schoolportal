@@ -1,6 +1,7 @@
 import { Head, Link, router } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import SearchSelect from "@/Components/SearchSelect";
+import TimetableWorkspaceTabs from "@/Pages/Academic/Timetables/Partials/TimetableWorkspaceTabs";
 
 export default function Index({
     weekly_board,
@@ -87,14 +88,10 @@ export default function Index({
                           filters.module_number)),
           );
 
-    const boardSessions = weekly_board.flatMap((day) => day.sessions);
-    const totalSessions = boardSessions.length;
-    const totalTrainers = new Set(
-        boardSessions.map((item) => item.trainer_staff_id),
-    ).size;
-    const totalUnits = new Set(
-        boardSessions.flatMap((item) => item.curriculum_unit_ids || []),
-    ).size;
+    const addTimetableHref = is_hod
+        ? route("academic.timetables.hod.create")
+        : route("academic.timetables.create");
+    const canAddTimetable = is_hod || is_trainer;
     const handleDownloadPdf = () => {
         window.print();
     };
@@ -106,33 +103,7 @@ export default function Index({
         : "grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6";
 
     return (
-        <AuthenticatedLayout
-            header={
-                <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-                    <div>
-                        <h1 className="text-3xl font-semibold text-zinc-900">
-                            Department Timetable
-                        </h1>
-                        <p className="mt-2 max-w-3xl text-sm text-zinc-600">
-                            Schedule real teaching sessions by trainer, room,
-                            day, and time, while allowing equivalent curriculum
-                            units from different courses to be merged into one
-                            class.
-                        </p>
-                    </div>
-                    <div className="flex flex-col gap-3 sm:flex-row">
-                        {!is_trainer ? (
-                            <Link
-                                href={route("lecture-rooms.index")}
-                                className="inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-white px-5 py-3 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
-                            >
-                                Manage Rooms
-                            </Link>
-                        ) : null}
-                    </div>
-                </div>
-            }
-        >
+        <AuthenticatedLayout>
             <Head title="Department Timetable" />
             <style>{`
                 @media print {
@@ -172,42 +143,21 @@ export default function Index({
             `}</style>
 
             <div className="space-y-8">
-                <section className="grid gap-4 md:grid-cols-3">
-                    <div className="rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-lime-50 p-6 shadow-sm">
-                        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">
-                            Weekly Sessions
-                        </p>
-                        <p className="mt-4 text-3xl font-semibold text-zinc-900">
-                            {totalSessions}
-                        </p>
-                        <p className="mt-2 text-sm text-zinc-600">
-                            Scheduled weekly class meetings across the filtered
-                            department.
-                        </p>
-                    </div>
-                    <div className="rounded-3xl border border-sky-100 bg-gradient-to-br from-sky-50 via-white to-cyan-50 p-6 shadow-sm">
-                        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-700">
-                            Trainers Scheduled
-                        </p>
-                        <p className="mt-4 text-3xl font-semibold text-zinc-900">
-                            {totalTrainers}
-                        </p>
-                        <p className="mt-2 text-sm text-zinc-600">
-                            Staff currently carrying timetable load in this
-                            filtered view.
-                        </p>
-                    </div>
-                    <div className="rounded-3xl border border-amber-100 bg-gradient-to-br from-amber-50 via-white to-orange-50 p-6 shadow-sm">
-                        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-700">
-                            Units Covered
-                        </p>
-                        <p className="mt-4 text-3xl font-semibold text-zinc-900">
-                            {totalUnits}
-                        </p>
-                        <p className="mt-2 text-sm text-zinc-600">
-                            Course version units currently mapped into those
-                            scheduled classes.
-                        </p>
+                <section>
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <TimetableWorkspaceTabs
+                            activeTab="view"
+                            addHref={addTimetableHref}
+                            canAdd={canAddTimetable}
+                        />
+                        {!is_trainer ? (
+                            <Link
+                                href={route("lecture-rooms.index")}
+                                className="inline-flex items-center justify-center rounded-xl border border-zinc-200 bg-white px-5 py-3 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
+                            >
+                                Manage Rooms
+                            </Link>
+                        ) : null}
                     </div>
                 </section>
 

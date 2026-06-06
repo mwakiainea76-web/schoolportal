@@ -33,69 +33,35 @@ export default function Sidebar({
           : "Admin Dashboard";
     const navItems = hasRole("student") ? STUDENT_NAV_ITEMS : STAFF_NAV_ITEMS;
     const visibleNav = filterNav(navItems, can);
-    const marksQuickLinks = [
-        ...(hasRole("admin")
-            ? [
-                  {
-                      label: "Staff Marks",
-                      routeName: "academic.marks.index",
-                      fallback: "/academic/marks",
-                  },
-              ]
-            : []),
-        ...((hasRole("admin") || hasRole("hod"))
-            ? [
-                  {
-                      label: "HOD Marks",
-                      routeName: "academic.marks.publish.index",
-                      fallback: "/academic/marks/publish",
-                  },
-              ]
-            : []),
-        ...(hasRole("trainer")
-            ? [
-                  {
-                      label: "Grade Students",
-                      routeName: "academic.marks.index",
-                      fallback: "/academic/marks",
-                  },
-              ]
-            : []),
-        ...(hasRole("trainer")
-            ? [
-                  {
-                      label: "Unit Marksheet",
-                      routeName: "academic.marks.marksheet.index",
-                      fallback: "/academic/marks/marksheet",
-                  },
-              ]
-            : []),
-    ];
-    const timetableQuickLinks = [
-        ...(hasRole("hod")
-            ? [
-                  {
-                      label: "Create Timetable",
-                      routeName: "academic.timetables.hod.create",
-                      fallback: "/academic/timetables/create/hod",
-                  },
-                  {
-                      label: "View Timetable",
-                      routeName: "academic.timetables.index",
-                      fallback: "/academic/timetables",
-                  },
-              ]
-            : []),
-        ...(hasRole("trainer")
-            ? [
-                  {
-                      label: "My Timetable",
-                      routeName: "academic.timetables.index",
-                      fallback: "/academic/timetables",
-                  },
-              ]
-            : []),
-    ];
+    const timetableQuickLinks = !hasRole("student") &&
+        (hasRole("admin") || hasRole("hod") || hasRole("trainer"))
+        ? [
+              {
+                  label: "Timetable Workspace",
+                  routeName: "academic.timetables.index",
+                  fallback: "/academic/timetables",
+              },
+          ]
+        : [];
+    const marksQuickLinks = !hasRole("student") &&
+        (hasRole("admin") || hasRole("hod") || hasRole("trainer"))
+        ? [
+              {
+                  label: "Marks Workspace",
+                  routeName: "academic.marks.add.index",
+                  fallback: "/academic/marks/add",
+              },
+          ]
+        : [];
+    const hostelQuickLinks = hasRole("admin")
+        ? [
+              {
+                  label: "Hostel Workspace",
+                  routeName: "hostels.index",
+                  fallback: "/hostels",
+              },
+          ]
+        : [];
     const quickSections = [
         ...(timetableQuickLinks.length
             ? [
@@ -108,7 +74,7 @@ export default function Sidebar({
                   },
               ]
             : []),
-        ...(!hasRole("student") && marksQuickLinks.length
+        ...(marksQuickLinks.length
             ? [
                   {
                       key: "marks-workspace",
@@ -116,6 +82,17 @@ export default function Sidebar({
                       icon: "academic",
                       basePath: "/academic/marks",
                       children: marksQuickLinks,
+                  },
+              ]
+            : []),
+        ...(hostelQuickLinks.length
+            ? [
+                  {
+                      key: "hostel-workspace",
+                      label: "Hostel Workspace",
+                      icon: "students",
+                      basePath: "/hostel",
+                      children: hostelQuickLinks,
                   },
               ]
             : []),

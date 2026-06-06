@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\AcademicTimetable;
 use App\Models\AcademicSession;
-use App\Models\Unit;
+use App\Models\AcademicTimetable;
 use App\Models\Staff;
 use App\Models\StudentInvoice;
 use App\Models\StudentMark;
 use App\Models\StudentUnitRegistration;
+use App\Models\Unit;
 use App\Models\User;
 use App\Services\FeeAssignmentService;
 use App\Services\StudentAcademicContextService;
@@ -83,8 +83,7 @@ class DashboardController extends Controller
             ? Unit::query()
                 ->where('curriculum_mapping_id', $courseEnrollment->curriculum_mapping_id)
                 ->where(function ($query) use ($currentModule) {
-                    $query->where('module', $currentModule)
-                        ->orWhere('module_taught', $currentModule);
+                    $query->where('module_taught', $currentModule);
                 })
                 ->orderBy('id')
                 ->get()

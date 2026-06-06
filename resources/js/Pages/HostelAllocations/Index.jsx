@@ -8,6 +8,7 @@ import THdata from "@/Components/Table/THdata";
 import Thead from "@/Components/Table/Thead";
 import Trow from "@/Components/Table/Trow";
 import formatDate from "@/utils/date";
+import HostelWorkspaceTabs from "@/Pages/Hostels/Partials/HostelWorkspaceTabs";
 
 const currency = (amount) =>
     `Ksh ${new Intl.NumberFormat("en-KE", {
@@ -49,19 +50,7 @@ export default function Index({ allocations, filters, hostels, sessions }) {
             <Head title="Hostel Allocations" />
 
             <div className="mx-auto w-full space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                    <div>
-                        <h1 className="text-3xl font-semibold text-zinc-900">Hostel Allocations</h1>
-                        <p className="mt-2 text-sm text-zinc-500">
-                            Allocate beds per session, confirm that the student is enrolled first, and keep hostel billing tied to the allocation record.
-                        </p>
-                    </div>
-                    <div className="flex gap-3">
-                        <Link href={route("hostels.index")} className="rounded bg-slate-600 px-4 py-2 text-white hover:bg-slate-700">
-                            Manage Hostels
-                        </Link>
-                    </div>
-                </div>
+                <HostelWorkspaceTabs activeTab="view-allocations" />
 
                 <form
                     className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm"

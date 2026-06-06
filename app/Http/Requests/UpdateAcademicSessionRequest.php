@@ -25,8 +25,6 @@ class UpdateAcademicSessionRequest extends FormRequest
         return [
             'session_No' => 'required|min:1|integer|max:100',
             'academic_year_id' => 'required|exists:academic_years,id',
-            'is_active' => 'boolean',
-            'close_session' => 'boolean',
         ];
     }
 }

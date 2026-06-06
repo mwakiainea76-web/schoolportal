@@ -9,6 +9,7 @@ import Trow from "@/Components/Table/Trow";
 import Tdata from "@/Components/Table/Tdata";
 import formatDate from "@/utils/date";
 import SearchSelect from "@/Components/SearchSelect";
+import DepartmentWorkspaceTabs from "@/Pages/Departments/Partials/DepartmentWorkspaceTabs";
 
 export default function DepartmentsIndex({ departments }) {
     const [sortField, setSortField] = useState(
@@ -60,6 +61,9 @@ export default function DepartmentsIndex({ departments }) {
             <Head title="Departments" />
 
             <div className=" mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <div className="mb-6">
+                    <DepartmentWorkspaceTabs activeTab="departments" />
+                </div>
                 <form
                     className="w-full relative flex gap-x-7"
                     onSubmit={submit}

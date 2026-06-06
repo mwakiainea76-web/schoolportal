@@ -6,6 +6,7 @@ import SearchSelect from "@/Components/SearchSelect";
 import TextInput from "@/Components/TextInput";
 import TextArea from "@/Components/TextArea";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
+import CourseWorkspaceTabs from "@/Pages/Courses/Partials/CourseWorkspaceTabs";
 
 const Create = () => {
     const { data, setData, post, processing, errors } = useForm({
@@ -28,6 +29,9 @@ const Create = () => {
             <Head title="Create Curriculum" />
 
             <div className="mx-auto w-full rounded-lg">
+                <div className="mb-6">
+                    <CourseWorkspaceTabs activeTab="add-curriculum" />
+                </div>
                 <legend className="text-white border-b border-white/50 text-center py-2 bg-slate-400 rounded-t-lg w-full">
                     Add curriculum
                 </legend>

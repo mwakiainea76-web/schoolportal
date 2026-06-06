@@ -1,199 +1,571 @@
-import { Head, Link, router } from "@inertiajs/react";
-import { useState } from "react";
+import { Head, router } from "@inertiajs/react";
+import { useMemo, useState } from "react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
-import Table from "@/Components/Table/Table";
-import Thead from "@/Components/Table/Thead";
-import THdata from "@/Components/Table/THdata";
-import Tbody from "@/Components/Table/Tbody";
-import Trow from "@/Components/Table/Trow";
-import Tdata from "@/Components/Table/Tdata";
+import SearchSelect from "@/Components/SearchSelect";
 import formatDate from "@/utils/date";
+import AcademicYearCreate from "@/Pages/AcademicYears/Create";
+import AcademicYearEdit from "@/Pages/AcademicYears/Edit";
+import AcademicSessionCreate from "@/Pages/AcademicSessions/Create";
+import AcademicSessionEdit from "@/Pages/AcademicSessions/Edit";
 
-// Updated prop name to match what is passed from the Controller
-export default function UnitsIndex({ academic_sessions }) {
-    // Accessing sort/direction from the paginated object meta or query params
-    const [sortField, setSortField] = useState(
-        academic_sessions.sort || "created_at",
+export default function Index({
+    academic_years = [],
+    selected_academic_year_id = "",
+    active_academic_session_id = "",
+    academic_sessions = [],
+    filters = {},
+}) {
+    const [yearSearchTerm, setYearSearchTerm] = useState(
+        filters.year_search || "",
     );
-    const [sortDirection, setSortDirection] = useState(
-        academic_sessions.direction || "desc",
+    const [addYearModalOpen, setAddYearModalOpen] = useState(false);
+    const [editingYear, setEditingYear] = useState(null);
+    const [addSessionModalOpen, setAddSessionModalOpen] = useState(false);
+    const [editingSession, setEditingSession] = useState(null);
+
+    const activeAcademicYearId = useMemo(
+        () =>
+            academic_years.find((year) => year.is_active)?.id
+                ? String(academic_years.find((year) => year.is_active)?.id)
+                : "",
+        [academic_years],
     );
-    const [searchTerm, setSearchTerm] = useState("");
 
-    const handleSort = (field) => {
-        const direction =
-            sortField === field && sortDirection === "asc" ? "desc" : "asc";
-        setSortField(field);
-        setSortDirection(direction);
-        router.get(
-            route("academic.sessions.index"),
-            { search: searchTerm, sort: field, direction, page: 1 },
-            { preserveState: true, replace: true },
+    const selectedYear = academic_years.find(
+        (year) => String(year.id) === String(selected_academic_year_id),
+    );
+
+    const nextSessionNumber = useMemo(() => {
+        if (!academic_sessions.length) {
+            return 1;
+        }
+
+        return (
+            Math.max(
+                ...academic_sessions.map((session) =>
+                    Number(session.session_No || 0),
+                ),
+            ) + 1
         );
+    }, [academic_sessions]);
+
+    const fetchSessions = (params) => {
+        router.get(route("academic.sessions.index"), params, {
+            preserveState: true,
+            replace: true,
+        });
     };
 
-    const renderArrow = (field) => {
-        if (sortField !== field) return null;
-        return sortDirection === "asc" ? "↑" : "↓";
+    const selectAcademicYear = (year) => {
+        fetchSessions({
+            academic_year_id: year.id,
+            year_search: yearSearchTerm,
+        });
     };
 
-    const submit = (e) => {
-        e.preventDefault();
-        router.get(
-            route("academic.sessions.index"),
-            { search: searchTerm, sort: sortField, direction: sortDirection },
-            { preserveState: true, replace: true },
-        );
+    const submitYearSearch = (event) => {
+        event.preventDefault();
+
+        fetchSessions({
+            academic_year_id: selected_academic_year_id,
+            year_search: yearSearchTerm,
+        });
     };
 
-    const handleDelete = (id) => {
-        if (!confirm("Are you sure you want to delete this session?")) return;
+    const handleDeleteSession = (id) => {
+        if (!confirm("Are you sure you want to delete this session?")) {
+            return;
+        }
+
         router.delete(route("academic.sessions.destroy", id), {
             preserveState: true,
             replace: true,
         });
     };
 
+    const handleDeleteYear = (id) => {
+        if (!confirm("Are you sure you want to delete this academic year?")) {
+            return;
+        }
+
+        router.delete(route("academic.years.destroy", id), {
+            preserveState: true,
+            replace: true,
+        });
+    };
+
+    const updateYearStatus = (year, action) => {
+        router.patch(
+            route("academic.years.status", year.id),
+            { action },
+            {
+                preserveScroll: true,
+            },
+        );
+    };
+
+    const updateSessionStatus = (session, action) => {
+        router.patch(
+            route("academic.sessions.status", session.id),
+            { action },
+            {
+                preserveScroll: true,
+            },
+        );
+    };
+
+    const getYearStatus = (year) => {
+        if (year.is_active) {
+            return {
+                label: "Ongoing",
+                badgeClass: "bg-green-100 text-green-700",
+                actionLabel: "End Year",
+                action: "end",
+                disabled: false,
+                helper: "",
+            };
+        }
+
+        if (year.end_date) {
+            return {
+                label: "Completed",
+                badgeClass: "bg-red-100 text-red-600",
+                actionLabel: "Reactivate",
+                action: "reactivate",
+                disabled:
+                    Boolean(activeAcademicYearId) &&
+                    String(activeAcademicYearId) !== String(year.id),
+                helper:
+                    "You can only reactivate an academic year after ending the previous one.",
+            };
+        }
+
+        return {
+            label: "Upcoming",
+            badgeClass: "bg-amber-100 text-amber-700",
+            actionLabel: "Start Year",
+            action: "start",
+            disabled:
+                Boolean(activeAcademicYearId) &&
+                String(activeAcademicYearId) !== String(year.id),
+            helper:
+                "You can only start an academic year after ending the previous one.",
+        };
+    };
+
+    const getSessionStatus = (session) => {
+        if (session.is_active) {
+            return {
+                label: "Ongoing",
+                badgeClass: "bg-green-100 text-green-700",
+                actionLabel: "End Session",
+                action: "end",
+                disabled: false,
+                helper: "",
+            };
+        }
+
+        if (session.end_date) {
+            return {
+                label: "Completed",
+                badgeClass: "bg-red-100 text-red-600",
+                actionLabel: "Reactivate",
+                action: "reactivate",
+                disabled:
+                    Boolean(active_academic_session_id) &&
+                    String(active_academic_session_id) !== String(session.id),
+                helper:
+                    "You can only reactivate a session after ending the previous active one.",
+            };
+        }
+
+        return {
+            label: "Upcoming",
+            badgeClass: "bg-amber-100 text-amber-700",
+            actionLabel: "Start Session",
+            action: "start",
+            disabled:
+                Boolean(active_academic_session_id) &&
+                String(active_academic_session_id) !== String(session.id),
+            helper:
+                "You can only start session after ending the previous.",
+            title:
+                "You can only start session after ending the previous.",
+        };
+    };
+
+    const stopSelection = (event, callback) => {
+        event.stopPropagation();
+        callback();
+    };
+
     return (
         <AuthenticatedLayout>
             <Head title="Academic Sessions" />
 
-            <div className="max-w-6xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
-                <form
-                    className="w-full relative flex gap-x-7"
-                    onSubmit={submit}
-                >
-                    <input
-                        type="text"
-                        placeholder="Search academic sessions..."
-                        className="w-full bg-zinc-50 border-zinc-200 rounded-xl py-2.5 pl-11 text-sm focus:ring-gray-400 transition-all"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                    <svg
-                        className="w-4 h-4 text-zinc-400 absolute left-4 top-3"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                    >
-                        <path
-                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                            strokeWidth="2"
-                        />
-                    </svg>
-                    <button
-                        className="px-4 py-1 bg-emerald-600 text-white rounded hover:bg-slate-700"
-                        type="submit"
-                    >
-                        Search
-                    </button>
-                </form>
+            <div className="mx-auto w-full max-w-7xl animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <div className="flex w-full flex-col gap-6 lg:flex-row lg:items-start">
+                    <section className="w-full shrink-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:w-[380px] xl:w-[430px]">
+                        <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+                            <h2 className="text-lg font-semibold text-slate-900">
+                                Academic Years
+                            </h2>
+                            <button
+                                type="button"
+                                onClick={() => setAddYearModalOpen(true)}
+                                className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700"
+                            >
+                                Add Academic Year
+                            </button>
+                        </div>
 
-                <Table
-                    pagination={academic_sessions}
-                    sortField={sortField}
-                    sortDirection={sortDirection}
-                >
-                    <Thead>
-                        <THdata
-                            onClick={() => handleSort("id")}
-                            className="cursor-pointer"
-                        >
-                            Id {renderArrow("id")}
-                        </THdata>
-                        <THdata>Session_No</THdata>
-                        <THdata>Academic Year</THdata>
-                        <THdata>Start Date</THdata>
-                        <THdata>End Date</THdata>
-                        <THdata>Status</THdata>
-                        <THdata
-                            onClick={() => handleSort("created_at")}
-                            className="cursor-pointer"
-                        >
-                            Created {renderArrow("created_at")}
-                        </THdata>
-                        <THdata>Actions</THdata>
-                    </Thead>
-                    <Tbody>
-                        {academic_sessions?.data?.length ? (
-                            academic_sessions.data.map((session, idx) => (
-                                <Trow key={session.id}>
-                                    <Tdata>{idx + 1}</Tdata>
-                                    <Tdata className="font-medium text-slate-700">
-                                        {session.session_No}
-                                    </Tdata>
-                                    <Tdata className="font-medium text-slate-700">
-                                        {session.academic_year.academic_year}
-                                    </Tdata>
+                        <div className="border-b border-slate-100 px-6 py-5">
+                            <form
+                                className="flex flex-col gap-3 md:flex-row"
+                                onSubmit={submitYearSearch}
+                            >
+                                <SearchSelect
+                                    routeName="academic.years.search"
+                                    defaultOptions={academic_years.map((year) => ({
+                                        id: String(year.id),
+                                        name: year.label || year.academic_year,
+                                    }))}
+                                    value={selected_academic_year_id}
+                                    selectedLabel={yearSearchTerm}
+                                    placeholder="Search academic years..."
+                                    preloadOptions
+                                    minSearchLength={0}
+                                    onChange={(item) => {
+                                        setYearSearchTerm(item?.name || "");
 
-                                    <Tdata>
-                                        {formatDate(session.start_date)}
-                                    </Tdata>
-                                    <Tdata>
-                                        {formatDate(session.end_date)}
-                                    </Tdata>
-                                    <Tdata>
-                                        {session.end_date &&
-                                            session.start_date && (
-                                                <span
-                                                    className={`px-2 py-0.5 rounded text-xs  bg-red-100 text-red-400`}
-                                                >
-                                                    Completed
-                                                </span>
-                                            )}
-                                        {session.start_date &&
-                                            session.is_active == true && (
-                                                <span
-                                                    className={`px-2 py-0.5 rounded text-xs  bg-green-100 text-green-700`}
-                                                >
-                                                    Ongoing
-                                                </span>
-                                            )}
-                                        {!session.start_date &&
-                                            session.is_active == false && (
-                                                <span
-                                                    className={`px-2 py-0.5 rounded text-xs  bg-green-100 text-green-400`}
-                                                >
-                                                    Upcoming
-                                                </span>
-                                            )}
-                                    </Tdata>
-                                    <Tdata>
-                                        {formatDate(session.created_at)}
-                                    </Tdata>
-                                    <Tdata>
-                                        <div className="flex items-center justify-center gap-x-10">
-                                            <Link
-                                                href={route(
-                                                    "academic.sessions.edit",
-                                                    session.id,
-                                                )}
-                                                className="text-emerald-600 hover:underline"
-                                            >
-                                                Edit
-                                            </Link>
-                                            <button
-                                                onClick={() =>
-                                                    handleDelete(session.id)
+                                        if (item?.id) {
+                                            fetchSessions({
+                                                academic_year_id: item.id,
+                                                year_search: item.name || "",
+                                            });
+                                        }
+                                    }}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setYearSearchTerm("");
+                                        fetchSessions({});
+                                    }}
+                                    className="rounded border border-zinc-200 px-3 py-2 text-sm font-semibold text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-700"
+                                    title="Clear academic year filter"
+                                >
+                                    X
+                                </button>
+                                <button
+                                    className="rounded bg-emerald-700 px-5 py-2 text-sm font-semibold text-white transition hover:bg-emerald-800"
+                                    type="submit"
+                                >
+                                    Search
+                                </button>
+                            </form>
+                        </div>
+
+                        <div className="divide-y divide-slate-100">
+                            {academic_years.length > 0 ? (
+                                academic_years.map((year) => {
+                                    const isSelected =
+                                        String(year.id) ===
+                                        String(selected_academic_year_id);
+                                    const status = getYearStatus(year);
+
+                                    return (
+                                        <div
+                                            role="button"
+                                            tabIndex={0}
+                                            key={year.id}
+                                            onClick={() =>
+                                                selectAcademicYear(year)
+                                            }
+                                            onKeyDown={(event) => {
+                                                if (
+                                                    event.key === "Enter" ||
+                                                    event.key === " "
+                                                ) {
+                                                    event.preventDefault();
+                                                    selectAcademicYear(year);
                                                 }
-                                                className="text-red-600 hover:underline"
-                                            >
-                                                Delete
-                                            </button>
+                                            }}
+                                            className={`block w-full px-6 py-5 text-left transition ${
+                                                isSelected
+                                                    ? "bg-emerald-50"
+                                                    : "bg-white hover:bg-slate-50"
+                                            }`}
+                                        >
+                                            <div className="flex items-start justify-between gap-4">
+                                                <div className="min-w-0">
+                                                    <p className="truncate text-lg font-semibold text-slate-700">
+                                                        {year.academic_year}
+                                                    </p>
+                                                    <p className="mt-2 text-sm text-slate-500">
+                                                        Start{" "}
+                                                        {formatDate(
+                                                            year.start_date,
+                                                        )}{" "}
+                                                        | End{" "}
+                                                        {formatDate(
+                                                            year.end_date,
+                                                        )}
+                                                    </p>
+                                                </div>
+
+                                                <span
+                                                    className={`rounded px-2 py-0.5 text-xs ${status.badgeClass}`}
+                                                >
+                                                    {status.label}
+                                                </span>
+                                            </div>
+
+                                            <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+                                                <button
+                                                    type="button"
+                                                    onClick={(event) =>
+                                                        stopSelection(
+                                                            event,
+                                                            () =>
+                                                                setEditingYear(
+                                                                    year,
+                                                                ),
+                                                        )
+                                                    }
+                                                    className="text-emerald-600 hover:underline"
+                                                >
+                                                    Edit
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={(event) =>
+                                                        stopSelection(
+                                                            event,
+                                                            () =>
+                                                                handleDeleteYear(
+                                                                    year.id,
+                                                                ),
+                                                        )
+                                                    }
+                                                    className="text-red-600 hover:underline"
+                                                >
+                                                    Delete
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    title={
+                                                        status.disabled
+                                                            ? status.helper
+                                                            : ""
+                                                    }
+                                                    disabled={status.disabled}
+                                                    onClick={(event) =>
+                                                        stopSelection(
+                                                            event,
+                                                            () =>
+                                                                !status.disabled &&
+                                                                updateYearStatus(
+                                                                    year,
+                                                                    status.action,
+                                                                ),
+                                                        )
+                                                    }
+                                                    className={`${
+                                                        status.disabled
+                                                            ? "cursor-not-allowed text-slate-400"
+                                                            : "text-slate-700 hover:text-emerald-700 hover:underline"
+                                                    }`}
+                                                >
+                                                    {status.actionLabel}
+                                                </button>
+                                            </div>
                                         </div>
-                                    </Tdata>
-                                </Trow>
-                            ))
-                        ) : (
-                            <Trow>
-                                <Tdata colSpan="8" className="text-center py-4">
-                                    No records found.
-                                </Tdata>
-                            </Trow>
-                        )}
-                    </Tbody>
-                </Table>
+                                    );
+                                })
+                            ) : (
+                                <div className="px-6 py-10 text-center text-sm text-slate-500">
+                                    No academic years found.
+                                </div>
+                            )}
+                        </div>
+                    </section>
+
+                    <section className="min-h-[260px] w-full min-w-0 flex-1 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                        <div className="flex flex-col gap-4 border-b border-slate-100 px-6 py-4 lg:flex-row lg:items-center lg:justify-between">
+                            <div>
+                                <h2 className="text-lg font-semibold text-slate-900">
+                                    Sessions for{" "}
+                                    <span className="text-slate-600">
+                                        {selectedYear?.academic_year ??
+                                            "No year selected"}
+                                    </span>
+                                </h2>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setAddSessionModalOpen(true)}
+                                disabled={!selectedYear}
+                                className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                            >
+                                Add Academic Session
+                            </button>
+                        </div>
+
+                        <div className="px-6 py-6">
+                            {selected_academic_year_id ? (
+                                academic_sessions.length > 0 ? (
+                                    <div className="space-y-4">
+                                        {academic_sessions.map((session) => {
+                                            const status =
+                                                getSessionStatus(session);
+
+                                            return (
+                                                <div
+                                                    key={session.id}
+                                                    className="rounded-2xl border border-slate-200 bg-white px-5 py-4"
+                                                >
+                                                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                                                        <div>
+                                                            <p className="text-lg font-semibold text-slate-800">
+                                                                Session{" "}
+                                                                {session.session_No}
+                                                            </p>
+                                                            <div className="mt-2 flex flex-wrap gap-3 text-sm text-slate-500">
+                                                                <span>
+                                                                    Start:{" "}
+                                                                    {formatDate(
+                                                                        session.start_date,
+                                                                    )}
+                                                                </span>
+                                                                <span>
+                                                                    End:{" "}
+                                                                    {formatDate(
+                                                                        session.end_date,
+                                                                    )}
+                                                                </span>
+                                                                <span>
+                                                                    Created:{" "}
+                                                                    {formatDate(
+                                                                        session.created_at,
+                                                                    )}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+
+                                                        <span
+                                                            className={`rounded px-2 py-0.5 text-xs ${status.badgeClass}`}
+                                                        >
+                                                            {status.label}
+                                                        </span>
+                                                    </div>
+
+                                                    <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                setEditingSession(
+                                                                    session,
+                                                                )
+                                                            }
+                                                            className="text-emerald-600 hover:underline"
+                                                        >
+                                                            Edit
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                handleDeleteSession(
+                                                                    session.id,
+                                                                )
+                                                            }
+                                                            className="text-red-600 hover:underline"
+                                                        >
+                                                            Delete
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            title={
+                                                                status.disabled
+                                                                    ? status.helper
+                                                                    : ""
+                                                            }
+                                                            disabled={
+                                                                status.disabled
+                                                            }
+                                                            onClick={() =>
+                                                                !status.disabled &&
+                                                                updateSessionStatus(
+                                                                    session,
+                                                                    status.action,
+                                                                )
+                                                            }
+                                                            className={`${
+                                                                status.disabled
+                                                                    ? "cursor-not-allowed text-slate-400"
+                                                                    : "text-slate-700 hover:text-emerald-700 hover:underline"
+                                                            }`}
+                                                        >
+                                                            {status.actionLabel}
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                ) : (
+                                    <div className="px-6 py-16 text-center text-sm text-slate-500">
+                                        No sessions found for the selected
+                                        academic year.
+                                    </div>
+                                )
+                            ) : (
+                                <div className="px-6 py-16 text-center text-sm text-slate-500">
+                                    Select an academic year to view its
+                                    sessions.
+                                </div>
+                            )}
+                        </div>
+                    </section>
+                </div>
             </div>
+
+            <AcademicYearCreate
+                modalMode
+                open={addYearModalOpen}
+                onClose={() => setAddYearModalOpen(false)}
+            />
+
+            {editingYear ? (
+                <AcademicYearEdit
+                    modalMode
+                    open={Boolean(editingYear)}
+                    onClose={() => setEditingYear(null)}
+                    academic_year={editingYear}
+                />
+            ) : null}
+
+            <AcademicSessionCreate
+                modalMode
+                open={addSessionModalOpen}
+                onClose={() => setAddSessionModalOpen(false)}
+                academic_year={selectedYear}
+                session_no={nextSessionNumber}
+                prerequisite_error={
+                    selectedYear
+                        ? null
+                        : "Select an academic year before creating a session."
+                }
+            />
+
+            {editingSession ? (
+                <AcademicSessionEdit
+                    modalMode
+                    open={Boolean(editingSession)}
+                    onClose={() => setEditingSession(null)}
+                    academic_session={editingSession}
+                />
+            ) : null}
         </AuthenticatedLayout>
     );
 }

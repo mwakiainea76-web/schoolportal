@@ -14,6 +14,7 @@ import Thead from "@/Components/Table/Thead";
 import Trow from "@/Components/Table/Trow";
 import TextInput from "@/Components/TextInput";
 import formatDate from "@/utils/date";
+import AccessWorkspaceTabs from "@/Pages/Roles/Partials/AccessWorkspaceTabs";
 
 const emptyRole = {
     id: null,
@@ -247,10 +248,8 @@ export default function RolesIndex({
             <Head title="Roles & Permissions" />
 
             <div className="mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
-                <div className="mb-6 text-center">
-                    <h1 className="text-xl font-semibold text-slate-900">
-                        Roles & Permissions
-                    </h1>
+                <div className="mb-6">
+                    <AccessWorkspaceTabs activeTab="roles" roleId={activeRole?.id} />
                 </div>
 
                 <div className="flex w-full flex-col gap-6 lg:flex-row lg:items-start">

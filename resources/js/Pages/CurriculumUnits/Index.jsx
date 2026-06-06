@@ -9,6 +9,7 @@ import THdata from "@/Components/Table/THdata";
 import Tbody from "@/Components/Table/Tbody";
 import Trow from "@/Components/Table/Trow";
 import Tdata from "@/Components/Table/Tdata";
+import CourseWorkspaceTabs from "@/Pages/Courses/Partials/CourseWorkspaceTabs";
 
 export default function Index({
     curriculum_mapping,
@@ -170,6 +171,9 @@ export default function Index({
             <Head title={title} />
 
             <div className="mx-auto w-full max-w-6xl animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <div className="mb-6">
+                    <CourseWorkspaceTabs activeTab="units" />
+                </div>
                 <form
                     className="mb-4 rounded-lg border border-zinc-100 bg-white p-4 shadow-sm"
                     onSubmit={submit}

@@ -1,6 +1,7 @@
 import { Head, useForm } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import Form from "./Form";
+import HostelWorkspaceTabs from "./Partials/HostelWorkspaceTabs";
 
 export default function Create() {
     const form = useForm({
@@ -22,7 +23,8 @@ export default function Create() {
     return (
         <AuthenticatedLayout>
             <Head title="Create Hostel" />
-            <div className="mx-auto max-w-6xl">
+            <div className="mx-auto max-w-6xl space-y-6">
+                <HostelWorkspaceTabs activeTab="add-hostel" />
                 <Form
                     form={{ ...form, onSubmit }}
                     title="Create Hostel"

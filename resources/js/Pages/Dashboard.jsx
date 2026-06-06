@@ -10,8 +10,10 @@ import {
     BookOpen,
     CalendarDays,
     CreditCard,
+    Eye,
     GraduationCap,
     ShieldCheck,
+    Send,
     Wallet,
     Presentation,
 } from "lucide-react";
@@ -608,6 +610,11 @@ function StaffDashboard({ dashboard }) {
     const snapshotTrends = analytics.snapshot_trends ?? {};
     const trainerWorkspace = dashboard.trainer_workspace ?? {};
     const staffProfile = dashboard.staff_profile ?? {};
+    const canManageMarks =
+        trainerWorkspace.can_grade_students ||
+        (staffProfile.roles || []).some((role) =>
+            ["hod", "admin"].includes(String(role).toLowerCase()),
+        );
 
     const cards = [
         {
@@ -773,16 +780,36 @@ function StaffDashboard({ dashboard }) {
                   tone: "from-emerald-500 to-teal-500",
               }
             : null,
-        trainerWorkspace.can_grade_students
+        canManageMarks
             ? {
-                  label: "Grade Students",
-                  helper: "Open marks entry to load a unit and record assessments.",
-                  href: route("academic.marks.index"),
+                  label: "Add Marks",
+                  helper: "Open marks entry to choose a course mapping, unit, and record assessments.",
+                  href: route("academic.marks.add.index"),
                   icon: ClipboardPenLine,
                   tone: "from-sky-500 to-cyan-500",
               }
             : null,
-        trainerWorkspace.can_grade_students
+        canManageMarks
+            ? {
+                  label: "View Marks",
+                  helper: "Review submitted marks by assessment, module, and academic year.",
+                  href: route("academic.marks.view.index"),
+                  icon: Eye,
+                  tone: "from-violet-500 to-indigo-500",
+              }
+            : null,
+        (staffProfile.roles || []).some((role) =>
+            ["hod", "admin"].includes(String(role).toLowerCase()),
+        )
+            ? {
+                  label: "Publish Marks",
+                  helper: "Publish or unpublish departmental marks for a selected assessment.",
+                  href: route("academic.marks.publish.index"),
+                  icon: Send,
+                  tone: "from-rose-500 to-orange-500",
+              }
+            : null,
+        canManageMarks
             ? {
                   label: "Unit Marksheet",
                   helper: "Review submitted unit performance and top performers.",

@@ -5,10 +5,11 @@ import InputError from "@/Components/InputError";
 import SearchSelect from "@/Components/SearchSelect";
 import MarksWorkspaceTabs from "@/Pages/Grades/Partials/MarksWorkspaceTabs";
 
-export default function Publish({
+export default function View({
     filters,
     selected_unit,
     submitted_marks,
+    course_mappings,
     unit_options,
     filter_options,
     blocker,
@@ -16,6 +17,7 @@ export default function Publish({
     selected_filters,
 }) {
     const filterForm = useForm({
+        curriculum_mapping_id: filters.curriculum_mapping_id || "",
         curriculum_unit_id: filters.curriculum_unit_id || "",
         assessment_type: filters.assessment_type || "theory",
         assessment_number: filters.assessment_number || "1",
@@ -27,9 +29,21 @@ export default function Publish({
     const currentPage = submitted_marks?.current_page ?? 1;
     const lastPage = submitted_marks?.last_page ?? 1;
 
+    const loadUnits = (mappingId) => {
+        router.get(
+            route("academic.marks.view.index"),
+            {
+                curriculum_mapping_id: mappingId,
+                assessment_type: filterForm.data.assessment_type,
+                assessment_number: filterForm.data.assessment_number,
+            },
+            { preserveState: true, preserveScroll: true, replace: true },
+        );
+    };
+
     const searchMarks = (page = 1) => {
         router.get(
-            route("academic.marks.publish.index"),
+            route("academic.marks.view.index"),
             {
                 ...filterForm.data,
                 search_marks: true,
@@ -41,8 +55,9 @@ export default function Publish({
 
     const syncAcademicYear = (academicYear) => {
         router.get(
-            route("academic.marks.publish.index"),
+            route("academic.marks.view.index"),
             {
+                curriculum_mapping_id: filterForm.data.curriculum_mapping_id,
                 curriculum_unit_id: filterForm.data.curriculum_unit_id,
                 assessment_type: filterForm.data.assessment_type,
                 assessment_number: filterForm.data.assessment_number,
@@ -52,42 +67,57 @@ export default function Publish({
         );
     };
 
-    const publishAssessment = (action) => {
-        router.post(
-            route("academic.marks.publish.assessment"),
-            {
-                ...filterForm.data,
-                action,
-            },
-            { preserveScroll: true },
-        );
-    };
-
-    const toggleStudentMark = (markId, action) => {
-        router.post(
-            route("academic.marks.publish.toggle", markId),
-            { action },
-            { preserveScroll: true },
-        );
-    };
-
     return (
         <AuthenticatedLayout>
-            <Head title="Publish Marks" />
+            <Head title="View Marks" />
 
             <div className="mx-auto max-w-6xl space-y-8">
                 <MarksWorkspaceTabs
-                    activeTab="publish"
+                    activeTab="view"
                     canPublish={can_publish}
                 />
 
                 <div className="rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
                     <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
                         <div>
+                            <InputLabel value="Course Mapping" required />
+                            <select
+                                value={filterForm.data.curriculum_mapping_id}
+                                onChange={(e) => {
+                                    filterForm.setData(
+                                        "curriculum_mapping_id",
+                                        e.target.value,
+                                    );
+                                    filterForm.setData("curriculum_unit_id", "");
+                                    filterForm.setData("academic_year_id", "");
+                                    filterForm.setData("module", "");
+                                    loadUnits(e.target.value);
+                                }}
+                                className="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none transition focus:border-emerald-400"
+                            >
+                                <option value="">Select course mapping</option>
+                                {course_mappings.map((mapping) => (
+                                    <option key={mapping.id} value={mapping.id}>
+                                        {mapping.name}
+                                    </option>
+                                ))}
+                            </select>
+                            <InputError
+                                message={filterForm.errors.curriculum_mapping_id}
+                                className="mt-2"
+                            />
+                        </div>
+
+                        <div>
                             <InputLabel value="Unit" required />
                             <div className="mt-2">
                                 <SearchSelect
                                     routeName="units.search"
+                                    routeParams={{
+                                        curriculum_mapping_id:
+                                            filterForm.data.curriculum_mapping_id,
+                                        limit: 10,
+                                    }}
                                     defaultOptions={unit_options}
                                     value={filterForm.data.curriculum_unit_id}
                                     selectedLabel={
@@ -95,7 +125,11 @@ export default function Publish({
                                             ? `${selected_unit.course} / Module ${selected_unit.module} / ${selected_unit.code} - ${selected_unit.name}`
                                             : null
                                     }
-                                    placeholder="Search unit..."
+                                    placeholder={
+                                        filterForm.data.curriculum_mapping_id
+                                            ? "Search unit..."
+                                            : "Select course mapping first..."
+                                    }
                                     preloadOptions
                                     onChange={(unit) =>
                                         filterForm.setData(
@@ -104,6 +138,7 @@ export default function Publish({
                                         )
                                     }
                                     error={filterForm.errors.curriculum_unit_id}
+                                    disabled={!filterForm.data.curriculum_mapping_id}
                                 />
                             </div>
                             <InputError
@@ -195,16 +230,19 @@ export default function Publish({
                                     {selected_unit.code} - {selected_unit.name}
                                 </span>
                             ) : (
-                                "Choose a unit and search to review marks for publishing."
+                                "Choose a unit and search to load submitted marks."
                             )}
                         </div>
                         <button
                             type="button"
                             onClick={() => searchMarks()}
-                            disabled={!filterForm.data.curriculum_unit_id}
+                            disabled={
+                                !filterForm.data.curriculum_mapping_id ||
+                                !filterForm.data.curriculum_unit_id
+                            }
                             className="rounded-xl bg-emerald-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
                         >
-                            Load Assessment
+                            Search Marks
                         </button>
                     </div>
                 </div>
@@ -216,40 +254,17 @@ export default function Publish({
                 )}
 
                 <div className="rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div>
-                            <h2 className="text-xl font-semibold text-zinc-900">
-                                Publish Assessment
-                            </h2>
-                            <p className="mt-1 text-sm text-zinc-500">
-                                Publish or unpublish the selected assessment, or
-                                adjust visibility student by student.
-                            </p>
-                        </div>
-
-                        <div className="flex gap-3">
-                            <button
-                                type="button"
-                                onClick={() => publishAssessment("publish")}
-                                disabled={!selected_unit || !marks.length}
-                                className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-                            >
-                                Publish Assessment
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => publishAssessment("unpublish")}
-                                disabled={!selected_unit || !marks.length}
-                                className="rounded-xl border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-60"
-                            >
-                                Unpublish Assessment
-                            </button>
-                        </div>
-                    </div>
+                    <h2 className="text-xl font-semibold text-zinc-900">
+                        Submitted Marks
+                    </h2>
+                    <p className="mt-1 text-sm text-zinc-500">
+                        Results are shown for the selected theory or practical
+                        assessment number.
+                    </p>
 
                     <div className="mt-6 overflow-hidden rounded-2xl border border-zinc-100">
                         <div className="overflow-x-auto">
-                            <table className="w-full min-w-[56rem] border-collapse">
+                            <table className="w-full min-w-[48rem] border-collapse">
                                 <thead className="bg-zinc-50">
                                     <tr className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
                                         <th className="px-4 py-3 text-left">Reg. No.</th>
@@ -257,7 +272,6 @@ export default function Publish({
                                         <th className="px-4 py-3 text-left">Unit</th>
                                         <th className="px-4 py-3 text-left">Marks</th>
                                         <th className="px-4 py-3 text-left">Status</th>
-                                        <th className="px-4 py-3 text-right">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-zinc-100 bg-white">
@@ -289,35 +303,17 @@ export default function Publish({
                                                             : "Unpublished"}
                                                     </span>
                                                 </td>
-                                                <td className="px-4 py-3 text-right">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            toggleStudentMark(
-                                                                mark.id,
-                                                                mark.is_published
-                                                                    ? "unpublish"
-                                                                    : "publish",
-                                                            )
-                                                        }
-                                                        className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
-                                                    >
-                                                        {mark.is_published
-                                                            ? "Unpublish"
-                                                            : "Publish"}
-                                                    </button>
-                                                </td>
                                             </tr>
                                         ))
                                     ) : (
                                         <tr>
                                             <td
-                                                colSpan="6"
+                                                colSpan="5"
                                                 className="px-4 py-8 text-center text-sm text-zinc-500"
                                             >
                                                 {submitted_marks
                                                     ? "No submitted marks found for this assessment."
-                                                    : "Run a search to review marks for publishing."}
+                                                    : "Run a search to view submitted marks."}
                                             </td>
                                         </tr>
                                     )}

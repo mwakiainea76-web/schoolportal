@@ -5,6 +5,7 @@ import InputLabel from "@/Components/InputLabel";
 import TextArea from "@/Components/TextArea";
 import SearchSelect from "@/Components/SearchSelect";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
+import CourseWorkspaceTabs from "@/Pages/Courses/Partials/CourseWorkspaceTabs";
 
 export default function CreateCurriculum() {
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -26,6 +27,9 @@ export default function CreateCurriculum() {
             <Head title="Add Curriculum Mapping" />
 
             <div className="mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <div className="mb-6">
+                    <CourseWorkspaceTabs activeTab="add-mapping" />
+                </div>
                 <div className="bg-white rounded-lg border border-zinc-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden">
                     <form className="p-10 space-y-8" onSubmit={submit}>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

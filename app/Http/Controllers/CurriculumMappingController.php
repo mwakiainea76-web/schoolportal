@@ -100,22 +100,34 @@ class CurriculumMappingController extends Controller
 
     public function search(Request $request)
     {
-        $q = $request->q;
+        $limit = min(max($request->integer('limit', 10), 1), 25);
+        $query = trim((string) $request->query('q', ''));
 
-        $curriculums = Curriculum::query()
-            ->when($q, function ($query) use ($q) {
-                $query->where('name', 'like', "{$q}%");
-            })
-            ->orderBy('name', 'asc')
-            ->limit(10)
-            ->get(['id', 'name']);
-
-        return response()->json(
-            $curriculums->map(fn ($curriculum) => [
-                'id' => $curriculum->id,
-                'name' => $curriculum->name,
+        $mappings = CurriculumMapping::query()
+            ->with([
+                'course:id,name,code',
+                'curriculum:id,name',
             ])
-        );
+            ->when($query !== '', function ($builder) use ($query) {
+                $builder->where(function ($mappingQuery) use ($query) {
+                    $mappingQuery
+                        ->whereHas('course', fn ($courseQuery) => $courseQuery
+                            ->where('name', 'like', "%{$query}%")
+                            ->orWhere('code', 'like', "%{$query}%"))
+                        ->orWhereHas('curriculum', fn ($curriculumQuery) => $curriculumQuery
+                            ->where('name', 'like', "%{$query}%"));
+                });
+            })
+            ->latest('id')
+            ->limit($limit)
+            ->get(['id', 'course_id', 'curriculum_id'])
+            ->map(fn (CurriculumMapping $mapping) => [
+                'id' => (string) $mapping->id,
+                'name' => trim(($mapping->curriculum?->name ?? '').' - '.($mapping->course?->display_name ?? $mapping->course?->name ?? ''), ' -'),
+            ])
+            ->values();
+
+        return response()->json($mappings);
     }
 
     public function courseSearch(Request $request)

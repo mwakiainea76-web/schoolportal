@@ -177,6 +177,8 @@ class AcademicTimetableController extends Controller
 
     public function create(Request $request)
     {
+        abort_unless($this->canManageTimetable($request), 403);
+
         $currentDepartmentId = $request->user()?->staff?->department_id;
         $selectedDepartmentId = $request->integer('department_id') ?: $currentDepartmentId;
 
@@ -193,6 +195,8 @@ class AcademicTimetableController extends Controller
 
     public function store(StoreAcademicTimetableRequest $request)
     {
+        abort_unless($this->canManageTimetable($request), 403);
+
         $validated = $request->validated();
         $actorStaffId = $request->user()?->staff?->id;
 
@@ -340,14 +344,16 @@ class AcademicTimetableController extends Controller
         );
     }
 
-    public function edit(AcademicTimetable $timetable)
+    public function edit(Request $request, AcademicTimetable $timetable)
     {
+        abort_unless($this->canManageTimetable($request), 403);
+
         $timetable->load([
             'department:id,name',
             'trainer.user:id,first_name,last_name',
             'lectureRoom:id,name,code,department_id',
-            'curriculumUnit:id,name,code',
-            'curriculumUnits:id,name,code',
+            'curriculumUnit:id,name,code,curriculum_mapping_id,module_taught',
+            'curriculumUnits:id,name,code,curriculum_mapping_id,module_taught',
             'curriculumUnits.curriculumMapping.course:id,name,department_id',
             'curriculumUnits.curriculumMapping.curriculum:id,name',
             'curriculumUnit.curriculumMapping.course:id,name,department_id',
@@ -366,6 +372,8 @@ class AcademicTimetableController extends Controller
 
     public function update(UpdateAcademicTimetableRequest $request, AcademicTimetable $timetable)
     {
+        abort_unless($this->canManageTimetable($request), 403);
+
         $validated = $request->validated();
 
         $timetable->update([
@@ -385,8 +393,10 @@ class AcademicTimetableController extends Controller
         ])->with('success', 'Timetable session updated successfully.');
     }
 
-    public function destroy(AcademicTimetable $timetable)
+    public function destroy(Request $request, AcademicTimetable $timetable)
     {
+        abort_unless($this->canManageTimetable($request), 403);
+
         $departmentId = $timetable->department_id;
         $timetable->delete();
 
@@ -402,8 +412,8 @@ class AcademicTimetableController extends Controller
             'department:id,name',
             'trainer.user:id,first_name,last_name',
             'lectureRoom:id,name,code,department_id',
-            'curriculumUnit:id,name,code',
-            'curriculumUnits:id,name,code',
+            'curriculumUnit:id,name,code,curriculum_mapping_id,module_taught',
+            'curriculumUnits:id,name,code,curriculum_mapping_id,module_taught',
             'curriculumUnits.curriculumMapping.course:id,name,department_id',
             'curriculumUnits.curriculumMapping.curriculum:id,name',
             'curriculumUnit.curriculumMapping.course:id,name,department_id',
@@ -742,5 +752,12 @@ class AcademicTimetableController extends Controller
             ])
             ->values()
             ->all();
+    }
+
+    protected function canManageTimetable(Request $request): bool
+    {
+        $user = $request->user();
+
+        return (bool) ($user?->hasRole('hod') || $user?->hasRole('trainer'));
     }
 }

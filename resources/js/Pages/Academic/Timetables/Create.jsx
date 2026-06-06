@@ -3,6 +3,7 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import SearchSelect from "@/Components/SearchSelect";
+import TimetableWorkspaceTabs from "@/Pages/Academic/Timetables/Partials/TimetableWorkspaceTabs";
 
 export default function Create({
     departments,
@@ -95,34 +96,21 @@ export default function Create({
     };
 
     return (
-        <AuthenticatedLayout
-            header={
-                <div>
-                    <h1 className="text-3xl font-semibold text-zinc-900">
-                        Create Department Timetable
-                    </h1>
-                    <p className="mt-2 max-w-3xl text-sm text-zinc-600">
-                        Plan a real class session with trainer, hall, and one or
-                        more equivalent curriculum units that can be taught
-                        together across courses.
-                    </p>
-                </div>
-            }
-        >
+        <AuthenticatedLayout>
             <Head title="Create Timetable" />
 
-            <div className="mx-auto max-w-5xl">
+            <div className="space-y-8">
+                <section>
+                    <TimetableWorkspaceTabs
+                        activeTab="add"
+                        addHref={route("academic.timetables.create")}
+                    />
+                </section>
+
                 <form
                     onSubmit={submit}
                     className="space-y-8 rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm"
                 >
-                    <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
-                        A trainer can merge students from different courses into
-                        one class when the content is the same. Select all
-                        matching curriculum units below, then assign one room and
-                        one weekly slot for that merged teaching session.
-                    </div>
-
                     <div className="grid gap-6 md:grid-cols-3">
                         <div>
                             <InputLabel value="Department" required />

@@ -5,6 +5,7 @@ import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import SearchSelect from "@/Components/SearchSelect";
 import TextInput from "@/Components/TextInput";
+import CourseWorkspaceTabs from "@/Pages/Courses/Partials/CourseWorkspaceTabs";
 
 export default function Create({ curriculum_mapping, selected_mapping_option }) {
     const { data, setData, post, processing, errors } = useForm({
@@ -41,11 +42,7 @@ export default function Create({ curriculum_mapping, selected_mapping_option }) 
 
             <div className="mx-auto w-full max-w-7xl animate-in fade-in slide-in-from-bottom-4 duration-700">
                 <div className="mb-6">
-                    <h1 className="text-2xl font-bold text-zinc-900">Add Unit</h1>
-                    <p className="text-zinc-500">
-                        Search the active versioned course, then capture the unit
-                        details directly on the merged units table.
-                    </p>
+                    <CourseWorkspaceTabs activeTab="add-unit" />
                 </div>
 
                 <div className="overflow-hidden rounded-lg border border-zinc-100 bg-white shadow-sm">

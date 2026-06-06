@@ -4,6 +4,7 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import SearchSelect from "@/Components/SearchSelect";
+import TimetableWorkspaceTabs from "@/Pages/Academic/Timetables/Partials/TimetableWorkspaceTabs";
 
 const STUDY_SLOTS = [
     {
@@ -146,24 +147,17 @@ export default function CreateHod({
     };
 
     return (
-        <AuthenticatedLayout
-            header={
-                <div>
-                    <h1 className="text-3xl font-semibold text-zinc-900">
-                        Create Department Timetable
-                    </h1>
-                    <p className="mt-2 max-w-3xl text-sm text-zinc-600">
-                        Your department is detected automatically. Choose one
-                        active curriculum, narrow to a module, then assign
-                        equivalent units together into one trainer, room, and
-                        weekly slot.
-                    </p>
-                </div>
-            }
-        >
+        <AuthenticatedLayout>
             <Head title="Create Timetable" />
 
-            <div className="mx-auto max-w-5xl">
+            <div className="space-y-8">
+                <section>
+                    <TimetableWorkspaceTabs
+                        activeTab="add"
+                        addHref={route("academic.timetables.hod.create")}
+                    />
+                </section>
+
                 <form
                     onSubmit={submit}
                     className="space-y-8 rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm"

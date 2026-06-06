@@ -5,12 +5,19 @@ import {
     CalendarDays,
     ClipboardPenLine,
     GraduationCap,
+    Eye,
+    Send,
     ShieldCheck,
 } from "lucide-react";
 
 export default function StaffDashboard({ dashboard }) {
     const staffProfile = dashboard?.staff_profile ?? {};
     const trainerWorkspace = dashboard?.trainer_workspace ?? {};
+    const canManageMarks =
+        trainerWorkspace.can_grade_students ||
+        (staffProfile.roles || []).some((role) =>
+            ["hod", "admin"].includes(String(role).toLowerCase()),
+        );
 
     const quickActions = [
         trainerWorkspace.can_view_timetable
@@ -23,16 +30,36 @@ export default function StaffDashboard({ dashboard }) {
                   tone: "from-emerald-500 to-teal-500",
               }
             : null,
-        trainerWorkspace.can_grade_students
+        canManageMarks
             ? {
-                  label: "Grade Students",
-                  helper: "Capture and manage student marks for your assigned teaching work.",
-                  href: route("academic.marks.index"),
+                  label: "Add Marks",
+                  helper: "Capture marks for units taught within your department workspace.",
+                  href: route("academic.marks.add.index"),
                   icon: ClipboardPenLine,
                   tone: "from-sky-500 to-cyan-500",
               }
             : null,
-        trainerWorkspace.can_grade_students
+        canManageMarks
+            ? {
+                  label: "View Marks",
+                  helper: "Review submitted marks by assessment, unit, and academic year.",
+                  href: route("academic.marks.view.index"),
+                  icon: Eye,
+                  tone: "from-violet-500 to-indigo-500",
+              }
+            : null,
+        (staffProfile.roles || []).some((role) =>
+            ["hod", "admin"].includes(String(role).toLowerCase()),
+        )
+            ? {
+                  label: "Publish Marks",
+                  helper: "Approve and publish departmental marks assessment by assessment.",
+                  href: route("academic.marks.publish.index"),
+                  icon: Send,
+                  tone: "from-rose-500 to-orange-500",
+              }
+            : null,
+        canManageMarks
             ? {
                   label: "Unit Marksheet",
                   helper: "Review marksheets and unit-level grading summaries.",

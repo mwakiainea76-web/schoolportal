@@ -140,6 +140,7 @@ Route::middleware(['auth', 'non_student'])->group(function () {
     */
     Route::prefix('exam-bodies')->name('exam.bodies.')->group(function () {
         Route::get('/', [ExamBodyController::class, 'index'])->name('index');
+        Route::get('/search', [ExamBodyController::class, 'search'])->name('search');
         Route::get('/create', [ExamBodyController::class, 'create'])->name('create');
         Route::post('/', [ExamBodyController::class, 'store'])->name('store');
         Route::get('/{exam_body}/edit', [ExamBodyController::class, 'edit'])->name('edit');
@@ -156,6 +157,7 @@ Route::middleware(['auth', 'non_student'])->group(function () {
     */
     Route::prefix('exam-bodies/certification-levels')->name('certification-levels.')->group(function () {
         Route::get('/', [CertificationLevelController::class, 'index'])->name('index');
+        Route::get('/search', [CertificationLevelController::class, 'search'])->name('search');
         Route::get('/create', [CertificationLevelController::class, 'create'])->name('create');
         Route::post('/', [CertificationLevelController::class, 'store'])->name('store');
 
@@ -172,9 +174,9 @@ Route::middleware(['auth', 'non_student'])->group(function () {
     */
     Route::prefix('departments')->name('departments.')->group(function () {
         Route::get('/', [DepartmentController::class, 'index'])->name('index');
+        Route::get('/search', [DepartmentController::class, 'search'])->name('search');
         Route::get('/create', [DepartmentController::class, 'create'])->name('create');
         Route::post('/', [DepartmentController::class, 'store'])->name('store');
-
         Route::get('/{department}/edit', [DepartmentController::class, 'edit'])->name('edit');
         Route::put('/{department}', [DepartmentController::class, 'update'])->name('update');
         Route::delete('/{department}', [DepartmentController::class, 'destroy'])->name('destroy');
@@ -196,6 +198,7 @@ Route::middleware(['auth', 'non_student'])->group(function () {
 
             Route::prefix('curriculums')->name('curriculum-mappings.')->group(function () {
                 Route::get('/', [CurriculumMappingController::class, 'index'])->name('index');
+                Route::get('/search', [CurriculumMappingController::class, 'search'])->name('search');
                 Route::get('/create', [CurriculumMappingController::class, 'create'])->name('create');
                 Route::post('/', [CurriculumMappingController::class, 'store'])->name('store');
 
@@ -214,6 +217,7 @@ Route::middleware(['auth', 'non_student'])->group(function () {
 
         Route::prefix('units')->name('units.')->group(function () {
             Route::get('/', [UnitController::class, 'index'])->name('index');
+            Route::get('/search', [UnitController::class, 'search'])->name('search');
             Route::get('/create', [UnitController::class, 'create'])->name('create');
             Route::post('/', [UnitController::class, 'store'])->name('store');
             Route::get('/{unit}/edit', [UnitController::class, 'edit'])->name('edit');
@@ -233,6 +237,9 @@ Route::middleware(['auth', 'non_student'])->group(function () {
             Route::put('/{curriculum}', [CurriculumController::class, 'update'])->name('update');
             Route::delete('/{curriculum}', [CurriculumController::class, 'destroy'])->name('destroy');
         });
+
+        Route::get('/lookup/exam-bodies/search', [ExamBodyController::class, 'search'])->name('exam-bodies.search');
+        Route::get('/lookup/curriculum-mappings/search', [CurriculumMappingController::class, 'search'])->name('curriculum-mappings.search');
     });
 
     /*
@@ -242,11 +249,13 @@ Route::middleware(['auth', 'non_student'])->group(function () {
     */
     Route::prefix('academic/years')->name('academic.years.')->group(function () {
         Route::get('/', [AcademicYearController::class, 'index'])->name('index');
+        Route::get('/search', [AcademicYearController::class, 'search'])->name('search');
         Route::get('/create', [AcademicYearController::class, 'create'])->name('create');
         Route::post('/', [AcademicYearController::class, 'store'])->name('store');
 
         Route::get('/{academic_year}/edit', [AcademicYearController::class, 'edit'])->name('edit');
         Route::put('/{academic_year}', [AcademicYearController::class, 'update'])->name('update');
+        Route::patch('/{academic_year}/status', [AcademicYearController::class, 'updateStatus'])->name('status');
         Route::delete('/{academic_year}', [AcademicYearController::class, 'destroy'])->name('destroy');
     });
 
@@ -264,6 +273,7 @@ Route::middleware(['auth', 'non_student'])->group(function () {
 
         Route::get('/{academic_session}/edit', [AcademicSessionController::class, 'edit'])->name('edit');
         Route::put('/{academic_session}', [AcademicSessionController::class, 'update'])->name('update');
+        Route::patch('/{academic_session}/status', [AcademicSessionController::class, 'updateStatus'])->name('status');
         Route::delete('/{academic_session}', [AcademicSessionController::class, 'destroy'])->name('destroy');
     });
 
@@ -279,19 +289,21 @@ Route::middleware(['auth', 'non_student'])->group(function () {
     Route::prefix('academic/timetables')->name('academic.timetables.')->group(function () {
         Route::get('/', [AcademicTimetableController::class, 'index'])->name('index');
         Route::get('/courses/search', [AcademicTimetableController::class, 'searchCourseMappings'])->name('courses.search');
-        Route::get('/create', [AcademicTimetableController::class, 'create'])->name('create');
-        Route::post('/', [AcademicTimetableController::class, 'store'])->name('store');
+        Route::middleware('role:hod|trainer')->get('/create', [AcademicTimetableController::class, 'create'])->name('create');
+        Route::middleware('role:hod|trainer')->post('/', [AcademicTimetableController::class, 'store'])->name('store');
         Route::middleware('role:hod')->get('/create/hod', [AcademicTimetableController::class, 'createHod'])->name('hod.create');
         Route::middleware('role:hod')->get('/hod/courses/search', [AcademicTimetableController::class, 'searchHodCourses'])->name('hod.courses.search');
         Route::middleware('role:hod')->post('/hod', [AcademicTimetableController::class, 'storeHod'])->name('hod.store');
-        Route::get('/{timetable}/edit', [AcademicTimetableController::class, 'edit'])->name('edit');
-        Route::put('/{timetable}', [AcademicTimetableController::class, 'update'])->name('update');
-        Route::delete('/{timetable}', [AcademicTimetableController::class, 'destroy'])->name('destroy');
+        Route::middleware('role:hod|trainer')->get('/{timetable}/edit', [AcademicTimetableController::class, 'edit'])->name('edit');
+        Route::middleware('role:hod|trainer')->put('/{timetable}', [AcademicTimetableController::class, 'update'])->name('update');
+        Route::middleware('role:hod|trainer')->delete('/{timetable}', [AcademicTimetableController::class, 'destroy'])->name('destroy');
     });
 
     Route::middleware('role:admin|hod|trainer')->prefix('academic/marks')->name('academic.marks.')->group(function () {
         Route::get('/', [StudentMarkController::class, 'index'])->name('index');
-        Route::post('/', [StudentMarkController::class, 'store'])->name('store');
+        Route::get('/add', [StudentMarkController::class, 'addIndex'])->name('add.index');
+        Route::post('/add', [StudentMarkController::class, 'store'])->name('add.store');
+        Route::get('/view', [StudentMarkController::class, 'viewIndex'])->name('view.index');
         Route::get('/marksheet', [StudentMarkController::class, 'marksheetIndex'])
             ->name('marksheet.index');
         Route::middleware('role:admin|hod')->group(function () {
@@ -313,21 +325,23 @@ Route::middleware(['auth', 'non_student'])->group(function () {
         Route::delete('/{lecture_room}', [LectureRoomController::class, 'destroy'])->name('destroy');
     });
 
-    Route::prefix('hostels')->name('hostels.')->group(function () {
-        Route::get('/', [HostelController::class, 'index'])->name('index');
-        Route::get('/create', [HostelController::class, 'create'])->name('create');
-        Route::post('/', [HostelController::class, 'store'])->name('store');
-        Route::get('/{hostel}/edit', [HostelController::class, 'edit'])->name('edit');
-        Route::put('/{hostel}', [HostelController::class, 'update'])->name('update');
-        Route::delete('/{hostel}', [HostelController::class, 'destroy'])->name('destroy');
-    });
+    Route::middleware('role:admin')->group(function () {
+        Route::prefix('hostels')->name('hostels.')->group(function () {
+            Route::get('/', [HostelController::class, 'index'])->name('index');
+            Route::get('/create', [HostelController::class, 'create'])->name('create');
+            Route::post('/', [HostelController::class, 'store'])->name('store');
+            Route::get('/{hostel}/edit', [HostelController::class, 'edit'])->name('edit');
+            Route::put('/{hostel}', [HostelController::class, 'update'])->name('update');
+            Route::delete('/{hostel}', [HostelController::class, 'destroy'])->name('destroy');
+        });
 
-    Route::prefix('hostel-allocations')->name('hostel-allocations.')->group(function () {
-        Route::get('/', [HostelAllocationController::class, 'index'])->name('index');
-        Route::get('/create', [HostelAllocationController::class, 'create'])->name('create');
-        Route::post('/', [HostelAllocationController::class, 'store'])->name('store');
-        Route::get('/{hostel_allocation}/edit', [HostelAllocationController::class, 'edit'])->name('edit');
-        Route::put('/{hostel_allocation}', [HostelAllocationController::class, 'update'])->name('update');
+        Route::prefix('hostel-allocations')->name('hostel-allocations.')->group(function () {
+            Route::get('/', [HostelAllocationController::class, 'index'])->name('index');
+            Route::get('/create', [HostelAllocationController::class, 'create'])->name('create');
+            Route::post('/', [HostelAllocationController::class, 'store'])->name('store');
+            Route::get('/{hostel_allocation}/edit', [HostelAllocationController::class, 'edit'])->name('edit');
+            Route::put('/{hostel_allocation}', [HostelAllocationController::class, 'update'])->name('update');
+        });
     });
 
     /*

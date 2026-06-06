@@ -3,9 +3,7 @@
 use App\Http\Controllers\Api\FeeManagement\FeeAssignmentController;
 use App\Http\Controllers\Api\FeeManagement\FeeComponentController;
 use App\Http\Controllers\Api\FeeManagement\FeePlanController;
-use App\Http\Controllers\Api\AcademicLookupController;
 use App\Http\Controllers\Api\PublicCourseController;
-use App\Http\Controllers\Api\StaffLookupController;
 use App\Http\Controllers\ReportingController;
 use Illuminate\Support\Facades\Route;
 
@@ -38,28 +36,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/academic-years/{id}/sessions/{sid}/unassigned-curriculums', [FeeAssignmentController::class, 'unassignedCurricula']);
 });
 
-Route::middleware(['web', 'auth', 'non_student'])
-    ->prefix('staffs')
-    ->name('api.staffs.')
-    ->group(function () {
-        Route::get('/hod-search', [StaffLookupController::class, 'hods'])->name('hod-search');
-    });
-
-Route::middleware(['web', 'auth', 'non_student'])
-    ->prefix('lookups')
-    ->name('api.lookups.')
-    ->group(function () {
-        Route::get('/departments', [AcademicLookupController::class, 'departments'])->name('departments');
-        Route::get('/courses', [AcademicLookupController::class, 'courses'])->name('courses');
-        Route::get('/curriculums', [AcademicLookupController::class, 'curriculums'])->name('curriculums');
-        Route::get('/curriculum-mappings', [AcademicLookupController::class, 'curriculumMappings'])->name('curriculum-mappings');
-        Route::get('/units', [AcademicLookupController::class, 'units'])->name('units');
-        Route::get('/academic-years', [AcademicLookupController::class, 'academicYears'])->name('academic-years');
-        Route::get('/academic-sessions', [AcademicLookupController::class, 'academicSessions'])->name('academic-sessions');
-        Route::get('/exam-bodies', [AcademicLookupController::class, 'examBodies'])->name('exam-bodies');
-        Route::get('/certification-levels', [AcademicLookupController::class, 'certificationLevels'])->name('certification-levels');
-        Route::get('/staffs', [AcademicLookupController::class, 'staffs'])->name('staffs');
-    });
 
 Route::middleware(['web', 'auth', 'non_student'])
     ->prefix('reports')

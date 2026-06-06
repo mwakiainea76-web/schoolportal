@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Unit;
+use App\Models\AcademicSession;
+use App\Models\AcademicYear;
+use App\Models\CurriculumMapping;
 use App\Models\Student;
 use App\Models\StudentMark;
 use App\Models\StudentUnitRegistration;
+use App\Models\Unit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -14,238 +18,238 @@ use Inertia\Response;
 
 class StudentMarkController extends Controller
 {
-    // ─────────────────────────────────────────────────────────────────────────
-    //  Index (marks entry)
-    // ─────────────────────────────────────────────────────────────────────────
-
-    public function index(Request $request): Response
+    public function index(Request $request)
     {
-        [$unitCode, $type, $number, $module, $year] = $this->parseFilters($request);
+        return to_route('academic.marks.add.index', $request->query());
+    }
 
-        $selectedUnit = $unitCode ? $this->resolveUnit($unitCode) : null;
-        $submittedMarks = null; // null = not yet searched
+    public function addIndex(Request $request): Response
+    {
+        [$mappingId, $unitId, $type, $number] = $this->parseSelectionFilters($request);
+        $selectedUnit = $this->resolveSelectedUnit($mappingId, $unitId);
+
+        return Inertia::render('Grades/Add', [
+            'filters' => $this->selectionFiltersArray($mappingId, $unitId, $type, $number),
+            'selected_unit' => $this->unitPayload($selectedUnit),
+            'unit_options' => $this->unitOptions(null, $request),
+            'blocker' => $this->selectedUnitBlocker($mappingId, $unitId, $selectedUnit),
+            'can_publish' => $this->canPublishMarks($request),
+        ]);
+    }
+
+    public function viewIndex(Request $request): Response
+    {
+        [$mappingId, $unitId, $type, $number, $module, $academicYearId] = $this->parseSelectionFilters($request, true);
+        $selectedUnit = $this->resolveSelectedUnit($mappingId, $unitId);
+        $submittedMarks = null;
 
         if ($selectedUnit && $request->boolean('search_marks')) {
             $submittedMarks = $this->fetchMarks(
-                $selectedUnit->id, $type, $number, $module, $year,
+                $selectedUnit->id,
+                $type,
+                $number,
+                $module,
+                $academicYearId,
                 $request->integer('page', 1)
             );
         }
 
-        return Inertia::render('Grades/Index', [
-            'filters' => $this->filtersArray($unitCode, $type, $number, $module, $year),
+        return Inertia::render('Grades/View', [
+            'filters' => $this->selectionFiltersArray($mappingId, $unitId, $type, $number, $module, $academicYearId),
             'selected_unit' => $this->unitPayload($selectedUnit),
             'submitted_marks' => $submittedMarks,
+            'course_mappings' => $this->courseMappingOptions($request),
+            'unit_options' => $this->unitOptions($mappingId, $request),
             'filter_options' => $selectedUnit
-                ? $this->filterOptions($selectedUnit->id, $type, $number, $year)
+                ? $this->filterOptions($selectedUnit->id, $type, $number, $academicYearId)
                 : ['modules' => [], 'academic_years' => []],
-            'blocker' => $unitCode && ! $selectedUnit
-                ? 'No curriculum unit was found for the entered code.'
-                : null,
+            'blocker' => $this->selectedUnitBlocker($mappingId, $unitId, $selectedUnit),
+            'can_publish' => $this->canPublishMarks($request),
+            'selected_filters' => [
+                'academic_year' => $this->academicYearPayload($academicYearId),
+            ],
         ]);
     }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    //  Store
-    // ─────────────────────────────────────────────────────────────────────────
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'curriculum_unit_code' => ['required', 'string'],
+            'curriculum_unit_id' => ['required', 'integer'],
             'assessment_type' => ['required', 'in:theory,practical'],
             'assessment_number' => ['required', 'integer', 'min:1'],
-            'entries' => ['required', 'array', 'min:1'],
-            'entries.*.registration_number' => ['required', 'string', 'distinct'],
-            'entries.*.marks' => ['required', 'integer', 'min:0', 'max:100'],
+            'student_identifier' => ['required', 'string'],
+            'marks' => ['required', 'integer', 'min:0', 'max:100'],
         ]);
 
-        $unitCode = trim($validated['curriculum_unit_code']);
-        $unit = $this->resolveUnit($unitCode);
+        $unitId = (int) $validated['curriculum_unit_id'];
+        $unit = $this->resolveSelectedUnit(null, $unitId);
 
         if (! $unit) {
             throw ValidationException::withMessages([
-                'curriculum_unit_code' => 'No curriculum unit was found for the entered code.',
+                'curriculum_unit_id' => 'Select a valid unit before saving marks.',
             ]);
         }
 
-        $entries = collect($validated['entries'])
-            ->map(fn ($e) => [
-                'registration_number' => trim($e['registration_number']),
-                'marks' => (int) $e['marks'],
-            ])
-            ->filter(fn ($e) => $e['registration_number'] !== '')
-            ->values();
+        $entry = [
+            'student_identifier' => trim((string) $validated['student_identifier']),
+            'marks' => (int) $validated['marks'],
+        ];
 
-        // ── Validate all registration numbers exist ───────────────────────────
-        $students = Student::query()
-            ->whereIn('registration_number', $entries->pluck('registration_number')->all())
-            ->get()
-            ->keyBy('registration_number');
+        $students = $this->resolveStudentsForIdentifiers([$entry['student_identifier']]);
 
-        $unknown = $entries
-            ->pluck('registration_number')
-            ->reject(fn ($reg) => $students->has($reg))
+        $unknown = collect([$entry['student_identifier']])
+            ->reject(fn ($identifier) => $students->has($this->normalizeStudentIdentifier($identifier)))
             ->values();
 
         if ($unknown->isNotEmpty()) {
             return back()->withErrors([
-                'entries' => 'Unknown registration number(s): '.$unknown->implode(', '),
+                'student_identifier' => 'Unknown student ID or registration number: '.$unknown->implode(', '),
             ]);
         }
 
-        // ── Validate all students are registered for this unit ────────────────
         $eligible = StudentUnitRegistration::query()
             ->select('student_unit_registrations.*')
-            ->selectRaw('pe.student_id as resolved_student_id')
-            ->join('academic_session_enrollments as ase', 'ase.id', '=', 'student_unit_registrations.academic_session_enrollment_id')
-            ->join('course_enrollments as pe', 'pe.id', '=', 'ase.course_enrollment_id')
+            ->addSelect('course_enrollments.student_id')
+            ->join('academic_session_enrollments', 'academic_session_enrollments.id', '=', 'student_unit_registrations.academic_session_enrollment_id')
+            ->join('course_enrollments', 'course_enrollments.id', '=', 'academic_session_enrollments.course_enrollment_id')
             ->with('academicSessionEnrollment')
             ->where('curriculum_unit_id', $unit->id)
-            ->whereIn('pe.student_id', $students->pluck('id')->all())
-            ->orderByDesc('ase.academic_session_id')
-            ->orderByDesc('ase.id')
+            ->whereIn('course_enrollments.student_id', $students->pluck('id')->unique()->all())
+            ->orderByDesc('academic_session_enrollments.academic_session_id')
+            ->orderByDesc('academic_session_enrollments.id')
             ->get()
-            ->unique('resolved_student_id')
-            ->keyBy('resolved_student_id');
+            ->unique('student_id')
+            ->keyBy('student_id');
 
-        $notRegistered = $entries
-            ->filter(fn ($e) => ! $eligible->has($students->get($e['registration_number'])?->id))
-            ->pluck('registration_number')
-            ->values();
+        $student = $students->get($this->normalizeStudentIdentifier($entry['student_identifier']));
+        $notRegistered = (! $student || ! $eligible->has($student->id))
+            ? collect([$entry['student_identifier']])
+            : collect();
 
         if ($notRegistered->isNotEmpty()) {
             return back()->withErrors([
-                'entries' => 'Marks can only be awarded after unit registration. Invalid: '.$notRegistered->implode(', '),
+                'student_identifier' => 'Marks can only be awarded after unit registration. Invalid: '.$notRegistered->implode(', '),
             ]);
         }
 
         $staffId = $request->user()?->staff?->id;
 
-        DB::transaction(function () use ($validated, $entries, $students, $eligible, $unit, $staffId) {
-            foreach ($entries as $entry) {
-                $student = $students->get($entry['registration_number']);
-                $unitRegistration = $eligible->get($student->id);
-                $session = $unitRegistration->academicSessionEnrollment;
+        DB::transaction(function () use ($validated, $entry, $students, $eligible, $unit, $staffId) {
+            $student = $students->get($this->normalizeStudentIdentifier($entry['student_identifier']));
+            $unitRegistration = $eligible->get($student->id);
+            $session = $unitRegistration->academicSessionEnrollment;
 
-                StudentMark::updateOrCreate(
-                    [
-                        'student_id' => $student->id,
-                        'curriculum_unit_id' => $unit->id,
-                        'assessment_type' => $validated['assessment_type'],
-                        'assessment_number' => $validated['assessment_number'],
-                    ],
-                    [
-                        'academic_session_id' => $session->academic_session_id,
-                        'academic_session_enrollment_id' => $session->id,
-                        'marks' => $entry['marks'],
-                        'recorded_by_staff_id' => $staffId,
-                        'is_published' => false,
-                    ]
-                );
-            }
+            StudentMark::updateOrCreate(
+                [
+                    'student_id' => $student->id,
+                    'curriculum_unit_id' => $unit->id,
+                    'assessment_type' => $validated['assessment_type'],
+                    'assessment_number' => $validated['assessment_number'],
+                ],
+                [
+                    'academic_session_id' => $session->academic_session_id,
+                    'academic_session_enrollment_id' => $session->id,
+                    'marks' => $entry['marks'],
+                    'recorded_by_staff_id' => $staffId,
+                    'is_published' => false,
+                ]
+            );
         });
 
-        return to_route('academic.marks.index', [
-            'curriculum_unit_code' => $unitCode,
+        return to_route('academic.marks.add.index', [
+            'curriculum_unit_id' => $unitId,
             'assessment_type' => $validated['assessment_type'],
             'assessment_number' => $validated['assessment_number'],
         ])->with('success', 'Marks saved as unpublished successfully.');
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    //  Publish index (HoD)
-    // ─────────────────────────────────────────────────────────────────────────
-
     public function publishIndex(Request $request): Response
     {
         $this->authorizeHod($request);
 
-        [$unitCode, $type, $number, $module, $year] = $this->parseFilters($request);
+        [$mappingId, $unitId, $type, $number, $module, $academicYearId] = $this->parseSelectionFilters($request, true);
+        $selectedUnit = $this->resolveSelectedUnit($mappingId, $unitId);
+        $submittedMarks = null;
 
-        $selectedUnit = $unitCode ? $this->resolveUnit($unitCode) : null;
-        $submittedMarks = $selectedUnit
-            ? $this->fetchPublishMarks(
-                $selectedUnit->id, $module, $year,
+        if ($selectedUnit && $request->boolean('search_marks')) {
+            $submittedMarks = $this->fetchPublishMarks(
+                $selectedUnit->id,
+                $type,
+                $number,
+                $module,
+                $academicYearId,
                 $request->integer('page', 1)
-            )
-            : null;
+            );
+        }
 
         return Inertia::render('Grades/Publish', [
-            // Publish frontend only uses these 3 filter fields
-            'filters' => [
-                'curriculum_unit_code' => $unitCode,
-                'academic_year' => $year ?? '',
-                'module' => $module ? (string) $module : '',
-            ],
+            'filters' => $this->selectionFiltersArray($mappingId, $unitId, $type, $number, $module, $academicYearId),
             'selected_unit' => $this->unitPayload($selectedUnit),
             'submitted_marks' => $submittedMarks,
+            'unit_options' => $this->unitOptions(null, $request),
             'filter_options' => $selectedUnit
-                ? $this->publishFilterOptions($selectedUnit->id, $year)
+                ? $this->publishFilterOptions($selectedUnit->id, $type, $number, $academicYearId)
                 : ['modules' => [], 'academic_years' => []],
-            'blocker' => $unitCode && ! $selectedUnit
-                ? 'No curriculum unit was found for the entered code.'
-                : null,
+            'blocker' => $this->selectedUnitBlocker($mappingId, $unitId, $selectedUnit),
+            'can_publish' => true,
+            'selected_filters' => [
+                'academic_year' => $this->academicYearPayload($academicYearId),
+            ],
         ]);
     }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    //  Publish / unpublish an entire assessment
-    // ─────────────────────────────────────────────────────────────────────────
 
     public function publishAssessment(Request $request)
     {
         $this->authorizeHod($request);
 
         $validated = $request->validate([
-            'curriculum_unit_code' => ['required', 'string'],
-            'assessment_type' => ['nullable', 'in:theory,practical'],
-            'assessment_number' => ['nullable', 'integer', 'min:1'],
-            'academic_year' => ['nullable', 'string'],
+            'curriculum_unit_id' => ['required', 'integer'],
+            'assessment_type' => ['required', 'in:theory,practical'],
+            'assessment_number' => ['required', 'integer', 'min:1'],
+            'academic_year_id' => ['nullable', 'integer'],
             'module' => ['nullable', 'integer', 'min:1'],
             'action' => ['required', 'in:publish,unpublish'],
         ]);
 
-        $unit = $this->resolveUnit(trim($validated['curriculum_unit_code']));
+        $unitId = (int) $validated['curriculum_unit_id'];
+        $unit = $this->resolveSelectedUnit(null, $unitId);
 
         if (! $unit) {
             throw ValidationException::withMessages([
-                'curriculum_unit_code' => 'No curriculum unit was found for the entered code.',
+                'curriculum_unit_id' => 'Select a valid unit before publishing marks.',
             ]);
         }
 
-        $year = trim((string) ($validated['academic_year'] ?? ''));
-        $year = $year !== '' ? $year : null;
+        $academicYearId = isset($validated['academic_year_id']) ? (int) $validated['academic_year_id'] : null;
         $module = isset($validated['module']) ? (int) $validated['module'] : null;
 
         $query = StudentMark::query()
             ->where('curriculum_unit_id', $unit->id)
-            ->when(! empty($validated['assessment_type']), fn ($q) => $q->where('assessment_type', $validated['assessment_type']))
-            ->when(! empty($validated['assessment_number']), fn ($q) => $q->where('assessment_number', $validated['assessment_number']));
+            ->where('assessment_type', $validated['assessment_type'])
+            ->where('assessment_number', $validated['assessment_number']);
 
-        $this->applyYearModuleFilters($query, $year, $module);
+        $this->applyYearModuleFilters($query, $academicYearId, $module);
 
         $updated = $query->update([
             'is_published' => $validated['action'] === 'publish',
             'updated_at' => now(),
         ]);
 
-        $msg = match (true) {
+        $message = match (true) {
             $updated === 0 => 'No marks were found for that assessment.',
             $validated['action'] === 'publish' => 'Assessment marks published successfully.',
             default => 'Assessment marks unpublished successfully.',
         };
 
         return to_route('academic.marks.publish.index', [
-            'curriculum_unit_code' => $validated['curriculum_unit_code'],
-            'academic_year' => $year,
+            'curriculum_unit_id' => $unitId,
+            'assessment_type' => $validated['assessment_type'],
+            'assessment_number' => $validated['assessment_number'],
+            'academic_year_id' => $academicYearId,
             'module' => $module,
-        ])->with('success', $msg);
+            'search_marks' => true,
+        ])->with('success', $message);
     }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    //  Toggle a single mark's published state
-    // ─────────────────────────────────────────────────────────────────────────
 
     public function togglePublish(Request $request, StudentMark $studentMark)
     {
@@ -263,26 +267,21 @@ class StudentMarkController extends Controller
         );
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    //  Marksheet
-    // ─────────────────────────────────────────────────────────────────────────
-
     public function marksheetIndex(Request $request): Response
     {
         $validated = $request->validate([
             'curriculum_unit_code' => ['nullable', 'string'],
-            'session_number' => ['nullable', 'integer', 'min:1'],
+            'academic_session_id' => ['nullable', 'integer'],
             'year_of_study' => ['nullable', 'integer', 'min:1'],
             'registration_number' => ['nullable', 'string'],
         ]);
 
         $unitCode = trim((string) ($validated['curriculum_unit_code'] ?? ''));
-        $sessionNumber = isset($validated['session_number']) ? (int) $validated['session_number'] : null;
+        $academicSessionId = isset($validated['academic_session_id']) ? (int) $validated['academic_session_id'] : null;
         $yearOfStudy = isset($validated['year_of_study']) ? (int) $validated['year_of_study'] : null;
         $registrationNumber = trim((string) ($validated['registration_number'] ?? ''));
         $selectedUnit = $unitCode !== '' ? $this->resolveUnit($unitCode) : null;
 
-        $availableSessions = collect();
         $availableYears = collect();
         $marksheetData = [
             'theory' => ['average' => 0, 'top_performers' => []],
@@ -290,20 +289,6 @@ class StudentMarkController extends Controller
         ];
 
         if ($selectedUnit) {
-            // ── Sessions: JOIN instead of loading all marks into memory ──────
-            $availableSessions = StudentMark::query()
-                ->join('academic_sessions as acs', 'acs.id', '=', 'student_marks.academic_session_id')
-                ->where('student_marks.curriculum_unit_id', $selectedUnit->id)
-                ->distinct()
-                ->orderBy('acs.session_number')
-                ->pluck('acs.session_number')
-                ->filter()
-                ->map(fn ($s) => [
-                    'value' => (string) (int) $s,
-                    'label' => 'Session '.(int) $s,
-                ])
-                ->values();
-
             $availableYears = StudentMark::query()
                 ->join('academic_session_enrollments as ase', 'ase.id', '=', 'student_marks.academic_session_enrollment_id')
                 ->where('student_marks.curriculum_unit_id', $selectedUnit->id)
@@ -311,42 +296,39 @@ class StudentMarkController extends Controller
                 ->orderBy('ase.year_of_study')
                 ->pluck('ase.year_of_study')
                 ->filter()
-                ->map(fn ($y) => [
-                    'value' => (string) (int) $y,
-                    'label' => 'Year '.(int) $y,
+                ->map(fn ($year) => [
+                    'value' => (string) (int) $year,
+                    'label' => 'Year '.(int) $year,
                 ])
                 ->values();
 
             $marksheetData = [
-                'theory' => $this->marksheetSection($selectedUnit->id, 'theory', $sessionNumber, $yearOfStudy, $registrationNumber),
-                'practical' => $this->marksheetSection($selectedUnit->id, 'practical', $sessionNumber, $yearOfStudy, $registrationNumber),
+                'theory' => $this->marksheetSection($selectedUnit->id, 'theory', $academicSessionId, $yearOfStudy, $registrationNumber),
+                'practical' => $this->marksheetSection($selectedUnit->id, 'practical', $academicSessionId, $yearOfStudy, $registrationNumber),
             ];
         }
 
         return Inertia::render('Grades/Marksheet', [
             'filters' => [
                 'curriculum_unit_code' => $unitCode,
-                'session_number' => $sessionNumber ? (string) $sessionNumber : '',
+                'academic_session_id' => $academicSessionId ? (string) $academicSessionId : '',
                 'year_of_study' => $yearOfStudy ? (string) $yearOfStudy : '',
                 'registration_number' => $registrationNumber,
             ],
-            // Marksheet only renders code + name — skip full unitPayload()
             'selected_unit' => $selectedUnit ? [
-                'code' => $selectedUnit->unit?->code,
-                'name' => $selectedUnit->unit?->name,
+                'code' => $selectedUnit->code,
+                'name' => $selectedUnit->name,
             ] : null,
-            'available_sessions' => $availableSessions,
             'available_years' => $availableYears,
             'marksheet_data' => $marksheetData,
             'blocker' => $unitCode !== '' && ! $selectedUnit
                 ? 'No curriculum unit was found for the entered code.'
                 : null,
+            'selected_filters' => [
+                'academic_session' => $this->academicSessionPayload($academicSessionId),
+            ],
         ]);
     }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    //  Student results (student-facing)
-    // ─────────────────────────────────────────────────────────────────────────
 
     public function studentResultsIndex(Request $request): Response
     {
@@ -369,7 +351,6 @@ class StudentMarkController extends Controller
             ]);
         }
 
-        // ── 1. Filter options: two cheap scalar queries, no relations ─────────
         $baseMarks = StudentMark::query()
             ->where('student_id', $student->id)
             ->where('is_published', true);
@@ -380,7 +361,7 @@ class StudentMarkController extends Controller
             ->orderBy('units.module_taught')
             ->pluck('units.module_taught')
             ->filter()
-            ->map(fn ($m) => (int) $m)
+            ->map(fn ($module) => (int) $module)
             ->values();
 
         $availableYears = (clone $baseMarks)
@@ -389,12 +370,11 @@ class StudentMarkController extends Controller
             ->orderBy('academic_session_enrollments.year_of_study')
             ->pluck('academic_session_enrollments.year_of_study')
             ->filter()
-            ->map(fn ($y) => (int) $y)
+            ->map(fn ($year) => (int) $year)
             ->values();
 
         $publishedCount = (clone $baseMarks)->count();
 
-        // ── 2. Filtered + paginated marks: filters pushed to SQL ─────────────
         $filteredQuery = (clone $baseMarks)
             ->with([
                 'academicSessionEnrollment:id,year_of_study',
@@ -406,13 +386,11 @@ class StudentMarkController extends Controller
             ->orderBy('assessment_number');
 
         if ($selectedModule) {
-            $filteredQuery->whereHas('curriculumUnit', fn ($q) => $q->where('module_taught', $selectedModule)
-            );
+            $filteredQuery->whereHas('curriculumUnit', fn ($query) => $query->where('module_taught', $selectedModule));
         }
 
         if ($selectedYear) {
-            $filteredQuery->whereHas('academicSessionEnrollment', fn ($q) => $q->where('year_of_study', $selectedYear)
-            );
+            $filteredQuery->whereHas('academicSessionEnrollment', fn ($query) => $query->where('year_of_study', $selectedYear));
         }
 
         $paginator = $filteredQuery
@@ -436,11 +414,13 @@ class StudentMarkController extends Controller
                 'year_of_study' => $selectedYear ? (string) $selectedYear : '',
             ],
             'filter_options' => [
-                'modules' => $availableModules->map(fn ($m) => [
-                    'value' => (string) $m, 'label' => "Module $m",
+                'modules' => $availableModules->map(fn ($module) => [
+                    'value' => (string) $module,
+                    'label' => "Module $module",
                 ])->values(),
-                'years_of_study' => $availableYears->map(fn ($y) => [
-                    'value' => (string) $y, 'label' => "Year $y",
+                'years_of_study' => $availableYears->map(fn ($year) => [
+                    'value' => (string) $year,
+                    'label' => "Year $year",
                 ])->values(),
             ],
             'student' => [
@@ -461,50 +441,43 @@ class StudentMarkController extends Controller
         ]);
     }
 
-    // =========================================================================
-    //  Private helpers
-    // =========================================================================
-
-    /**
-     * Parse the five common filter inputs from any request.
-     * Returns [$unitCode, $type, $number, $module, $year].
-     */
-    private function parseFilters(Request $request): array
+    private function parseSelectionFilters(Request $request, bool $includeHistoryFilters = false): array
     {
-        $year = trim($request->string('academic_year')->toString());
-
-        return [
-            trim($request->string('curriculum_unit_code')->toString()),
+        $filters = [
+            $request->integer('curriculum_mapping_id') ?: null,
+            $request->integer('curriculum_unit_id') ?: null,
             $request->string('assessment_type')->toString() ?: 'theory',
             max(1, $request->integer('assessment_number') ?: 1),
-            $request->integer('module') ?: null,
-            $year !== '' ? $year : null,
         ];
+
+        if (! $includeHistoryFilters) {
+            return $filters;
+        }
+
+        $filters[] = $request->integer('module') ?: null;
+        $filters[] = $request->integer('academic_year_id') ?: null;
+
+        return $filters;
     }
 
-    /**
-     * Shape the filters array sent back to Index page.
-     */
-    private function filtersArray(
-        string $unitCode,
+    private function selectionFiltersArray(
+        ?int $mappingId,
+        ?int $unitId,
         string $type,
         int $number,
-        ?int $module,
-        ?string $year,
+        ?int $module = null,
+        ?int $academicYearId = null,
     ): array {
         return [
-            'curriculum_unit_code' => $unitCode,
+            'curriculum_mapping_id' => $mappingId ? (string) $mappingId : '',
+            'curriculum_unit_id' => $unitId ? (string) $unitId : '',
             'assessment_type' => $type,
             'assessment_number' => (string) $number,
             'module' => $module ? (string) $module : '',
-            'academic_year' => $year ?? '',
+            'academic_year_id' => $academicYearId ? (string) $academicYearId : '',
         ];
     }
 
-    /**
-     * Resolve a CurriculumUnit by unit code.
-     * Eager-loads everything unitPayload() needs.
-     */
     private function resolveUnit(string $unitCode): ?Unit
     {
         if ($unitCode === '') {
@@ -512,35 +485,31 @@ class StudentMarkController extends Controller
         }
 
         return Unit::query()
-            ->select([
-                'units.*',
-                'units.code as resolved_unit_code',
-                'units.name as resolved_unit_name',
-                'courses.name as resolved_course_name',
-                'curricula.name as resolved_version_name',
+            ->with([
+                'curriculumMapping.course:id,name,code',
+                'curriculumMapping.curriculum:id,name',
             ])
-            ->join(
-                'curriculum_mappings',
-                'curriculum_mappings.id',
-                '=',
-                'units.curriculum_mapping_id'
-            )
-            ->join('courses', 'courses.id', '=', 'curriculum_mappings.course_id')
-            ->join(
-                'curricula',
-                'curricula.id',
-                '=',
-                'curriculum_mappings.curriculum_id'
-            )
             ->where('units.code', $unitCode)
-            ->orderBy('id')
+            ->orderBy('units.id')
             ->first();
     }
 
-    /**
-     * Shape a CurriculumUnit into the full payload used by Index and Publish.
-     * Marksheet uses its own slimmer shape (code + name only).
-     */
+    private function resolveSelectedUnit(?int $mappingId, ?int $unitId): ?Unit
+    {
+        if (! $unitId) {
+            return null;
+        }
+
+        return Unit::query()
+            ->with([
+                'curriculumMapping.course:id,name,code',
+                'curriculumMapping.curriculum:id,name',
+            ])
+            ->where('units.id', $unitId)
+            ->when($mappingId, fn ($query) => $query->where('units.curriculum_mapping_id', $mappingId))
+            ->first();
+    }
+
     private function unitPayload(?Unit $unit): ?array
     {
         if (! $unit) {
@@ -549,24 +518,147 @@ class StudentMarkController extends Controller
 
         return [
             'id' => $unit->id,
-            'code' => $unit->resolved_unit_code ?? $unit->code,
-            'name' => $unit->resolved_unit_name ?? $unit->name,
+            'curriculum_mapping_id' => (string) $unit->curriculum_mapping_id,
+            'code' => $unit->code,
+            'name' => $unit->name,
             'module' => $unit->module_taught,
-            'course' => $unit->resolved_course_name ?? $unit->curriculumMapping?->course?->name,
-            'version' => $unit->resolved_version_name ?? $unit->curriculumMapping?->curriculum?->name,
+            'course' => $unit->curriculumMapping?->course?->name,
+            'version' => $unit->curriculumMapping?->curriculum?->name,
         ];
     }
 
-    /**
-     * Paginated submitted marks for the Index (marks entry) page.
-     * Returns a plain array shaped for the frontend paginator component.
-     */
+    private function courseMappingOptions(Request $request): array
+    {
+        return CurriculumMapping::query()
+            ->with([
+                'course:id,name,code',
+                'curriculum:id,name',
+            ])
+            ->where('is_active', true)
+            ->whereHas('units')
+            ->when(
+                $this->shouldScopeMarksToDepartment($request),
+                fn ($query) => $query->whereHas(
+                    'course',
+                    fn ($courseQuery) => $courseQuery->where('department_id', $this->currentDepartmentId($request))
+                )
+            )
+            ->latest('id')
+            ->get(['id', 'course_id', 'curriculum_id'])
+            ->map(fn (CurriculumMapping $mapping) => [
+                'id' => (string) $mapping->id,
+                'name' => trim(($mapping->curriculum?->name ?? '').' - '.($mapping->course?->name ?? '').' ('.($mapping->course?->code ?? '').')', ' -()'),
+            ])
+            ->values()
+            ->all();
+    }
+
+    private function unitOptions(?int $mappingId, Request $request): array
+    {
+        return $this->unitSearchResults($request, $mappingId, '', 12);
+    }
+
+    private function unitSearchResults(Request $request, ?int $mappingId, string $query, int $limit): array
+    {
+        return Unit::query()
+            ->with([
+                'curriculumMapping.course:id,name,department_id',
+                'curriculumMapping.curriculum:id,name',
+            ])
+            ->when($mappingId, fn ($builder) => $builder->where('curriculum_mapping_id', $mappingId))
+            ->when(
+                $this->shouldScopeMarksToDepartment($request),
+                fn ($builder) => $builder->whereHas(
+                    'curriculumMapping.course',
+                    fn ($courseQuery) => $courseQuery->where('department_id', $this->currentDepartmentId($request))
+                )
+            )
+            ->when($query !== '', function ($builder) use ($query) {
+                $builder->where(function ($unitQuery) use ($query) {
+                    $unitQuery
+                        ->where('units.name', 'like', "%{$query}%")
+                        ->orWhere('units.code', 'like', "%{$query}%")
+                        ->orWhereHas('curriculumMapping.course', fn ($courseQuery) => $courseQuery->where('name', 'like', "%{$query}%"))
+                        ->orWhereHas('curriculumMapping.curriculum', fn ($curriculumQuery) => $curriculumQuery->where('name', 'like', "%{$query}%"));
+                });
+            })
+            ->orderBy('module_taught')
+            ->orderBy('code')
+            ->limit($limit)
+            ->get(['id', 'curriculum_mapping_id', 'code', 'name', 'module_taught'])
+            ->map(fn (Unit $unit) => [
+                'id' => (string) $unit->id,
+                'name' => trim(
+                    ($unit->curriculumMapping?->course?->name ?? '').
+                    ' / Module '.($unit->module_taught ?: '?').
+                    ' / '.($unit->code ?? '').
+                    ' - '.($unit->name ?? '')
+                ),
+            ])
+            ->values()
+            ->all();
+    }
+
+    private function selectedUnitBlocker(?int $mappingId, ?int $unitId, ?Unit $selectedUnit): ?string
+    {
+        if ($unitId && ! $selectedUnit) {
+            return $mappingId
+                ? 'Select a valid unit from the chosen course mapping.'
+                : 'Select a valid unit before continuing.';
+        }
+
+        return null;
+    }
+
+    private function resolveStudentsForIdentifiers(array $identifiers): Collection
+    {
+        $normalized = collect($identifiers)
+            ->map(fn ($identifier) => $this->normalizeStudentIdentifier($identifier))
+            ->filter()
+            ->unique()
+            ->values();
+
+        $numericIds = $normalized
+            ->filter(fn ($identifier) => ctype_digit($identifier))
+            ->map(fn ($identifier) => (int) $identifier)
+            ->values()
+            ->all();
+
+        $registrationNumbers = $normalized->all();
+
+        $students = Student::query()
+            ->where(function ($query) use ($registrationNumbers, $numericIds) {
+                if ($registrationNumbers !== []) {
+                    $query->whereIn('registration_number', $registrationNumbers);
+                }
+
+                if ($numericIds !== []) {
+                    $query->orWhereIn('id', $numericIds);
+                }
+            })
+            ->get();
+
+        $keyed = collect();
+
+        foreach ($students as $student) {
+            $keyed->put($this->normalizeStudentIdentifier($student->registration_number), $student);
+            $keyed->put((string) $student->id, $student);
+        }
+
+        return $keyed;
+    }
+
+    private function normalizeStudentIdentifier(string $identifier): string
+    {
+        return strtoupper(trim($identifier));
+    }
+
     private function fetchMarks(
         int $unitId,
         string $type,
         int $number,
         ?int $module,
-        ?string $year,
+        ?int $academicYearId,
         int $page = 1,
     ): array {
         $paginator = StudentMark::query()
@@ -578,19 +670,18 @@ class StudentMarkController extends Controller
             ->where('curriculum_unit_id', $unitId)
             ->where('assessment_type', $type)
             ->where('assessment_number', $number)
-            ->when($year, function ($q) use ($year, $module) {
-                $q->whereHas('academicSession.academicYear', fn ($q2) => $q2->where('academic_year', $year)
-                );
+            ->when($academicYearId, function ($query) use ($academicYearId, $module) {
+                $query->whereHas('academicSession', fn ($sessionQuery) => $sessionQuery->where('academic_year_id', $academicYearId));
+
                 if ($module !== null) {
-                    $q->whereHas('academicSessionEnrollment', fn ($q2) => $q2->where('module', $module)
-                        ->whereHas('academicSession.academicYear', fn ($q3) => $q3->where('academic_year', $year)
-                        )
-                    );
+                    $query->whereHas('academicSessionEnrollment', fn ($enrollmentQuery) => $enrollmentQuery
+                        ->where('module', $module)
+                        ->whereHas('academicSession', fn ($sessionQuery) => $sessionQuery->where('academic_year_id', $academicYearId)));
                 }
             })
-            ->when(! $year && $module, fn ($q) => $q->whereHas(
+            ->when(! $academicYearId && $module, fn ($query) => $query->whereHas(
                 'academicSessionEnrollment',
-                fn ($q2) => $q2->where('module', $module)
+                fn ($enrollmentQuery) => $enrollmentQuery->where('module', $module)
             ))
             ->orderBy('student_id')
             ->paginate(25, ['*'], 'page', $page)
@@ -600,10 +691,7 @@ class StudentMarkController extends Controller
             $paginator->getCollection()->map(fn (StudentMark $mark) => [
                 'id' => $mark->id,
                 'registration_number' => $mark->student?->registration_number,
-                'student_name' => trim(
-                    ($mark->student?->user?->first_name ?? '').' '.
-                    ($mark->student?->user?->last_name ?? '')
-                ),
+                'student_name' => trim(($mark->student?->user?->first_name ?? '').' '.($mark->student?->user?->last_name ?? '')),
                 'unit_name' => $mark->curriculumUnit?->name,
                 'marks' => (int) $mark->marks,
                 'is_published' => (bool) $mark->is_published,
@@ -619,14 +707,12 @@ class StudentMarkController extends Controller
         ];
     }
 
-    /**
-     * Paginated submitted marks for the HoD Publish page.
-     * Covers all assessments for a unit (no assessment_type/number filter).
-     */
     private function fetchPublishMarks(
         int $unitId,
+        string $type,
+        int $number,
         ?int $module,
-        ?string $year,
+        ?int $academicYearId,
         int $page = 1,
     ): array {
         $query = StudentMark::query()
@@ -635,13 +721,13 @@ class StudentMarkController extends Controller
                 'student.user:id,first_name,last_name',
                 'curriculumUnit:id,name',
             ])
-            ->where('curriculum_unit_id', $unitId);
+            ->where('curriculum_unit_id', $unitId)
+            ->where('assessment_type', $type)
+            ->where('assessment_number', $number);
 
-        $this->applyYearModuleFilters($query, $year, $module);
+        $this->applyYearModuleFilters($query, $academicYearId, $module);
 
         $paginator = $query
-            ->orderBy('assessment_type')
-            ->orderBy('assessment_number')
             ->orderBy('student_id')
             ->paginate(25, ['*'], 'page', $page)
             ->withQueryString();
@@ -650,10 +736,7 @@ class StudentMarkController extends Controller
             $paginator->getCollection()->map(fn (StudentMark $mark) => [
                 'id' => $mark->id,
                 'registration_number' => $mark->student?->registration_number,
-                'student_name' => trim(
-                    ($mark->student?->user?->first_name ?? '').' '.
-                    ($mark->student?->user?->last_name ?? '')
-                ),
+                'student_name' => trim(($mark->student?->user?->first_name ?? '').' '.($mark->student?->user?->last_name ?? '')),
                 'unit_name' => $mark->curriculumUnit?->name,
                 'marks' => (int) $mark->marks,
                 'is_published' => (bool) $mark->is_published,
@@ -669,11 +752,7 @@ class StudentMarkController extends Controller
         ];
     }
 
-    /**
-     * Dropdown options for the Index page.
-     * Academic years always unscoped; modules scoped to selected year when provided.
-     */
-    private function filterOptions(int $unitId, string $type, int $number, ?string $selectedYear = null): array
+    private function filterOptions(int $unitId, string $type, int $number, ?int $selectedAcademicYearId = null): array
     {
         $years = StudentMark::query()
             ->join('academic_sessions as acs', 'acs.id', '=', 'student_marks.academic_session_id')
@@ -683,9 +762,12 @@ class StudentMarkController extends Controller
             ->where('student_marks.assessment_number', $number)
             ->distinct()
             ->orderByDesc('ay.academic_year')
-            ->pluck('ay.academic_year')
-            ->filter()
-            ->map(fn ($y) => ['value' => (string) $y, 'label' => (string) $y])
+            ->get(['ay.id', 'ay.label', 'ay.academic_year'])
+            ->map(fn ($year) => [
+                'value' => (string) $year->id,
+                'label' => trim(($year->label ?? '').' '.($year->academic_year ?? '')),
+            ])
+            ->unique('value')
             ->values();
 
         $modulesQuery = StudentMark::query()
@@ -696,8 +778,8 @@ class StudentMarkController extends Controller
             ->where('student_marks.assessment_type', $type)
             ->where('student_marks.assessment_number', $number);
 
-        if ($selectedYear !== null) {
-            $modulesQuery->where('ay2.academic_year', $selectedYear);
+        if ($selectedAcademicYearId !== null) {
+            $modulesQuery->where('ay2.id', $selectedAcademicYearId);
         }
 
         $modules = $modulesQuery
@@ -705,70 +787,30 @@ class StudentMarkController extends Controller
             ->orderBy('ase.module')
             ->pluck('ase.module')
             ->filter()
-            ->map(fn ($m) => ['value' => (string) (int) $m, 'label' => 'Module '.(int) $m])
+            ->map(fn ($module) => ['value' => (string) (int) $module, 'label' => 'Module '.(int) $module])
             ->values();
 
         return ['modules' => $modules, 'academic_years' => $years];
     }
 
-    /**
-     * Dropdown options for the HoD Publish page, across all assessments.
-     */
-    private function publishFilterOptions(int $unitId, ?string $selectedYear = null): array
+    private function publishFilterOptions(int $unitId, string $type, int $number, ?int $selectedAcademicYearId = null): array
     {
-        $years = StudentMark::query()
-            ->join('academic_sessions as acs', 'acs.id', '=', 'student_marks.academic_session_id')
-            ->join('academic_years as ay', 'ay.id', '=', 'acs.academic_year_id')
-            ->where('student_marks.curriculum_unit_id', $unitId)
-            ->distinct()
-            ->orderByDesc('ay.academic_year')
-            ->pluck('ay.academic_year')
-            ->filter()
-            ->map(fn ($y) => ['value' => (string) $y, 'label' => (string) $y])
-            ->values();
-
-        $modulesQuery = StudentMark::query()
-            ->join('academic_session_enrollments as ase', 'ase.id', '=', 'student_marks.academic_session_enrollment_id')
-            ->join('academic_sessions as acs', 'acs.id', '=', 'student_marks.academic_session_id')
-            ->join('academic_years as ay', 'ay.id', '=', 'acs.academic_year_id')
-            ->where('student_marks.curriculum_unit_id', $unitId);
-
-        if ($selectedYear !== null) {
-            $modulesQuery->where('ay.academic_year', $selectedYear);
-        }
-
-        $modules = $modulesQuery
-            ->distinct()
-            ->orderBy('ase.module')
-            ->pluck('ase.module')
-            ->filter()
-            ->map(fn ($m) => ['value' => (string) (int) $m, 'label' => 'Module '.(int) $m])
-            ->values();
-
-        return ['modules' => $modules, 'academic_years' => $years];
+        return $this->filterOptions($unitId, $type, $number, $selectedAcademicYearId);
     }
 
-    /**
-     * Top-3 performers + average for a single assessment type.
-     * Used by marksheetIndex — intentionally NOT paginated (fixed top-3 display).
-     */
     private function marksheetSection(
         int $unitId,
         string $assessmentType,
-        ?int $sessionNumber,
+        ?int $academicSessionId,
         ?int $yearOfStudy,
         string $registrationNumber,
     ): array {
         $baseQuery = StudentMark::query()
             ->where('curriculum_unit_id', $unitId)
             ->where('assessment_type', $assessmentType)
-            ->when($sessionNumber, fn ($q) => $q->whereHas('academicSession', fn ($q2) => $q2->where('session_number', $sessionNumber)
-                ->orWhere('session_No', $sessionNumber)
-            ))
-            ->when($yearOfStudy, fn ($q) => $q->whereHas('academicSessionEnrollment', fn ($q2) => $q2->where('year_of_study', $yearOfStudy)
-            ))
-            ->when($registrationNumber !== '', fn ($q) => $q->whereHas('student', fn ($q2) => $q2->where('registration_number', $registrationNumber)
-            ));
+            ->when($academicSessionId, fn ($query) => $query->where('academic_session_id', $academicSessionId))
+            ->when($yearOfStudy, fn ($query) => $query->whereHas('academicSessionEnrollment', fn ($enrollmentQuery) => $enrollmentQuery->where('year_of_study', $yearOfStudy)))
+            ->when($registrationNumber !== '', fn ($query) => $query->whereHas('student', fn ($studentQuery) => $studentQuery->where('registration_number', $registrationNumber)));
 
         $average = round((float) (clone $baseQuery)->avg('marks'), 2);
 
@@ -788,10 +830,7 @@ class StudentMarkController extends Controller
             'top_performers' => $topPerformers
                 ->map(fn (StudentMark $mark) => [
                     'registration_number' => $mark->student?->registration_number,
-                    'student_name' => trim(
-                        ($mark->student?->user?->first_name ?? '').' '.
-                        ($mark->student?->user?->last_name ?? '')
-                    ),
+                    'student_name' => trim(($mark->student?->user?->first_name ?? '').' '.($mark->student?->user?->last_name ?? '')),
                     'marks' => (int) $mark->marks,
                     'year_of_study' => $mark->academicSessionEnrollment?->year_of_study,
                 ])
@@ -799,31 +838,74 @@ class StudentMarkController extends Controller
         ];
     }
 
-    /**
-     * Apply year and module filters to a StudentMark query builder in place.
-     * Used by publishAssessment and fetchPublishMarks.
-     */
-    private function applyYearModuleFilters($query, ?string $year, ?int $module): void
+    private function applyYearModuleFilters($query, ?int $academicYearId, ?int $module): void
     {
-        if ($year !== null) {
-            $query->whereHas('academicSession.academicYear', fn ($q) => $q->where('academic_year', $year)
-            );
+        if ($academicYearId !== null) {
+            $query->whereHas('academicSession', fn ($sessionQuery) => $sessionQuery->where('academic_year_id', $academicYearId));
         }
 
         if ($module !== null) {
-            $query->whereHas('academicSessionEnrollment', fn ($q) => $q->where('module', $module)
-            );
+            $query->whereHas('academicSessionEnrollment', fn ($enrollmentQuery) => $enrollmentQuery->where('module', $module));
         }
     }
 
-    /**
-     * Abort with 403 unless the authenticated user is an HoD or admin.
-     */
     private function authorizeHod(Request $request): void
     {
-        abort_unless(
-            $request->user()?->hasRole('hod') || $request->user()?->hasRole('admin'),
-            403
-        );
+        abort_unless($this->canPublishMarks($request), 403);
+    }
+
+    private function canPublishMarks(Request $request): bool
+    {
+        return (bool) ($request->user()?->hasRole('hod') || $request->user()?->hasRole('admin'));
+    }
+
+    private function currentDepartmentId(Request $request): ?int
+    {
+        return $request->user()?->staff?->department_id
+            ? (int) $request->user()->staff->department_id
+            : null;
+    }
+
+    private function shouldScopeMarksToDepartment(Request $request): bool
+    {
+        return (bool) ($request->user()?->hasRole('hod') && ! $request->user()?->hasRole('admin') && $this->currentDepartmentId($request));
+    }
+
+    private function academicYearPayload(?int $academicYearId): ?array
+    {
+        if (! $academicYearId) {
+            return null;
+        }
+
+        $year = AcademicYear::query()->find($academicYearId, ['id', 'label', 'academic_year']);
+
+        if (! $year) {
+            return null;
+        }
+
+        return [
+            'id' => (string) $year->id,
+            'name' => $year->name,
+        ];
+    }
+
+    private function academicSessionPayload(?int $academicSessionId): ?array
+    {
+        if (! $academicSessionId) {
+            return null;
+        }
+
+        $session = AcademicSession::query()
+            ->with('academicYear:id,label,academic_year')
+            ->find($academicSessionId, ['id', 'academic_year_id', 'session_number', 'session_No', 'label']);
+
+        if (! $session) {
+            return null;
+        }
+
+        return [
+            'id' => (string) $session->id,
+            'name' => $session->display_name,
+        ];
     }
 }

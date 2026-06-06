@@ -9,6 +9,7 @@ import Trow from "@/Components/Table/Trow";
 import Tdata from "@/Components/Table/Tdata";
 import SearchSelect from "@/Components/SearchSelect";
 import useRbac from "@/Hooks/UseRBAC";
+import CourseWorkspaceTabs from "@/Pages/Courses/Partials/CourseWorkspaceTabs";
 
 export default function CurriculumIndex({
     curricula,
@@ -91,6 +92,9 @@ export default function CurriculumIndex({
             <Head title="Curriculums" />
 
             <div className="mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <div className="mb-6">
+                    <CourseWorkspaceTabs activeTab="curriculums" />
+                </div>
                 {can("curriculums.view") ? (
                     <form
                         className="w-full relative flex gap-x-7"

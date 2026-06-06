@@ -171,6 +171,50 @@ class UnitController extends Controller
             ->with('success', 'Unit deleted successfully.');
     }
 
+    public function search(Request $request)
+    {
+        $limit = min(max($request->integer('limit', 10), 1), 25);
+        $query = trim((string) $request->query('q', ''));
+
+        $units = Unit::query()
+            ->with(['curriculumMapping.course:id,name', 'curriculumMapping.curriculum:id,name'])
+            ->when($request->filled('curriculum_mapping_id'), fn ($builder) => $builder->where('curriculum_mapping_id', $request->integer('curriculum_mapping_id')))
+            ->when($request->filled('course_id'), function ($builder) use ($request) {
+                $builder->whereHas('curriculumMapping.course', fn ($courseQuery) => $courseQuery->whereKey($request->integer('course_id')));
+            })
+            ->when($request->filled('exam_body_id'), function ($builder) use ($request) {
+                $builder->whereHas('curriculumMapping.course.certificationLevel', fn ($levelQuery) => $levelQuery->where('exam_body_id', $request->integer('exam_body_id')));
+            })
+            ->when($request->filled('certification_level_id'), function ($builder) use ($request) {
+                $builder->whereHas('curriculumMapping.course', fn ($courseQuery) => $courseQuery->where('certification_level_id', $request->integer('certification_level_id')));
+            })
+            ->when($query !== '', function ($builder) use ($query) {
+                $builder->where(function ($unitQuery) use ($query) {
+                    $unitQuery
+                        ->where('units.name', 'like', "%{$query}%")
+                        ->orWhere('units.code', 'like', "%{$query}%")
+                        ->orWhereHas('curriculumMapping.course', fn ($courseQuery) => $courseQuery->where('name', 'like', "%{$query}%"))
+                        ->orWhereHas('curriculumMapping.curriculum', fn ($curriculumQuery) => $curriculumQuery->where('name', 'like', "%{$query}%"));
+                });
+            })
+            ->orderBy('module_taught')
+            ->orderBy('code')
+            ->limit($limit)
+            ->get(['id', 'curriculum_mapping_id', 'code', 'name', 'module_taught'])
+            ->map(fn (Unit $unit) => [
+                'id' => (string) $unit->id,
+                'name' => trim(
+                    ($unit->curriculumMapping?->course?->name ?? '').
+                    ' / Module '.($unit->module_taught ?: '?').
+                    ' / '.($unit->code ?? '').
+                    ' - '.($unit->name ?? '')
+                ),
+            ])
+            ->values();
+
+        return response()->json($units);
+    }
+
     protected function mappingOption(?CurriculumMapping $mapping): ?array
     {
         if (! $mapping) {

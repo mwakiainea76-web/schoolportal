@@ -2,18 +2,19 @@ import { Head, router, useForm } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
+import SearchSelect from "@/Components/SearchSelect";
 
 export default function Marksheet({
     filters,
     selected_unit,
-    available_sessions,
     available_years,
     marksheet_data,
     blocker,
+    selected_filters,
 }) {
     const filterForm = useForm({
         curriculum_unit_code: filters.curriculum_unit_code || "",
-        session_number: filters.session_number || "",
+        academic_session_id: filters.academic_session_id || "",
         year_of_study: filters.year_of_study || "",
         registration_number: filters.registration_number || "",
     });
@@ -25,7 +26,7 @@ export default function Marksheet({
             {
                 curriculum_unit_code:
                     filterForm.data.curriculum_unit_code,
-                session_number: filterForm.data.session_number,
+                academic_session_id: filterForm.data.academic_session_id,
                 year_of_study: filterForm.data.year_of_study,
                 registration_number: filterForm.data.registration_number,
             },
@@ -163,27 +164,25 @@ export default function Marksheet({
                         </div>
 
                         <div>
-                            <InputLabel value="Session Number" />
-                            <select
-                                value={filterForm.data.session_number}
-                                onChange={(e) =>
-                                    filterForm.setData(
-                                        "session_number",
-                                        e.target.value,
-                                    )
-                                }
-                                className="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none transition focus:border-blue-400"
-                            >
-                                <option value="">All sessions</option>
-                                {available_sessions.map((option) => (
-                                    <option
-                                        key={option.value}
-                                        value={option.value}
-                                    >
-                                        {option.label}
-                                    </option>
-                                ))}
-                            </select>
+                            <InputLabel value="Academic Session" />
+                            <div className="mt-2">
+                                <SearchSelect
+                                    routeName="academic-sessions.search"
+                                    value={filterForm.data.academic_session_id}
+                                    selectedLabel={
+                                        selected_filters?.academic_session?.name
+                                    }
+                                    placeholder="Select academic session..."
+                                    defaultOptions={[]}
+                                    preloadOptions
+                                    onChange={(academicSession) =>
+                                        filterForm.setData(
+                                            "academic_session_id",
+                                            academicSession.id || "",
+                                        )
+                                    }
+                                />
+                            </div>
                         </div>
 
                         <div>

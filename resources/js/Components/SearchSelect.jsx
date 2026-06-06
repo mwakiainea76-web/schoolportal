@@ -1,21 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { route } from "ziggy-js";
 
-const API_LOOKUP_ROUTES = {
-    "departments.search": "/api/lookups/departments",
-    "courses.search": "/api/lookups/courses",
-    "curriculums.search": "/api/lookups/curriculums",
-    "curriculum-mappings.search": "/api/lookups/curriculum-mappings",
-    "units.search": "/api/lookups/units",
-    "academic-years.search": "/api/lookups/academic-years",
-    "academic-sessions.search": "/api/lookups/academic-sessions",
-    "exam-bodies.search": "/api/lookups/exam-bodies",
-    "certification-levels.search": "/api/lookups/certification-levels",
-    "staffs.search": "/api/lookups/staffs",
-};
-
 const buildSearchUrl = (routeName, routeParams, text) => {
-    const apiUrl = API_LOOKUP_ROUTES[routeName];
     const params = new URLSearchParams();
 
     Object.entries(routeParams ?? {}).forEach(([key, value]) => {
@@ -25,10 +11,6 @@ const buildSearchUrl = (routeName, routeParams, text) => {
     });
 
     params.set("q", text);
-
-    if (apiUrl) {
-        return `${apiUrl}?${params.toString()}`;
-    }
 
     return route(routeName, { ...routeParams, q: text });
 };
@@ -47,9 +29,7 @@ export default function SearchSelect({
     preloadOptions = false,
 }) {
     const [query, setQuery] = useState("");
-    const isApiLookup = !!API_LOOKUP_ROUTES[routeName];
-    const initialOptions = isApiLookup ? [] : defaultOptions;
-    const [options, setOptions] = useState(initialOptions);
+    const [options, setOptions] = useState(defaultOptions);
     const [open, setOpen] = useState(false);
     const [isTyping, setIsTyping] = useState(false);
 
@@ -108,10 +88,10 @@ export default function SearchSelect({
         }
 
         // 3. fallback if value is already a string (role_name, gender, etc.)
-        if (!isApiLookup && typeof value === "string") {
+        if (typeof value === "string") {
             setQuery(value);
         }
-    }, [value, selectedLabel, defaultOptions, options, isApiLookup, open, query, isTyping]);
+    }, [value, selectedLabel, defaultOptions, options, open, query, isTyping]);
 
     // -----------------------------
     // SEARCH (DEBOUNCED)
@@ -130,17 +110,17 @@ export default function SearchSelect({
                 const trimmedText = text.trim();
 
                 if (!trimmedText) {
-                    if (isApiLookup && preloadOptions) {
+                    if (preloadOptions) {
                         await fetchOptions("");
                     } else {
-                        setOptions(initialOptions);
+                        setOptions(defaultOptions);
                     }
                     onChange?.({ id: "", name: "" });
                     return;
                 }
 
                 if (routeName && trimmedText.length < minSearchLength) {
-                    setOptions(initialOptions);
+                    setOptions(defaultOptions);
                     return;
                 }
 
@@ -180,22 +160,14 @@ export default function SearchSelect({
     // SYNC OPTIONS ON PROP CHANGE
     // -----------------------------
     useEffect(() => {
-        if (isApiLookup) {
-            if (!preloadOptions) {
-                setOptions([]);
-            }
-
-            return;
-        }
-
         setOptions(defaultOptions);
-    }, [defaultOptions, isApiLookup, preloadOptions]);
+    }, [defaultOptions]);
 
     useEffect(() => {
-        if (!isApiLookup || !preloadOptions || disabled) return;
+        if (!routeName || !preloadOptions || disabled) return;
 
         fetchOptions("");
-    }, [isApiLookup, preloadOptions, disabled, routeParamsKey]);
+    }, [routeName, preloadOptions, disabled, routeParamsKey]);
 
     return (
         <div ref={wrapperRef} className={`relative w-full ${open ? "z-[60]" : ""}`}>
@@ -210,7 +182,7 @@ export default function SearchSelect({
                     if (!disabled) {
                         setIsTyping(false);
                         setOpen(true);
-                        if (preloadOptions && isApiLookup) {
+                        if (preloadOptions && routeName) {
                             fetchOptions("");
                         }
                     }

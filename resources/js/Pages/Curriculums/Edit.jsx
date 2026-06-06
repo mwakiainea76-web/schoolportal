@@ -5,6 +5,7 @@ import InputLabel from "@/Components/InputLabel";
 import TextArea from "@/Components/TextArea";
 import TextInput from "@/Components/TextInput";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
+import CourseWorkspaceTabs from "@/Pages/Courses/Partials/CourseWorkspaceTabs";
 
 const Edit = ({ curriculum }) => {
     const c = curriculum;
@@ -29,6 +30,9 @@ const Edit = ({ curriculum }) => {
             <Head title="Edit Curriculum" />
 
             <div className="mx-auto w-full">
+                <div className="mb-6">
+                    <CourseWorkspaceTabs activeTab="curriculums" />
+                </div>
                 <legend className="text-white border-b border-white/50 text-center py-2 bg-slate-400 rounded-t-lg w-full">
                     Edit curriculum details
                 </legend>
