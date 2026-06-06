@@ -116,21 +116,28 @@ export default function Publish({
                     activeTab="publish"
                     canPublish={can_publish}
                 />
-
                 <div className="rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
                     <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
                         <div>
                             <InputLabel value="Course Mapping" required />
                             <select
-                                value={filterForm.data.curriculum_mapping_id || ""}
+                                value={
+                                    filterForm.data.curriculum_mapping_id || ""
+                                }
                                 onChange={(e) => {
                                     filterForm.setData(
                                         "curriculum_mapping_id",
                                         e.target.value,
                                     );
-                                    filterForm.setData("curriculum_unit_id", "");
+                                    filterForm.setData(
+                                        "curriculum_unit_id",
+                                        "",
+                                    );
                                     filterForm.setData("academic_year_id", "");
-                                    filterForm.setData("academic_session_id", "");
+                                    filterForm.setData(
+                                        "academic_session_id",
+                                        "",
+                                    );
                                     loadUnits(e.target.value);
                                 }}
                                 className="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none transition focus:border-emerald-400"
@@ -143,7 +150,9 @@ export default function Publish({
                                 ))}
                             </select>
                             <InputError
-                                message={filterForm.errors.curriculum_mapping_id}
+                                message={
+                                    filterForm.errors.curriculum_mapping_id
+                                }
                                 className="mt-2"
                             />
                         </div>
@@ -155,7 +164,8 @@ export default function Publish({
                                     routeName="units.search"
                                     routeParams={{
                                         curriculum_mapping_id:
-                                            filterForm.data.curriculum_mapping_id,
+                                            filterForm.data
+                                                .curriculum_mapping_id,
                                         limit: 10,
                                     }}
                                     defaultOptions={unit_options}
@@ -178,7 +188,9 @@ export default function Publish({
                                         )
                                     }
                                     error={filterForm.errors.curriculum_unit_id}
-                                    disabled={!filterForm.data.curriculum_mapping_id}
+                                    disabled={
+                                        !filterForm.data.curriculum_mapping_id
+                                    }
                                 />
                             </div>
                             <InputError
@@ -354,158 +366,188 @@ export default function Publish({
                         </button>
                     </div>
                 </div>
-
                 {blocker && (
                     <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
                         {blocker}
                     </div>
                 )}
+                ma
+                {marks.length > 0 && (
+                    <div className="rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <h2 className="text-xl font-semibold text-zinc-900">
+                                    Publish Assessment
+                                </h2>
+                                <p className="mt-1 text-sm text-zinc-500">
+                                    Review the filtered results first, then
+                                    publish or unpublish the loaded marks in
+                                    bulk or one by one.
+                                </p>
+                            </div>
 
-                <div className="rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div>
-                            <h2 className="text-xl font-semibold text-zinc-900">
-                                Publish Assessment
-                            </h2>
-                            <p className="mt-1 text-sm text-zinc-500">
-                                Review the filtered results first, then publish
-                                or unpublish the loaded marks in bulk or one by
-                                one.
-                            </p>
+                            <div className="flex gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => publishAssessment("publish")}
+                                    disabled={!selected_unit || !marks.length}
+                                    className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                    Publish Assessment
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        publishAssessment("unpublish")
+                                    }
+                                    disabled={!selected_unit || !marks.length}
+                                    className="rounded-xl border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                    Unpublish Assessment
+                                </button>
+                            </div>
                         </div>
 
-                        <div className="flex gap-3">
-                            <button
-                                type="button"
-                                onClick={() => publishAssessment("publish")}
-                                disabled={!selected_unit || !marks.length}
-                                className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-                            >
-                                Publish Assessment
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => publishAssessment("unpublish")}
-                                disabled={!selected_unit || !marks.length}
-                                className="rounded-xl border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-60"
-                            >
-                                Unpublish Assessment
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="mt-6 overflow-hidden rounded-2xl border border-zinc-100">
-                        <div className="overflow-x-auto">
-                            <table className="w-full min-w-[56rem] border-collapse">
-                                <thead className="bg-zinc-50">
-                                    <tr className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                                        <th className="px-4 py-3 text-left">Reg. No.</th>
-                                        <th className="px-4 py-3 text-left">Student</th>
-                                        <th className="px-4 py-3 text-left">Unit</th>
-                                        <th className="px-4 py-3 text-left">Session</th>
-                                        <th className="px-4 py-3 text-left">Type</th>
-                                        <th className="px-4 py-3 text-left">Assessment</th>
-                                        <th className="px-4 py-3 text-left">Marks</th>
-                                        <th className="px-4 py-3 text-left">Status</th>
-                                        <th className="px-4 py-3 text-right">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-zinc-100 bg-white">
-                                    {marks.length ? (
-                                        marks.map((mark) => (
-                                            <tr key={mark.id} className="text-sm">
-                                                <td className="px-4 py-3 font-medium text-zinc-900">
-                                                    {mark.registration_number}
-                                                </td>
-                                                <td className="px-4 py-3 text-zinc-700">
-                                                    {mark.student_name || "-"}
-                                                </td>
-                                                <td className="px-4 py-3 text-zinc-700">
-                                                    {mark.unit_name || "-"}
-                                                </td>
-                                                <td className="px-4 py-3 text-zinc-700">
-                                                    {mark.session_name || "-"}
-                                                </td>
-                                                <td className="px-4 py-3 text-zinc-700">
-                                                    {mark.assessment_type || "-"}
-                                                </td>
-                                                <td className="px-4 py-3 text-zinc-700">
-                                                    {mark.assessment_number || "-"}
-                                                </td>
-                                                <td className="px-4 py-3 font-semibold text-zinc-900">
-                                                    {mark.marks}
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    <span
-                                                        className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                                                            mark.is_published
-                                                                ? "bg-emerald-100 text-emerald-700"
-                                                                : "bg-amber-100 text-amber-700"
-                                                        }`}
-                                                    >
-                                                        {mark.is_published
-                                                            ? "Published"
-                                                            : "Unpublished"}
-                                                    </span>
-                                                </td>
-                                                <td className="px-4 py-3 text-right">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            toggleStudentMark(
-                                                                mark.id,
-                                                                mark.is_published
-                                                                    ? "unpublish"
-                                                                    : "publish",
-                                                            )
+                        <div className="mt-6 overflow-hidden rounded-2xl border border-zinc-100">
+                            <div className="overflow-x-auto">
+                                <table className="w-full min-w-[56rem] border-collapse">
+                                    <thead className="bg-zinc-50">
+                                        <tr className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                                            <th className="px-4 py-3 text-left">
+                                                Reg. No.
+                                            </th>
+                                            <th className="px-4 py-3 text-left">
+                                                Student
+                                            </th>
+                                            <th className="px-4 py-3 text-left">
+                                                Unit
+                                            </th>
+                                            <th className="px-4 py-3 text-left">
+                                                Session
+                                            </th>
+                                            <th className="px-4 py-3 text-left">
+                                                Type
+                                            </th>
+                                            <th className="px-4 py-3 text-left">
+                                                Assessment
+                                            </th>
+                                            <th className="px-4 py-3 text-left">
+                                                Marks
+                                            </th>
+                                            <th className="px-4 py-3 text-left">
+                                                Status
+                                            </th>
+                                            <th className="px-4 py-3 text-right">
+                                                Action
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-zinc-100 bg-white">
+                                        {marks.length ? (
+                                            marks.map((mark) => (
+                                                <tr
+                                                    key={mark.id}
+                                                    className="text-sm"
+                                                >
+                                                    <td className="px-4 py-3 font-medium text-zinc-900">
+                                                        {
+                                                            mark.registration_number
                                                         }
-                                                        className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
-                                                    >
-                                                        {mark.is_published
-                                                            ? "Unpublish"
-                                                            : "Publish"}
-                                                    </button>
+                                                    </td>
+                                                    <td className="px-4 py-3 text-zinc-700">
+                                                        {mark.student_name ||
+                                                            "-"}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-zinc-700">
+                                                        {mark.unit_name || "-"}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-zinc-700">
+                                                        {mark.session_name ||
+                                                            "-"}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-zinc-700">
+                                                        {mark.assessment_type ||
+                                                            "-"}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-zinc-700">
+                                                        {mark.assessment_number ||
+                                                            "-"}
+                                                    </td>
+                                                    <td className="px-4 py-3 font-semibold text-zinc-900">
+                                                        {mark.marks}
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        <span
+                                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                                mark.is_published
+                                                                    ? "bg-emerald-100 text-emerald-700"
+                                                                    : "bg-amber-100 text-amber-700"
+                                                            }`}
+                                                        >
+                                                            {mark.is_published
+                                                                ? "Published"
+                                                                : "Unpublished"}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-4 py-3 text-right">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                toggleStudentMark(
+                                                                    mark.id,
+                                                                    mark.is_published
+                                                                        ? "unpublish"
+                                                                        : "publish",
+                                                                )
+                                                            }
+                                                            className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
+                                                        >
+                                                            {mark.is_published
+                                                                ? "Unpublish"
+                                                                : "Publish"}
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        ) : (
+                                            <tr>
+                                                <td
+                                                    colSpan="9"
+                                                    className="px-4 py-8 text-center text-sm text-zinc-500"
+                                                >
+                                                    {submitted_marks
+                                                        ? "No submitted marks found for the selected filters."
+                                                        : "Run a search to review marks for publishing."}
                                                 </td>
                                             </tr>
-                                        ))
-                                    ) : (
-                                        <tr>
-                                            <td
-                                                colSpan="9"
-                                                className="px-4 py-8 text-center text-sm text-zinc-500"
-                                            >
-                                                {submitted_marks
-                                                    ? "No submitted marks found for the selected filters."
-                                                    : "Run a search to review marks for publishing."}
-                                            </td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
-                    </div>
 
-                    {lastPage > 1 && (
-                        <div className="mt-5 flex justify-end gap-2">
-                            <button
-                                type="button"
-                                onClick={() => searchMarks(currentPage - 1)}
-                                disabled={currentPage === 1}
-                                className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40"
-                            >
-                                Prev
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => searchMarks(currentPage + 1)}
-                                disabled={currentPage === lastPage}
-                                className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40"
-                            >
-                                Next
-                            </button>
-                        </div>
-                    )}
-                </div>
+                        {lastPage > 1 && (
+                            <div className="mt-5 flex justify-end gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => searchMarks(currentPage - 1)}
+                                    disabled={currentPage === 1}
+                                    className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40"
+                                >
+                                    Prev
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => searchMarks(currentPage + 1)}
+                                    disabled={currentPage === lastPage}
+                                    className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40"
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
         </AuthenticatedLayout>
     );

@@ -93,10 +93,7 @@ export default function View({
             <Head title="View Marks" />
 
             <div className="mx-auto max-w-6xl space-y-8">
-                <MarksWorkspaceTabs
-                    activeTab="view"
-                    canPublish={can_publish}
-                />
+                <MarksWorkspaceTabs activeTab="view" canPublish={can_publish} />
 
                 <div className="rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
                     <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
@@ -109,9 +106,15 @@ export default function View({
                                         "curriculum_mapping_id",
                                         e.target.value,
                                     );
-                                    filterForm.setData("curriculum_unit_id", "");
+                                    filterForm.setData(
+                                        "curriculum_unit_id",
+                                        "",
+                                    );
                                     filterForm.setData("academic_year_id", "");
-                                    filterForm.setData("academic_session_id", "");
+                                    filterForm.setData(
+                                        "academic_session_id",
+                                        "",
+                                    );
                                     loadUnits(e.target.value);
                                 }}
                                 className="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none transition focus:border-emerald-400"
@@ -124,7 +127,9 @@ export default function View({
                                 ))}
                             </select>
                             <InputError
-                                message={filterForm.errors.curriculum_mapping_id}
+                                message={
+                                    filterForm.errors.curriculum_mapping_id
+                                }
                                 className="mt-2"
                             />
                         </div>
@@ -136,7 +141,8 @@ export default function View({
                                     routeName="units.search"
                                     routeParams={{
                                         curriculum_mapping_id:
-                                            filterForm.data.curriculum_mapping_id,
+                                            filterForm.data
+                                                .curriculum_mapping_id,
                                         limit: 10,
                                     }}
                                     defaultOptions={unit_options}
@@ -159,7 +165,9 @@ export default function View({
                                         )
                                     }
                                     error={filterForm.errors.curriculum_unit_id}
-                                    disabled={!filterForm.data.curriculum_mapping_id}
+                                    disabled={
+                                        !filterForm.data.curriculum_mapping_id
+                                    }
                                 />
                             </div>
                             <InputError
@@ -342,108 +350,136 @@ export default function View({
                     </div>
                 )}
 
-                <div className="rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
-                    <h2 className="text-xl font-semibold text-zinc-900">
-                        Submitted Marks
-                    </h2>
-                    <p className="mt-1 text-sm text-zinc-500">
-                        Results are shown for the selected assessment filters,
-                        with pagination when multiple assessments are included.
-                    </p>
+                {marks.length > 0 && (
+                    <div className="rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
+                        <h2 className="text-xl font-semibold text-zinc-900">
+                            Submitted Marks
+                        </h2>
+                        <p className="mt-1 text-sm text-zinc-500">
+                            Results are shown for the selected assessment
+                            filters, with pagination when multiple assessments
+                            are included.
+                        </p>
 
-                    <div className="mt-6 overflow-hidden rounded-2xl border border-zinc-100">
-                        <div className="overflow-x-auto">
-                            <table className="w-full min-w-[48rem] border-collapse">
-                                <thead className="bg-zinc-50">
-                                    <tr className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                                        <th className="px-4 py-3 text-left">Reg. No.</th>
-                                        <th className="px-4 py-3 text-left">Student</th>
-                                        <th className="px-4 py-3 text-left">Unit</th>
-                                        <th className="px-4 py-3 text-left">Session</th>
-                                        <th className="px-4 py-3 text-left">Type</th>
-                                        <th className="px-4 py-3 text-left">Assessment</th>
-                                        <th className="px-4 py-3 text-left">Marks</th>
-                                        <th className="px-4 py-3 text-left">Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-zinc-100 bg-white">
-                                    {marks.length ? (
-                                        marks.map((mark) => (
-                                            <tr key={mark.id} className="text-sm">
-                                                <td className="px-4 py-3 font-medium text-zinc-900">
-                                                    {mark.registration_number}
-                                                </td>
-                                                <td className="px-4 py-3 text-zinc-700">
-                                                    {mark.student_name || "-"}
-                                                </td>
-                                                <td className="px-4 py-3 text-zinc-700">
-                                                    {mark.unit_name || "-"}
-                                                </td>
-                                                <td className="px-4 py-3 text-zinc-700">
-                                                    {mark.session_name || "-"}
-                                                </td>
-                                                <td className="px-4 py-3 text-zinc-700">
-                                                    {mark.assessment_type || "-"}
-                                                </td>
-                                                <td className="px-4 py-3 text-zinc-700">
-                                                    {mark.assessment_number || "-"}
-                                                </td>
-                                                <td className="px-4 py-3 font-semibold text-zinc-900">
-                                                    {mark.marks}
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    <span
-                                                        className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                                                            mark.is_published
-                                                                ? "bg-emerald-100 text-emerald-700"
-                                                                : "bg-amber-100 text-amber-700"
-                                                        }`}
-                                                    >
-                                                        {mark.is_published
-                                                            ? "Published"
-                                                            : "Unpublished"}
-                                                    </span>
+                        <div className="mt-6 overflow-hidden rounded-2xl border border-zinc-100">
+                            <div className="overflow-x-auto">
+                                <table className="w-full min-w-[48rem] border-collapse">
+                                    <thead className="bg-zinc-50">
+                                        <tr className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                                            <th className="px-4 py-3 text-left">
+                                                Reg. No.
+                                            </th>
+                                            <th className="px-4 py-3 text-left">
+                                                Student
+                                            </th>
+                                            <th className="px-4 py-3 text-left">
+                                                Unit
+                                            </th>
+                                            <th className="px-4 py-3 text-left">
+                                                Session
+                                            </th>
+                                            <th className="px-4 py-3 text-left">
+                                                Type
+                                            </th>
+                                            <th className="px-4 py-3 text-left">
+                                                Assessment
+                                            </th>
+                                            <th className="px-4 py-3 text-left">
+                                                Marks
+                                            </th>
+                                            <th className="px-4 py-3 text-left">
+                                                Status
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-zinc-100 bg-white">
+                                        {marks.length ? (
+                                            marks.map((mark) => (
+                                                <tr
+                                                    key={mark.id}
+                                                    className="text-sm"
+                                                >
+                                                    <td className="px-4 py-3 font-medium text-zinc-900">
+                                                        {
+                                                            mark.registration_number
+                                                        }
+                                                    </td>
+                                                    <td className="px-4 py-3 text-zinc-700">
+                                                        {mark.student_name ||
+                                                            "-"}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-zinc-700">
+                                                        {mark.unit_name || "-"}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-zinc-700">
+                                                        {mark.session_name ||
+                                                            "-"}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-zinc-700">
+                                                        {mark.assessment_type ||
+                                                            "-"}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-zinc-700">
+                                                        {mark.assessment_number ||
+                                                            "-"}
+                                                    </td>
+                                                    <td className="px-4 py-3 font-semibold text-zinc-900">
+                                                        {mark.marks}
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        <span
+                                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                                                mark.is_published
+                                                                    ? "bg-emerald-100 text-emerald-700"
+                                                                    : "bg-amber-100 text-amber-700"
+                                                            }`}
+                                                        >
+                                                            {mark.is_published
+                                                                ? "Published"
+                                                                : "Unpublished"}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        ) : (
+                                            <tr>
+                                                <td
+                                                    colSpan="8"
+                                                    className="px-4 py-8 text-center text-sm text-zinc-500"
+                                                >
+                                                    {submitted_marks
+                                                        ? "No submitted marks found for the selected filters."
+                                                        : "Run a search to view submitted marks."}
                                                 </td>
                                             </tr>
-                                        ))
-                                    ) : (
-                                        <tr>
-                                            <td
-                                                colSpan="8"
-                                                className="px-4 py-8 text-center text-sm text-zinc-500"
-                                            >
-                                                {submitted_marks
-                                                    ? "No submitted marks found for the selected filters."
-                                                    : "Run a search to view submitted marks."}
-                                            </td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
-                    </div>
 
-                    {lastPage > 1 && (
-                        <div className="mt-5 flex justify-end gap-2">
-                            <button
-                                type="button"
-                                onClick={() => searchMarks(currentPage - 1)}
-                                disabled={currentPage === 1}
-                                className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40"
-                            >
-                                Prev
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => searchMarks(currentPage + 1)}
-                                disabled={currentPage === lastPage}
-                                className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40"
-                            >
-                                Next
-                            </button>
-                        </div>
-                    )}
-                </div>
+                        {lastPage > 1 && (
+                            <div className="mt-5 flex justify-end gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => searchMarks(currentPage - 1)}
+                                    disabled={currentPage === 1}
+                                    className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40"
+                                >
+                                    Prev
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => searchMarks(currentPage + 1)}
+                                    disabled={currentPage === lastPage}
+                                    className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40"
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
         </AuthenticatedLayout>
     );
