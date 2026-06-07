@@ -55,7 +55,21 @@ export default function DepartmentsIndex({ departments }) {
             replace: true,
         });
     };
+    const handleExport = () => {
+        const params = new URLSearchParams({
+            search: searchTerm || departments.filters?.search || "",
+            sort: sortField,
+            direction: sortDirection,
+        });
 
+        // Create a hidden anchor and click it — triggers download directly
+        const link = document.createElement("a");
+        link.href = `/export/departments?${params}`;
+        link.download = "departments.pdf";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
     return (
         <AuthenticatedLayout>
             <Head title="Departments" />
@@ -79,6 +93,13 @@ export default function DepartmentsIndex({ departments }) {
                         type="submit"
                     >
                         Search
+                    </button>
+                    <button
+                        type="button"
+                        onClick={handleExport}
+                        className="px-4 py-1 bg-blue-700 text-white rounded hover:bg-blue-900 flex items-center gap-x-2"
+                    >
+                        <span>⬇</span> Export PDF
                     </button>
                 </form>
 
@@ -120,7 +141,10 @@ export default function DepartmentsIndex({ departments }) {
                                     </Tdata>
                                     <Tdata>
                                         {department.hod
-                                            ? [department.hod.staff_number, department.hod.name]
+                                            ? [
+                                                  department.hod.staff_number,
+                                                  department.hod.name,
+                                              ]
                                                   .filter(Boolean)
                                                   .join(" - ")
                                             : "-"}

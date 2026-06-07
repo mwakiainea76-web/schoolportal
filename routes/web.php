@@ -4,7 +4,12 @@ use App\Http\Controllers\AcademicSessionController;
 use App\Http\Controllers\AcademicSessionEnrollmentController;
 use App\Http\Controllers\AcademicTimetableController;
 use App\Http\Controllers\AcademicYearController;
+use App\Http\Controllers\Api\ExportController;
 use App\Http\Controllers\CertificationLevelController;
+use App\Http\Controllers\CourseController;
+use App\Http\Controllers\CourseEnrollmentController;
+use App\Http\Controllers\CurriculumController;
+use App\Http\Controllers\CurriculumMappingController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\ExamBodyController;
@@ -21,10 +26,6 @@ use App\Http\Controllers\OnlineUsersController;
 use App\Http\Controllers\PerformanceDashboardController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\CourseController;
-use App\Http\Controllers\CourseEnrollmentController;
-use App\Http\Controllers\CurriculumController;
-use App\Http\Controllers\CurriculumMappingController;
 use App\Http\Controllers\ReportingController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SecurityMonitoringController;
@@ -546,6 +547,15 @@ Route::middleware(['auth', 'non_student'])->group(function () {
 
 });
 
+
+
+
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/export/{resource}', [ExportController::class, 'export'])
+         ->middleware('throttle:5,1')
+         ->name('export.resource');
+});
 /*
 |--------------------------------------------------------------------------
 | AUTH

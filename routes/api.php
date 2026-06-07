@@ -36,7 +36,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/academic-years/{id}/sessions/{sid}/unassigned-curriculums', [FeeAssignmentController::class, 'unassignedCurricula']);
 });
 
-
 Route::middleware(['web', 'auth', 'non_student'])
     ->prefix('reports')
     ->name('reports.api.')
