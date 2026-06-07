@@ -24,11 +24,11 @@ export default function Index({
     });
 
     const marksForm = useForm({
-        entries: [{ registration_number: "", marks: "" }],
+        entries: [{ admission_number: "", marks: "" }],
     });
 
     const resetEntries = useCallback(() => {
-        marksForm.setData("entries", [{ registration_number: "", marks: "" }]);
+        marksForm.setData("entries", [{ admission_number: "", marks: "" }]);
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
@@ -41,8 +41,7 @@ export default function Index({
         router.get(
             route("academic.marks.index"),
             {
-                curriculum_unit_code:
-                    filterForm.data.curriculum_unit_code,
+                curriculum_unit_code: filterForm.data.curriculum_unit_code,
                 assessment_type: filterForm.data.assessment_type,
                 assessment_number: filterForm.data.assessment_number,
             },
@@ -56,8 +55,7 @@ export default function Index({
         router.get(
             route("academic.marks.index"),
             {
-                curriculum_unit_code:
-                    filterForm.data.curriculum_unit_code,
+                curriculum_unit_code: filterForm.data.curriculum_unit_code,
                 assessment_type: filterForm.data.assessment_type,
                 assessment_number: filterForm.data.assessment_number,
                 module: filterForm.data.module,
@@ -73,8 +71,7 @@ export default function Index({
         router.get(
             route("academic.marks.index"),
             {
-                curriculum_unit_code:
-                    filterForm.data.curriculum_unit_code,
+                curriculum_unit_code: filterForm.data.curriculum_unit_code,
                 assessment_type: filterForm.data.assessment_type,
                 assessment_number: filterForm.data.assessment_number,
                 module: filterForm.data.module,
@@ -95,7 +92,7 @@ export default function Index({
     const addRow = () => {
         marksForm.setData("entries", [
             ...marksForm.data.entries,
-            { registration_number: "", marks: "" },
+            { admission_number: "", marks: "" },
         ]);
     };
 
@@ -106,8 +103,7 @@ export default function Index({
             route("academic.marks.store"),
             {
                 ...marksForm.data,
-                curriculum_unit_code:
-                    filterForm.data.curriculum_unit_code,
+                curriculum_unit_code: filterForm.data.curriculum_unit_code,
                 assessment_type: filterForm.data.assessment_type,
                 assessment_number: filterForm.data.assessment_number,
             },
@@ -131,8 +127,8 @@ export default function Index({
                         Marks Entry
                     </h1>
                     <p className="mt-2 max-w-3xl text-sm text-zinc-600">
-                        Enter the curriculum unit code, then fill
-                        registration numbers and marks manually.
+                        Enter the curriculum unit code, then fill admission
+                        numbers and marks manually.
                     </p>
                 </div>
             }
@@ -153,10 +149,7 @@ export default function Index({
                     </div>
 
                     <div>
-                        <InputLabel
-                            value="Curriculum Unit Code"
-                            required
-                        />
+                        <InputLabel value="Curriculum Unit Code" required />
                         <input
                             type="text"
                             value={filterForm.data.curriculum_unit_code}
@@ -170,9 +163,7 @@ export default function Index({
                             placeholder="e.g. ICT101"
                         />
                         <InputError
-                            message={
-                                filterForm.errors.curriculum_unit_code
-                            }
+                            message={filterForm.errors.curriculum_unit_code}
                             className="mt-2"
                         />
                     </div>
@@ -189,9 +180,7 @@ export default function Index({
                         </div>
                         <button
                             type="submit"
-                            disabled={
-                                !filterForm.data.curriculum_unit_code
-                            }
+                            disabled={!filterForm.data.curriculum_unit_code}
                             className="rounded-xl bg-emerald-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                             Load Unit
@@ -304,7 +293,7 @@ export default function Index({
 
                         <div className="overflow-hidden rounded-2xl border border-zinc-100">
                             <div className="grid grid-cols-2 gap-4 bg-zinc-50 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                                <p>Registration No.</p>
+                                <p>Admission Number</p>
                                 <p>Marks</p>
                             </div>
 
@@ -316,11 +305,11 @@ export default function Index({
                                     <div>
                                         <input
                                             type="text"
-                                            value={entry.registration_number}
+                                            value={entry.admission_number}
                                             onChange={(e) =>
                                                 updateEntry(
                                                     index,
-                                                    "registration_number",
+                                                    "admission_number",
                                                     e.target.value,
                                                 )
                                             }
@@ -330,7 +319,7 @@ export default function Index({
                                         <InputError
                                             message={
                                                 marksForm.errors[
-                                                    `entries.${index}.registration_number`
+                                                    `entries.${index}.admission_number`
                                                 ]
                                             }
                                             className="mt-2"
@@ -562,7 +551,7 @@ export default function Index({
                                                         >
                                                             <td className="px-4 py-3 font-medium text-zinc-900">
                                                                 {
-                                                                    mark.registration_number
+                                                                    mark.admission_number
                                                                 }
                                                             </td>
                                                             <td className="px-4 py-3 text-zinc-700">

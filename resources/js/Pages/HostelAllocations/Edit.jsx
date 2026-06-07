@@ -26,7 +26,7 @@ export default function Edit({ allocation, enrollments, hostels, rooms, beds }) 
                 <HostelWorkspaceTabs activeTab="view-allocations" />
                 <Form
                     form={{ ...form, onSubmit }}
-                    title={`Edit Hostel Allocation${allocation.registration_number ? ` - ${allocation.registration_number}` : ""}`}
+                    title={`Edit Hostel Allocation${allocation.admission_number ? ` - ${allocation.admission_number}` : ""}`}
                     description="Move the student within the approved hostel inventory only where a fully paid hostel invoice already exists for that session."
                     submitLabel="Update Allocation"
                     cancelHref={route("hostel-allocations.index")}

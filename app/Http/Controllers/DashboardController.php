@@ -120,8 +120,8 @@ class DashboardController extends Controller
             'dashboard' => [
                 'type' => 'student',
                 'student' => $student ? [
-                    'registration_number' => $student->registration_number,
-                    'status' => $student->student_status,
+                    'admission_number' => $student->admission_number,
+                    'status' => $student->enrollment_status,
                     'current_module' => $student->current_module,
                     'fee_discount_percentage' => $student->fee_discount_percentage,
                     // admission_date removed — not read by frontend
@@ -230,7 +230,7 @@ class DashboardController extends Controller
         return [
             'type' => 'staff',
             'staff_profile' => [
-                'name' => trim(($user?->first_name ?? '').' '.($user?->last_name ?? '')),
+                'name' => $user?->staff?->full_name,
                 'staff_number' => $staff?->staff_number,
                 'designation' => $staff?->designation,
                 'department_name' => $staff?->department_name,
@@ -335,20 +335,22 @@ class DashboardController extends Controller
     private function dashboardRouteFor(?User $user): string
     {
         if (! $user) {
-            return 'admin.dashboard';
+            return 'login';
         }
 
         $user->loadMissing('roles:id,name');
         $roles = $user->roles->pluck('name');
 
+        $staffRoles = ['admin', 'bursar', 'hod', 'lecturer', 'librarian'];
+
+        if ($roles->intersect($staffRoles)->isNotEmpty()) {
+            return 'staff.dashboard';
+        }
+
         if ($roles->contains('student')) {
             return 'student.dashboard';
         }
 
-        if ($roles->contains('trainer') && ! $roles->contains('admin') && ! $roles->contains('hod')) {
-            return 'trainer.dashboard';
-        }
-
-        return 'admin.dashboard';
+        return 'dashboard';
     }
 }

@@ -70,11 +70,11 @@ export default function Show({ statement }) {
                                 />
                                 <ProfileChip
                                     icon={FileText}
-                                    label="Reg. No."
-                                    value={
-                                        statement.student.registration_number
-                                    }
-                                />
+                                        label="Admission Number"
+                                        value={
+                                            statement.student.admission_number
+                                        }
+                                    />
                                 <ProfileChip
                                     icon={CalendarClock}
                                     label="Session"

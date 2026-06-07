@@ -400,9 +400,7 @@ export default function View({
                                                     className="text-sm"
                                                 >
                                                     <td className="px-4 py-3 font-medium text-zinc-900">
-                                                        {
-                                                            mark.registration_number
-                                                        }
+                                                        {mark.admission_number}
                                                     </td>
                                                     <td className="px-4 py-3 text-zinc-700">
                                                         {mark.student_name ||

@@ -13,17 +13,17 @@ export default function CourseChange({
 }) {
     const [showConfirm, setShowConfirm] = useState(false);
     const lookupForm = useForm({
-        registration_number: filters.registration_number || "",
+        admission_number: filters.admission_number || "",
     });
     const transferForm = useForm({
-        registration_number: filters.registration_number || "",
+        admission_number: filters.admission_number || "",
         new_curriculum_mapping_id: "",
         notes: "",
     });
 
     useEffect(() => {
-        transferForm.setData("registration_number", filters.registration_number || "");
-    }, [filters.registration_number]);
+        transferForm.setData("admission_number", filters.admission_number || "");
+    }, [filters.admission_number]);
 
     const selectedCourse = curriculumMappings.find(
         (course) =>
@@ -41,7 +41,7 @@ export default function CourseChange({
         router.get(
             route("students.course-change.index"),
             {
-                registration_number: lookupForm.data.registration_number,
+                admission_number: lookupForm.data.admission_number,
             },
             {
                 preserveState: true,
@@ -58,7 +58,7 @@ export default function CourseChange({
             onSuccess: () => {
                 setShowConfirm(false);
                 transferForm.reset("new_curriculum_mapping_id", "notes");
-                lookupForm.reset("registration_number");
+                lookupForm.reset("admission_number");
             },
         });
     };
@@ -86,8 +86,8 @@ export default function CourseChange({
                             Course change completed
                         </h2>
                         <div className="mt-4 grid gap-3 md:grid-cols-2">
-                            <Info label="Old admission number" value={latestTransfer.old_registration_number} />
-                            <Info label="New admission number" value={latestTransfer.new_registration_number} />
+                            <Info label="Old admission number" value={latestTransfer.old_admission_number} />
+                            <Info label="New admission number" value={latestTransfer.new_admission_number} />
                             <Info label="Old course" value={latestTransfer.old_course} />
                             <Info label="New course" value={latestTransfer.new_course} />
                             <Info label="New username" value={latestTransfer.username} />
@@ -98,20 +98,20 @@ export default function CourseChange({
                 <section className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
                     <form onSubmit={lookupStudent} className="grid gap-4 md:grid-cols-[1fr,auto] md:items-end">
                         <div>
-                            <InputLabel value="Existing Registration Number" required />
+                            <InputLabel value="Existing Admission Number" required />
                             <input
                                 type="text"
-                                value={lookupForm.data.registration_number}
+                                value={lookupForm.data.admission_number}
                                 onChange={(e) =>
                                     lookupForm.setData(
-                                        "registration_number",
+                                        "admission_number",
                                         e.target.value.toUpperCase(),
                                     )
                                 }
                                 className="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none transition focus:border-emerald-400"
                                 placeholder="STD/2026/05/0001"
                             />
-                            <InputError message={lookupForm.errors.registration_number} className="mt-2" />
+                            <InputError message={lookupForm.errors.admission_number} className="mt-2" />
                         </div>
                         <button
                             type="submit"

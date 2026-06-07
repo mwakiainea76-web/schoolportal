@@ -127,8 +127,7 @@ function StudentDashboard({ dashboard, fullName }) {
         });
     };
 
-    const selectedUnitCount =
-        unitRegistrationData.curriculum_unit_ids.length;
+    const selectedUnitCount = unitRegistrationData.curriculum_unit_ids.length;
     const allModuleUnitsSelected =
         moduleUnitIds.length > 0 && selectedUnitCount === moduleUnitIds.length;
 
@@ -145,9 +144,8 @@ function StudentDashboard({ dashboard, fullName }) {
                             Welcome back, {fullName}.
                         </h1>
                         <p className="mt-3 max-w-xl text-sm text-slate-300">
-                            Keep track of your course progress, current
-                            session, billing status, and learning units from one
-                            place.
+                            Keep track of your course progress, current session,
+                            billing status, and learning units from one place.
                         </p>
                     </div>
 
@@ -173,7 +171,7 @@ function StudentDashboard({ dashboard, fullName }) {
                                 Reg. No
                             </p>
                             <p className="mt-2 text-sm font-semibold">
-                                {dashboard.student?.registration_number ?? "-"}
+                                {dashboard.student?.admission_number ?? "-"}
                             </p>
                         </div>
                         <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur">
@@ -467,10 +465,10 @@ function StudentDashboard({ dashboard, fullName }) {
                     >
                         <div className="rounded-2xl bg-zinc-50 px-4 py-3">
                             <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-                                Registration Number
+                                Admission Number
                             </p>
                             <p className="mt-1 text-sm font-semibold text-zinc-900">
-                                {dashboard.student?.registration_number ?? "-"}
+                                {dashboard.student?.admission_number ?? "-"}
                             </p>
                         </div>
 
@@ -826,8 +824,8 @@ function StaffDashboard({ dashboard }) {
                 Academic Overview
             </h1>
             <p className="mt-1 text-zinc-500">
-                Manage courses, curriculums, and institutional scheduling
-                from one place.
+                Manage courses, curriculums, and institutional scheduling from
+                one place.
             </p>
 
             {analyticsError ? (
@@ -1003,7 +1001,7 @@ function StaffDashboard({ dashboard }) {
                             renderItem={(item) => ({
                                 key: item.student_id,
                                 title: item.student_name,
-                                subtitle: item.registration_number,
+                                subtitle: item.admission_number,
                                 meta: `Module ${item.current_module}`,
                             })}
                         />
@@ -1025,7 +1023,7 @@ function StaffDashboard({ dashboard }) {
                             renderItem={(item) => ({
                                 key: item.student_id,
                                 title: item.student_name,
-                                subtitle: item.registration_number,
+                                subtitle: item.admission_number,
                                 meta: item.admission_date ?? "",
                             })}
                         />
@@ -1046,7 +1044,7 @@ function StaffDashboard({ dashboard }) {
                             renderItem={(item) => ({
                                 key: item.allocation_id,
                                 title: item.student_name,
-                                subtitle: item.registration_number,
+                                subtitle: item.admission_number,
                                 meta: item.hostel_name,
                             })}
                         />

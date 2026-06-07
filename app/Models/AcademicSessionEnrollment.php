@@ -157,10 +157,8 @@ class AcademicSessionEnrollment extends Model
             ? $this->getRelation('academicSession')
             : null;
 
-        $studentName = trim(
-            ($studentUser?->first_name ?? '').' '.($studentUser?->last_name ?? '')
-        );
-        $registration = $student?->registration_number ?? 'N/A';
+        $studentName = $student?->full_name ?? 'N/A';
+        $registration = $student?->admission_number ?? 'N/A';
         $session = $academicSession?->session_No ?? $academicSession?->name ?? 'No Session';
         $curriculum = $this->curriculum?->name ?? 'No Curriculum';
         $course = $this->course?->name ?? 'No Course';

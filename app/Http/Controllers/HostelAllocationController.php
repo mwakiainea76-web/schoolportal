@@ -22,7 +22,7 @@ class HostelAllocationController extends Controller
     {
         $query = HostelAllocation::query()
             ->with([
-                'student.user:id,first_name,last_name',
+                'student',
                 'academicSession.academicYear:id,academic_year',
                 'hostel:id,name,code',
                 'room:id,name,code',
@@ -34,12 +34,9 @@ class HostelAllocationController extends Controller
                 $builder->where(function ($query) use ($term) {
                     $query->whereHas('student', function ($studentQuery) use ($term) {
                         $studentQuery
-                            ->where('registration_number', 'like', "%{$term}%")
-                            ->orWhereHas('user', function ($userQuery) use ($term) {
-                                $userQuery
-                                    ->where('first_name', 'like', "%{$term}%")
-                                    ->orWhere('last_name', 'like', "%{$term}%");
-                            });
+                            ->where('admission_number', 'like', "%{$term}%")
+                            ->orWhere('first_name', 'like', "%{$term}%")
+                            ->orWhere('last_name', 'like', "%{$term}%");
                     })
                         ->orWhereHas('hostel', fn ($hostelQuery) => $hostelQuery->where('name', 'like', "%{$term}%"))
                         ->orWhereHas('room', fn ($roomQuery) => $roomQuery->where('name', 'like', "%{$term}%"))
@@ -122,7 +119,7 @@ class HostelAllocationController extends Controller
     public function edit(HostelAllocation $hostel_allocation)
     {
         $hostel_allocation->load([
-            'student.user:id,first_name,last_name',
+            'student',
             'academicSession.academicYear:id,academic_year',
             'hostel:id,name,code',
             'room:id,name,code',
@@ -319,8 +316,8 @@ class HostelAllocationController extends Controller
         return [
             'id' => $allocation->id,
             'academic_session_enrollment_id' => (string) $allocation->academic_session_enrollment_id,
-            'student_name' => trim(($allocation->student?->user?->first_name ?? '').' '.($allocation->student?->user?->last_name ?? '')),
-            'registration_number' => $allocation->student?->registration_number,
+            'student_name' => $allocation->student?->full_name,
+            'admission_number' => $allocation->student?->admission_number,
             'academic_session_id' => (string) $allocation->academic_session_id,
             'session_name' => $allocation->academicSession?->display_name,
             'hostel_id' => (string) $allocation->hostel_id,
@@ -342,7 +339,7 @@ class HostelAllocationController extends Controller
     {
         return AcademicSessionEnrollment::query()
             ->with([
-                'student.user:id,first_name,last_name',
+                'student',
                 'academicSession.academicYear:id,academic_year',
             ])
             ->where('status', 'active')
@@ -350,7 +347,7 @@ class HostelAllocationController extends Controller
             ->get()
             ->map(fn (AcademicSessionEnrollment $enrollment) => [
                 'id' => (string) $enrollment->id,
-                'name' => trim(($enrollment->student?->user?->first_name ?? '').' '.($enrollment->student?->user?->last_name ?? '')).' ('.($enrollment->student?->registration_number ?? 'N/A').') - '.($enrollment->academicSession?->display_name ?? 'No Session'),
+                'name' => ($enrollment->student?->full_name ?? 'N/A').' ('.($enrollment->student?->admission_number ?? 'N/A').') - '.($enrollment->academicSession?->display_name ?? 'No Session'),
                 'academic_session_id' => (string) $enrollment->academic_session_id,
                 'student_id' => (string) $enrollment->student_id,
             ])

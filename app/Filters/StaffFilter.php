@@ -9,17 +9,15 @@ class StaffFilter
     public function apply(Builder $query, array $filters): Builder
     {
         return $query
-            // 🔎 SEARCH (user + staff_number)
+            // 🔎 SEARCH (staff details + email)
             ->when($filters['search'] ?? null, function ($q, $search) {
                 $q->where(function ($sub) use ($search) {
                     $sub->where('staff_number', 'like', "%{$search}%")
-                        ->orWhereHas('user', function ($uq) use ($search) {
-                            $uq->where('first_name', 'like', "%{$search}%")
-                                ->orWhere('last_name', 'like', "%{$search}%")
-                                ->orWhere('other_name', 'like', "%{$search}%")
-                                ->orWhere('email', 'like', "%{$search}%")
-                                ->orWhere('phone_number', 'like', "%{$search}%");
-                        });
+                        ->orWhere('first_name', 'like', "%{$search}%")
+                        ->orWhere('last_name', 'like', "%{$search}%")
+                        ->orWhere('other_name', 'like', "%{$search}%")
+                        ->orWhere('phone_number', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%");
                 });
             })
 
@@ -42,17 +40,13 @@ class StaffFilter
                 });
             })
 
-            // ⚧ Gender filter (users table)
+            // ⚧ Gender filter (staff table)
             ->when($filters['gender'] ?? null, function ($q, $gender) {
-                $q->whereHas('user', function ($uq) use ($gender) {
-                    $uq->where('gender', $gender);
-                });
+                $q->where('gender', $gender);
             })
 
             ->when($filters['county'] ?? null, function ($q, $county) {
-                $q->whereHas('user', function ($uq) use ($county) {
-                    $uq->where('county', $county);
-                });
+                $q->where('county', $county);
             });
     }
 }

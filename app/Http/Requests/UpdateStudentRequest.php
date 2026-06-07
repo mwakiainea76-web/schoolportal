@@ -42,7 +42,7 @@ class UpdateStudentRequest extends FormRequest
             'current_module' => ['required', 'string'],
             'study_mode' => ['nullable', Rule::in(['fulltime', 'parttime'])],
             'fee_discount_percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'student_status' => ['nullable', Rule::in(['active', 'suspended', 'graduated', 'dropped'])],
+            'student_status' => ['nullable', Rule::in(['active', 'deferred', 'expelled', 'graduated'])],
             'curriculum_mapping_id' => [
                 'nullable',
                 Rule::exists('curriculum_mappings', 'id')

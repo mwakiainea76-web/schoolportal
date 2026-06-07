@@ -22,12 +22,12 @@ class StudentCourseChangeController extends Controller
 {
     public function index(Request $request): Response
     {
-        $registrationNumber = trim((string) $request->query('registration_number', ''));
+        $admissionNumber = trim((string) $request->query('admission_number', ''));
         $studentDetails = null;
         $lookupError = null;
 
-        if ($registrationNumber !== '') {
-            $student = $this->findActiveStudent($registrationNumber);
+        if ($admissionNumber !== '') {
+            $student = $this->findActiveStudent($admissionNumber);
 
             if (! $student) {
                 $lookupError = 'Student not found or the student is inactive.';
@@ -38,7 +38,7 @@ class StudentCourseChangeController extends Controller
 
         return Inertia::render('students/CourseChange', [
             'filters' => [
-                'registration_number' => $registrationNumber,
+                'admission_number' => $admissionNumber,
             ],
             'student' => $studentDetails,
             'lookupError' => $lookupError,
@@ -50,25 +50,25 @@ class StudentCourseChangeController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'registration_number' => ['required', 'string', 'max:100'],
+            'admission_number' => ['required', 'string', 'max:100'],
             'new_curriculum_mapping_id' => ['required', 'integer', 'exists:curriculum_mappings,id'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
 
         $result = DB::transaction(function () use ($request, $validated) {
             $student = Student::query()
-                ->where('registration_number', trim($validated['registration_number']))
-                ->where('student_status', 'active')
+                ->where('admission_number', trim($validated['admission_number']))
+                ->where('enrollment_status', 'active')
                 ->lockForUpdate()
                 ->first();
 
             if (! $student) {
                 throw ValidationException::withMessages([
-                    'registration_number' => 'Student not found or the student is inactive.',
+                    'admission_number' => 'Student not found or the student is inactive.',
                 ]);
             }
 
-            $student->loadMissing(['user.nextofkin']);
+            $student->loadMissing(['user.nextOfKin']);
 
             $oldEnrollment = CourseEnrollment::query()
                 ->where('student_id', $student->id)
@@ -79,7 +79,7 @@ class StudentCourseChangeController extends Controller
 
             if (! $oldEnrollment) {
                 throw ValidationException::withMessages([
-                    'registration_number' => 'This student does not have an active course enrolment.',
+                    'admission_number' => 'This student does not have an active course enrolment.',
                 ]);
             }
 
@@ -92,7 +92,7 @@ class StudentCourseChangeController extends Controller
 
             if ($otherActiveEnrollments) {
                 throw ValidationException::withMessages([
-                    'registration_number' => 'This student already has more than one active enrolment. Please investigate before processing a course change.',
+                    'admission_number' => 'This student already has more than one active enrolment. Please investigate before processing a course change.',
                 ]);
             }
 
@@ -116,46 +116,36 @@ class StudentCourseChangeController extends Controller
             $oldUser = $student->user;
             if (! $oldUser) {
                 throw ValidationException::withMessages([
-                    'registration_number' => 'This student does not have an existing login account to transfer.',
+                    'admission_number' => 'This student does not have an existing login account to transfer.',
                 ]);
             }
 
-            $oldRegistrationNumber = $student->registration_number;
-            $newRegistrationNumber = $this->generateRegistrationNumber();
-            $generatedEmail = $this->generatedTransferEmail($newRegistrationNumber);
+            $oldAdmissionNumber = $student->admission_number;
+            $newAdmissionNumber = $this->generateAdmissionNumber();
+            $generatedEmail = $this->generatedTransferEmail($newAdmissionNumber);
 
             $newUser = User::create([
-                'first_name' => $oldUser->first_name,
-                'last_name' => $oldUser->last_name,
-                'other_name' => $oldUser->other_name,
                 'email' => $generatedEmail,
-                'login_id' => $newRegistrationNumber,
-                'profile_photo' => $oldUser->profile_photo,
-                'gender' => $oldUser->gender,
-                'date_of_birth' => $oldUser->date_of_birth,
-                'phone_number' => $oldUser->phone_number,
-                'county' => $oldUser->county,
-                'address' => $oldUser->address,
-                'religion' => $oldUser->religion,
-                'is_pwd' => $oldUser->is_pwd,
+                'login_id' => $newAdmissionNumber,
                 'is_active' => true,
-                'disability_type' => $oldUser->disability_type,
-                'medical_condition' => $oldUser->medical_condition,
                 'password' => $oldUser->password,
             ]);
 
             $newUser->assignRole('student');
             RbacCache::forgetForUser($newUser);
 
-            if ($oldUser->nextofkin) {
-                $newUser->nextofkin()->create([
-                    'first_name' => $oldUser->nextofkin->first_name,
-                    'last_name' => $oldUser->nextofkin->last_name,
-                    'relationship' => $oldUser->nextofkin->relationship,
-                    'phone_number' => $oldUser->nextofkin->phone_number,
-                    'alternate_phone_number' => $oldUser->nextofkin->alternate_phone_number,
-                    'email' => $oldUser->nextofkin->email,
-                ]);
+            // Copy next of kin if it exists
+            if ($oldUser->nextOfKin->isNotEmpty()) {
+                foreach ($oldUser->nextOfKin as $kin) {
+                    $newUser->nextOfKin()->create([
+                        'first_name' => $kin->first_name,
+                        'last_name' => $kin->last_name,
+                        'relationship' => $kin->relationship,
+                        'phone_number' => $kin->phone_number,
+                        'alternate_phone_number' => $kin->alternate_phone_number,
+                        'email' => $kin->email,
+                    ]);
+                }
             }
 
             $oldEnrollment->update([
@@ -182,10 +172,11 @@ class StudentCourseChangeController extends Controller
 
             $student->update([
                 'user_id' => $newUser->id,
-                'registration_number' => $newRegistrationNumber,
+                'admission_number' => $newAdmissionNumber,
+                'email' => $generatedEmail,
                 'current_module' => '1',
-                'student_status' => 'active',
-                'admission_date' => now(),
+                'enrollment_status' => 'active',
+                'created_at' => now(), // Updating admission date/time
             ]);
 
             $oldUser->update([
@@ -198,9 +189,10 @@ class StudentCourseChangeController extends Controller
                 'new_course_enrollment_id' => $newEnrollment->id,
                 'old_curriculum_mapping_id' => $oldEnrollment->curriculum_mapping_id,
                 'new_curriculum_mapping_id' => $newMapping->id,
-                'old_registration_number' => $oldRegistrationNumber,
-                'new_registration_number' => $newRegistrationNumber,
+                'old_admission_number' => $oldAdmissionNumber,
+                'new_admission_number' => $newAdmissionNumber,
                 'old_user_id' => $oldUser->id,
+
                 'new_user_id' => $newUser->id,
                 'processed_by' => $request->user()?->id,
                 'changed_at' => now(),
@@ -227,7 +219,7 @@ class StudentCourseChangeController extends Controller
                 'deactivated_by' => $request->user()?->id,
                 'context' => [
                     'reason' => 'course_change',
-                    'new_registration_number' => $newRegistrationNumber,
+                    'new_admission_number' => $newAdmissionNumber,
                 ],
             ]);
 
@@ -240,16 +232,16 @@ class StudentCourseChangeController extends Controller
                 'status' => 'active',
                 'context' => [
                     'reason' => 'course_change',
-                    'old_registration_number' => $oldRegistrationNumber,
+                    'old_admission_number' => $oldAdmissionNumber,
                 ],
             ]);
 
             return [
-                'old_registration_number' => $oldRegistrationNumber,
-                'new_registration_number' => $newRegistrationNumber,
+                'old_admission_number' => $oldAdmissionNumber,
+                'new_admission_number' => $newAdmissionNumber,
                 'old_course' => $this->courseName($oldEnrollment->curriculumMapping),
                 'new_course' => $this->courseName($newMapping),
-                'username' => $newRegistrationNumber,
+                'username' => $newAdmissionNumber,
                 'email' => $generatedEmail,
             ];
         });
@@ -260,13 +252,13 @@ class StudentCourseChangeController extends Controller
             ->with('latestTransfer', $result);
     }
 
-    protected function findActiveStudent(string $registrationNumber): ?Student
+    protected function findActiveStudent(string $admissionNumber): ?Student
     {
         return Student::query()
-            ->where('registration_number', $registrationNumber)
-            ->where('student_status', 'active')
+            ->where('admission_number', $admissionNumber)
+            ->where('enrollment_status', 'active')
             ->with([
-                'user:id,first_name,last_name,email,login_id,is_active',
+                'user:id,email,login_id,is_active',
                 'courseEnrollment.curriculumMapping.course.certificationLevel',
                 'courseEnrollment.curriculumMapping.curriculum',
             ])
@@ -279,13 +271,14 @@ class StudentCourseChangeController extends Controller
 
         return [
             'id' => $student->id,
-            'full_name' => trim(($student->user?->first_name ?? '').' '.($student->user?->last_name ?? '')),
+            'full_name' => $student->full_name,
             'current_course' => $this->courseName($mapping),
             'current_curriculum_mapping_id' => $mapping?->id,
-            'current_admission_number' => $student->registration_number,
+            'current_admission_number' => $student->admission_number,
             'current_enrolment_status' => $student->courseEnrollment?->status ?? 'missing',
-            'student_status' => $student->student_status,
+            'student_status' => $student->enrollment_status,
         ];
+
     }
 
     protected function activeCourseCurricula()
@@ -310,7 +303,7 @@ class StudentCourseChangeController extends Controller
         return trim(($mapping->curriculum?->name ?? 'Curriculum').' - '.($mapping->course?->display_name ?? $mapping->course?->name ?? 'Course'), ' -');
     }
 
-    protected function generateRegistrationNumber(): string
+    protected function generateAdmissionNumber(): string
     {
         $year = now()->year;
         $month = now()->format('m');
@@ -319,7 +312,7 @@ class StudentCourseChangeController extends Controller
             ->whereYear('created_at', $year)
             ->lockForUpdate()
             ->latest('id')
-            ->value('registration_number');
+            ->value('admission_number');
 
         $next = $last ? ((int) substr($last, -4)) + 1 : 1;
         $sequence = str_pad((string) $next, 4, '0', STR_PAD_LEFT);
@@ -327,7 +320,7 @@ class StudentCourseChangeController extends Controller
         $candidate = "STD/{$year}/{$month}/{$sequence}";
 
         while (
-            Student::query()->where('registration_number', $candidate)->exists()
+            Student::query()->where('admission_number', $candidate)->exists()
             || User::query()->where('login_id', $candidate)->exists()
         ) {
             $next++;
@@ -338,9 +331,9 @@ class StudentCourseChangeController extends Controller
         return $candidate;
     }
 
-    protected function generatedTransferEmail(string $registrationNumber): string
+    protected function generatedTransferEmail(string $admissionNumber): string
     {
-        $slug = Str::lower(Str::replace(['/', ' '], '.', $registrationNumber));
+        $slug = Str::lower(Str::replace(['/', ' '], '.', $admissionNumber));
         $email = "{$slug}.transfer@local.invalid";
         $suffix = 1;
 

@@ -35,9 +35,7 @@ class HostelAnalyticsService
 
         $allocationBase = DB::table('hostel_allocations')
             ->join('students', 'students.id', '=', 'hostel_allocations.student_id')
-            ->join('users', 'users.id', '=', 'students.user_id')
             ->whereNull('students.deleted_at')
-            ->whereNull('users.deleted_at')
             ->where('hostel_allocations.status', 'active')
             ->when($activeSession, fn ($query) => $query->where('hostel_allocations.academic_session_id', $activeSession->id));
 
@@ -157,24 +155,22 @@ class HostelAnalyticsService
 
         $duplicateAllocations = DB::table('hostel_allocations')
             ->join('students', 'students.id', '=', 'hostel_allocations.student_id')
-            ->join('users', 'users.id', '=', 'students.user_id')
             ->whereNull('students.deleted_at')
-            ->whereNull('users.deleted_at')
             ->where('hostel_allocations.status', 'active')
             ->when($activeSession, fn ($query) => $query->where('hostel_allocations.academic_session_id', $activeSession->id))
             ->groupBy(
                 'hostel_allocations.student_id',
                 'hostel_allocations.academic_session_id',
-                'students.registration_number',
-                'users.first_name',
-                'users.last_name'
+                'students.admission_number',
+                'students.first_name',
+                'students.last_name'
             )
             ->select(
                 'hostel_allocations.student_id',
                 'hostel_allocations.academic_session_id',
-                'students.registration_number',
-                'users.first_name',
-                'users.last_name'
+                'students.admission_number',
+                'students.first_name',
+                'students.last_name'
             )
             ->selectRaw('COUNT(*) as allocation_count')
             ->havingRaw('COUNT(*) > 1')
@@ -183,8 +179,8 @@ class HostelAnalyticsService
             ->get()
             ->map(fn ($row) => [
                 'student_id' => (int) $row->student_id,
-                'registration_number' => $row->registration_number,
-                'student_name' => trim($row->first_name.' '.$row->last_name),
+                'admission_number' => $row->admission_number,
+                'student_name' => "{$row->first_name} {$row->last_name}",
                 'allocation_count' => (int) $row->allocation_count,
             ])
             ->all();
@@ -219,10 +215,8 @@ class HostelAnalyticsService
 
         $billedButNotAllocatedBase = StudentInvoice::query()
             ->join('students', 'students.id', '=', 'student_invoices.student_id')
-            ->join('users', 'users.id', '=', 'students.user_id')
             ->leftJoin('hostel_allocations', 'hostel_allocations.student_invoice_id', '=', 'student_invoices.id')
             ->whereNull('students.deleted_at')
-            ->whereNull('users.deleted_at')
             ->where('student_invoices.invoice_type', 'hostel')
             ->whereIn('student_invoices.status', $includedInvoiceStatuses)
             ->where('student_invoices.approval_status', '!=', 'rejected')
@@ -237,9 +231,9 @@ class HostelAnalyticsService
                 'student_invoices.invoice_number',
                 'student_invoices.amount_due',
                 'student_invoices.balance_due',
-                'students.registration_number',
-                'users.first_name',
-                'users.last_name'
+                'students.admission_number',
+                'students.first_name',
+                'students.last_name'
             )
             ->orderByDesc('student_invoices.issue_date')
             ->limit(10)
@@ -247,8 +241,8 @@ class HostelAnalyticsService
             ->map(fn ($row) => [
                 'invoice_id' => (int) $row->id,
                 'invoice_number' => $row->invoice_number,
-                'registration_number' => $row->registration_number,
-                'student_name' => trim($row->first_name.' '.$row->last_name),
+                'admission_number' => $row->admission_number,
+                'student_name' => "{$row->first_name} {$row->last_name}",
                 'amount_due' => round((float) $row->amount_due, 2),
                 'balance_due' => round((float) $row->balance_due, 2),
             ])
@@ -256,11 +250,9 @@ class HostelAnalyticsService
 
         $allocatedButNotBilledBase = DB::table('hostel_allocations')
             ->join('students', 'students.id', '=', 'hostel_allocations.student_id')
-            ->join('users', 'users.id', '=', 'students.user_id')
             ->join('hostels', 'hostels.id', '=', 'hostel_allocations.hostel_id')
             ->leftJoin('student_invoices', 'student_invoices.id', '=', 'hostel_allocations.student_invoice_id')
             ->whereNull('students.deleted_at')
-            ->whereNull('users.deleted_at')
             ->where('hostel_allocations.status', 'active')
             ->when($activeSession, fn ($query) => $query->where('hostel_allocations.academic_session_id', $activeSession->id))
             ->where(function ($query) {
@@ -274,9 +266,9 @@ class HostelAnalyticsService
         $allocatedButNotBilled = (clone $allocatedButNotBilledBase)
             ->select(
                 'hostel_allocations.id',
-                'students.registration_number',
-                'users.first_name',
-                'users.last_name',
+                'students.admission_number',
+                'students.first_name',
+                'students.last_name',
                 'hostels.name as hostel_name',
                 'hostel_allocations.hostel_fee_amount'
             )
@@ -285,8 +277,8 @@ class HostelAnalyticsService
             ->get()
             ->map(fn ($row) => [
                 'allocation_id' => (int) $row->id,
-                'registration_number' => $row->registration_number,
-                'student_name' => trim($row->first_name.' '.$row->last_name),
+                'admission_number' => $row->admission_number,
+                'student_name' => "{$row->first_name} {$row->last_name}",
                 'hostel_name' => $row->hostel_name,
                 'hostel_fee_amount' => round((float) $row->hostel_fee_amount, 2),
             ])
@@ -294,29 +286,27 @@ class HostelAnalyticsService
 
         $inactiveStudentsWithActiveAllocation = DB::table('hostel_allocations')
             ->join('students', 'students.id', '=', 'hostel_allocations.student_id')
-            ->join('users', 'users.id', '=', 'students.user_id')
             ->join('hostels', 'hostels.id', '=', 'hostel_allocations.hostel_id')
             ->whereNull('students.deleted_at')
-            ->whereNull('users.deleted_at')
             ->where('hostel_allocations.status', 'active')
-            ->where('students.student_status', '!=', 'active')
+            ->where('students.enrollment_status', '!=', 'active')
             ->when($activeSession, fn ($query) => $query->where('hostel_allocations.academic_session_id', $activeSession->id))
             ->select(
                 'hostel_allocations.id',
-                'students.registration_number',
-                'students.student_status',
-                'users.first_name',
-                'users.last_name',
+                'students.admission_number',
+                'students.enrollment_status',
+                'students.first_name',
+                'students.last_name',
                 'hostels.name as hostel_name'
             )
-            ->orderBy('students.student_status')
+            ->orderBy('students.enrollment_status')
             ->limit(10)
             ->get()
             ->map(fn ($row) => [
                 'allocation_id' => (int) $row->id,
-                'registration_number' => $row->registration_number,
-                'student_name' => trim($row->first_name.' '.$row->last_name),
-                'student_status' => $row->student_status,
+                'admission_number' => $row->admission_number,
+                'student_name' => "{$row->first_name} {$row->last_name}",
+                'student_status' => $row->enrollment_status,
                 'hostel_name' => $row->hostel_name,
             ])
             ->all();

@@ -14,13 +14,13 @@ const plusDays = (days) =>
         .toISOString()
         .split("T")[0];
 
-export default function Index({ selectedRegistrationNumber = "" }) {
+export default function Index({ selectedAdmissionNumber = "" }) {
     const [activeModal, setActiveModal] = useState(null);
     const openModal = (name) => setActiveModal(name);
     const closeModal = () => setActiveModal(null);
 
     const invoiceForm = useForm({
-        registration_number: selectedRegistrationNumber || "",
+        admission_number: selectedAdmissionNumber || "",
         invoice_kind: "standard_invoice",
         description: "",
         amount: "",
@@ -28,7 +28,7 @@ export default function Index({ selectedRegistrationNumber = "" }) {
         due_date: plusDays(14),
     });
     const paymentForm = useForm({
-        registration_number: selectedRegistrationNumber || "",
+        admission_number: selectedAdmissionNumber || "",
         amount: "",
         method: "mpesa",
         reference: "",
@@ -36,7 +36,7 @@ export default function Index({ selectedRegistrationNumber = "" }) {
         notes: "",
     });
     const adjustmentForm = useForm({
-        registration_number: selectedRegistrationNumber || "",
+        admission_number: selectedAdmissionNumber || "",
         type: "discount",
         amount: "",
         description: "",
@@ -51,7 +51,7 @@ export default function Index({ selectedRegistrationNumber = "" }) {
             onSuccess: () => {
                 closeModal();
                 invoiceForm.reset("description", "amount", "issue_date", "due_date");
-                invoiceForm.setData("registration_number", selectedRegistrationNumber || "");
+                invoiceForm.setData("admission_number", selectedAdmissionNumber || "");
                 invoiceForm.setData("invoice_kind", "standard_invoice");
                 invoiceForm.setData("issue_date", today);
                 invoiceForm.setData("due_date", plusDays(14));
@@ -66,9 +66,9 @@ export default function Index({ selectedRegistrationNumber = "" }) {
             onSuccess: () => {
                 closeModal();
                 paymentForm.reset("amount", "reference", "notes");
-                paymentForm.setData("registration_number", selectedRegistrationNumber || "");
+                paymentForm.setData("admission_number", selectedAdmissionNumber || "");
                 paymentForm.setData("method", "mpesa");
-                paymentForm.setData("payment_date", today);
+                payment_form.setData("payment_date", today);
             },
         });
     };
@@ -80,7 +80,7 @@ export default function Index({ selectedRegistrationNumber = "" }) {
             onSuccess: () => {
                 closeModal();
                 adjustmentForm.reset("amount", "description", "replacement_amount", "replacement_description");
-                adjustmentForm.setData("registration_number", selectedRegistrationNumber || "");
+                adjustmentForm.setData("admission_number", selectedAdmissionNumber || "");
                 adjustmentForm.setData("type", "discount");
                 adjustmentForm.setData("applied_at", today);
             },

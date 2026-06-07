@@ -24,13 +24,13 @@ class StudentInvoicesFilter
     {
         $query->where(function ($q) use ($search) {
             $q->where('id', 'like', "%{$search}%")
-                ->orWhereHas('enrollment.student.user', function ($q2) use ($search) {
+                ->orWhereHas('enrollment.student', function ($q2) use ($search) {
                     $q2->where('first_name', 'like', "%{$search}%")
                         ->orWhere('last_name', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%");
-                })
-                ->orWhereHas('enrollment.student', function ($q2) use ($search) {
-                    $q2->where('registration_number', 'like', "%{$search}%");
+                        ->orWhere('admission_number', 'like', "%{$search}%")
+                        ->orWhereHas('user', function ($q3) use ($search) {
+                            $q3->where('email', 'like', "%{$search}%");
+                        });
                 })
                 ->orWhereHas('enrollment.academicSession', function ($q2) use ($search) {
                     $q2->where('session_No', 'like', "%{$search}%");
@@ -76,9 +76,8 @@ class StudentInvoicesFilter
             $query->join('academic_session_enrollments', 'student_invoices.enrollment_id', '=', 'academic_session_enrollments.id')
                 ->join('course_enrollments', 'academic_session_enrollments.course_enrollment_id', '=', 'course_enrollments.id')
                 ->join('students', 'course_enrollments.student_id', '=', 'students.id')
-                ->join('users', 'students.user_id', '=', 'users.id')
-                ->orderBy('users.first_name', $direction)
-                ->orderBy('users.last_name', $direction)
+                ->orderBy('students.first_name', $direction)
+                ->orderBy('students.last_name', $direction)
                 ->select('student_invoices.*');
         } else {
             $query->orderBy($field, $direction);

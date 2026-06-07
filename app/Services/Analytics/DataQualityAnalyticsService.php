@@ -106,11 +106,9 @@ class DataQualityAnalyticsService
 
         $inactiveStudentActiveAllocationBase = DB::table('hostel_allocations')
             ->join('students', 'students.id', '=', 'hostel_allocations.student_id')
-            ->join('users', 'users.id', '=', 'students.user_id')
             ->whereNull('students.deleted_at')
-            ->whereNull('users.deleted_at')
             ->where('hostel_allocations.status', 'active')
-            ->where('students.student_status', '!=', 'active');
+            ->where('students.enrollment_status', '!=', 'active');
 
         $duplicateContactIdentifierCount = $this->duplicateContactIdentifierCount();
         $duplicateContacts = $this->duplicateContacts();
@@ -196,24 +194,24 @@ class DataQualityAnalyticsService
             ],
             'exceptions' => [
                 'students_without_user' => (clone $studentsWithoutUserBase)
-                    ->select('students.id', 'students.registration_number')
+                    ->select('students.id', 'students.admission_number')
                     ->orderByDesc('students.id')
                     ->limit(10)
                     ->get()
                     ->map(fn ($row) => [
                         'student_id' => (int) $row->id,
-                        'registration_number' => $row->registration_number,
+                        'admission_number' => $row->admission_number,
                     ])
                     ->all(),
                 'students_without_course_enrollment' => (clone $studentsWithoutCourseEnrollmentBase)
-                    ->select('students.id', 'students.registration_number', 'users.first_name', 'users.last_name')
+                    ->select('students.id', 'students.admission_number', 'students.first_name', 'students.last_name')
                     ->orderByDesc('students.id')
                     ->limit(10)
                     ->get()
                     ->map(fn ($row) => [
                         'student_id' => (int) $row->id,
-                        'registration_number' => $row->registration_number,
-                        'student_name' => trim($row->first_name.' '.$row->last_name),
+                        'admission_number' => $row->admission_number,
+                        'student_name' => "{$row->first_name} {$row->last_name}",
                     ])
                     ->all(),
                 'enrollments_without_academic_session' => (clone $enrollmentsWithoutAcademicSessionBase)
@@ -266,13 +264,12 @@ class DataQualityAnalyticsService
                 'duplicate_contact_identifiers' => $duplicateContacts,
                 'invoice_student_mismatches' => (clone $invoiceStudentMismatchBase)
                     ->join('students', 'students.id', '=', 'student_invoices.student_id')
-                    ->join('users', 'users.id', '=', 'students.user_id')
                     ->select(
                         'student_invoices.id',
                         'student_invoices.invoice_number',
-                        'students.registration_number',
-                        'users.first_name',
-                        'users.last_name'
+                        'students.admission_number',
+                        'students.first_name',
+                        'students.last_name'
                     )
                     ->orderByDesc('student_invoices.id')
                     ->limit(10)
@@ -280,8 +277,8 @@ class DataQualityAnalyticsService
                     ->map(fn ($row) => [
                         'invoice_id' => (int) $row->id,
                         'invoice_number' => $row->invoice_number,
-                        'registration_number' => $row->registration_number,
-                        'student_name' => trim($row->first_name.' '.$row->last_name),
+                        'admission_number' => $row->admission_number,
+                        'student_name' => "{$row->first_name} {$row->last_name}",
                     ])
                     ->all(),
                 'invalid_invoice_statuses' => (clone $invalidInvoiceStatusesBase)
@@ -319,8 +316,11 @@ class DataQualityAnalyticsService
                 HAVING COUNT(*) > 1
                 UNION ALL
                 SELECT phone_number as contact_value, 'phone' as contact_type, COUNT(*) as duplicate_count
-                FROM users
-                WHERE deleted_at IS NULL AND phone_number IS NOT NULL AND phone_number <> ''
+                FROM (
+                    SELECT phone_number FROM staffs WHERE deleted_at IS NULL AND phone_number IS NOT NULL AND phone_number <> ''
+                    UNION ALL
+                    SELECT phone_number FROM students WHERE deleted_at IS NULL AND phone_number IS NOT NULL AND phone_number <> ''
+                ) all_phones
                 GROUP BY phone_number
                 HAVING COUNT(*) > 1
             ) duplicate_contacts
@@ -348,11 +348,14 @@ class DataQualityAnalyticsService
             ->get()
             ->count();
 
-        $phoneCount = DB::table('users')
+        $phoneCount = DB::table(DB::raw("
+            (
+                SELECT phone_number FROM staffs WHERE deleted_at IS NULL AND phone_number IS NOT NULL AND phone_number <> ''
+                UNION ALL
+                SELECT phone_number FROM students WHERE deleted_at IS NULL AND phone_number IS NOT NULL AND phone_number <> ''
+            ) all_phones
+        "))
             ->select('phone_number')
-            ->whereNull('deleted_at')
-            ->whereNotNull('phone_number')
-            ->where('phone_number', '!=', '')
             ->groupBy('phone_number')
             ->havingRaw('COUNT(*) > 1')
             ->get()

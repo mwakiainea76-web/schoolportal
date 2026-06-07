@@ -28,10 +28,10 @@ class LoginIdentifierDemoSeeder extends Seeder
             ->with('student')
             ->get()
             ->each(function (User $user): void {
-                $registrationNumber = trim((string) $user->student?->registration_number);
+                $admissionNumber = trim((string) $user->student?->admission_number);
 
-                if ($registrationNumber !== '') {
-                    $user->forceFill(['login_id' => $registrationNumber])->save();
+                if ($admissionNumber !== '') {
+                    $user->forceFill(['login_id' => $admissionNumber])->save();
                 }
             });
 
@@ -46,7 +46,7 @@ class LoginIdentifierDemoSeeder extends Seeder
             $studentExamples = Student::query()
                 ->with('user')
                 ->whereHas('user', fn ($query) => $query->whereNotNull('login_id'))
-                ->orderBy('registration_number')
+                ->orderBy('admission_number')
                 ->limit(3)
                 ->get();
 
@@ -63,7 +63,7 @@ class LoginIdentifierDemoSeeder extends Seeder
             foreach ($studentExamples as $student) {
                 $this->command->line(sprintf(
                     'STUDENT| %s | password: %s',
-                    $student->registration_number,
+                    $student->admission_number,
                     'Password@123'
                 ));
             }

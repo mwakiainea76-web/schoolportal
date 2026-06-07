@@ -59,15 +59,15 @@ class ExecutiveAnalyticsService
                     (select count(*)
                      from students
                      where deleted_at is null
-                       and student_status = 'active') as active_students,
+                       and enrollment_status = 'active') as active_students,
                     (select count(*)
                      from students
                      where deleted_at is null
-                       and admission_date between ? and ?) as new_admissions_this_month,
+                       and created_at between ? and ?) as new_admissions_this_month,
                     (select count(*)
                      from students
                      where deleted_at is null
-                       and student_status = 'active'
+                       and enrollment_status = 'active'
                        and exists (
                            select 1
                            from course_enrollments
@@ -83,7 +83,7 @@ class ExecutiveAnalyticsService
                      where academic_session_enrollments.deleted_at is null
                        and course_enrollments.deleted_at is null
                        and students.deleted_at is null
-                       and students.student_status = 'active'
+                       and students.enrollment_status = 'active'
                        and ? is not null
                        and academic_session_enrollments.academic_session_id = ?) as registered_students_in_active_session,
                     (select coalesce(sum(amount_due), 0)
@@ -166,13 +166,13 @@ class ExecutiveAnalyticsService
             ->all();
 
         $studentStatusBreakdown = Student::query()
-            ->select('student_status')
+            ->select('enrollment_status')
             ->selectRaw('COUNT(*) as total')
-            ->groupBy('student_status')
-            ->orderBy('student_status')
+            ->groupBy('enrollment_status')
+            ->orderBy('enrollment_status')
             ->get()
             ->map(fn ($row) => [
-                'status' => $row->student_status,
+                'status' => $row->enrollment_status,
                 'total' => (int) $row->total,
             ])
             ->all();

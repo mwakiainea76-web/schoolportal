@@ -7,7 +7,7 @@ import AcademicCalendarWorkspaceTabs from "@/Pages/Academic/Partials/AcademicCal
 
 export default function Create({ activeSession }) {
     const { data, setData, post, processing, errors } = useForm({
-        registration_number: "",
+        admission_number: "",
     });
 
     const submit = (e) => {
@@ -39,26 +39,26 @@ export default function Create({ activeSession }) {
                     className="bg-white p-8 space-y-6 border rounded-lg shadow-sm"
                 >
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Registration Number */}
+                        {/* Admission Number */}
                         <div>
                             <InputLabel
-                                value="Student Registration Number"
+                                value="Student Admission Number"
                                 required
                             />
                             <TextInput
                                 type="text"
-                                name="registration_number"
-                                value={data.registration_number}
+                                name="admission_number"
+                                value={data.admission_number}
                                 onChange={(e) =>
                                     setData(
-                                        "registration_number",
+                                        "admission_number",
                                         e.target.value,
                                     )
                                 }
                                 placeholder="e.g. STD/001/2026"
                                 className="mt-1 block w-full"
                             />
-                            <InputError message={errors.registration_number} />
+                            <InputError message={errors.admission_number} />
                         </div>
 
                         {/* Active Session — read only */}

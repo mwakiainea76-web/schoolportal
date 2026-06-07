@@ -14,22 +14,40 @@ class Staff extends Model
     protected $table = 'staffs';
 
     protected $fillable = [
+        'user_id',
+        'department_id',
+        'first_name',
+        'last_name',
+        'other_name',
+        'email',
+        'phone_number',
+        'date_of_birth',
+        'county',
+        'address',
+        'gender',
+        'profile_photo',
+        'religion',
+        'is_pwd',
+        'disability_type',
+        'medical_condition',
         'designation',
-        'salary',
-        'staff_status',
-        'hired_date',
-        'employment_type',
         'staff_number',
         'national_id_number',
+        'salary',
+        'hired_date',
+        'employment_type',
         'highest_qualification',
         'specialization',
         'kra_pin',
         'nhif_number',
         'nssf_number',
-
-        'user_id',
-        'department_id',
+        'staff_status',
     ];
+
+    public function getFullNameAttribute()
+    {
+        return "{$this->first_name} {$this->last_name}".($this->other_name ? " {$this->other_name}" : '');
+    }
 
     public function user()
     {

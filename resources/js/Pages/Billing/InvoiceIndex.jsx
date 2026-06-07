@@ -186,9 +186,7 @@ export default function InvoiceIndex({
                             >
                                 Invoice # {renderArrow("invoice_number")}
                             </THdata>
-                            <THdata className="cursor-pointer">
-                                Student
-                            </THdata>
+                            <THdata className="cursor-pointer">Student</THdata>
                             <THdata>Type</THdata>
                             <THdata>Session</THdata>
                             <THdata
@@ -227,7 +225,8 @@ export default function InvoiceIndex({
                         <Tbody>
                             {invoices?.data?.length ? (
                                 invoices.data.map((invoice) => {
-                                    const studentName = `${invoice.student?.user?.first_name ?? ""} ${invoice.student?.user?.last_name ?? ""}`.trim();
+                                    const studentName =
+                                        `${invoice.student?.user?.first_name ?? ""} ${invoice.student?.user?.last_name ?? ""}`.trim();
                                     const sessionName =
                                         invoice.enrollment?.academic_session
                                             ?.display_name ??
@@ -247,7 +246,7 @@ export default function InvoiceIndex({
                                                 <br />
                                                 <span className="text-sm text-gray-500">
                                                     {invoice.student
-                                                        ?.registration_number ??
+                                                        ?.admission_number ??
                                                         ""}
                                                 </span>
                                             </Tdata>
@@ -313,7 +312,10 @@ export default function InvoiceIndex({
                                                               .toUpperCase() +
                                                           invoice.approval_status
                                                               .slice(1)
-                                                              .replace("_", " ")}
+                                                              .replace(
+                                                                  "_",
+                                                                  " ",
+                                                              )}
                                                 </span>
                                             </Tdata>
                                             <Tdata>
@@ -363,10 +365,10 @@ export default function InvoiceIndex({
                                                         href={route(
                                                             "billing.manual.index",
                                                             {
-                                                                registration_number:
+                                                                admission_number:
                                                                     invoice
                                                                         .student
-                                                                        ?.registration_number,
+                                                                        ?.admission_number,
                                                             },
                                                         )}
                                                         className="text-sm text-blue-600 hover:underline"

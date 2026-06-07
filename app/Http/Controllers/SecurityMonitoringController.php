@@ -28,7 +28,7 @@ class SecurityMonitoringController extends Controller
         $blockPerPage = max(10, min((int) $request->query('block_per_page', 15), 100));
 
         $events = SecurityEvent::query()
-            ->with('user:id,first_name,last_name,login_id,email')
+            ->with(['user' => fn($q) => $q->select('id', 'login_id', 'email')->with(['staff', 'student'])])
             ->when($filters['risk'], fn ($query) => $query->where('risk_level', $filters['risk']))
             ->when($filters['event'], fn ($query) => $query->where('event_type', $filters['event']))
             ->when($filters['search'], function ($query, $search) {
@@ -56,7 +56,7 @@ class SecurityMonitoringController extends Controller
                 'occurred_at' => optional($event->occurred_at)->toDateTimeString(),
                 'user' => $event->user ? [
                     'id' => $event->user->id,
-                    'name' => trim($event->user->first_name.' '.$event->user->last_name),
+                    'name' => $event->user->full_name ?? 'N/A',
                     'login_id' => $event->user->login_id,
                     'email' => $event->user->email,
                 ] : null,
@@ -64,7 +64,10 @@ class SecurityMonitoringController extends Controller
             ]);
 
         $blocks = SecurityBlock::query()
-            ->with(['user:id,first_name,last_name,login_id,email', 'creator:id,first_name,last_name'])
+            ->with([
+                'user' => fn($q) => $q->select('id', 'login_id', 'email')->with(['staff', 'student']),
+                'creator' => fn($q) => $q->select('id')->with(['staff', 'student'])
+            ])
             ->latest('created_at')
             ->paginate($blockPerPage, ['*'], 'blocks_page')
             ->withQueryString()
@@ -84,11 +87,11 @@ class SecurityMonitoringController extends Controller
                 'notes' => $block->notes,
                 'user' => $block->user ? [
                     'id' => $block->user->id,
-                    'name' => trim($block->user->first_name.' '.$block->user->last_name),
+                    'name' => $block->user->full_name ?? 'N/A',
                     'login_id' => $block->user->login_id,
                     'email' => $block->user->email,
                 ] : null,
-                'creator' => $block->creator ? trim($block->creator->first_name.' '.$block->creator->last_name) : null,
+                'creator' => $block->creator ? $block->creator->full_name : null,
             ]);
 
         return Inertia::render('Settings/SecurityMonitoring', [

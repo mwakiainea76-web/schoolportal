@@ -172,16 +172,14 @@ class FinanceAnalyticsService
                 $join->on('allocation_totals.payment_id', '=', 'payments.id');
             })
             ->join('students', 'students.id', '=', 'payments.student_id')
-            ->join('users', 'users.id', '=', 'students.user_id')
             ->where('payments.status', 'completed')
             ->whereNull('students.deleted_at')
-            ->whereNull('users.deleted_at')
-            ->groupBy('payments.student_id', 'students.registration_number', 'users.first_name', 'users.last_name')
+            ->groupBy('payments.student_id', 'students.admission_number', 'students.first_name', 'students.last_name')
             ->select(
                 'payments.student_id',
-                'students.registration_number',
-                'users.first_name',
-                'users.last_name'
+                'students.admission_number',
+                'students.first_name',
+                'students.last_name'
             )
             ->selectRaw('SUM(payments.amount - COALESCE(allocation_totals.allocated_amount, 0)) as credit_balance')
             ->havingRaw('SUM(payments.amount - COALESCE(allocation_totals.allocated_amount, 0)) > 0')
@@ -190,8 +188,8 @@ class FinanceAnalyticsService
             ->get()
             ->map(fn ($row) => [
                 'student_id' => (int) $row->student_id,
-                'registration_number' => $row->registration_number,
-                'student_name' => trim($row->first_name.' '.$row->last_name),
+                'admission_number' => $row->admission_number,
+                'student_name' => "{$row->first_name} {$row->last_name}",
                 'credit_balance' => round((float) $row->credit_balance, 2),
             ])
             ->all();
@@ -201,15 +199,14 @@ class FinanceAnalyticsService
                 $join->on('allocation_totals.payment_id', '=', 'payments.id');
             })
             ->leftJoin('students', 'students.id', '=', 'payments.student_id')
-            ->leftJoin('users', 'users.id', '=', 'students.user_id')
             ->where('payments.status', 'completed')
             ->select(
                 'payments.id',
                 'payments.reference',
                 'payments.payment_date',
-                'students.registration_number',
-                'users.first_name',
-                'users.last_name'
+                'students.admission_number',
+                'students.first_name',
+                'students.last_name'
             )
             ->selectRaw('payments.amount - COALESCE(allocation_totals.allocated_amount, 0) as unallocated_amount')
             ->whereRaw('payments.amount - COALESCE(allocation_totals.allocated_amount, 0) > 0')
@@ -220,8 +217,8 @@ class FinanceAnalyticsService
                 'payment_id' => (int) $row->id,
                 'reference' => $row->reference ?: 'No reference',
                 'payment_date' => $row->payment_date,
-                'registration_number' => $row->registration_number,
-                'student_name' => trim(($row->first_name ?? '').' '.($row->last_name ?? '')),
+                'admission_number' => $row->admission_number,
+                'student_name' => "{$row->first_name} {$row->last_name}",
                 'unallocated_amount' => round((float) $row->unallocated_amount, 2),
             ])
             ->all();

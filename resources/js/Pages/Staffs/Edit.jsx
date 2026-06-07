@@ -61,21 +61,26 @@ export default function EditStaff({ staff, departments, roles }) {
     const [validating, setValidating] = useState(false);
 
     const { data, setData, put, processing, errors, reset } = useForm({
-        first_name: staff.user?.first_name || "",
-        last_name: staff.user?.last_name || "",
-        other_name: staff.user?.other_name || "",
-        email: staff.user?.email || "",
-        phone_number: staff.user?.phone_number || "",
-        gender: staff.user?.gender || "",
-        date_of_birth: staff.user?.date_of_birth || "",
-        county: staff.user?.county || "",
-        address: staff.user?.address || "",
-        religion: staff.user?.religion || "",
+        // Step 1 — Personal (flat on staff)
+        first_name: staff.first_name || "",
+        last_name: staff.last_name || "",
+        other_name: staff.other_name || "",
+        email: staff.email || "",
+        phone_number: staff.phone_number || "",
+        gender: staff.gender || "",
+        date_of_birth: staff.date_of_birth || "",
+        county: staff.county || "",
+        address: staff.address || "",
+        religion: staff.religion || "",
+        is_pwd: staff.is_pwd ?? false,
+        disability_type: staff.disability_type || "",
+        medical_condition: staff.medical_condition || "",
         profile_photo: null,
 
+        // Step 2 — Employment (flat on staff)
         department_id: staff.department_id || "",
         staff_number: staff.staff_number || "",
-        role_name: staff.user?.roles?.[0]?.name || "",
+        role_name: staff.role_name || "", // mapped in controller
         designation: staff.designation || "",
         national_id_number: staff.national_id_number || "",
         salary: staff.salary || "",
@@ -88,18 +93,14 @@ export default function EditStaff({ staff, departments, roles }) {
         nhif_number: staff.nhif_number || "",
         nssf_number: staff.nssf_number || "",
 
-        kin_first_name: staff.user?.nextofkin?.first_name || "",
-        kin_last_name: staff.user?.nextofkin?.last_name || "",
-        kin_relationship: staff.user?.nextofkin?.relationship || "",
-        kin_phone: staff.user?.nextofkin?.phone_number || "",
-        kin_alt_phone: staff.user?.nextofkin?.alternate_phone_number || "",
-        kin_email: staff.user?.nextofkin?.email || "",
-
-        is_pwd: staff.user?.is_pwd ?? false,
-        disability_type: staff.user?.disability_type || "",
-        medical_condition: staff.user?.medical_condition || "",
+        // Step 3 — Next of kin (mapped as next_of_kin[0] in controller)
+        kin_first_name: staff.next_of_kin?.[0]?.first_name || "",
+        kin_last_name: staff.next_of_kin?.[0]?.last_name || "",
+        kin_relationship: staff.next_of_kin?.[0]?.relationship || "",
+        kin_phone: staff.next_of_kin?.[0]?.phone_number || "",
+        kin_alt_phone: staff.next_of_kin?.[0]?.alternate_phone_number || "",
+        kin_email: staff.next_of_kin?.[0]?.email || "",
     });
-
     const allErrors = { ...errors, ...stepErrors };
 
     // ── Per-step backend validation ─────────────────────────────────

@@ -21,7 +21,7 @@ class DepartmentController extends Controller
     public function index(DepartmentFilter $filter)
     {
         $departments = Department::query()
-            ->with('hod.user:id,first_name,last_name,email')
+            ->with('hod')
             ->tap(fn ($query) => $filter->apply(
                 $query,
                 request()->only(['search', 'sort', 'direction'])
@@ -38,7 +38,7 @@ class DepartmentController extends Controller
                 'hod' => $department->hod
                     ? [
                         'id' => $department->hod->id,
-                        'name' => trim(($department->hod->user?->first_name ?? '').' '.($department->hod->user?->last_name ?? '')),
+                        'name' => $department->hod->full_name,
                         'staff_number' => $department->hod->staff_number,
                     ]
                     : null,
@@ -66,7 +66,7 @@ class DepartmentController extends Controller
 
     public function edit(Department $department)
     {
-        $department->load('hod.user:id,first_name,last_name,email');
+        $department->load('hod');
 
         return inertia('Departments/Edit', [
             'department' => $department,
@@ -112,7 +112,7 @@ class DepartmentController extends Controller
     protected function staffLabel($staff): string
     {
         return collect([
-            trim(($staff->user?->first_name ?? '').' '.($staff->user?->last_name ?? '')),
+            $staff->full_name,
             $staff->staff_number,
             $staff->designation,
         ])->filter()->implode(' - ');

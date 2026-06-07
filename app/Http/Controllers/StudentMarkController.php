@@ -311,7 +311,7 @@ class StudentMarkController extends Controller
             fwrite($handle, "\xEF\xBB\xBF");
 
             fputcsv($handle, [
-                'Registration Number',
+                'Admission Number',
                 'Student',
                 'Unit',
                 'Session',
@@ -323,8 +323,8 @@ class StudentMarkController extends Controller
 
             foreach ($query->lazyById(100) as $mark) {
                 fputcsv($handle, [
-                    $mark->student?->registration_number,
-                    trim(($mark->student?->user?->first_name ?? '').' '.($mark->student?->user?->last_name ?? '')),
+                    $mark->student?->admission_number,
+                    $mark->student?->full_name,
                     $mark->curriculumUnit?->name,
                     $mark->academicSession?->display_name,
                     ucfirst((string) $mark->assessment_type),
@@ -439,7 +439,7 @@ class StudentMarkController extends Controller
             fwrite($handle, "\xEF\xBB\xBF");
 
             fputcsv($handle, [
-                'Registration Number',
+                'Admission Number',
                 'Student Name',
                 'FA 1',
                 'FA 2',
@@ -455,7 +455,7 @@ class StudentMarkController extends Controller
 
             foreach ($query->cursor() as $row) {
                 fputcsv($handle, [
-                    $row->registration_number ?? '',
+                    $row->admission_number ?? '',
                     trim(($row->first_name ?? '').' '.($row->last_name ?? '')),
                     $row->theory_fa1 ?? '',
                     $row->theory_fa2 ?? '',
@@ -575,8 +575,8 @@ class StudentMarkController extends Controller
                 ])->values(),
             ],
             'student' => [
-                'name' => trim(($student->user?->first_name ?? '').' '.($student->user?->last_name ?? '')),
-                'registration_number' => $student->registration_number,
+                'name' => $student->full_name,
+                'admission_number' => $student->admission_number,
             ],
             'summary' => [
                 'published_count' => $publishedCount,
@@ -788,7 +788,7 @@ class StudentMarkController extends Controller
         $students = Student::query()
             ->where(function ($query) use ($registrationNumbers, $numericIds) {
                 if ($registrationNumbers !== []) {
-                    $query->whereIn('registration_number', $registrationNumbers);
+                    $query->whereIn('admission_number', $registrationNumbers);
                 }
 
                 if ($numericIds !== []) {
@@ -800,7 +800,7 @@ class StudentMarkController extends Controller
         $keyed = collect();
 
         foreach ($students as $student) {
-            $keyed->put($this->normalizeStudentIdentifier($student->registration_number), $student);
+            $keyed->put($this->normalizeStudentIdentifier($student->admission_number), $student);
             $keyed->put((string) $student->id, $student);
         }
 
@@ -838,8 +838,8 @@ class StudentMarkController extends Controller
         $paginator->setCollection(
             $paginator->getCollection()->map(fn (StudentMark $mark) => [
                 'id' => $mark->id,
-                'registration_number' => $mark->student?->registration_number,
-                'student_name' => trim(($mark->student?->user?->first_name ?? '').' '.($mark->student?->user?->last_name ?? '')),
+                'admission_number' => $mark->student?->admission_number,
+                'student_name' => $mark->student?->full_name,
                 'unit_name' => $mark->curriculumUnit?->name,
                 'assessment_type' => ucfirst($mark->assessment_type),
                 'assessment_number' => (int) $mark->assessment_number,
@@ -884,8 +884,8 @@ class StudentMarkController extends Controller
         $paginator->setCollection(
             $paginator->getCollection()->map(fn (StudentMark $mark) => [
                 'id' => $mark->id,
-                'registration_number' => $mark->student?->registration_number,
-                'student_name' => trim(($mark->student?->user?->first_name ?? '').' '.($mark->student?->user?->last_name ?? '')),
+                'admission_number' => $mark->student?->admission_number,
+                'student_name' => $mark->student?->full_name,
                 'unit_name' => $mark->curriculumUnit?->name,
                 'assessment_type' => ucfirst($mark->assessment_type),
                 'assessment_number' => (int) $mark->assessment_number,
@@ -1028,7 +1028,7 @@ class StudentMarkController extends Controller
         $groupedRows = $marks
             ->map(function ($row) {
                 return [
-                    'registration_number' => $row->registration_number ?? '',
+                    'admission_number' => $row->admission_number ?? '',
                     'student_name' => trim(($row->first_name ?? '').' '.($row->last_name ?? '')),
                     'theory' => [
                         1 => $row->theory_fa1 !== null ? (string) (int) $row->theory_fa1 : '',
@@ -1048,7 +1048,7 @@ class StudentMarkController extends Controller
                         : '',
                 ];
             })
-            ->sortBy('registration_number')
+            ->sortBy('admission_number')
             ->values();
 
         return [
@@ -1079,18 +1079,17 @@ class StudentMarkController extends Controller
     ) {
         return StudentMark::query()
             ->join('students', 'students.id', '=', 'student_marks.student_id')
-            ->join('users', 'users.id', '=', 'students.user_id')
             ->join('academic_sessions', 'academic_sessions.id', '=', 'student_marks.academic_session_id')
             ->where('student_marks.curriculum_unit_id', $unitId)
             ->when($academicYearId, fn ($query) => $query->where('academic_sessions.academic_year_id', $academicYearId))
             ->when($academicSessionId, fn ($query) => $query->where('student_marks.academic_session_id', $academicSessionId))
-            ->groupBy('students.id', 'students.registration_number', 'users.first_name', 'users.last_name')
+            ->groupBy('students.id', 'students.admission_number', 'students.first_name', 'students.last_name')
             ->orderBy('students.id')
             ->selectRaw('
                 students.id as student_id,
-                students.registration_number,
-                users.first_name,
-                users.last_name,
+                students.admission_number,
+                students.first_name,
+                students.last_name,
                 MAX(CASE WHEN student_marks.assessment_type = \'theory\' AND student_marks.assessment_number = 1 THEN student_marks.marks END) as theory_fa1,
                 MAX(CASE WHEN student_marks.assessment_type = \'theory\' AND student_marks.assessment_number = 2 THEN student_marks.marks END) as theory_fa2,
                 MAX(CASE WHEN student_marks.assessment_type = \'theory\' AND student_marks.assessment_number = 3 THEN student_marks.marks END) as theory_fa3,
@@ -1111,8 +1110,7 @@ class StudentMarkController extends Controller
     ) {
         $query = StudentMark::query()
             ->with([
-                'student:id,registration_number,user_id',
-                'student.user:id,first_name,last_name',
+                'student',
                 'curriculumUnit:id,name',
                 'academicSession:id,academic_year_id,session_number,session_No,label',
                 'academicSession.academicYear:id,label,academic_year',

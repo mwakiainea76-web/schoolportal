@@ -4,9 +4,9 @@ import ApplyAdjustmentForm from "./ApplyAdjustmentForm";
 
 const today = new Date().toISOString().split("T")[0];
 
-export default function ApplyAdjustment({ selectedRegistrationNumber }) {
+export default function ApplyAdjustment({ selectedAdmissionNumber }) {
     const form = useForm({
-        registration_number: selectedRegistrationNumber || "",
+        admission_number: selectedAdmissionNumber || "",
         type: "discount",
         amount: "",
         description: "",

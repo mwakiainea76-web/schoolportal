@@ -45,7 +45,6 @@ class InvoiceController extends Controller
 
         $query = StudentInvoice::with([
             'student',
-            'student.user',
             'enrollment.academicSession',
             'academicSession',
         ])
@@ -57,11 +56,11 @@ class InvoiceController extends Controller
                         ->where('invoice_number', 'like', "%{$search}%")
                         ->orWhereHas('student', function ($studentQuery) use ($search) {
                             $studentQuery
-                                ->where('registration_number', 'like', "%{$search}%")
-                                ->orWhereHas('user', function ($userQuery) use ($search) {
-                                    $userQuery
-                                        ->where('first_name', 'like', "%{$search}%")
-                                        ->orWhere('last_name', 'like', "%{$search}%");
+                                ->where('admission_number', 'like', "%{$search}%")
+                                ->orWhere('first_name', 'like', "%{$search}%")
+                                ->orWhere('last_name', 'like', "%{$search}%")
+                                ->orWhereHas('user', function ($uq) use ($search) {
+                                    $uq->where('email', 'like', "%{$search}%");
                                 });
                         });
                 });
@@ -118,7 +117,7 @@ class InvoiceController extends Controller
         $this->ensureBillingStaff($request);
 
         $invoice->load([
-            'student.user',
+            'student',
             'enrollment.courseEnrollment.curriculumMapping.course',
             'enrollment.courseEnrollment.curriculumMapping.curriculum',
             'enrollment.academicSession',
@@ -203,11 +202,11 @@ class InvoiceController extends Controller
         abort_unless($student && $invoice->student_id === $student->id, 403);
 
         // Only load what buildStudentStatement() actually reads from $invoice directly:
-        // student.user  → student.name, student.registration_number, student.admission_date
+        // student  → student.name, student.admission_number, student.created_at
         // academicSession → display_name (via $invoice->academicSession?->display_name)
         // invoice_number, issue_date, due_date, academic_session_id, student_id
         $invoice->load([
-            'student.user',
+            'student',
             'academicSession:id,academic_year_id,session_number,label',
         ]);
 
@@ -311,7 +310,7 @@ class InvoiceController extends Controller
         $this->ensureBillingStaff($request);
 
         return Inertia::render('Billing/ManualOperations/Index', [
-            'selectedRegistrationNumber' => $this->resolveSelectedRegistrationNumber($request),
+            'selectedAdmissionNumber' => $this->resolveSelectedAdmissionNumber($request),
         ]);
     }
 
@@ -325,7 +324,7 @@ class InvoiceController extends Controller
             : 'standard_invoice';
 
         return Inertia::render('Billing/ManualOperations/AdditionalInvoice', [
-            'selectedRegistrationNumber' => $this->resolveSelectedRegistrationNumber($request),
+            'selectedAdmissionNumber' => $this->resolveSelectedAdmissionNumber($request),
             'selectedInvoiceKind' => $invoiceKind,
         ]);
     }
@@ -335,7 +334,7 @@ class InvoiceController extends Controller
         $this->ensureBillingStaff($request);
 
         return Inertia::render('Billing/ManualOperations/RecordPayment', [
-            'selectedRegistrationNumber' => $this->resolveSelectedRegistrationNumber($request),
+            'selectedAdmissionNumber' => $this->resolveSelectedAdmissionNumber($request),
         ]);
     }
 
@@ -345,7 +344,7 @@ class InvoiceController extends Controller
 
         return redirect()
             ->route('billing.manual.invoices.create', [
-                'registration_number' => $this->resolveSelectedRegistrationNumber($request),
+                'admission_number' => $this->resolveSelectedAdmissionNumber($request),
                 'invoice_kind' => 'penalty',
             ])
             ->with('info', 'Penalties are now posted from Student Charge using the Penalty charge class.');
@@ -356,14 +355,14 @@ class InvoiceController extends Controller
         $this->ensureBillingStaff($request);
 
         return Inertia::render('Billing/ManualOperations/ApplyAdjustment', [
-            'selectedRegistrationNumber' => $this->resolveSelectedRegistrationNumber($request),
+            'selectedAdmissionNumber' => $this->resolveSelectedAdmissionNumber($request),
         ]);
     }
 
     public function storeManualInvoice(Request $request, BillingService $billingService)
     {
         $validated = $request->validate([
-            'registration_number' => 'required|string|max:100',
+            'admission_number' => 'required|string|max:100',
             'invoice_kind' => 'required|in:standard_invoice,penalty,hostel,invoice_adjustment',
             'description' => 'required|string|max:255',
             'amount' => 'required|numeric|min:0.01',
@@ -373,7 +372,7 @@ class InvoiceController extends Controller
 
         $creatorStaffId = $this->ensureBillingStaff($request);
 
-        $enrollment = $this->resolveEnrollmentByRegistrationNumber($validated['registration_number']);
+        $enrollment = $this->resolveEnrollmentByAdmissionNumber($validated['admission_number']);
         $idempotencyKey = $this->makeTransactionIdempotencyKey(
             'manual-invoice',
             [
@@ -414,7 +413,7 @@ class InvoiceController extends Controller
     public function storePenalty(Request $request, BillingService $billingService)
     {
         $validated = $request->validate([
-            'registration_number' => 'required|string|max:100',
+            'admission_number' => 'required|string|max:100',
             'amount' => 'required|numeric|min:0.01',
             'description' => 'required|string|max:255',
             'applied_at' => 'required|date',
@@ -422,8 +421,8 @@ class InvoiceController extends Controller
 
         $creatorStaffId = $this->ensureBillingStaff($request);
 
-        $invoice = $this->resolveInvoiceByRegistrationNumber(
-            $validated['registration_number'],
+        $invoice = $this->resolveInvoiceByAdmissionNumber(
+            $validated['admission_number'],
             true
         );
         $idempotencyKey = $this->makeTransactionIdempotencyKey(
@@ -455,7 +454,7 @@ class InvoiceController extends Controller
     public function storeAdjustment(Request $request, BillingService $billingService)
     {
         $validated = $request->validate([
-            'registration_number' => 'required|string|max:100',
+            'admission_number' => 'required|string|max:100',
             'type' => 'required|in:discount,waiver,bursary,helb,refund,reversal,other',
             'amount' => 'required|numeric|min:0.01',
             'description' => 'required|string|max:255',
@@ -466,8 +465,8 @@ class InvoiceController extends Controller
 
         $creatorStaffId = $this->ensureBillingStaff($request);
 
-        $invoice = $this->resolveInvoiceByRegistrationNumber(
-            $validated['registration_number'],
+        $invoice = $this->resolveInvoiceByAdmissionNumber(
+            $validated['admission_number'],
             ! in_array($validated['type'], ['refund', 'reversal'], true)
         );
         $idempotencyKey = $this->makeTransactionIdempotencyKey(
@@ -526,7 +525,7 @@ class InvoiceController extends Controller
     public function storePayment(Request $request, BillingService $billingService)
     {
         $validated = $request->validate([
-            'registration_number' => 'required|string|max:100',
+            'admission_number' => 'required|string|max:100',
             'amount' => 'required|numeric|min:0.01',
             'method' => 'required|in:mpesa,bank,cash,card,cheque,other',
             'reference' => 'nullable|string|max:150',
@@ -536,7 +535,7 @@ class InvoiceController extends Controller
 
         $creatorStaffId = $this->ensureBillingStaff($request);
 
-        $student = $this->resolveStudentByRegistrationNumber($validated['registration_number']);
+        $student = $this->resolveStudentByAdmissionNumber($validated['admission_number']);
         $idempotencyKey = $this->makeTransactionIdempotencyKey(
             'manual-payment',
             [
@@ -576,17 +575,17 @@ class InvoiceController extends Controller
             ->with('success', 'Payment recorded successfully.');
     }
 
-    protected function resolveSelectedRegistrationNumber(Request $request): ?string
+    protected function resolveSelectedAdmissionNumber(Request $request): ?string
     {
-        if ($request->filled('registration_number')) {
-            return trim($request->string('registration_number')->toString());
+        if ($request->filled('admission_number')) {
+            return trim($request->string('admission_number')->toString());
         }
 
         if ($request->filled('invoice')) {
             return StudentInvoice::query()
                 ->with('student')
                 ->find($request->integer('invoice'))
-                ?->student?->registration_number;
+                ?->student?->admission_number;
         }
 
         return null;
@@ -603,14 +602,14 @@ class InvoiceController extends Controller
         return (int) $staffId;
     }
 
-    protected function resolveEnrollmentByRegistrationNumber(string $registrationNumber): AcademicSessionEnrollment
+    protected function resolveEnrollmentByAdmissionNumber(string $admissionNumber): AcademicSessionEnrollment
     {
-        $student = $this->resolveStudentByRegistrationNumber($registrationNumber);
+        $student = $this->resolveStudentByAdmissionNumber($admissionNumber);
 
         $enrollment = AcademicSessionEnrollment::query()
             ->with([
                 'courseEnrollment',
-                'student.user',
+                'student',
                 'academicSession',
                 'curriculumMapping.course',
                 'curriculumMapping.curriculum',
@@ -622,16 +621,16 @@ class InvoiceController extends Controller
 
         if (! $enrollment) {
             throw ValidationException::withMessages([
-                'registration_number' => 'This student does not have a session enrollment yet.',
+                'admission_number' => 'This student does not have a session enrollment yet.',
             ]);
         }
 
         return $enrollment;
     }
 
-    protected function resolveInvoiceByRegistrationNumber(string $registrationNumber, bool $requireOutstanding = false): StudentInvoice
+    protected function resolveInvoiceByAdmissionNumber(string $admissionNumber, bool $requireOutstanding = false): StudentInvoice
     {
-        $student = $this->resolveStudentByRegistrationNumber($registrationNumber);
+        $student = $this->resolveStudentByAdmissionNumber($admissionNumber);
 
         $query = StudentInvoice::query()
             ->where('student_id', $student->id)
@@ -656,22 +655,22 @@ class InvoiceController extends Controller
                 : 'No invoice was found for that student registration number.';
 
             throw ValidationException::withMessages([
-                'registration_number' => $message,
+                'admission_number' => $message,
             ]);
         }
 
         return $invoice;
     }
 
-    protected function resolveStudentByRegistrationNumber(string $registrationNumber): Student
+    protected function resolveStudentByAdmissionNumber(string $admissionNumber): Student
     {
         $student = Student::query()
-            ->where('registration_number', $registrationNumber)
+            ->where('admission_number', $admissionNumber)
             ->first();
 
         if (! $student) {
             throw ValidationException::withMessages([
-                'registration_number' => 'No student was found with that registration number.',
+                'admission_number' => 'No student was found with that admission number.',
             ]);
         }
 

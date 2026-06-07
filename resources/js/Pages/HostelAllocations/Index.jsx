@@ -144,7 +144,7 @@ export default function Index({ allocations, filters, hostels, sessions }) {
                                 <Trow key={allocation.id}>
                                     <Tdata>
                                         {allocation.student_name}
-                                        <div className="mt-1 text-xs text-zinc-500">{allocation.registration_number}</div>
+                                        <div className="mt-1 text-xs text-zinc-500">{allocation.admission_number}</div>
                                     </Tdata>
                                     <Tdata>{allocation.session_name}</Tdata>
                                     <Tdata>{allocation.hostel_name}</Tdata>

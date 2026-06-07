@@ -214,7 +214,7 @@ export default function Index({
                                         {item.student_name || "-"}
                                     </Tdata>
                                     <Tdata>
-                                        {item.registration_number || "-"}
+                                        {item.admission_number || "-"}
                                     </Tdata>
                                     <Tdata>{item.course ?? "-"}</Tdata>
                                     <Tdata>{item.curriculum ?? "-"}</Tdata>

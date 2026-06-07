@@ -350,7 +350,7 @@ class AcademicTimetableController extends Controller
 
         $timetable->load([
             'department:id,name',
-            'trainer.user:id,first_name,last_name',
+            'trainer:id,first_name,last_name,staff_number',
             'lectureRoom:id,name,code,department_id',
             'curriculumUnit:id,name,code,curriculum_mapping_id,module_taught',
             'curriculumUnits:id,name,code,curriculum_mapping_id,module_taught',
@@ -410,7 +410,7 @@ class AcademicTimetableController extends Controller
         return AcademicTimetable::query()->with([
             'academicSession:id,academic_year_id,session_number,session_No,label,is_active',
             'department:id,name',
-            'trainer.user:id,first_name,last_name',
+            'trainer:id,first_name,last_name,staff_number',
             'lectureRoom:id,name,code,department_id',
             'curriculumUnit:id,name,code,curriculum_mapping_id,module_taught',
             'curriculumUnits:id,name,code,curriculum_mapping_id,module_taught',
@@ -432,7 +432,7 @@ class AcademicTimetableController extends Controller
             'curriculum_unit_id' => (string) $entry->curriculum_unit_id,
             'curriculum_unit_ids' => $entry->curriculumUnits->pluck('id')->map(fn ($id) => (string) $id)->values()->all(),
             'trainer_staff_id' => (string) $entry->trainer_staff_id,
-            'trainer_name' => trim(($entry->trainer?->user?->last_name ?? '').' '.($entry->trainer?->user?->first_name ?? '')),
+            'trainer_name' => $entry->trainer?->full_name,
             'trainer_staff_number' => $entry->trainer?->staff_number,
             'lecture_room_id' => $entry->lecture_room_id ? (string) $entry->lecture_room_id : '',
             'lecture_room_name' => $entry->lectureRoom?->name,
@@ -497,14 +497,13 @@ class AcademicTimetableController extends Controller
     protected function trainerOptions(?int $departmentId = null): array
     {
         return Staff::query()
-            ->with('user:id,first_name,last_name')
             ->when($departmentId, fn ($query) => $query->where('department_id', $departmentId))
             ->where('staff_status', 'active')
             ->get()
-            ->sortBy(fn (Staff $staff) => trim(($staff->user?->last_name ?? '').' '.($staff->user?->first_name ?? '')))
+            ->sortBy('first_name')
             ->map(fn (Staff $staff) => [
                 'id' => (string) $staff->id,
-                'name' => trim(($staff->user?->last_name ?? '').' '.($staff->user?->first_name ?? '')).' ('.$staff->staff_number.')',
+                'name' => $staff->full_name.' ('.$staff->staff_number.')',
                 'department_id' => (string) $staff->department_id,
             ])
             ->values()

@@ -132,7 +132,7 @@ export default function StudentResults({
                             {student?.name || "Student"}
                         </p>
                         <p className="mt-1 text-sm text-zinc-500">
-                            {student?.registration_number || "–"}
+                            {student?.admission_number || "–"}
                         </p>
                     </div>
 

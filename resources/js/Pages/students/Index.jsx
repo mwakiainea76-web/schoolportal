@@ -48,7 +48,7 @@ export default function StudentIndex({ students }) {
                     <form className="flex gap-2 w-full" onSubmit={submit}>
                         <TextInput
                             className="w-full"
-                            placeholder="Search by email or reg. number..."
+                            placeholder="Search by email or admission number..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
@@ -64,7 +64,7 @@ export default function StudentIndex({ students }) {
                 {/* Table */}
                 <Table pagination={students}>
                     <Thead>
-                        <THdata>Reg. No</THdata>
+                        <THdata>Admission Number</THdata>
                         <THdata>Name</THdata>
                         <THdata>Email</THdata>
                         <THdata>Module</THdata>
@@ -80,15 +80,15 @@ export default function StudentIndex({ students }) {
                             students.data.map((student) => (
                                 <Trow key={student.id}>
                                     <Tdata className="font-mono text-xs">
-                                        {student.registration_number}
+                                        {student.admission_number}
                                     </Tdata>
 
                                     <Tdata>
-                                        {student.user.last_name}{" "}
-                                        {student.user.first_name}
+                                        {student.last_name}{" "}
+                                        {student.first_name}
                                     </Tdata>
 
-                                    <Tdata>{student.user.email}</Tdata>
+                                    <Tdata>{student.email}</Tdata>
 
                                     <Tdata>
                                         Module {student.current_module}

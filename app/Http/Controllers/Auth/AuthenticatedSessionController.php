@@ -17,8 +17,7 @@ class AuthenticatedSessionController extends Controller
 {
     public function __construct(
         protected SecurityMonitoringService $securityMonitoring,
-    ) {
-    }
+    ) {}
 
     /**
      * Display the login view.
@@ -75,20 +74,20 @@ class AuthenticatedSessionController extends Controller
     private function dashboardRouteFor(?User $user): string
     {
         if (! $user) {
-            return 'dashboard';
+            return 'login';
         }
 
         $user->loadMissing('roles:id,name');
         $roles = $user->roles->pluck('name');
 
-        if ($roles->contains('student')) {
-            return 'student.dashboard';
-        }
-
-        if ($roles->contains('trainer') && ! $roles->contains('admin') && ! $roles->contains('hod')) {
-            return 'trainer.dashboard';
-        }
-
-        return 'admin.dashboard';
+        return match (true) {
+            $roles->contains('admin') => 'admin.dashboard',
+            $roles->contains('hod') => 'hod.dashboard',
+            $roles->contains('bursar') => 'bursar.dashboard',
+            $roles->contains('librarian') => 'librarian.dashboard',
+            $roles->contains('trainer') => 'trainer.dashboard',
+            $roles->contains('student') => 'student.dashboard',
+            default => 'student.dashboard',
+        };
     }
 }

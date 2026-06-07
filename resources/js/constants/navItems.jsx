@@ -6,6 +6,7 @@ import {
     Building2,
     CalendarClock,
     GraduationCap,
+    Home,
     Landmark,
     LayoutDashboard,
     LayoutGrid,
@@ -19,6 +20,60 @@ import {
 } from "lucide-react";
 
 export const STAFF_NAV_ITEMS = [
+    // ----------------------------------------------------------------
+    // QUICK SECTIONS
+    // Shown only when the user has the relevant permission.
+    // filterNav() in the sidebar handles hiding them automatically.
+    // ----------------------------------------------------------------
+    {
+        key: "timetable-workspace",
+        label: "Timetable Workspace",
+        icon: "academic",
+        basePath: "/academic/timetables",
+        permissions: ["academic.sessions.view"],
+        children: [
+            {
+                routeName: "academic.timetables.index",
+                fallback: "/academic/timetables",
+                label: "Timetable Workspace",
+                permission: "academic.sessions.view",
+            },
+        ],
+    },
+    {
+        key: "marks-workspace",
+        label: "Marks Workspace",
+        icon: "academic",
+        basePath: "/academic/marks",
+        permissions: ["academic.sessions.view"],
+        children: [
+            {
+                routeName: "academic.marks.add.index",
+                fallback: "/academic/marks/add",
+                label: "Marks Workspace",
+                permission: "academic.sessions.view",
+            },
+        ],
+    },
+    {
+        key: "hostel-workspace",
+        label: "Hostel Workspace",
+        icon: "hostel",
+        basePath: "/hostels",
+        permissions: ["hostels.view"],
+        children: [
+            {
+                routeName: "hostels.index",
+                fallback: "/hostels",
+                label: "Hostel Workspace",
+                permission: "hostels.view",
+            },
+        ],
+    },
+
+    // ----------------------------------------------------------------
+    // MAIN SECTIONS
+    // ----------------------------------------------------------------
     {
         key: "reports",
         label: "Analytics & Reports",
@@ -32,7 +87,6 @@ export const STAFF_NAV_ITEMS = [
                 label: "Executive Reports",
                 permission: "students.view",
             },
- 
         ],
     },
     {
@@ -313,7 +367,8 @@ export const STAFF_NAV_ITEMS = [
                     },
                     {
                         routeName: "billing.manual.invoices.create",
-                        fallback: "/billing/manual-operations/additional-invoice",
+                        fallback:
+                            "/billing/manual-operations/additional-invoice",
                         label: "Add Additional Invoice",
                         permission: "students.view",
                     },
@@ -545,4 +600,5 @@ export const ICONS = {
     staff: <UserRound className="w-5 h-5 shrink-0" />,
     users: <UsersRound className="w-5 h-5 shrink-0" />,
     finance: <Wallet className="w-5 h-5 shrink-0" />,
+    hostel: <Home className="w-5 h-5 shrink-0" />,
 };

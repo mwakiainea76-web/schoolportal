@@ -24,11 +24,29 @@ class ProfileTest extends TestCase
     public function test_profile_information_can_be_updated(): void
     {
         $user = User::factory()->create();
+        // Since it's a new user, we need to give them a staff or student profile to update first/last name
+        $user->staff()->create([
+            'first_name' => 'Old',
+            'last_name' => 'Name',
+            'department_id' => 1, // Assume 1 exists or use a factory
+            'staff_number' => 'STF001',
+            'gender' => 'male',
+            'phone_number' => '0712345678',
+            'date_of_birth' => '1990-01-01',
+            'county' => 'Nairobi',
+            'address' => '123 Street',
+            'religion' => 'Christian',
+            'highest_qualification' => 'Degree',
+            'hired_date' => '2020-01-01',
+            'employment_type' => 'fulltime',
+            'designation' => 'Lecturer',
+        ]);
 
         $response = $this
             ->actingAs($user)
             ->patch('/profile', [
-                'name' => 'Test User',
+                'first_name' => 'Test',
+                'last_name' => 'User',
                 'email' => 'test@example.com',
             ]);
 
@@ -38,7 +56,7 @@ class ProfileTest extends TestCase
 
         $user->refresh();
 
-        $this->assertSame('Test User', $user->name);
+        $this->assertSame('Test User', $user->full_name);
         $this->assertSame('test@example.com', $user->email);
         $this->assertNull($user->email_verified_at);
     }
@@ -46,11 +64,28 @@ class ProfileTest extends TestCase
     public function test_email_verification_status_is_unchanged_when_the_email_address_is_unchanged(): void
     {
         $user = User::factory()->create();
+        $user->staff()->create([
+            'first_name' => 'Test',
+            'last_name' => 'User',
+            'department_id' => 1,
+            'staff_number' => 'STF001',
+            'gender' => 'male',
+            'phone_number' => '0712345678',
+            'date_of_birth' => '1990-01-01',
+            'county' => 'Nairobi',
+            'address' => '123 Street',
+            'religion' => 'Christian',
+            'highest_qualification' => 'Degree',
+            'hired_date' => '2020-01-01',
+            'employment_type' => 'fulltime',
+            'designation' => 'Lecturer',
+        ]);
 
         $response = $this
             ->actingAs($user)
             ->patch('/profile', [
-                'name' => 'Test User',
+                'first_name' => 'Test',
+                'last_name' => 'User',
                 'email' => $user->email,
             ]);
 

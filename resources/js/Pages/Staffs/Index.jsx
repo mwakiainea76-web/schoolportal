@@ -41,7 +41,7 @@ export default function StaffIndex({ staffs }) {
                 {/* SEARCH */}
                 <form className="w-full flex gap-x-7 mb-4" onSubmit={submit}>
                     <TextInput
-                        placeholder="Type staff email here"
+                        placeholder="Search by name, email or staff number..."
                         value={searchTerm}
                         onChange={(e) => {
                             setSearchTerm(e.target.value);
@@ -77,15 +77,12 @@ export default function StaffIndex({ staffs }) {
                                     <Tdata>{staff.staff_number}</Tdata>
 
                                     <Tdata className="">
-                                        {staff.user.last_name}{" "}
-                                        {staff.user.first_name}
+                                        {staff.last_name} {staff.first_name}
                                     </Tdata>
 
-                                    <Tdata>{staff.user.email}</Tdata>
+                                    <Tdata>{staff.email}</Tdata>
 
-                                    <Tdata>
-                                        {staff.user?.roles?.[0]?.name ?? "N/A"}
-                                    </Tdata>
+                                    <Tdata>{staff.roles?.[0] ?? "N/A"}</Tdata>
 
                                     <Tdata>
                                         {staff.department?.name ?? "N/A"}

@@ -220,7 +220,7 @@ export default function LedgerIndex({
                                             {transaction.student || "-"}
                                             <br />
                                             <span className="text-xs text-zinc-500">
-                                                {transaction.registration_number ||
+                                                {transaction.admission_number ||
                                                     ""}
                                             </span>
                                         </Tdata>

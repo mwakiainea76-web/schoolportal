@@ -24,7 +24,7 @@ class StoreAcademicSessionEnrollmentRequest extends FormRequest
     {
 
         return [
-            'registration_number' => ['required', 'string', 'exists:students,registration_number'],
+            'admission_number' => ['required', 'string', 'exists:students,admission_number'],
         ];
 
     }

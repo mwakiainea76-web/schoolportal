@@ -62,8 +62,9 @@ export default function ReportsIndex({
     const [academicSummary, setAcademicSummary] = useState(null);
     const [admissionsSummary, setAdmissionsSummary] = useState(null);
     const [dataQualitySummary, setDataQualitySummary] = useState(null);
-    const [executiveSummary, setExecutiveSummary] =
-        useState(emptyExecutiveSummary);
+    const [executiveSummary, setExecutiveSummary] = useState(
+        emptyExecutiveSummary,
+    );
     const [executiveError, setExecutiveError] = useState(null);
     const [financeSummary, setFinanceSummary] = useState(null);
     const [hostelSummary, setHostelSummary] = useState(null);
@@ -85,9 +86,11 @@ export default function ReportsIndex({
         year_of_study: "",
         session_number: "",
     });
-    const showExecutive = activeSection === "all" || activeSection === "executive";
+    const showExecutive =
+        activeSection === "all" || activeSection === "executive";
     const showFinance = activeSection === "all" || activeSection === "finance";
-    const showAcademic = activeSection === "all" || activeSection === "academic";
+    const showAcademic =
+        activeSection === "all" || activeSection === "academic";
     const showAdmissions =
         activeSection === "all" || activeSection === "admissions";
     const showHostel = activeSection === "all" || activeSection === "hostel";
@@ -315,10 +318,7 @@ export default function ReportsIndex({
             <AuthenticatedLayout>
                 <Head title={pageTitle} />
                 <div className="flex h-64 items-center justify-center">
-                    <LoadingSpinner
-                        size="lg"
-                        centered
-                    />
+                    <LoadingSpinner size="lg" centered />
                 </div>
             </AuthenticatedLayout>
         );
@@ -380,14 +380,15 @@ export default function ReportsIndex({
                                         Executive Overview
                                     </h2>
                                     <p className="text-sm text-zinc-500">
-                                        A quick institutional snapshot built from secured aggregate metrics.
+                                        A quick institutional snapshot built
+                                        from secured aggregate metrics.
                                     </p>
                                 </div>
                                 <div className="text-sm text-zinc-500">
                                     Active Session:{" "}
                                     <span className="font-medium text-zinc-700">
-                                        {executiveSummary.active_session?.label ??
-                                            "No active session"}
+                                        {executiveSummary.active_session
+                                            ?.label ?? "No active session"}
                                     </span>
                                 </div>
                             </div>
@@ -401,11 +402,15 @@ export default function ReportsIndex({
                             <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
                                 <MetricCard
                                     label="Total Students"
-                                    value={executiveSummary.metrics.total_students}
+                                    value={
+                                        executiveSummary.metrics.total_students
+                                    }
                                 />
                                 <MetricCard
                                     label="Active Students"
-                                    value={executiveSummary.metrics.active_students}
+                                    value={
+                                        executiveSummary.metrics.active_students
+                                    }
                                 />
                                 <MetricCard
                                     label="New Admissions This Month"
@@ -440,7 +445,8 @@ export default function ReportsIndex({
                                 <MetricCard
                                     label="Total Collected"
                                     value={formatCurrency(
-                                        executiveSummary.metrics.total_collected,
+                                        executiveSummary.metrics
+                                            .total_collected,
                                     )}
                                     accent="text-emerald-600"
                                 />
@@ -455,7 +461,8 @@ export default function ReportsIndex({
                                 <MetricCard
                                     label="Overdue Balance"
                                     value={formatCurrency(
-                                        executiveSummary.metrics.overdue_balance,
+                                        executiveSummary.metrics
+                                            .overdue_balance,
                                     )}
                                     accent="text-red-600"
                                 />
@@ -481,7 +488,10 @@ export default function ReportsIndex({
                                                             {course.name}
                                                         </p>
                                                         <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
-                                                            {course.student_count} students
+                                                            {
+                                                                course.student_count
+                                                            }{" "}
+                                                            students
                                                         </span>
                                                     </div>
                                                 </div>
@@ -537,11 +547,14 @@ export default function ReportsIndex({
                                         Finance Analytics
                                     </h2>
                                     <p className="text-sm text-zinc-500">
-                                        Billing health, payment behavior, debt exposure, and finance exception monitoring.
+                                        Billing health, payment behavior, debt
+                                        exposure, and finance exception
+                                        monitoring.
                                     </p>
                                 </div>
                                 <div className="text-xs text-zinc-500">
-                                    Excluding rejected invoices from finance totals
+                                    Excluding rejected invoices from finance
+                                    totals
                                 </div>
                             </div>
 
@@ -625,7 +638,10 @@ export default function ReportsIndex({
                                                             {method.method}
                                                         </p>
                                                         <span className="text-sm text-zinc-500">
-                                                            {method.payment_count} payments
+                                                            {
+                                                                method.payment_count
+                                                            }{" "}
+                                                            payments
                                                         </span>
                                                     </div>
                                                     <p className="mt-2 font-semibold text-zinc-900">
@@ -696,8 +712,8 @@ export default function ReportsIndex({
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-zinc-200 bg-white">
-                                            {financeSummary.breakdowns.adjustments
-                                                ?.length ? (
+                                            {financeSummary.breakdowns
+                                                .adjustments?.length ? (
                                                 financeSummary.breakdowns.adjustments.map(
                                                     (adjustment) => (
                                                         <tr
@@ -805,7 +821,7 @@ export default function ReportsIndex({
                                                             </p>
                                                             <p className="text-sm text-zinc-500">
                                                                 {
-                                                                    student.registration_number
+                                                                    student.admission_number
                                                                 }
                                                             </p>
                                                         </div>
@@ -856,21 +872,17 @@ export default function ReportsIndex({
                                             financeSummary.exceptions.payments_without_allocations.map(
                                                 (payment) => (
                                                     <tr
-                                                        key={
-                                                            payment.payment_id
-                                                        }
+                                                        key={payment.payment_id}
                                                     >
                                                         <td className="px-4 py-3 text-sm text-zinc-800">
-                                                            {
-                                                                payment.reference
-                                                            }
+                                                            {payment.reference}
                                                         </td>
                                                         <td className="px-4 py-3 text-sm text-zinc-700">
                                                             {payment.student_name ||
                                                                 "Unlinked student"}
                                                         </td>
                                                         <td className="px-4 py-3 text-sm text-zinc-700">
-                                                            {payment.registration_number ||
+                                                            {payment.admission_number ||
                                                                 "-"}
                                                         </td>
                                                         <td className="px-4 py-3 text-sm font-medium text-red-600">
@@ -887,7 +899,8 @@ export default function ReportsIndex({
                                                     colSpan="4"
                                                     className="px-4 py-3 text-center text-sm text-zinc-500"
                                                 >
-                                                    No payment allocation exceptions found
+                                                    No payment allocation
+                                                    exceptions found
                                                 </td>
                                             </tr>
                                         )}
@@ -907,14 +920,16 @@ export default function ReportsIndex({
                                         Academic Operations Analytics
                                     </h2>
                                     <p className="text-sm text-zinc-500">
-                                        Session registration, timetable delivery, utilization, and operational exception monitoring.
+                                        Session registration, timetable
+                                        delivery, utilization, and operational
+                                        exception monitoring.
                                     </p>
                                 </div>
                                 <div className="text-sm text-zinc-500">
                                     Active Session:{" "}
                                     <span className="font-medium text-zinc-700">
-                                        {academicSummary.active_session?.label ??
-                                            "No active session"}
+                                        {academicSummary.active_session
+                                            ?.label ?? "No active session"}
                                     </span>
                                 </div>
                             </div>
@@ -948,7 +963,8 @@ export default function ReportsIndex({
                                     label="Units Without Timetable"
                                     value={
                                         academicSummary.exceptions
-                                            .units_without_timetable?.length ?? 0
+                                            .units_without_timetable?.length ??
+                                        0
                                     }
                                     accent="text-amber-600"
                                 />
@@ -994,8 +1010,8 @@ export default function ReportsIndex({
                                     Students by Module
                                 </h2>
                                 <div className="space-y-3">
-                                    {academicSummary.breakdowns.students_by_module
-                                        ?.length ? (
+                                    {academicSummary.breakdowns
+                                        .students_by_module?.length ? (
                                         academicSummary.breakdowns.students_by_module.map(
                                             (row) => (
                                                 <div
@@ -1033,8 +1049,7 @@ export default function ReportsIndex({
                                                     className="flex items-center justify-between rounded-lg bg-zinc-50 px-4 py-3"
                                                 >
                                                     <p className="text-zinc-700">
-                                                        Year{" "}
-                                                        {row.year_of_study}
+                                                        Year {row.year_of_study}
                                                     </p>
                                                     <span className="font-semibold text-zinc-900">
                                                         {row.total}
@@ -1079,7 +1094,8 @@ export default function ReportsIndex({
                                                             </p>
                                                         </div>
                                                         <span className="font-semibold text-zinc-900">
-                                                            {row.session_count} sessions
+                                                            {row.session_count}{" "}
+                                                            sessions
                                                         </span>
                                                     </div>
                                                 </div>
@@ -1111,7 +1127,8 @@ export default function ReportsIndex({
                                                             {row.room_name}
                                                         </p>
                                                         <span className="font-semibold text-zinc-900">
-                                                            {row.session_count} sessions
+                                                            {row.session_count}{" "}
+                                                            sessions
                                                         </span>
                                                     </div>
                                                 </div>
@@ -1149,7 +1166,7 @@ export default function ReportsIndex({
                                                             </p>
                                                             <p className="text-sm text-zinc-500">
                                                                 {
-                                                                    student.registration_number
+                                                                    student.admission_number
                                                                 }
                                                             </p>
                                                         </div>
@@ -1165,7 +1182,8 @@ export default function ReportsIndex({
                                         )
                                     ) : (
                                         <p className="text-sm text-zinc-500">
-                                            No unregistered active students found in the current sample.
+                                            No unregistered active students
+                                            found in the current sample.
                                         </p>
                                     )}
                                 </div>
@@ -1201,7 +1219,8 @@ export default function ReportsIndex({
                                         )
                                     ) : (
                                         <p className="text-sm text-zinc-500">
-                                            All sampled mapped units have timetable coverage.
+                                            All sampled mapped units have
+                                            timetable coverage.
                                         </p>
                                     )}
                                 </div>
@@ -1214,8 +1233,8 @@ export default function ReportsIndex({
                                     Lecturer Clashes
                                 </h2>
                                 <div className="space-y-4">
-                                    {academicSummary.exceptions
-                                        .lecturer_clashes?.length ? (
+                                    {academicSummary.exceptions.lecturer_clashes
+                                        ?.length ? (
                                         academicSummary.exceptions.lecturer_clashes.map(
                                             (clash, index) => (
                                                 <div
@@ -1226,15 +1245,19 @@ export default function ReportsIndex({
                                                         {clash.day_of_week}
                                                     </p>
                                                     <p className="mt-1 text-sm text-zinc-500">
-                                                        {clash.first_time_range} overlaps with{" "}
-                                                        {clash.second_time_range}
+                                                        {clash.first_time_range}{" "}
+                                                        overlaps with{" "}
+                                                        {
+                                                            clash.second_time_range
+                                                        }
                                                     </p>
                                                 </div>
                                             ),
                                         )
                                     ) : (
                                         <p className="text-sm text-zinc-500">
-                                            No lecturer clashes detected in the sampled timetable set.
+                                            No lecturer clashes detected in the
+                                            sampled timetable set.
                                         </p>
                                     )}
                                 </div>
@@ -1257,15 +1280,19 @@ export default function ReportsIndex({
                                                         {clash.day_of_week}
                                                     </p>
                                                     <p className="mt-1 text-sm text-zinc-500">
-                                                        {clash.first_time_range} overlaps with{" "}
-                                                        {clash.second_time_range}
+                                                        {clash.first_time_range}{" "}
+                                                        overlaps with{" "}
+                                                        {
+                                                            clash.second_time_range
+                                                        }
                                                     </p>
                                                 </div>
                                             ),
                                         )
                                     ) : (
                                         <p className="text-sm text-zinc-500">
-                                            No room clashes detected in the sampled timetable set.
+                                            No room clashes detected in the
+                                            sampled timetable set.
                                         </p>
                                     )}
                                 </div>
@@ -1283,7 +1310,8 @@ export default function ReportsIndex({
                                         Admissions and Registry Analytics
                                     </h2>
                                     <p className="text-sm text-zinc-500">
-                                        Intake trends, demographic breakdowns, and onboarding completion exceptions.
+                                        Intake trends, demographic breakdowns,
+                                        and onboarding completion exceptions.
                                     </p>
                                 </div>
                                 <div className="text-sm text-zinc-500">
@@ -1545,19 +1573,18 @@ export default function ReportsIndex({
                                                     </p>
                                                     <p className="mt-1 text-sm text-zinc-500">
                                                         {
-                                                            student.registration_number
+                                                            student.admission_number
                                                         }{" "}
                                                         /{" "}
-                                                        {
-                                                            student.admission_date
-                                                        }
+                                                        {student.admission_date}
                                                     </p>
                                                 </div>
                                             ),
                                         )
                                     ) : (
                                         <p className="text-sm text-zinc-500">
-                                            No missing course enrollment cases found.
+                                            No missing course enrollment cases
+                                            found.
                                         </p>
                                     )}
                                 </div>
@@ -1569,7 +1596,8 @@ export default function ReportsIndex({
                                 </h2>
                                 <div className="space-y-4">
                                     {admissionsSummary.exceptions
-                                        .students_missing_next_of_kin?.length ? (
+                                        .students_missing_next_of_kin
+                                        ?.length ? (
                                         admissionsSummary.exceptions.students_missing_next_of_kin.map(
                                             (student) => (
                                                 <div
@@ -1581,7 +1609,7 @@ export default function ReportsIndex({
                                                     </p>
                                                     <p className="mt-1 text-sm text-zinc-500">
                                                         {
-                                                            student.registration_number
+                                                            student.admission_number
                                                         }
                                                     </p>
                                                 </div>
@@ -1615,7 +1643,7 @@ export default function ReportsIndex({
                                                     </p>
                                                     <p className="mt-1 text-sm text-zinc-500">
                                                         {
-                                                            student.registration_number
+                                                            student.admission_number
                                                         }{" "}
                                                         / {student.email}
                                                     </p>
@@ -1649,7 +1677,7 @@ export default function ReportsIndex({
                                                     </p>
                                                     <p className="mt-1 text-sm text-zinc-500">
                                                         {
-                                                            student.registration_number
+                                                            student.admission_number
                                                         }
                                                     </p>
                                                 </div>
@@ -1657,7 +1685,8 @@ export default function ReportsIndex({
                                         )
                                     ) : (
                                         <p className="text-sm text-zinc-500">
-                                            No session-enrollment gaps found in the current sample.
+                                            No session-enrollment gaps found in
+                                            the current sample.
                                         </p>
                                     )}
                                 </div>
@@ -1683,7 +1712,8 @@ export default function ReportsIndex({
                                                         {risk.contact_value}
                                                     </p>
                                                     <p className="mt-2 text-sm font-semibold text-red-600">
-                                                        {risk.duplicate_count} duplicates
+                                                        {risk.duplicate_count}{" "}
+                                                        duplicates
                                                     </p>
                                                 </div>
                                             ),
@@ -1708,7 +1738,8 @@ export default function ReportsIndex({
                                         Hostel Analytics
                                     </h2>
                                     <p className="text-sm text-zinc-500">
-                                        Occupancy, hostel billing linkage, and accommodation exception monitoring.
+                                        Occupancy, hostel billing linkage, and
+                                        accommodation exception monitoring.
                                     </p>
                                 </div>
                                 <div className="text-sm text-zinc-500">
@@ -1739,8 +1770,7 @@ export default function ReportsIndex({
                                 <MetricCard
                                     label="Allocated Students"
                                     value={
-                                        hostelSummary.metrics
-                                            .allocated_students
+                                        hostelSummary.metrics.allocated_students
                                     }
                                 />
                                 <MetricCard
@@ -1794,8 +1824,8 @@ export default function ReportsIndex({
                                     Occupancy by Hostel
                                 </h2>
                                 <div className="space-y-4">
-                                    {hostelSummary.breakdowns.occupancy_by_hostel
-                                        ?.length ? (
+                                    {hostelSummary.breakdowns
+                                        .occupancy_by_hostel?.length ? (
                                         hostelSummary.breakdowns.occupancy_by_hostel.map(
                                             (row) => (
                                                 <div
@@ -1821,9 +1851,7 @@ export default function ReportsIndex({
                                                             </p>
                                                         </div>
                                                         <span className="font-semibold text-zinc-900">
-                                                            {
-                                                                row.occupancy_rate
-                                                            }
+                                                            {row.occupancy_rate}
                                                             %
                                                         </span>
                                                     </div>
@@ -1872,9 +1900,7 @@ export default function ReportsIndex({
                                                             </p>
                                                         </div>
                                                         <span className="font-semibold text-zinc-900">
-                                                            {
-                                                                row.occupancy_rate
-                                                            }
+                                                            {row.occupancy_rate}
                                                             %
                                                         </span>
                                                     </div>
@@ -1908,10 +1934,8 @@ export default function ReportsIndex({
                                                         {row.student_name}
                                                     </p>
                                                     <p className="mt-1 text-sm text-zinc-500">
-                                                        {
-                                                            row.registration_number
-                                                        }{" "}
-                                                        / {row.invoice_number}
+                                                        {row.admission_number} /{" "}
+                                                        {row.invoice_number}
                                                     </p>
                                                     <p className="mt-2 text-sm font-semibold text-amber-700">
                                                         Due{" "}
@@ -1924,7 +1948,8 @@ export default function ReportsIndex({
                                         )
                                     ) : (
                                         <p className="text-sm text-zinc-500">
-                                            No billed-without-allocation cases found.
+                                            No billed-without-allocation cases
+                                            found.
                                         </p>
                                     )}
                                 </div>
@@ -1947,10 +1972,8 @@ export default function ReportsIndex({
                                                         {row.student_name}
                                                     </p>
                                                     <p className="mt-1 text-sm text-zinc-500">
-                                                        {
-                                                            row.registration_number
-                                                        }{" "}
-                                                        / {row.hostel_name}
+                                                        {row.admission_number} /{" "}
+                                                        {row.hostel_name}
                                                     </p>
                                                     <p className="mt-2 text-sm font-semibold text-red-600">
                                                         Expected{" "}
@@ -1963,7 +1986,8 @@ export default function ReportsIndex({
                                         )
                                     ) : (
                                         <p className="text-sm text-zinc-500">
-                                            No allocation-without-billing cases found.
+                                            No allocation-without-billing cases
+                                            found.
                                         </p>
                                     )}
                                 </div>
@@ -1988,14 +2012,10 @@ export default function ReportsIndex({
                                                         {row.student_name}
                                                     </p>
                                                     <p className="mt-1 text-sm text-zinc-500">
-                                                        {
-                                                            row.registration_number
-                                                        }
+                                                        {row.admission_number}
                                                     </p>
                                                     <p className="mt-2 text-sm font-semibold text-red-600">
-                                                        {
-                                                            row.allocation_count
-                                                        }{" "}
+                                                        {row.allocation_count}{" "}
                                                         active allocations
                                                     </p>
                                                 </div>
@@ -2003,7 +2023,8 @@ export default function ReportsIndex({
                                         )
                                     ) : (
                                         <p className="text-sm text-zinc-500">
-                                            No duplicate student allocations found.
+                                            No duplicate student allocations
+                                            found.
                                         </p>
                                     )}
                                 </div>
@@ -2014,8 +2035,8 @@ export default function ReportsIndex({
                                     Rooms Over Capacity
                                 </h2>
                                 <div className="space-y-4">
-                                    {hostelSummary.exceptions.rooms_over_capacity
-                                        ?.length ? (
+                                    {hostelSummary.exceptions
+                                        .rooms_over_capacity?.length ? (
                                         hostelSummary.exceptions.rooms_over_capacity.map(
                                             (row) => (
                                                 <div
@@ -2029,9 +2050,7 @@ export default function ReportsIndex({
                                                         {row.hostel_name}
                                                     </p>
                                                     <p className="mt-2 text-sm font-semibold text-red-600">
-                                                        {
-                                                            row.allocation_count
-                                                        }{" "}
+                                                        {row.allocation_count}{" "}
                                                         allocations vs{" "}
                                                         {row.bed_count} beds
                                                     </p>
@@ -2064,10 +2083,8 @@ export default function ReportsIndex({
                                                         {row.student_name}
                                                     </p>
                                                     <p className="mt-1 text-sm text-zinc-500">
-                                                        {
-                                                            row.registration_number
-                                                        }{" "}
-                                                        / {row.hostel_name}
+                                                        {row.admission_number} /{" "}
+                                                        {row.hostel_name}
                                                     </p>
                                                     <p className="mt-2 text-sm font-semibold capitalize text-red-600">
                                                         {row.student_status}
@@ -2077,7 +2094,8 @@ export default function ReportsIndex({
                                         )
                                     ) : (
                                         <p className="text-sm text-zinc-500">
-                                            No inactive-student allocation conflicts found.
+                                            No inactive-student allocation
+                                            conflicts found.
                                         </p>
                                     )}
                                 </div>
@@ -2095,11 +2113,14 @@ export default function ReportsIndex({
                                         Data Quality and Operational Signals
                                     </h2>
                                     <p className="text-sm text-zinc-500">
-                                        Integrity gaps, anomalous records, and runtime-health signals that affect trust in analytics.
+                                        Integrity gaps, anomalous records, and
+                                        runtime-health signals that affect trust
+                                        in analytics.
                                     </p>
                                 </div>
                                 <div className="text-xs text-zinc-500">
-                                    Log signals use the latest laravel.log tail sample
+                                    Log signals use the latest laravel.log tail
+                                    sample
                                 </div>
                             </div>
 
@@ -2188,7 +2209,8 @@ export default function ReportsIndex({
                                 </h2>
                                 <div className="space-y-4">
                                     {dataQualitySummary.exceptions
-                                        .duplicate_contact_identifiers?.length ? (
+                                        .duplicate_contact_identifiers
+                                        ?.length ? (
                                         dataQualitySummary.exceptions.duplicate_contact_identifiers.map(
                                             (row, index) => (
                                                 <div
@@ -2202,7 +2224,8 @@ export default function ReportsIndex({
                                                         {row.contact_value}
                                                     </p>
                                                     <p className="mt-2 text-sm font-semibold text-red-600">
-                                                        {row.duplicate_count} duplicates
+                                                        {row.duplicate_count}{" "}
+                                                        duplicates
                                                     </p>
                                                 </div>
                                             ),
@@ -2226,21 +2249,25 @@ export default function ReportsIndex({
                                         dataQualitySummary.exceptions.multiple_active_academic_sessions.map(
                                             (row) => (
                                                 <div
-                                                    key={row.academic_session_id}
+                                                    key={
+                                                        row.academic_session_id
+                                                    }
                                                     className="rounded-lg border border-zinc-100 bg-zinc-50 px-4 py-3"
                                                 >
                                                     <p className="font-medium text-zinc-800">
                                                         {row.session_label}
                                                     </p>
                                                     <p className="mt-1 text-sm text-zinc-500">
-                                                        Session number {row.session_number}
+                                                        Session number{" "}
+                                                        {row.session_number}
                                                     </p>
                                                 </div>
                                             ),
                                         )
                                     ) : (
                                         <p className="text-sm text-zinc-500">
-                                            No multi-active session anomalies found.
+                                            No multi-active session anomalies
+                                            found.
                                         </p>
                                     )}
                                 </div>
@@ -2266,14 +2293,15 @@ export default function ReportsIndex({
                                                         {row.student_name}
                                                     </p>
                                                     <p className="mt-1 text-sm text-zinc-500">
-                                                        {row.registration_number}
+                                                        {row.admission_number}
                                                     </p>
                                                 </div>
                                             ),
                                         )
                                     ) : (
                                         <p className="text-sm text-zinc-500">
-                                            No missing course-enrollment cases found.
+                                            No missing course-enrollment cases
+                                            found.
                                         </p>
                                     )}
                                 </div>
@@ -2296,14 +2324,16 @@ export default function ReportsIndex({
                                                         {row.invoice_number}
                                                     </p>
                                                     <p className="mt-1 text-sm text-zinc-500">
-                                                        Student ID {row.student_id}
+                                                        Student ID{" "}
+                                                        {row.student_id}
                                                     </p>
                                                 </div>
                                             ),
                                         )
                                     ) : (
                                         <p className="text-sm text-zinc-500">
-                                            No invoice-enrollment orphan cases found.
+                                            No invoice-enrollment orphan cases
+                                            found.
                                         </p>
                                     )}
                                 </div>
@@ -2326,14 +2356,17 @@ export default function ReportsIndex({
                                                         {row.reference}
                                                     </p>
                                                     <p className="mt-1 text-sm text-zinc-500">
-                                                        {formatCurrency(row.amount)}
+                                                        {formatCurrency(
+                                                            row.amount,
+                                                        )}
                                                     </p>
                                                 </div>
                                             ),
                                         )
                                     ) : (
                                         <p className="text-sm text-zinc-500">
-                                            No payments missing student links found.
+                                            No payments missing student links
+                                            found.
                                         </p>
                                     )}
                                 </div>
@@ -2361,14 +2394,18 @@ export default function ReportsIndex({
                                                         Status {row.status}
                                                     </p>
                                                     <p className="mt-2 text-sm text-red-600">
-                                                        Due {formatCurrency(row.balance_due)}
+                                                        Due{" "}
+                                                        {formatCurrency(
+                                                            row.balance_due,
+                                                        )}
                                                     </p>
                                                 </div>
                                             ),
                                         )
                                     ) : (
                                         <p className="text-sm text-zinc-500">
-                                            No invalid invoice status combinations found.
+                                            No invalid invoice status
+                                            combinations found.
                                         </p>
                                     )}
                                 </div>
@@ -2392,14 +2429,15 @@ export default function ReportsIndex({
                                                     </p>
                                                     <p className="mt-1 text-sm text-zinc-500">
                                                         {row.student_name} /{" "}
-                                                        {row.registration_number}
+                                                        {row.admission_number}
                                                     </p>
                                                 </div>
                                             ),
                                         )
                                     ) : (
                                         <p className="text-sm text-zinc-500">
-                                            No invoice-student mismatch cases found.
+                                            No invoice-student mismatch cases
+                                            found.
                                         </p>
                                     )}
                                 </div>
@@ -2423,14 +2461,18 @@ export default function ReportsIndex({
                                                         {row.course_name}
                                                     </p>
                                                     <p className="mt-1 text-sm text-red-600">
-                                                        {row.active_mapping_count} active mappings
+                                                        {
+                                                            row.active_mapping_count
+                                                        }{" "}
+                                                        active mappings
                                                     </p>
                                                 </div>
                                             ),
                                         )
                                     ) : (
                                         <p className="text-sm text-zinc-500">
-                                            No multi-active course mapping cases found.
+                                            No multi-active course mapping cases
+                                            found.
                                         </p>
                                     )}
                                 </div>
@@ -2447,7 +2489,8 @@ export default function ReportsIndex({
                                     Snapshot Trends
                                 </h2>
                                 <p className="text-sm text-zinc-500">
-                                    Historical trend slices sourced from the daily analytics snapshot tables.
+                                    Historical trend slices sourced from the
+                                    daily analytics snapshot tables.
                                 </p>
                             </div>
                             <div className="text-xs text-zinc-500">
@@ -2511,292 +2554,326 @@ export default function ReportsIndex({
 
                 {showFinance && (
                     <>
-                {(!financeOnlyPage || loadedFinanceSections.collection) ? (
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
-                    <div className="rounded-lg border border-zinc-100 bg-white p-6 shadow-sm">
-                        <h3 className="text-sm font-medium text-zinc-500">
-                            Total Invoiced
-                        </h3>
-                        <p className="text-2xl font-bold text-zinc-900">
-                            {formatCurrency(
-                                collectionPerformance.total_invoiced || 0,
-                            )}
-                        </p>
-                    </div>
-                    <div className="rounded-lg border border-zinc-100 bg-white p-6 shadow-sm">
-                        <h3 className="text-sm font-medium text-zinc-500">
-                            Total Collected
-                        </h3>
-                        <p className="text-2xl font-bold text-emerald-600">
-                            {formatCurrency(
-                                collectionPerformance.total_collected || 0,
-                            )}
-                        </p>
-                    </div>
-                    <div className="rounded-lg border border-zinc-100 bg-white p-6 shadow-sm">
-                        <h3 className="text-sm font-medium text-zinc-500">
-                            Outstanding
-                        </h3>
-                        <p className="text-2xl font-bold text-red-600">
-                            {formatCurrency(
-                                collectionPerformance.outstanding || 0,
-                            )}
-                        </p>
-                    </div>
-                    <div className="rounded-lg border border-zinc-100 bg-white p-6 shadow-sm">
-                        <h3 className="text-sm font-medium text-zinc-500">
-                            Collection Rate
-                        </h3>
-                        <p className="text-2xl font-bold text-blue-600">
-                            {collectionPerformance.collection_rate || 0}%
-                        </p>
-                    </div>
-                </div>
-                ) : (
-                    <LoadFinancePanel
-                        title="Collection Performance"
-                        description="Load invoiced, collected, outstanding, and collection-rate figures."
-                        loading={Boolean(financeSectionLoading.collection)}
-                        onLoad={() => loadFinanceSection("collection")}
-                    />
-                )}
+                        {!financeOnlyPage ||
+                        loadedFinanceSections.collection ? (
+                            <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
+                                <div className="rounded-lg border border-zinc-100 bg-white p-6 shadow-sm">
+                                    <h3 className="text-sm font-medium text-zinc-500">
+                                        Total Invoiced
+                                    </h3>
+                                    <p className="text-2xl font-bold text-zinc-900">
+                                        {formatCurrency(
+                                            collectionPerformance.total_invoiced ||
+                                                0,
+                                        )}
+                                    </p>
+                                </div>
+                                <div className="rounded-lg border border-zinc-100 bg-white p-6 shadow-sm">
+                                    <h3 className="text-sm font-medium text-zinc-500">
+                                        Total Collected
+                                    </h3>
+                                    <p className="text-2xl font-bold text-emerald-600">
+                                        {formatCurrency(
+                                            collectionPerformance.total_collected ||
+                                                0,
+                                        )}
+                                    </p>
+                                </div>
+                                <div className="rounded-lg border border-zinc-100 bg-white p-6 shadow-sm">
+                                    <h3 className="text-sm font-medium text-zinc-500">
+                                        Outstanding
+                                    </h3>
+                                    <p className="text-2xl font-bold text-red-600">
+                                        {formatCurrency(
+                                            collectionPerformance.outstanding ||
+                                                0,
+                                        )}
+                                    </p>
+                                </div>
+                                <div className="rounded-lg border border-zinc-100 bg-white p-6 shadow-sm">
+                                    <h3 className="text-sm font-medium text-zinc-500">
+                                        Collection Rate
+                                    </h3>
+                                    <p className="text-2xl font-bold text-blue-600">
+                                        {collectionPerformance.collection_rate ||
+                                            0}
+                                        %
+                                    </p>
+                                </div>
+                            </div>
+                        ) : (
+                            <LoadFinancePanel
+                                title="Collection Performance"
+                                description="Load invoiced, collected, outstanding, and collection-rate figures."
+                                loading={Boolean(
+                                    financeSectionLoading.collection,
+                                )}
+                                onLoad={() => loadFinanceSection("collection")}
+                            />
+                        )}
 
-                {(!financeOnlyPage || loadedFinanceSections.outstanding) ? (
-                <div className="rounded-lg border border-zinc-100 bg-white p-6 shadow-sm">
-                    <h2 className="mb-4 text-lg font-semibold text-zinc-700">
-                        Outstanding Balance by Session
-                    </h2>
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-zinc-200">
-                            <thead className="bg-zinc-50">
-                                <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
-                                        Session
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
-                                        Total Outstanding
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
-                                        Invoice Count
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-zinc-200 bg-white">
-                                {outstandingBalance.map((item, index) => (
-                                    <tr key={index}>
-                                        <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-zinc-900">
-                                            {item.session}
-                                        </td>
-                                        <td className="whitespace-nowrap px-6 py-4 text-sm text-zinc-900">
-                                            {formatCurrency(
-                                                item.total_outstanding,
+                        {!financeOnlyPage ||
+                        loadedFinanceSections.outstanding ? (
+                            <div className="rounded-lg border border-zinc-100 bg-white p-6 shadow-sm">
+                                <h2 className="mb-4 text-lg font-semibold text-zinc-700">
+                                    Outstanding Balance by Session
+                                </h2>
+                                <div className="overflow-x-auto">
+                                    <table className="min-w-full divide-y divide-zinc-200">
+                                        <thead className="bg-zinc-50">
+                                            <tr>
+                                                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
+                                                    Session
+                                                </th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
+                                                    Total Outstanding
+                                                </th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
+                                                    Invoice Count
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-zinc-200 bg-white">
+                                            {outstandingBalance.map(
+                                                (item, index) => (
+                                                    <tr key={index}>
+                                                        <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-zinc-900">
+                                                            {item.session}
+                                                        </td>
+                                                        <td className="whitespace-nowrap px-6 py-4 text-sm text-zinc-900">
+                                                            {formatCurrency(
+                                                                item.total_outstanding,
+                                                            )}
+                                                        </td>
+                                                        <td className="whitespace-nowrap px-6 py-4 text-sm text-zinc-900">
+                                                            {item.invoice_count}
+                                                        </td>
+                                                    </tr>
+                                                ),
                                             )}
-                                        </td>
-                                        <td className="whitespace-nowrap px-6 py-4 text-sm text-zinc-900">
-                                            {item.invoice_count}
-                                        </td>
-                                    </tr>
-                                ))}
-                                {outstandingBalance.length === 0 && (
-                                    <tr>
-                                        <td
-                                            colSpan="3"
-                                            className="px-6 py-4 text-center text-sm text-zinc-500"
-                                        >
-                                            No outstanding balances found
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                ) : (
-                    <LoadFinancePanel
-                        title="Outstanding Balance by Session"
-                        description="Load the session-by-session outstanding invoice breakdown."
-                        loading={Boolean(financeSectionLoading.outstanding)}
-                        onLoad={() => loadFinanceSection("outstanding")}
-                    />
-                )}
-
-                {(!financeOnlyPage || loadedFinanceSections.overdue) ? (
-                <div className="rounded-lg border border-zinc-100 bg-white p-6 shadow-sm">
-                    <h2 className="mb-4 text-lg font-semibold text-zinc-700">
-                        Overdue Amounts by Department
-                    </h2>
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-zinc-200">
-                            <thead className="bg-zinc-50">
-                                <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
-                                        Department
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
-                                        Total Overdue
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
-                                        Overdue Count
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-zinc-200 bg-white">
-                                {overdueByDepartment.map((item, index) => (
-                                    <tr key={index}>
-                                        <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-zinc-900">
-                                            {item.department_name}
-                                        </td>
-                                        <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-red-600">
-                                            {formatCurrency(item.total_overdue)}
-                                        </td>
-                                        <td className="whitespace-nowrap px-6 py-4 text-sm text-zinc-900">
-                                            {item.overdue_count}
-                                        </td>
-                                    </tr>
-                                ))}
-                                {overdueByDepartment.length === 0 && (
-                                    <tr>
-                                        <td
-                                            colSpan="3"
-                                            className="px-6 py-4 text-center text-sm text-zinc-500"
-                                        >
-                                            No overdue amounts found
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                ) : (
-                    <LoadFinancePanel
-                        title="Overdue Amounts by Department"
-                        description="Load overdue totals grouped by department."
-                        loading={Boolean(financeSectionLoading.overdue)}
-                        onLoad={() => loadFinanceSection("overdue")}
-                    />
-                )}
-
-                {(!financeOnlyPage || loadedFinanceSections.usage) ? (
-                <div className="rounded-lg border border-zinc-100 bg-white p-6 shadow-sm">
-                    <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-                        <h2 className="text-lg font-semibold text-zinc-700">
-                            Fee Plan Usage Statistics
-                        </h2>
-
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                            <div className="min-w-56">
-                                <InputLabel value="Academic Session" />
-                                <SearchSelect
-                                    routeName="academic.sessions.search"
-                                    defaultOptions={academicSessions}
-                                    placeholder="Filter session..."
-                                    onChange={(item) =>
-                                        setUsageFilters((prev) => ({
-                                            ...prev,
-                                            academic_session_id: item.id,
-                                        }))
-                                    }
-                                />
+                                            {outstandingBalance.length ===
+                                                0 && (
+                                                <tr>
+                                                    <td
+                                                        colSpan="3"
+                                                        className="px-6 py-4 text-center text-sm text-zinc-500"
+                                                    >
+                                                        No outstanding balances
+                                                        found
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
-
-                            <div>
-                                <InputLabel value="Year Of Study" />
-                                <TextInput
-                                    type="number"
-                                    min="1"
-                                    value={usageFilters.year_of_study}
-                                    onChange={(e) =>
-                                        setUsageFilters((prev) => ({
-                                            ...prev,
-                                            year_of_study: e.target.value,
-                                        }))
-                                    }
-                                    className="w-full"
-                                />
-                            </div>
-
-                            <div>
-                                <InputLabel value="Session Number" />
-                                <TextInput
-                                    type="number"
-                                    min="1"
-                                    value={usageFilters.session_number}
-                                    onChange={(e) =>
-                                        setUsageFilters((prev) => ({
-                                            ...prev,
-                                            session_number: e.target.value,
-                                        }))
-                                    }
-                                    className="w-full"
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-zinc-200">
-                            <thead className="bg-zinc-50">
-                                <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
-                                        Fee Plan
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
-                                        Year Of Study
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
-                                        Session Number
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
-                                        Assignment Count
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
-                                        Curriculum Count
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-zinc-200 bg-white">
-                                {feePlanUsage.map((item, index) => (
-                                    <tr key={index}>
-                                        <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-zinc-900">
-                                            {item.plan_name}
-                                        </td>
-                                        <td className="whitespace-nowrap px-6 py-4 text-sm text-zinc-900">
-                                            {item.year_of_study ?? "-"}
-                                        </td>
-                                        <td className="whitespace-nowrap px-6 py-4 text-sm text-zinc-900">
-                                            {item.session_number ?? "-"}
-                                        </td>
-                                        <td className="whitespace-nowrap px-6 py-4 text-sm text-zinc-900">
-                                            {item.assignment_count}
-                                        </td>
-                                        <td className="whitespace-nowrap px-6 py-4 text-sm text-zinc-900">
-                                            {item.curriculum_count}
-                                        </td>
-                                    </tr>
-                                ))}
-                                {feePlanUsage.length === 0 && (
-                                    <tr>
-                                        <td
-                                            colSpan="5"
-                                            className="px-6 py-4 text-center text-sm text-zinc-500"
-                                        >
-                                            No fee plan usage data found
-                                        </td>
-                                    </tr>
+                        ) : (
+                            <LoadFinancePanel
+                                title="Outstanding Balance by Session"
+                                description="Load the session-by-session outstanding invoice breakdown."
+                                loading={Boolean(
+                                    financeSectionLoading.outstanding,
                                 )}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                ) : (
-                    <LoadFinancePanel
-                        title="Fee Plan Usage Statistics"
-                        description="Load fee-plan usage and activate the session and study-level filters."
-                        loading={Boolean(financeSectionLoading.usage)}
-                        onLoad={() => loadFinanceSection("usage")}
-                    />
-                )}
+                                onLoad={() => loadFinanceSection("outstanding")}
+                            />
+                        )}
+
+                        {!financeOnlyPage || loadedFinanceSections.overdue ? (
+                            <div className="rounded-lg border border-zinc-100 bg-white p-6 shadow-sm">
+                                <h2 className="mb-4 text-lg font-semibold text-zinc-700">
+                                    Overdue Amounts by Department
+                                </h2>
+                                <div className="overflow-x-auto">
+                                    <table className="min-w-full divide-y divide-zinc-200">
+                                        <thead className="bg-zinc-50">
+                                            <tr>
+                                                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
+                                                    Department
+                                                </th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
+                                                    Total Overdue
+                                                </th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
+                                                    Overdue Count
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-zinc-200 bg-white">
+                                            {overdueByDepartment.map(
+                                                (item, index) => (
+                                                    <tr key={index}>
+                                                        <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-zinc-900">
+                                                            {
+                                                                item.department_name
+                                                            }
+                                                        </td>
+                                                        <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-red-600">
+                                                            {formatCurrency(
+                                                                item.total_overdue,
+                                                            )}
+                                                        </td>
+                                                        <td className="whitespace-nowrap px-6 py-4 text-sm text-zinc-900">
+                                                            {item.overdue_count}
+                                                        </td>
+                                                    </tr>
+                                                ),
+                                            )}
+                                            {overdueByDepartment.length ===
+                                                0 && (
+                                                <tr>
+                                                    <td
+                                                        colSpan="3"
+                                                        className="px-6 py-4 text-center text-sm text-zinc-500"
+                                                    >
+                                                        No overdue amounts found
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        ) : (
+                            <LoadFinancePanel
+                                title="Overdue Amounts by Department"
+                                description="Load overdue totals grouped by department."
+                                loading={Boolean(financeSectionLoading.overdue)}
+                                onLoad={() => loadFinanceSection("overdue")}
+                            />
+                        )}
+
+                        {!financeOnlyPage || loadedFinanceSections.usage ? (
+                            <div className="rounded-lg border border-zinc-100 bg-white p-6 shadow-sm">
+                                <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                                    <h2 className="text-lg font-semibold text-zinc-700">
+                                        Fee Plan Usage Statistics
+                                    </h2>
+
+                                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                                        <div className="min-w-56">
+                                            <InputLabel value="Academic Session" />
+                                            <SearchSelect
+                                                routeName="academic.sessions.search"
+                                                defaultOptions={
+                                                    academicSessions
+                                                }
+                                                placeholder="Filter session..."
+                                                onChange={(item) =>
+                                                    setUsageFilters((prev) => ({
+                                                        ...prev,
+                                                        academic_session_id:
+                                                            item.id,
+                                                    }))
+                                                }
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <InputLabel value="Year Of Study" />
+                                            <TextInput
+                                                type="number"
+                                                min="1"
+                                                value={
+                                                    usageFilters.year_of_study
+                                                }
+                                                onChange={(e) =>
+                                                    setUsageFilters((prev) => ({
+                                                        ...prev,
+                                                        year_of_study:
+                                                            e.target.value,
+                                                    }))
+                                                }
+                                                className="w-full"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <InputLabel value="Session Number" />
+                                            <TextInput
+                                                type="number"
+                                                min="1"
+                                                value={
+                                                    usageFilters.session_number
+                                                }
+                                                onChange={(e) =>
+                                                    setUsageFilters((prev) => ({
+                                                        ...prev,
+                                                        session_number:
+                                                            e.target.value,
+                                                    }))
+                                                }
+                                                className="w-full"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="overflow-x-auto">
+                                    <table className="min-w-full divide-y divide-zinc-200">
+                                        <thead className="bg-zinc-50">
+                                            <tr>
+                                                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
+                                                    Fee Plan
+                                                </th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
+                                                    Year Of Study
+                                                </th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
+                                                    Session Number
+                                                </th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
+                                                    Assignment Count
+                                                </th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500">
+                                                    Curriculum Count
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-zinc-200 bg-white">
+                                            {feePlanUsage.map((item, index) => (
+                                                <tr key={index}>
+                                                    <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-zinc-900">
+                                                        {item.plan_name}
+                                                    </td>
+                                                    <td className="whitespace-nowrap px-6 py-4 text-sm text-zinc-900">
+                                                        {item.year_of_study ??
+                                                            "-"}
+                                                    </td>
+                                                    <td className="whitespace-nowrap px-6 py-4 text-sm text-zinc-900">
+                                                        {item.session_number ??
+                                                            "-"}
+                                                    </td>
+                                                    <td className="whitespace-nowrap px-6 py-4 text-sm text-zinc-900">
+                                                        {item.assignment_count}
+                                                    </td>
+                                                    <td className="whitespace-nowrap px-6 py-4 text-sm text-zinc-900">
+                                                        {item.curriculum_count}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                            {feePlanUsage.length === 0 && (
+                                                <tr>
+                                                    <td
+                                                        colSpan="5"
+                                                        className="px-6 py-4 text-center text-sm text-zinc-500"
+                                                    >
+                                                        No fee plan usage data
+                                                        found
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        ) : (
+                            <LoadFinancePanel
+                                title="Fee Plan Usage Statistics"
+                                description="Load fee-plan usage and activate the session and study-level filters."
+                                loading={Boolean(financeSectionLoading.usage)}
+                                onLoad={() => loadFinanceSection("usage")}
+                            />
+                        )}
                     </>
                 )}
             </div>
@@ -2855,9 +2932,7 @@ function SnapshotTrendCard({
                             key={`${title}-${point.date}`}
                             className="flex items-center justify-between text-sm"
                         >
-                            <span className="text-zinc-500">
-                                {point.date}
-                            </span>
+                            <span className="text-zinc-500">{point.date}</span>
                             <span className="font-medium text-zinc-900">
                                 {formatter(point.value)}
                                 {suffix}

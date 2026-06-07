@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -11,39 +10,15 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<UserFactory> */
-    use HasFactory, HasRoles,Notifiable,SoftDeletes;
+    use HasFactory, HasRoles, Notifiable, SoftDeletes;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
-        'first_name',
-        'last_name',
-        'other_name',
         'email',
         'login_id',
-        'profile_photo',
-        'gender',
-        'date_of_birth',
-        'phone_number',
-        'county',
-        'address',
-        'is_active',
-        'is_pwd',
-        'disability_type',
-        'medical_condition',
-        'religion',
         'password',
+        'is_active',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
@@ -59,17 +34,53 @@ class User extends Authenticatable
         return $this->hasOne(Staff::class);
     }
 
-    public function nextofkin()
+    public function nextOfKin()
     {
-        return $this->hasOne(NextOfKin::class);
+        return $this->hasMany(NextOfKin::class, 'user_id');
     }
 
+    // ----------------------------------------------------------------
+    // Resolve the profile model — student takes priority,
+    // falls back to staff (covers admin, hod, teacher, etc.)
+    // Never touches the DB; only reads already-loaded relations.
+    // ----------------------------------------------------------------
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
+    private function profile(): mixed
+    {
+        if ($this->relationLoaded('student')) {
+            $student = $this->getRelation('student');
+            if ($student !== null) {
+                return $student;
+            }
+        }
+
+        if ($this->relationLoaded('staff')) {
+            return $this->getRelation('staff');
+        }
+
+        return null;
+    }
+
+    public function getFirstNameAttribute(): ?string
+    {
+        return $this->profile()?->first_name;
+    }
+
+    public function getLastNameAttribute(): ?string
+    {
+        return $this->profile()?->last_name;
+    }
+
+    public function getOtherNameAttribute(): ?string
+    {
+        return $this->profile()?->other_name;
+    }
+
+    public function getFullNameAttribute(): ?string
+    {
+        return $this->profile()?->full_name;
+    }
+
     protected function casts(): array
     {
         return [

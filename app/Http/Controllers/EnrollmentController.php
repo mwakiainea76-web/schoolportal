@@ -18,7 +18,7 @@ class EnrollmentController extends Controller
         $enrollments = $filter
             ->apply(
                 Enrollment::with([
-                    'student.user',
+                    'student',
                     'courseEnrollment.curriculumMapping.course',
                     'courseEnrollment.curriculumMapping.curriculum',
                     'academicSession',
@@ -87,19 +87,17 @@ class EnrollmentController extends Controller
     {
         $q = $request->get('q');
 
-        return Enrollment::with(['student.user', 'academicSession'])
-            ->whereHas('student.user', function ($query) use ($q) {
+        return Enrollment::with(['student', 'academicSession'])
+            ->whereHas('student', function ($query) use ($q) {
                 $query->where('first_name', 'like', "%{$q}%")
-                      ->orWhere('last_name', 'like', "%{$q}%");
-            })
-            ->orWhereHas('student', function ($query) use ($q) {
-                $query->where('registration_number', 'like', "%{$q}%");
+                      ->orWhere('last_name', 'like', "%{$q}%")
+                      ->orWhere('admission_number', 'like', "%{$q}%");
             })
             ->limit(10)
             ->get()
             ->map(fn ($e) => [
                 'id' => $e->id,
-                'name' => ($e->student->user->first_name ?? '') . ' ' . ($e->student->user->last_name ?? '') . ' (' . ($e->student->registration_number ?? 'N/A') . ')' . ($e->academicSession ? ' - '.$e->academicSession->name : ''),
+                'name' => ($e->student->full_name ?? 'N/A') . ' (' . ($e->student->admission_number ?? 'N/A') . ')' . ($e->academicSession ? ' - '.$e->academicSession->name : ''),
             ]);
     }
 }

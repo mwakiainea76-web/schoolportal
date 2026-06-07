@@ -4,9 +4,9 @@ import RecordPaymentForm from "./RecordPaymentForm";
 
 const today = new Date().toISOString().split("T")[0];
 
-export default function RecordPayment({ selectedRegistrationNumber }) {
+export default function RecordPayment({ selectedAdmissionNumber }) {
     const form = useForm({
-        registration_number: selectedRegistrationNumber || "",
+        admission_number: selectedAdmissionNumber || "",
         amount: "",
         method: "mpesa",
         reference: "",

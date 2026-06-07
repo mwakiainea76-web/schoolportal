@@ -12,14 +12,14 @@ export default function ApplyAdjustmentForm({
     return (
         <form onSubmit={form.onSubmit} className="space-y-5">
             <TextField
-                label="Student Registration Number"
+                label="Student Admission Number"
                 required
                 type="text"
-                value={form.data.registration_number}
+                value={form.data.admission_number}
                 onChange={(e) =>
-                    form.setData("registration_number", e.target.value)
+                    form.setData("admission_number", e.target.value)
                 }
-                error={form.errors.registration_number}
+                error={form.errors.admission_number}
                 placeholder="e.g. TVET/2026/001"
             />
             <p className="-mt-2 text-sm text-zinc-500">

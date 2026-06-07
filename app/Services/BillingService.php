@@ -245,7 +245,7 @@ class BillingService
 
         if (! $studentId && $throw) {
             throw ValidationException::withMessages([
-                'registration_number' => 'The selected session enrollment is not linked to a student.',
+                'admission_number' => 'The selected session enrollment is not linked to a student.',
             ]);
         }
 

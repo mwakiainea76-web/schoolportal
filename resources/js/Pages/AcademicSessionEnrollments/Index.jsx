@@ -78,7 +78,7 @@ export default function Index({ enrollments }) {
                 >
                     <input
                         type="text"
-                        placeholder="Search by student name or registration number..."
+                        placeholder="Search by student name or admission number..."
                         className="w-full bg-zinc-50 border-zinc-200 rounded-xl py-2.5 pl-11 text-sm focus:ring-gray-400 transition-all"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
@@ -115,7 +115,7 @@ export default function Index({ enrollments }) {
                             Id {renderArrow("id")}
                         </THdata>
                         <THdata>Student</THdata>
-                        <THdata>Reg No.</THdata>
+                        <THdata>Admission Number</THdata>
                         <THdata>Session</THdata>
                         <THdata>Curriculum</THdata>
                         <THdata>Course</THdata>
@@ -139,7 +139,7 @@ export default function Index({ enrollments }) {
                                         {enrollment.student_name}
                                     </Tdata>
                                     <Tdata className="text-slate-500">
-                                        {enrollment.registration_number}
+                                        {enrollment.admission_number}
                                     </Tdata>
                                     <Tdata>{enrollment.session}</Tdata>
                                     <Tdata>{enrollment.curriculum}</Tdata>

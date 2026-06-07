@@ -4,9 +4,9 @@ import PostPenaltyForm from "./PostPenaltyForm";
 
 const today = new Date().toISOString().split("T")[0];
 
-export default function PostPenalty({ selectedRegistrationNumber }) {
+export default function PostPenalty({ selectedAdmissionNumber }) {
     const form = useForm({
-        registration_number: selectedRegistrationNumber || "",
+        admission_number: selectedAdmissionNumber || "",
         amount: "",
         description: "",
         applied_at: today,

@@ -3,7 +3,11 @@ import { useEffect, useRef, useState } from "react";
 import { ChevronLeft } from "lucide-react";
 import useRbac from "@/Hooks/UseRBAC";
 import NavLink from "./SideBarLink";
-import { STAFF_NAV_ITEMS, STUDENT_NAV_ITEMS, ICONS } from "../constants/navItems";
+import {
+    STAFF_NAV_ITEMS,
+    STUDENT_NAV_ITEMS,
+    ICONS,
+} from "../constants/navItems";
 import { safeRoute, isRouteCurrent, filterNav } from "../utils/sidebarHelpers";
 
 const SIDEBAR_SCROLL_KEY = "sidebar-scroll-top";
@@ -16,6 +20,7 @@ export default function Sidebar({
 }) {
     const { url } = usePage();
     const { can, hasRole } = useRbac();
+
     const dashboardRouteName = hasRole("student")
         ? "student.dashboard"
         : hasRole("trainer") && !hasRole("admin") && !hasRole("hod")
@@ -31,78 +36,12 @@ export default function Sidebar({
         : hasRole("trainer") && !hasRole("admin") && !hasRole("hod")
           ? "Trainer Dashboard"
           : "Admin Dashboard";
+
     const navItems = hasRole("student") ? STUDENT_NAV_ITEMS : STAFF_NAV_ITEMS;
     const visibleNav = filterNav(navItems, can);
-    const timetableQuickLinks = !hasRole("student") &&
-        (hasRole("admin") || hasRole("hod") || hasRole("trainer"))
-        ? [
-              {
-                  label: "Timetable Workspace",
-                  routeName: "academic.timetables.index",
-                  fallback: "/academic/timetables",
-              },
-          ]
-        : [];
-    const marksQuickLinks = !hasRole("student") &&
-        (hasRole("admin") || hasRole("hod") || hasRole("trainer"))
-        ? [
-              {
-                  label: "Marks Workspace",
-                  routeName: "academic.marks.add.index",
-                  fallback: "/academic/marks/add",
-              },
-          ]
-        : [];
-    const hostelQuickLinks = hasRole("admin")
-        ? [
-              {
-                  label: "Hostel Workspace",
-                  routeName: "hostels.index",
-                  fallback: "/hostels",
-              },
-          ]
-        : [];
-    const quickSections = [
-        ...(timetableQuickLinks.length
-            ? [
-                  {
-                      key: "timetable-workspace",
-                      label: "Timetable Workspace",
-                      icon: "academic",
-                      basePath: "/academic/timetables",
-                      children: timetableQuickLinks,
-                  },
-              ]
-            : []),
-        ...(marksQuickLinks.length
-            ? [
-                  {
-                      key: "marks-workspace",
-                      label: "Marks Workspace",
-                      icon: "academic",
-                      basePath: "/academic/marks",
-                      children: marksQuickLinks,
-                  },
-              ]
-            : []),
-        ...(hostelQuickLinks.length
-            ? [
-                  {
-                      key: "hostel-workspace",
-                      label: "Hostel Workspace",
-                      icon: "students",
-                      basePath: "/hostel",
-                      children: hostelQuickLinks,
-                  },
-              ]
-            : []),
-    ];
 
     const isChildActive = (child) => {
-        if (child.children) {
-            return child.children.some(isChildActive);
-        }
-
+        if (child.children) return child.children.some(isChildActive);
         return isRouteCurrent(
             child.routeName,
             child.fallback,
@@ -114,8 +53,7 @@ export default function Sidebar({
     const isSectionActive = ({ basePath, children }) =>
         url.startsWith(basePath) || children.some(isChildActive);
 
-    const getActiveKey = () =>
-        [...quickSections, ...visibleNav].find(isSectionActive)?.key ?? null;
+    const getActiveKey = () => visibleNav.find(isSectionActive)?.key ?? null;
 
     const [openMenu, setOpenMenu] = useState(getActiveKey);
     const navRef = useRef(null);
@@ -126,25 +64,17 @@ export default function Sidebar({
     }, [url]);
 
     useEffect(() => {
-        if (!navRef.current || typeof window === "undefined") {
-            return;
-        }
-
-        const storedScrollTop = window.sessionStorage.getItem(
-            SIDEBAR_SCROLL_KEY,
-        );
-
-        if (storedScrollTop !== null) {
+        if (!navRef.current || typeof window === "undefined") return;
+        const storedScrollTop =
+            window.sessionStorage.getItem(SIDEBAR_SCROLL_KEY);
+        if (storedScrollTop !== null)
             navRef.current.scrollTop = Number(storedScrollTop);
-        }
     }, [url, collapsed, mobileOpen]);
 
     const closeMobile = () => mobileOpen && setMobileOpen(false);
-    const preserveSidebarScroll = () => {
-        if (!navRef.current || typeof window === "undefined") {
-            return;
-        }
 
+    const preserveSidebarScroll = () => {
+        if (!navRef.current || typeof window === "undefined") return;
         window.sessionStorage.setItem(
             SIDEBAR_SCROLL_KEY,
             String(navRef.current.scrollTop),
@@ -158,14 +88,15 @@ export default function Sidebar({
 
     const toggleMenu = (key) =>
         setOpenMenu((prev) => (prev === key ? null : key));
+
     const isDashboardActive =
         isRouteCurrent("dashboard", "/dashboard", url) ||
         isRouteCurrent(dashboardRouteName, dashboardFallback, url);
+
     const renderSidebarChildren = (items, depth = 0) =>
         items.map((child) => {
             if (child.children) {
                 const headingIndent = depth > 0 ? "pl-12" : "pl-8";
-
                 return (
                     <div key={child.key ?? child.label} className="py-2">
                         <p
@@ -180,7 +111,6 @@ export default function Sidebar({
             }
 
             const { routeName, fallback, label: childLabel } = child;
-
             return (
                 <NavLink
                     key={routeName}
@@ -205,7 +135,6 @@ export default function Sidebar({
 
         if (isSingle) {
             const { routeName, fallback } = children[0];
-
             return (
                 <div key={key} className="border-b border-white/5">
                     <Link
@@ -219,7 +148,9 @@ export default function Sidebar({
                         }`}
                     >
                         {ICONS[icon]}
-                        {!collapsed && <span className="truncate">{label}</span>}
+                        {!collapsed && (
+                            <span className="truncate">{label}</span>
+                        )}
                     </Link>
                 </div>
             );
@@ -238,7 +169,9 @@ export default function Sidebar({
                 >
                     <div className="flex min-w-0 items-center gap-3">
                         {ICONS[icon]}
-                        {!collapsed && <span className="truncate">{label}</span>}
+                        {!collapsed && (
+                            <span className="truncate">{label}</span>
+                        )}
                     </div>
                     {!collapsed && (
                         <ChevronLeft
@@ -266,17 +199,19 @@ export default function Sidebar({
         <>
             {/* Backdrop */}
             <div
-                className={`fixed inset-0 bg-black/40 z-40 transition lg:hidden ${mobileOpen ? "opacity-100" : "opacity-0 pointer-events-none"
-                    }`}
+                className={`fixed inset-0 bg-black/40 z-40 transition lg:hidden ${
+                    mobileOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+                }`}
                 onClick={() => setMobileOpen(false)}
             />
 
             {/* Sidebar */}
             <aside
-                className={`fixed lg:static inset-y-0 left-0 z-50 flex flex-col bg-[#1b263b] transform transition duration-300  h-screen overflow-hidden  ${mobileOpen
-                    ? "translate-x-0"
-                    : "-translate-x-full lg:translate-x-0"
-                    } ${collapsed ? "w-20" : "w-64"}`}
+                className={`fixed lg:static inset-y-0 left-0 z-50 flex flex-col bg-[#1b263b] transform transition duration-300 h-screen overflow-hidden ${
+                    mobileOpen
+                        ? "translate-x-0"
+                        : "-translate-x-full lg:translate-x-0"
+                } ${collapsed ? "w-20" : "w-64"}`}
             >
                 {/* Logo */}
                 <div className="h-20 flex items-center px-5 border-b border-white/5">
@@ -313,20 +248,20 @@ export default function Sidebar({
                             )}
                             onClick={handleSidebarLinkClick}
                             title={collapsed ? dashboardLabel : undefined}
-                            className={`flex min-h-12 items-center gap-3 px-4 transition ${isDashboardActive
-                                ? "bg-emerald-500 text-white"
-                                : "text-zinc-400 hover:bg-white/5 hover:text-white"
-                                }`}
+                            className={`flex min-h-12 items-center gap-3 px-4 transition ${
+                                isDashboardActive
+                                    ? "bg-emerald-500 text-white"
+                                    : "text-zinc-400 hover:bg-white/5 hover:text-white"
+                            }`}
                         >
                             {ICONS.dashboard}
                             {!collapsed && (
-                                <span className="truncate">{dashboardLabel}</span>
+                                <span className="truncate">
+                                    {dashboardLabel}
+                                </span>
                             )}
                         </Link>
                     </div>
-
-                    {/* Grouped quick sections */}
-                    {quickSections.map(renderNestedSection)}
 
                     {visibleNav.map(renderNestedSection)}
                 </nav>

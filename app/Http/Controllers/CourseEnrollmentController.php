@@ -22,7 +22,7 @@ class CourseEnrollmentController extends Controller
         ]);
 
         $courseEnrollments = CourseEnrollment::with([
-            'student.user',
+            'student',
             'course:id,name,code',
             'curriculum:id,name',
             'curriculumMapping.course',
@@ -61,11 +61,8 @@ class CourseEnrollmentController extends Controller
 
                 return [
                     'id' => $enrollment->id,
-                    'student_name' => trim(
-                        ($enrollment->student?->user?->first_name ?? '').' '.
-                        ($enrollment->student?->user?->last_name ?? '')
-                    ),
-                    'registration_number' => $enrollment->student?->registration_number,
+                    'student_name' => $enrollment->student?->full_name,
+                    'admission_number' => $enrollment->student?->admission_number,
                     'course' => $enrollment->course?->name
                         ?? $enrollment->curriculumMapping?->course?->name,
                     'curriculum' => $enrollment->curriculum?->name

@@ -24,18 +24,16 @@ class AcademicSessionEnrollmentController extends Controller
     public function index(Request $request)
     {
         $enrollments = AcademicSessionEnrollment::with([
-            'courseEnrollment.student.user',
+            'courseEnrollment.student',
             'courseEnrollment.curriculumMapping.curriculum',
             'courseEnrollment.curriculumMapping.course',
             'academicSession.academicYear',
         ])
             ->when($request->search, function ($q) use ($request) {
                 $q->whereHas('courseEnrollment.student', function ($q) use ($request) {
-                    $q->where('registration_number', 'like', "%{$request->search}%")
-                        ->orWhereHas('user', function ($q) use ($request) {
-                            $q->where('first_name', 'like', "%{$request->search}%")
-                                ->orWhere('last_name', 'like', "%{$request->search}%");
-                        });
+                    $q->where('admission_number', 'like', "%{$request->search}%")
+                        ->orWhere('first_name', 'like', "%{$request->search}%")
+                        ->orWhere('last_name', 'like', "%{$request->search}%");
                 });
             })
             ->orderBy($request->sort ?? 'created_at', $request->direction ?? 'desc')
@@ -44,11 +42,8 @@ class AcademicSessionEnrollmentController extends Controller
 
         $mapped = $enrollments->through(fn ($e) => [
             'id' => $e->id,
-            'student_name' => trim(
-                ($e->courseEnrollment?->student?->user?->first_name ?? '').' '.
-                ($e->courseEnrollment?->student?->user?->last_name ?? '')
-            ),
-            'registration_number' => $e->courseEnrollment?->student?->registration_number ?? 'N/A',
+            'student_name' => $e->courseEnrollment?->student?->full_name ?? 'N/A',
+            'admission_number' => $e->courseEnrollment?->student?->admission_number ?? 'N/A',
             'session' => $e->academicSession
                 ? "{$e->academicSession->academicYear->academic_year} - Session {$e->academicSession->session_No}"
                 : 'N/A',
@@ -82,12 +77,12 @@ class AcademicSessionEnrollmentController extends Controller
 
     public function store(StoreAcademicSessionEnrollmentRequest $request)
     {
-        $student = Student::where('registration_number', $request->registration_number)
+        $student = Student::where('admission_number', $request->admission_number)
             ->first();
 
         if (! $student) {
             return back()->withInput()->withErrors([
-                'registration_number' => "No student found with registration number '{$request->registration_number}'.",
+                'admission_number' => "No student found with admission number '{$request->admission_number}'.",
             ]);
         }
 
@@ -156,7 +151,7 @@ class AcademicSessionEnrollmentController extends Controller
     public function edit(AcademicSessionEnrollment $academicSessionEnrollment)
     {
         $e = $academicSessionEnrollment->load([
-            'courseEnrollment.student.user',
+            'courseEnrollment.student',
             'courseEnrollment.curriculumMapping.curriculum',
             'courseEnrollment.curriculumMapping.course',
             'academicSession.academicYear',
@@ -165,11 +160,8 @@ class AcademicSessionEnrollmentController extends Controller
         return Inertia::render('AcademicSessionEnrollments/Edit', [
             'enrollment' => [
                 'id' => $e->id,
-                'student_name' => trim(
-                    ($e->courseEnrollment?->student?->user?->first_name ?? '').' '.
-                    ($e->courseEnrollment?->student?->user?->last_name ?? '')
-                ),
-                'registration_number' => $e->courseEnrollment?->student?->registration_number ?? 'N/A',
+                'student_name' => $e->courseEnrollment?->student?->full_name ?? 'N/A',
+                'admission_number' => $e->courseEnrollment?->student?->admission_number ?? 'N/A',
                 'session' => $e->academicSession
                     ? "{$e->academicSession->academicYear->academic_year} - Session {$e->academicSession->session_No}"
                     : 'N/A',
@@ -209,7 +201,7 @@ class AcademicSessionEnrollmentController extends Controller
 
         if (! $courseEnrollment) {
             throw ValidationException::withMessages([
-                'session_registration' => "Student '{$student->registration_number}' is not enrolled in any course.",
+                'session_registration' => "Student '{$student->admission_number}' is not enrolled in any course.",
             ]);
         }
 
@@ -268,7 +260,7 @@ class AcademicSessionEnrollmentController extends Controller
 
         if (! $courseEnrollment) {
             throw ValidationException::withMessages([
-                'unit_registration' => "Student '{$student->registration_number}' is not enrolled in any course.",
+                'unit_registration' => "Student '{$student->admission_number}' is not enrolled in any course.",
             ]);
         }
 

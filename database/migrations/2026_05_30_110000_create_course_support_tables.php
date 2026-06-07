@@ -15,8 +15,8 @@ return new class extends Migration
             $table->foreignId('new_course_enrollment_id')->nullable()->constrained('course_enrollments')->nullOnDelete();
             $table->foreignId('old_curriculum_mapping_id')->constrained('curriculum_mappings')->cascadeOnUpdate()->restrictOnDelete();
             $table->foreignId('new_curriculum_mapping_id')->constrained('curriculum_mappings')->cascadeOnUpdate()->restrictOnDelete();
-            $table->string('old_registration_number');
-            $table->string('new_registration_number');
+            $table->string('old_admission_number');
+            $table->string('new_admission_number');
             $table->foreignId('old_user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('new_user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('processed_by')->nullable()->constrained('users')->nullOnDelete();

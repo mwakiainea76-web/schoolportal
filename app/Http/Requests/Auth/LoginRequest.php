@@ -57,12 +57,14 @@ class LoginRequest extends FormRequest
         $normalizedLogin = Str::lower($login);
 
         $user = User::query()
-            ->where('login_id', $login)
+            ->where('email', $login)
+            ->orWhere('login_id', $login)
             ->first();
 
         if (! $user) {
             $user = User::query()
-                ->whereRaw('LOWER(TRIM(login_id)) = ?', [$normalizedLogin])
+                ->whereRaw('LOWER(TRIM(email)) = ?', [$normalizedLogin])
+                ->orWhereRaw('LOWER(TRIM(login_id)) = ?', [$normalizedLogin])
                 ->first();
         }
 

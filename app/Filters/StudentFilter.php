@@ -6,10 +6,8 @@ use Illuminate\Database\Eloquent\Builder;
 
 class StudentFilter
 {
-    public function apply(Builder $query, array $filters)
+    public function apply(Builder $query, array $filters): Builder
     {
-        $this->joinUsers($query);
-
         return $query
             ->when($filters['search'] ?? null, fn ($q, $v) => $this->search($q, $v))
             ->when($filters['gender'] ?? null, fn ($q, $v) => $this->gender($q, $v))
@@ -23,69 +21,53 @@ class StudentFilter
             );
     }
 
-    protected function joinUsers(Builder $query): void
-    {
-        $joins = $query->getQuery()->joins ?? [];
-
-        foreach ($joins as $join) {
-            if ($join->table === 'users') {
-                return;
-            }
-        }
-
-        $query->join('users', function ($join) {
-            $join->on('users.id', '=', 'students.user_id')
-                ->whereNull('users.deleted_at');
-        });
-    }
-
-    protected function search($query, $term)
+    protected function search(Builder $query, string $term): void
     {
         $query->where(function ($q) use ($term) {
-            $q->where('students.registration_number', 'like', "%{$term}%")
-                ->orWhere('users.first_name', 'like', "%{$term}%")
-                ->orWhere('users.last_name', 'like', "%{$term}%")
-                ->orWhere('users.email', 'like', "%{$term}%")
-                ->orWhere('users.phone_number', 'like', "%{$term}%");
+            $q->where('students.admission_number', 'like', "%{$term}%")
+                ->orWhere('students.first_name', 'like', "%{$term}%")
+                ->orWhere('students.last_name', 'like', "%{$term}%")
+                ->orWhere('students.email', 'like', "%{$term}%")
+                ->orWhere('students.phone_number', 'like', "%{$term}%");
         });
     }
 
-    protected function gender($query, $value)
+    protected function gender(Builder $query, string $value): void
     {
-        $query->where('users.gender', $value);
+        $query->where('students.gender', $value);
     }
 
-    protected function county($query, $value)
+    protected function county(Builder $query, string $value): void
     {
-        $query->where('users.county', $value);
+        $query->where('students.county', $value);
     }
 
-    protected function status($query, $value)
+    protected function status(Builder $query, string $value): void
     {
-        $query->where('students.student_status', $value);
+        $query->where('students.enrollment_status', $value);
     }
 
-    protected function module($query, $value)
+    protected function module(Builder $query, string $value): void
     {
         $query->where('students.current_module', $value);
     }
 
-    protected function active($query, $value)
+    protected function active(Builder $query, mixed $value): void
     {
-        $query->where('users.is_active', $value);
+        $query->whereHas('user', fn ($q) => $q->where('is_active', $value));
     }
 
-    protected function dateRange($query, $filters)
+    protected function dateRange(Builder $query, array $filters): void
     {
         $from = $filters['date_from'] ?? null;
         $to = $filters['date_to'] ?? null;
 
         if ($from && $to) {
-            $query->whereBetween('students.admission_date', [$from, $to]);
+            $query->whereBetween('students.created_at', [$from, $to]);
         } elseif ($from) {
-            $query->whereDate('students.admission_date', '>=', $from);
+            $query->whereDate('students.created_at', '>=', $from);
         } elseif ($to) {
-            $query->whereDate('students.admission_date', '<=', $to);
+            $query->whereDate('students.created_at', '<=', $to);
         }
     }
 }

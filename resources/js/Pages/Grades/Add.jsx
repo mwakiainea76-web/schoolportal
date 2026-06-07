@@ -115,7 +115,7 @@ export default function Add({
                         </div>
 
                         <div>
-                            <InputLabel value="Registration Number / Student ID" required />
+                            <InputLabel value="Admission Number / Student ID" required />
                             <input
                                 type="text"
                                 value={form.data.student_identifier}

@@ -29,26 +29,23 @@ class AdmissionsAnalyticsService
             ->first();
 
         $admissionsBase = Student::query()
-            ->join('users', 'users.id', '=', 'students.user_id')
-            ->whereNull('students.deleted_at')
-            ->whereNull('users.deleted_at');
+            ->whereNull('students.deleted_at');
 
         $totalAdmissions = (clone $admissionsBase)->count();
         $newAdmissionsInRange = (clone $admissionsBase)
-            ->whereBetween('students.admission_date', [$startDate->toDateString(), $endDate->toDateString()])
+            ->whereBetween('students.created_at', [$startDate->toDateString(), $endDate->toDateString()])
             ->count();
         $activeAccounts = (clone $admissionsBase)
-            ->where('users.is_active', true)
+            ->whereHas('user', fn($q) => $q->where('is_active', true))
             ->count();
         $inactiveAccounts = (clone $admissionsBase)
-            ->where('users.is_active', false)
+            ->whereHas('user', fn($q) => $q->where('is_active', false))
             ->count();
         $pwdStudents = (clone $admissionsBase)
-            ->where('users.is_pwd', true)
+            ->where('is_pwd', true)
             ->count();
 
         $admissionsByDepartment = Student::query()
-            ->join('users', 'users.id', '=', 'students.user_id')
             ->leftJoin('course_enrollments', function ($join) {
                 $join->on('course_enrollments.student_id', '=', 'students.id')
                     ->whereNull('course_enrollments.deleted_at');
@@ -57,7 +54,6 @@ class AdmissionsAnalyticsService
             ->leftJoin('courses', 'courses.id', '=', 'curriculum_mappings.course_id')
             ->leftJoin('departments', 'departments.id', '=', 'courses.department_id')
             ->whereNull('students.deleted_at')
-            ->whereNull('users.deleted_at')
             ->selectRaw("COALESCE(departments.name, 'Unassigned') as department_name")
             ->selectRaw('COUNT(DISTINCT students.id) as total')
             ->groupBy('department_name')
@@ -70,7 +66,6 @@ class AdmissionsAnalyticsService
             ->all();
 
         $admissionsByCourse = Student::query()
-            ->join('users', 'users.id', '=', 'students.user_id')
             ->leftJoin('course_enrollments', function ($join) {
                 $join->on('course_enrollments.student_id', '=', 'students.id')
                     ->whereNull('course_enrollments.deleted_at');
@@ -78,7 +73,6 @@ class AdmissionsAnalyticsService
             ->leftJoin('curriculum_mappings', 'curriculum_mappings.id', '=', 'course_enrollments.curriculum_mapping_id')
             ->leftJoin('courses', 'courses.id', '=', 'curriculum_mappings.course_id')
             ->whereNull('students.deleted_at')
-            ->whereNull('users.deleted_at')
             ->selectRaw("COALESCE(courses.name, 'Unassigned') as course_name")
             ->selectRaw('COUNT(DISTINCT students.id) as total')
             ->groupBy('course_name')
@@ -92,9 +86,9 @@ class AdmissionsAnalyticsService
             ->all();
 
         $admissionsByCounty = (clone $admissionsBase)
-            ->select('users.county')
+            ->select('county')
             ->selectRaw('COUNT(*) as total')
-            ->groupBy('users.county')
+            ->groupBy('county')
             ->orderByDesc('total')
             ->limit(10)
             ->get()
@@ -105,10 +99,10 @@ class AdmissionsAnalyticsService
             ->all();
 
         $admissionsByGender = (clone $admissionsBase)
-            ->select('users.gender')
+            ->select('gender')
             ->selectRaw('COUNT(*) as total')
-            ->groupBy('users.gender')
-            ->orderBy('users.gender')
+            ->groupBy('gender')
+            ->orderBy('gender')
             ->get()
             ->map(fn ($row) => [
                 'gender' => $row->gender,
@@ -127,7 +121,7 @@ class AdmissionsAnalyticsService
                 $monthEnd = $month->copy()->endOfMonth()->toDateString();
 
                 $total = Student::query()
-                    ->whereBetween('admission_date', [$monthStart, $monthEnd])
+                    ->whereBetween('created_at', [$monthStart, $monthEnd])
                     ->count();
 
                 return [
@@ -138,24 +132,22 @@ class AdmissionsAnalyticsService
             ->all();
 
         $studentsMissingCourseEnrollment = Student::query()
-            ->join('users', 'users.id', '=', 'students.user_id')
             ->whereNull('students.deleted_at')
-            ->whereNull('users.deleted_at')
             ->whereNotExists(function ($query) {
                 $query->selectRaw('1')
                     ->from('course_enrollments')
                     ->whereColumn('course_enrollments.student_id', 'students.id')
                     ->whereNull('course_enrollments.deleted_at');
             })
-            ->select('students.id', 'students.registration_number', 'students.admission_date', 'users.first_name', 'users.last_name')
-            ->orderByDesc('students.admission_date')
+            ->select('students.id', 'students.admission_number', 'students.created_at', 'students.first_name', 'students.last_name')
+            ->orderByDesc('students.created_at')
             ->limit(10)
             ->get()
             ->map(fn ($row) => [
                 'student_id' => (int) $row->id,
-                'registration_number' => $row->registration_number,
-                'student_name' => trim($row->first_name.' '.$row->last_name),
-                'admission_date' => $row->admission_date,
+                'admission_number' => $row->admission_number,
+                'student_name' => $row->full_name,
+                'admission_date' => $row->created_at->toDateString(),
             ])
             ->all();
 
@@ -168,36 +160,35 @@ class AdmissionsAnalyticsService
             ->whereNull('students.deleted_at')
             ->whereNull('users.deleted_at')
             ->whereNull('next_of_kin.id')
-            ->select('students.id', 'students.registration_number', 'users.first_name', 'users.last_name')
-            ->orderBy('users.last_name')
+            ->select('students.id', 'students.admission_number', 'students.first_name', 'students.last_name')
+            ->orderBy('students.last_name')
             ->limit(10)
             ->get()
             ->map(fn ($row) => [
                 'student_id' => (int) $row->id,
-                'registration_number' => $row->registration_number,
-                'student_name' => trim($row->first_name.' '.$row->last_name),
+                'admission_number' => $row->admission_number,
+                'student_name' => $row->full_name,
             ])
             ->all();
 
         $inactiveStudentAccounts = (clone $admissionsBase)
-            ->where('users.is_active', false)
-            ->select('students.id', 'students.registration_number', 'users.first_name', 'users.last_name', 'users.email')
-            ->orderBy('users.last_name')
+            ->whereHas('user', fn($q) => $q->where('is_active', false))
+            ->with('user:id,email')
+            ->select('students.id', 'students.admission_number', 'students.first_name', 'students.last_name', 'students.user_id')
+            ->orderBy('students.last_name')
             ->limit(10)
             ->get()
             ->map(fn ($row) => [
                 'student_id' => (int) $row->id,
-                'registration_number' => $row->registration_number,
-                'student_name' => trim($row->first_name.' '.$row->last_name),
-                'email' => $row->email,
+                'admission_number' => $row->admission_number,
+                'student_name' => $row->full_name,
+                'email' => $row->user?->email,
             ])
             ->all();
 
         $studentsNotSessionEnrolled = $activeSession
             ? Student::query()
-                ->join('users', 'users.id', '=', 'students.user_id')
                 ->whereNull('students.deleted_at')
-                ->whereNull('users.deleted_at')
                 ->whereNotExists(function ($query) use ($activeSession) {
                     $query->selectRaw('1')
                         ->from('course_enrollments')
@@ -207,14 +198,14 @@ class AdmissionsAnalyticsService
                         ->whereNull('academic_session_enrollments.deleted_at')
                         ->where('academic_session_enrollments.academic_session_id', $activeSession->id);
                 })
-                ->select('students.id', 'students.registration_number', 'users.first_name', 'users.last_name')
-                ->orderBy('users.last_name')
+                ->select('students.id', 'students.admission_number', 'students.first_name', 'students.last_name')
+                ->orderBy('students.last_name')
                 ->limit(10)
                 ->get()
                 ->map(fn ($row) => [
                     'student_id' => (int) $row->id,
-                    'registration_number' => $row->registration_number,
-                    'student_name' => trim($row->first_name.' '.$row->last_name),
+                    'admission_number' => $row->admission_number,
+                    'student_name' => $row->full_name,
                 ])
                 ->all()
             : [];
@@ -228,8 +219,11 @@ class AdmissionsAnalyticsService
                 HAVING COUNT(*) > 1
                 UNION ALL
                 SELECT phone_number as contact_value, 'phone' as contact_type, COUNT(*) as duplicate_count
-                FROM users
-                WHERE deleted_at IS NULL AND phone_number IS NOT NULL AND phone_number <> ''
+                FROM (
+                    SELECT phone_number FROM staffs WHERE deleted_at IS NULL AND phone_number IS NOT NULL AND phone_number <> ''
+                    UNION ALL
+                    SELECT phone_number FROM students WHERE deleted_at IS NULL AND phone_number IS NOT NULL AND phone_number <> ''
+                ) all_phones
                 GROUP BY phone_number
                 HAVING COUNT(*) > 1
             ) duplicate_contacts

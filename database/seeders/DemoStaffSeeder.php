@@ -12,158 +12,168 @@ class DemoStaffSeeder extends Seeder
 {
     public function seed(array $roles): array
     {
-        $admin = User::updateOrCreate(
-            ['email' => 'admin@tvetdemo.ke'],
-            $this->userData('Martin', 'Njoroge', 'TVET/STAFF/001', '0701001001', '1988-06-14', 'Nairobi', 'Westlands, Nairobi', 'male', 'Catholic', 'Password@123')
-        );
-        $admin->syncRoles([$roles['admin']->name]);
+        $staffData = [
+            [
+                'email' => 'admin@tvetdemo.ke',
+                'first_name' => 'Martin',
+                'last_name' => 'Njoroge',
+                'staff_number' => 'TVET/STAFF/001',
+                'phone' => '0701001001',
+                'dob' => '1988-06-14',
+                'county' => 'Nairobi',
+                'address' => 'Westlands, Nairobi',
+                'gender' => 'male',
+                'religion' => 'Catholic',
+                'role' => $roles['admin']->name,
+                'designation' => 'Principal',
+                'national_id' => '20100001',
+                'salary' => 145000,
+                'hired_date' => '2023-01-10',
+                'dept_code' => 'BUS',
+            ],
+            [
+                'email' => 'registrar@tvetdemo.ke',
+                'first_name' => 'Linet',
+                'last_name' => 'Wambui',
+                'staff_number' => 'TVET/STAFF/002',
+                'phone' => '0701001002',
+                'dob' => '1991-02-11',
+                'county' => 'Kiambu',
+                'address' => 'Ruiru, Kiambu',
+                'gender' => 'female',
+                'religion' => 'Christian',
+                'role' => $roles['registrar']->name,
+                'designation' => 'Registrar',
+                'national_id' => '20100002',
+                'salary' => 118000,
+                'hired_date' => '2023-03-14',
+                'dept_code' => 'BUS',
+            ],
+            [
+                'email' => 'bursar@tvetdemo.ke',
+                'first_name' => 'Peter',
+                'last_name' => 'Mutiso',
+                'staff_number' => 'TVET/STAFF/003',
+                'phone' => '0701001003',
+                'dob' => '1986-09-03',
+                'county' => 'Machakos',
+                'address' => 'Machakos Town',
+                'gender' => 'male',
+                'religion' => 'Christian',
+                'role' => $roles['bursar']->name,
+                'designation' => 'Bursar',
+                'national_id' => '20100003',
+                'salary' => 112000,
+                'hired_date' => '2023-05-19',
+                'dept_code' => 'BUS',
+            ],
+            [
+                'email' => 'hod.ict@tvetdemo.ke',
+                'first_name' => 'Mercy',
+                'last_name' => 'Achieng',
+                'staff_number' => 'TVET/STAFF/004',
+                'phone' => '0701001004',
+                'dob' => '1989-12-21',
+                'county' => 'Kisumu',
+                'address' => 'Milimani, Kisumu',
+                'gender' => 'female',
+                'religion' => 'Christian',
+                'role' => $roles['hod']->name,
+                'designation' => 'Head of Department',
+                'national_id' => '20100004',
+                'salary' => 120000,
+                'hired_date' => '2023-09-18',
+                'dept_code' => 'ICT',
+            ],
+            [
+                'email' => 'trainer.ict@tvetdemo.ke',
+                'first_name' => 'Brian',
+                'last_name' => 'Otieno',
+                'staff_number' => 'TVET/STAFF/005',
+                'phone' => '0701001005',
+                'dob' => '1992-04-10',
+                'county' => 'Kisumu',
+                'address' => 'Migosi, Kisumu',
+                'gender' => 'male',
+                'religion' => 'Christian',
+                'role' => $roles['trainer']->name,
+                'designation' => 'Trainer',
+                'national_id' => '20100005',
+                'salary' => 98000,
+                'hired_date' => '2024-01-15',
+                'dept_code' => 'ICT',
+            ],
+        ];
 
-        $registrarUser = User::updateOrCreate(
-            ['email' => 'registrar@tvetdemo.ke'],
-            $this->userData('Linet', 'Wambui', 'TVET/STAFF/002', '0701001002', '1991-02-11', 'Kiambu', 'Ruiru, Kiambu', 'female', 'Christian', 'Password@123')
-        );
-        $registrarUser->syncRoles([$roles['registrar']->name]);
+        $results = [];
+        $departments = Department::pluck('id', 'code');
 
-        $bursarUser = User::updateOrCreate(
-            ['email' => 'bursar@tvetdemo.ke'],
-            $this->userData('Peter', 'Mutiso', 'TVET/STAFF/003', '0701001003', '1986-09-03', 'Machakos', 'Machakos Town', 'male', 'Christian', 'Password@123')
-        );
-        $bursarUser->syncRoles([$roles['bursar']->name]);
+        foreach ($staffData as $data) {
+            $user = User::updateOrCreate(
+                ['email' => $data['email']],
+                [
+                    'login_id' => $data['staff_number'],
+                    'password' => \Hash::make('Password@123'),
+                    'is_active' => true,
+                    'email_verified_at' => now(),
+                ]
+            );
+            $user->syncRoles([$data['role']]);
 
-        $hodUser = User::updateOrCreate(
-            ['email' => 'hod.ict@tvetdemo.ke'],
-            $this->userData('Mercy', 'Achieng', 'TVET/STAFF/004', '0701001004', '1989-12-21', 'Kisumu', 'Milimani, Kisumu', 'female', 'Christian', 'Password@123')
-        );
-        $hodUser->syncRoles([$roles['hod']->name]);
+            $staff = Staff::updateOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'first_name' => $data['first_name'],
+                    'last_name' => $data['last_name'],
+                    'other_name' => '',
+                    'email' => $data['email'],
+                    'phone_number' => $data['phone'],
+                    'date_of_birth' => $data['dob'],
+                    'county' => $data['county'],
+                    'address' => $data['address'],
+                    'gender' => $data['gender'],
+                    'religion' => $data['religion'],
+                    'department_id' => $departments[$data['dept_code']] ?? $departments->first(),
+                    'designation' => $data['designation'],
+                    'staff_number' => $data['staff_number'],
+                    'national_id_number' => $data['national_id'],
+                    'salary' => $data['salary'],
+                    'hired_date' => $data['hired_date'],
+                    'employment_type' => 'Permanent',
+                    'staff_status' => 'active',
+                    'kra_pin' => 'A' . rand(100000000, 999999999) . 'X',
+                    'nhif_number' => rand(10000000, 99999999),
+                    'nssf_number' => rand(10000000, 99999999),
+                ]
+            );
 
-        $trainerUser = User::updateOrCreate(
-            ['email' => 'trainer.ict@tvetdemo.ke'],
-            $this->userData('Brian', 'Otieno', 'TVET/STAFF/005', '0701001005', '1992-04-10', 'Kisumu', 'Migosi, Kisumu', 'male', 'Christian', 'Password@123')
-        );
-        $trainerUser->syncRoles([$roles['trainer']->name]);
-
-        foreach ([$admin, $registrarUser, $bursarUser, $hodUser, $trainerUser] as $user) {
             NextOfKin::firstOrCreate(
                 ['user_id' => $user->id],
                 [
                     'first_name' => 'Grace',
-                    'last_name' => $user->last_name,
+                    'last_name' => $user->staff->last_name,
                     'relationship' => 'Sibling',
                     'phone_number' => '0712000000',
                     'alternate_phone_number' => '0722000000',
-                    'email' => strtolower($user->last_name).'.kin@tvetdemo.ke',
+                    'email' => strtolower($user->staff->last_name).'.kin@tvetdemo.ke',
                 ]
             );
+
+            $results[strtolower($data['designation'])] = $staff;
+            $results[strtolower($data['designation']) . '_user'] = $user;
         }
 
-        $departments = Department::pluck('id', 'code');
-
-        $adminStaff = Staff::firstOrCreate(
-            ['user_id' => $admin->id],
-            [
-                'department_id' => $departments['BUS'] ?? $departments->first(),
-                'designation' => 'Principal',
-                'staff_number' => 'TVET/STAFF/001',
-                'national_id_number' => '20100001',
-                'salary' => 145000,
-                'hired_date' => '2023-01-10',
-                'employment_type' => 'Permanent',
-                'highest_qualification' => 'Masters in Education Management',
-                'specialization' => 'Institutional Management',
-                'kra_pin' => 'A001000001X',
-                'nhif_number' => 'NHIF000001',
-                'nssf_number' => 'NSSF000001',
-                'staff_status' => 'active',
-            ]
-        );
-
-        $registrarStaff = Staff::firstOrCreate(
-            ['user_id' => $registrarUser->id],
-            [
-                'department_id' => $departments['BUS'] ?? $departments->first(),
-                'designation' => 'Registrar',
-                'staff_number' => 'TVET/STAFF/002',
-                'national_id_number' => '20100002',
-                'salary' => 118000,
-                'hired_date' => '2023-03-14',
-                'employment_type' => 'Permanent',
-                'highest_qualification' => 'Bachelor of Education',
-                'specialization' => 'Academic Administration',
-                'kra_pin' => 'A001000002X',
-                'nhif_number' => 'NHIF000002',
-                'nssf_number' => 'NSSF000002',
-                'staff_status' => 'active',
-            ]
-        );
-
-        $bursarStaff = Staff::firstOrCreate(
-            ['user_id' => $bursarUser->id],
-            [
-                'department_id' => $departments['BUS'] ?? $departments->first(),
-                'designation' => 'Bursar',
-                'staff_number' => 'TVET/STAFF/003',
-                'national_id_number' => '20100003',
-                'salary' => 112000,
-                'hired_date' => '2023-05-19',
-                'employment_type' => 'Permanent',
-                'highest_qualification' => 'Bachelor of Commerce',
-                'specialization' => 'Finance',
-                'kra_pin' => 'A001000003X',
-                'nhif_number' => 'NHIF000003',
-                'nssf_number' => 'NSSF000003',
-                'staff_status' => 'active',
-            ]
-        );
-
-        $hodStaff = Staff::firstOrCreate(
-            ['user_id' => $hodUser->id],
-            [
-                'department_id' => $departments['ICT'] ?? $departments->first(),
-                'designation' => 'Head of Department',
-                'staff_number' => 'TVET/STAFF/004',
-                'national_id_number' => '20100004',
-                'salary' => 120000,
-                'hired_date' => '2023-09-18',
-                'employment_type' => 'Contract',
-                'highest_qualification' => 'Masters in Information Technology',
-                'specialization' => 'Networking and Systems',
-                'kra_pin' => 'A001000004X',
-                'nhif_number' => 'NHIF000004',
-                'nssf_number' => 'NSSF000004',
-                'staff_status' => 'active',
-            ]
-        );
-
-        $trainerStaff = Staff::firstOrCreate(
-            ['user_id' => $trainerUser->id],
-            [
-                'department_id' => $departments['ICT'] ?? $departments->first(),
-                'designation' => 'Trainer',
-                'staff_number' => 'TVET/STAFF/005',
-                'national_id_number' => '20100005',
-                'salary' => 98000,
-                'hired_date' => '2024-01-15',
-                'employment_type' => 'Permanent',
-                'highest_qualification' => 'Bachelor of Science in Computer Science',
-                'specialization' => 'Software Development',
-                'kra_pin' => 'A001000005X',
-                'nhif_number' => 'NHIF000005',
-                'nssf_number' => 'NSSF000005',
-                'staff_status' => 'active',
-            ]
-        );
-
         return [
-            'admin' => $admin,
-            'bursar_user' => $bursarUser,
-            'bursar_staff' => $bursarStaff,
-            'registrar_user' => $registrarUser,
-            'registrar_staff' => $registrarStaff,
-            'admin_staff' => $adminStaff,
-            'hod_user' => $hodUser,
-            'hod_staff' => $hodStaff,
-            'trainer_user' => $trainerUser,
-            'trainer_staff' => $trainerStaff,
+            'admin' => $results['principal_user'],
+            'bursar_user' => $results['bursar_user'],
+            'bursar_staff' => $results['bursar'],
+            'registrar_user' => $results['registrar_user'],
+            'registrar_staff' => $results['registrar'],
+            'admin_staff' => $results['principal'],
+            'hod_user' => $results['head of department_user'],
+            'hod_staff' => $results['head of department'],
+            'trainer_user' => $results['trainer_user'],
+            'trainer_staff' => $results['trainer'],
         ];
     }
 
@@ -180,20 +190,8 @@ class DemoStaffSeeder extends Seeder
         string $password
     ): array {
         return [
-            'first_name' => $firstName,
-            'last_name' => $lastName,
-            'other_name' => '',
             'login_id' => $loginId,
-            'phone_number' => $phoneNumber,
-            'date_of_birth' => $dateOfBirth,
-            'county' => $county,
-            'address' => $address,
-            'gender' => $gender,
-            'religion' => $religion,
-            'is_pwd' => false,
-            'disability_type' => null,
-            'medical_condition' => null,
-            'is_active' => 'true',
+            'is_active' => true,
             'email_verified_at' => now(),
             'password' => $password,
         ];

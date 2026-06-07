@@ -22,10 +22,10 @@ class LedgerTransactionController extends Controller
 
         $baseQuery = LedgerTransaction::query()
             ->with([
-                'student.user',
+                'student',
                 'invoice:id,invoice_number',
                 'academicSession.academicYear',
-                'createdBy.user',
+                'createdBy',
             ])
             ->when($request->search, function ($query, $search) {
                 $query->where(function ($q) use ($search) {
@@ -34,11 +34,9 @@ class LedgerTransactionController extends Controller
                         ->orWhere('type', 'like', "%{$search}%")
                         ->orWhereHas('invoice', fn ($invoice) => $invoice->where('invoice_number', 'like', "%{$search}%"))
                         ->orWhereHas('student', function ($student) use ($search) {
-                            $student->where('registration_number', 'like', "%{$search}%")
-                                ->orWhereHas('user', function ($user) use ($search) {
-                                    $user->where('first_name', 'like', "%{$search}%")
-                                        ->orWhere('last_name', 'like', "%{$search}%");
-                                });
+                            $student->where('admission_number', 'like', "%{$search}%")
+                                ->orWhere('first_name', 'like', "%{$search}%")
+                                ->orWhere('last_name', 'like', "%{$search}%");
                         });
                 });
             })
@@ -78,11 +76,8 @@ class LedgerTransactionController extends Controller
             ->through(fn (LedgerTransaction $transaction) => [
                 'id' => $transaction->id,
                 'transaction_date' => optional($transaction->transaction_date)->toDateString(),
-                'student' => trim(
-                    ($transaction->student?->user?->first_name ?? '').' '.
-                    ($transaction->student?->user?->last_name ?? '')
-                ),
-                'registration_number' => $transaction->student?->registration_number,
+                'student' => $transaction->student?->full_name,
+                'admission_number' => $transaction->student?->admission_number,
                 'type' => $transaction->type,
                 'reference' => $transaction->reference ?: $transaction->invoice?->invoice_number,
                 'session' => $transaction->academicSession?->display_name,
@@ -90,10 +85,7 @@ class LedgerTransactionController extends Controller
                 'credit' => (float) $transaction->credit,
                 'net' => $transaction->net_amount,
                 'description' => $transaction->description,
-                'created_by' => trim(
-                    ($transaction->createdBy?->user?->first_name ?? '').' '.
-                    ($transaction->createdBy?->user?->last_name ?? '')
-                ),
+                'created_by' => $transaction->createdBy?->full_name,
             ]);
 
         return Inertia::render('Billing/LedgerIndex', [

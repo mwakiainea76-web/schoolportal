@@ -5,15 +5,15 @@ namespace App\Http\Controllers;
 use App\Filters\StudentFilter;
 use App\Http\Requests\StoreStudentRequest;
 use App\Http\Requests\UpdateStudentRequest;
-use App\Models\CourseEnrollment;
 use App\Models\Course;
-use App\Models\ExamBody;
+use App\Models\CourseEnrollment;
 use App\Models\Curriculum;
 use App\Models\CurriculumMapping;
+use App\Models\ExamBody;
 use App\Models\Student;
 use App\Models\User;
-use Carbon\Carbon;
 use App\Support\RbacCache;
+use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -30,8 +30,8 @@ class StudentController extends Controller
     {
         $step = (int) $request->input('step');
 
-        // Edit mode: ignore the current student's user in the unique email check
-        $ignoreUserId = Student::find($request->input('_student_id'))?->user_id;
+        $studentId = $request->input('_student_id');
+        $ignoreStudentId = Student::find($studentId)?->id;
 
         $rules = match ($step) {
             1 => [
@@ -39,10 +39,10 @@ class StudentController extends Controller
                 'last_name' => ['required', 'string', 'max:255'],
                 'other_name' => ['nullable', 'string', 'max:255'],
                 'email' => [
-                    'required', 'email',
-                    $ignoreUserId
-                        ? Rule::unique('users', 'email')->ignore($ignoreUserId)
-                        : Rule::unique('users', 'email'),
+                    'required', 'email', 'max:255',
+                    $ignoreStudentId
+                        ? Rule::unique('students', 'email')->ignore($ignoreStudentId)
+                        : Rule::unique('students', 'email'),
                 ],
                 'phone_number' => ['required', 'string', 'max:15'],
                 'gender' => ['required', 'string'],
@@ -66,7 +66,6 @@ class StudentController extends Controller
                 'fee_discount_percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
             ],
             3 => [
-
                 'kin_first_name' => ['required', 'string', 'max:255'],
                 'kin_last_name' => ['required', 'string', 'max:255'],
                 'kin_relationship' => ['required', 'string', 'max:255'],
@@ -83,10 +82,10 @@ class StudentController extends Controller
     }
 
     // ----------------------------------------------------------------
-    // REGISTRATION NUMBER GENERATION
+    // ADMISSION NUMBER GENERATION
     // ----------------------------------------------------------------
 
-    private function generateRegistrationNumber(): string
+    private function generateAdmissionNumber(): string
     {
         $year = now()->year;
         $month = now()->format('m');
@@ -94,7 +93,7 @@ class StudentController extends Controller
         $last = Student::whereYear('created_at', $year)
             ->lockForUpdate()
             ->latest('id')
-            ->value('registration_number');
+            ->value('admission_number');
 
         $next = $last ? ((int) substr($last, -4)) + 1 : 1;
         $sequence = str_pad($next, 4, '0', STR_PAD_LEFT);
@@ -109,33 +108,28 @@ class StudentController extends Controller
     public function index(Request $request, StudentFilter $filter)
     {
         $students = $filter
-            ->apply(
-                Student::query(),
-                $request->all()
-            )
+            ->apply(Student::query(), $request->all())
             ->select([
                 'students.id',
-                'students.registration_number',
+                'students.admission_number',
                 'students.current_module',
-                'students.admission_date',
-                'students.student_status',
-                'users.first_name as user_first_name',
-                'users.last_name as user_last_name',
-                'users.email as user_email',
+                'students.created_at',
+                'students.enrollment_status',
+                'students.first_name',
+                'students.last_name',
+                'students.email',
             ])
             ->latest('students.id')
             ->paginate(10)
             ->through(fn ($student) => [
                 'id' => $student->id,
-                'registration_number' => $student->registration_number,
+                'admission_number' => $student->admission_number,
+                'first_name' => $student->first_name,
+                'last_name' => $student->last_name,
+                'email' => $student->email,
                 'current_module' => $student->current_module,
-                'admission_date' => $student->admission_date,
-                'student_status' => $student->student_status,
-                'user' => [
-                    'first_name' => $student->user_first_name,
-                    'last_name' => $student->user_last_name,
-                    'email' => $student->user_email,
-                ],
+                'admission_date' => $student->created_at->toDateString(),
+                'student_status' => $student->enrollment_status,
             ])
             ->withQueryString();
 
@@ -164,54 +158,56 @@ class StudentController extends Controller
         DB::transaction(function () use ($request) {
 
             $user = User::create([
-                'first_name' => $request->first_name,
-                'last_name' => $request->last_name,
-                'other_name' => $request->other_name,
                 'email' => $request->email,
-                'phone_number' => $request->phone_number,
-                'gender' => $request->gender,
-                'date_of_birth' => $request->date_of_birth,
-                'county' => $request->county,
-                'address' => $request->address,
-                'religion' => $request->religion,
                 'password' => bcrypt($request->phone_number),
-                'is_pwd' => $request->boolean('is_pwd'),
                 'is_active' => true,
-                'disability_type' => $request->disability_type,
-                'medical_condition' => $request->medical_condition,
+                'role' => 'student',
             ]);
 
             $user->assignRole('student');
             RbacCache::forgetForUser($user);
 
-            // Generate unique registration number (retry up to 5 times on collision)
-            $registrationNumber = null;
+            // Generate unique admission number (retry up to 5 times on collision)
+            $admissionNumber = null;
             for ($i = 0; $i < 5; $i++) {
-                $candidate = $this->generateRegistrationNumber();
-                if (! Student::where('registration_number', $candidate)->exists()) {
-                    $registrationNumber = $candidate;
+                $candidate = $this->generateAdmissionNumber();
+                if (! Student::where('admission_number', $candidate)->exists()) {
+                    $admissionNumber = $candidate;
                     break;
                 }
             }
 
             throw_if(
-                ! $registrationNumber,
+                ! $admissionNumber,
                 \RuntimeException::class,
-                'Failed to generate a unique registration number.'
+                'Failed to generate a unique admission number.'
             );
 
             $student = Student::create([
                 'user_id' => $user->id,
-                'registration_number' => $registrationNumber,
+                'department_id' => $request->department_id,
+                'first_name' => $request->first_name,
+                'last_name' => $request->last_name,
+                'other_name' => $request->other_name,
+                'email' => $request->email,
+                'phone_number' => $request->phone_number,
+                'date_of_birth' => $request->date_of_birth,
+                'county' => $request->county,
+                'address' => $request->address,
+                'gender' => $request->gender,
+                'religion' => $request->religion,
+                'is_pwd' => $request->boolean('is_pwd'),
+                'disability_type' => $request->disability_type,
+                'medical_condition' => $request->medical_condition,
+                'admission_number' => $admissionNumber,
                 'previous_school' => $request->previous_school,
                 'fee_discount_percentage' => $request->fee_discount_percentage ?? 0,
                 'current_module' => $request->current_module ?? 1,
-                'admission_date' => now(),
-                'student_status' => 'active',
+                'enrollment_status' => 'active',
             ]);
 
             $user->update([
-                'login_id' => $registrationNumber,
+                'login_id' => $admissionNumber,
             ]);
 
             $courseEnrollment = new CourseEnrollment;
@@ -268,6 +264,10 @@ class StudentController extends Controller
         ]);
     }
 
+    // ----------------------------------------------------------------
+    // ADMISSION LETTER
+    // ----------------------------------------------------------------
+
     public function admissionLetter(Student $student): View
     {
         $student->loadMissing([
@@ -298,11 +298,17 @@ class StudentController extends Controller
     public function update(UpdateStudentRequest $request, Student $student)
     {
         DB::transaction(function () use ($request, $student) {
+
             $curriculumMappingId =
                 $request->curriculum_mapping_id
                 ?? $student->courseEnrollment?->curriculum_mapping_id;
 
             $student->user->update([
+                'email' => $request->email,
+                'is_active' => $request->boolean('is_active'),
+            ]);
+
+            $student->update([
                 'first_name' => $request->first_name,
                 'last_name' => $request->last_name,
                 'other_name' => $request->other_name,
@@ -316,23 +322,20 @@ class StudentController extends Controller
                 'is_pwd' => $request->boolean('is_pwd'),
                 'disability_type' => $request->disability_type,
                 'medical_condition' => $request->medical_condition,
-            ]);
-
-            $student->update([
                 'previous_school' => $request->previous_school,
                 'fee_discount_percentage' => $request->fee_discount_percentage ?? 0,
                 'current_module' => $request->current_module,
-                'admission_date' => $request->admission_date,
-                'student_status' => $request->student_status,
+                'enrollment_status' => $request->student_status,
             ]);
 
             $student->user->update([
-                'login_id' => $student->registration_number,
+                'login_id' => $student->admission_number,
             ]);
 
             $courseEnrollment = $student->courseEnrollment()->firstOrNew([
                 'student_id' => $student->id,
             ]);
+
             if (! $courseEnrollment->exists && $curriculumMappingId) {
                 $mapping = CurriculumMapping::query()
                     ->with('course.certificationLevel:id,exam_body_id')
@@ -341,8 +344,7 @@ class StudentController extends Controller
                 $courseEnrollment->course_id = $request->course_id ?? $mapping?->course_id;
                 $courseEnrollment->curriculum_id = $request->curriculum_id ?? $mapping?->curriculum_id;
                 $courseEnrollment->exam_body_id = $request->exam_body_id ?? $mapping?->course?->certificationLevel?->exam_body_id;
-                $courseEnrollment->curriculum_mapping_id =
-                    $curriculumMappingId;
+                $courseEnrollment->curriculum_mapping_id = $curriculumMappingId;
                 $courseEnrollment->enrollment_date = now()->toDateString();
                 $courseEnrollment->intake_year = now()->year;
                 $courseEnrollment->intake_period = $this->intakePeriod();
@@ -379,41 +381,38 @@ class StudentController extends Controller
         return redirect()->route('students.index')->with('success', 'Student deleted successfully.');
     }
 
-    /**
-     * Search for students.
-     */
+    // ----------------------------------------------------------------
+    // SEARCH
+    // ----------------------------------------------------------------
+
     public function search(Request $request)
     {
         $q = trim((string) $request->get('q'));
 
         return Student::query()
-            ->join('users', function ($join) {
-                $join->on('users.id', '=', 'students.user_id')
-                    ->whereNull('users.deleted_at');
-            })
             ->when($q !== '', function ($query) use ($q) {
                 $query->where(function ($builder) use ($q) {
-                    $builder->where('students.registration_number', 'like', "%{$q}%")
-                        ->orWhere('users.first_name', 'like', "%{$q}%")
-                        ->orWhere('users.last_name', 'like', "%{$q}%")
-                        ->orWhere('users.email', 'like', "%{$q}%");
+                    $builder
+                        ->where('admission_number', 'like', "%{$q}%")
+                        ->orWhere('first_name', 'like', "%{$q}%")
+                        ->orWhere('last_name', 'like', "%{$q}%")
+                        ->orWhere('email', 'like', "%{$q}%");
                 });
             })
-            ->select([
-                'students.id',
-                'students.registration_number',
-                'users.first_name',
-                'users.last_name',
-            ])
-            ->orderBy('users.first_name')
-            ->orderBy('users.last_name')
+            ->select(['id', 'admission_number', 'first_name', 'last_name'])
+            ->orderBy('first_name')
+            ->orderBy('last_name')
             ->limit(10)
             ->get()
             ->map(fn ($s) => [
                 'id' => $s->id,
-                'name' => trim(($s->first_name ?? '').' '.($s->last_name ?? '')).' ('.($s->registration_number ?? 'N/A').')',
+                'name' => trim("{$s->first_name} {$s->last_name}").' ('.($s->admission_number ?? 'N/A').')',
             ]);
     }
+
+    // ----------------------------------------------------------------
+    // AJAX HELPERS
+    // ----------------------------------------------------------------
 
     public function cycleCourses(Curriculum $curriculum): JsonResponse
     {
@@ -430,18 +429,9 @@ class StudentController extends Controller
         return response()->json($this->curriculumOptionsForCourse($course->id));
     }
 
-    private function curriculumOptions()
-    {
-        return Curriculum::query()
-            ->whereHas('curriculumMappings')
-            ->orderByDesc('id')
-            ->get(['id', 'name'])
-            ->map(fn (Curriculum $curriculum) => [
-                'id' => $curriculum->id,
-                'name' => $curriculum->name,
-            ])
-            ->values();
-    }
+    // ----------------------------------------------------------------
+    // PRIVATE HELPERS
+    // ----------------------------------------------------------------
 
     private function courseOptionsForCurriculum(?int $curriculumId)
     {
@@ -511,15 +501,13 @@ class StudentController extends Controller
             ->whereHas('activeCurriculumMapping', fn ($query) => $query->where('course_id', $course->id))
             ->orderByDesc('id')
             ->get(['id', 'course_id', 'exam_body_id', 'name'])
-            ->map(function (Curriculum $curriculum) {
-                return [
-                    'id' => $curriculum->id,
-                    'course_id' => $curriculum->course_id,
-                    'exam_body_id' => $curriculum->exam_body_id,
-                    'curriculum_mapping_id' => $curriculum->activeCurriculumMapping?->id,
-                    'name' => $curriculum->name,
-                ];
-            })
+            ->map(fn (Curriculum $curriculum) => [
+                'id' => $curriculum->id,
+                'course_id' => $curriculum->course_id,
+                'exam_body_id' => $curriculum->exam_body_id,
+                'curriculum_mapping_id' => $curriculum->activeCurriculumMapping?->id,
+                'name' => $curriculum->name,
+            ])
             ->values();
     }
 

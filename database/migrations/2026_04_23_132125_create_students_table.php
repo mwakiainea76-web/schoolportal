@@ -15,25 +15,44 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')
                 ->constrained('users', 'id')
-                ->cascadeOnDelete()
-                ->cascadeOnUpdate();
-            $table->string('registration_number')->unique();
-            $table->string('previous_school');
-            $table->string('current_module')->default(1);
-            $table->date('admission_date');
-            $table->unsignedInteger('fee_discount_percentage')->default(0);
-            $table->enum('student_status', [
+                ->cascadeOnDelete();
+            $table->foreignId('department_id')
+                ->constrained('departments', 'id');
+            
+            // Identity Fields
+            $table->string('first_name');
+            $table->string('last_name');
+            $table->string('other_name')->nullable();
+            $table->string('phone_number');
+            $table->date('date_of_birth');
+            $table->string('email')->nullable()->unique();
+            $table->string('county');
+            $table->text('address');
+            $table->string('gender');
+            $table->string('profile_photo')->nullable();
+            $table->string('religion');
+            $table->boolean('is_pwd')->default(false);
+            $table->string('disability_type')->nullable();
+            $table->string('medical_condition')->nullable();
+
+            // Academic Fields
+            $table->string('admission_number')->unique();
+            $table->string('current_module')->default('1');
+            $table->string('previous_school')->nullable();
+            $table->decimal('fee_discount_percentage', 5, 2)->default(0);
+            $table->enum('enrollment_status', [
                 'active',
-                'suspended',
+                'deferred',
+                'expelled',
                 'graduated',
-                'dropped',
             ])->default('active');
 
             $table->timestamps();
             $table->softDeletes();
 
             $table->index('user_id');
-            $table->index('student_status');
+            $table->index('department_id');
+            $table->index('enrollment_status');
         });
 
     }

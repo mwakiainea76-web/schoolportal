@@ -437,7 +437,7 @@ export default function Marksheet({
                                         {rows.map((row, index) => (
                                             <tr
                                                 key={
-                                                    row.registration_number ||
+                                                    row.admission_number ||
                                                     index
                                                 }
                                             >
@@ -445,7 +445,7 @@ export default function Marksheet({
                                                     {`${index + 1}.`}
                                                 </td>
                                                 <td className="border border-zinc-500 ">
-                                                    {row.registration_number ||
+                                                    {row.admission_number ||
                                                         ""}
                                                 </td>
                                                 <td className="border border-zinc-500 ">

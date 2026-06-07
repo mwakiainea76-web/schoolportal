@@ -175,9 +175,9 @@ class BillingStatementService
             'due_date' => optional($invoice->due_date)->toDateString(),
             'status' => $totals['status'],
             'student' => [
-                'name' => trim(($student?->user?->first_name ?? '').' '.($student?->user?->last_name ?? '')),
-                'registration_number' => $student?->registration_number,
-                'admission_date' => optional($student?->admission_date)->toDateString(),
+                'name' => $student?->full_name,
+                'admission_number' => $student?->admission_number,
+                'admission_date' => optional($student?->created_at)->toDateString(),
             ],
             'session' => $invoice->academicSession?->display_name,
             'entries' => $entries,

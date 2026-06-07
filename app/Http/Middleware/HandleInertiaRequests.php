@@ -32,14 +32,33 @@ class HandleInertiaRequests extends Middleware
 
         return array_merge(parent::share($request), [
             'auth' => [
-                'user' => fn () => $user
-                    ? [
+                'user' => function () use ($user) {
+                    if (! $user) {
+                        return null;
+                    }
+
+                    // Load roles first to determine profile source
+                    $user->loadMissing('roles:id,name');
+                    $isStudent = $user->roles->pluck('name')->contains('student');
+
+                    // Load only the relevant profile — no guessing
+                    $profile = $isStudent
+                        ? $user->loadMissing('student')->student
+                        : $user->loadMissing('staff')->staff;
+
+                    return [
                         'id' => $user->id,
-                        'first_name' => $user->first_name,
-                        'last_name' => $user->last_name,
                         'email' => $user->email,
-                    ]
-                    : null,
+                        'first_name' => $profile?->first_name,
+                        'last_name' => $profile?->last_name,
+                        'full_name' => $profile
+                            ? trim("{$profile->first_name} {$profile->last_name}")
+                            : $user->email,
+                        'profile_photo' => $profile?->profile_photo,
+                        'is_active' => $user->is_active,
+                        'is_student' => $isStudent,
+                    ];
+                },
                 'roles' => fn () => $authPayload()['roles'],
                 'permissions' => fn () => $authPayload()['permissions'],
             ],
@@ -47,7 +66,7 @@ class HandleInertiaRequests extends Middleware
             'flash' => [
                 'success' => session('success'),
                 'error' => session('error'),
-            ],
+        ],
 
             'search_term' => $request->session()->get('search_term', ''),
         ]);

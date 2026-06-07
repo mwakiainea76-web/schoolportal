@@ -62,7 +62,7 @@ class UserMonitorController extends Controller
                 $join->on('users.id', '=', 'online_sessions.user_id');
             })
             ->select('users.*', 'online_sessions.last_activity')
-            ->with('roles:id,name')
+            ->with(['roles:id,name', 'staff', 'student'])
             ->when($roleFilter !== '', function ($query) use ($roleFilter) {
                 $query->whereHas('roles', function ($roleQuery) use ($roleFilter) {
                     $roleQuery->where('name', $roleFilter);
@@ -74,6 +74,7 @@ class UserMonitorController extends Controller
             ->through(function (User $user) {
                 return [
                     'id' => $user->id,
+                    'name' => $user->full_name,
                     'first_name' => $user->first_name,
                     'last_name' => $user->last_name,
                     'email' => $user->email,

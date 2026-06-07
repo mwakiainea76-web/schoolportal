@@ -25,8 +25,8 @@ class StaffController extends Controller
     {
         $step = (int) $request->input('step');
 
-        // Edit mode: ignore the current staff's user in the unique email check
-        $ignoreUserId = Staff::find($request->input('_staff_id'))?->user_id;
+        $staffId = $request->input('_staff_id');
+        $ignoreStaffId = Staff::find($staffId)?->id;
 
         $rules = match ($step) {
             1 => [
@@ -34,10 +34,10 @@ class StaffController extends Controller
                 'last_name' => ['required', 'string', 'max:255'],
                 'other_name' => ['nullable', 'string', 'max:255'],
                 'email' => [
-                    'required', 'email',
-                    $ignoreUserId
-                        ? Rule::unique('users', 'email')->ignore($ignoreUserId)
-                        : Rule::unique('users', 'email'),
+                    'required', 'email', 'max:255',
+                    $ignoreStaffId
+                        ? Rule::unique('staffs', 'email')->ignore($ignoreStaffId)
+                        : Rule::unique('staffs', 'email'),
                 ],
                 'phone_number' => ['required', 'string', 'max:15'],
                 'gender' => ['required', 'string'],
@@ -54,11 +54,9 @@ class StaffController extends Controller
                 'role_name' => ['required', 'exists:roles,name'],
                 'designation' => ['required', 'string', 'max:255'],
                 'national_id_number' => [
-                    'required',
-                    'string',
-                    'max:50',
-                    $ignoreUserId
-                        ? Rule::unique('staffs', 'national_id_number')->ignore($request->input('_staff_id'))
+                    'required', 'string', 'max:50',
+                    $ignoreStaffId
+                        ? Rule::unique('staffs', 'national_id_number')->ignore($ignoreStaffId)
                         : Rule::unique('staffs', 'national_id_number'),
                 ],
                 'salary' => ['nullable', 'numeric'],
@@ -116,26 +114,52 @@ class StaffController extends Controller
     public function index(Request $request, StaffFilter $filter)
     {
         $staffs = $filter
-            ->apply(
-                Staff::query()->with(['user.roles', 'department']),
-                $request->all()
-            )
-            ->latest()
+            ->apply(Staff::query(), $request->all())
+            ->select([
+                'staffs.id',
+                'staffs.user_id',
+                'staffs.department_id',
+                'staffs.staff_number',
+                'staffs.first_name',
+                'staffs.last_name',
+                'staffs.email',
+                'staffs.designation',
+                'staffs.staff_status',
+                'staffs.created_at',
+            ])
+            ->latest('staffs.id')
             ->paginate(10)
             ->withQueryString();
 
-        return inertia('Staffs/Index', compact('staffs'));
-    }
+        // load after pagination — fully isolated from the filter query
+        $staffs->getCollection()->load([
+            'department:id,name',
+            'user:id',
+            'user.roles:id,name',
+        ]);
 
-    // ----------------------------------------------------------------
+        $staffs->through(fn ($staff) => [
+            'id' => $staff->id,
+            'staff_number' => $staff->staff_number,
+            'first_name' => $staff->first_name,
+            'last_name' => $staff->last_name,
+            'email' => $staff->email,
+            'designation' => $staff->designation,
+            'staff_status' => $staff->staff_status,
+            'department' => $staff->department ? ['id' => $staff->department->id, 'name' => $staff->department->name] : null,
+            'roles' => $staff->user?->roles->pluck('name'),
+        ]);
+
+        return inertia('Staffs/Index', compact('staffs'));
+    }  // ----------------------------------------------------------------
     // CREATE
     // ----------------------------------------------------------------
 
     public function create()
     {
         return inertia('Staffs/Create', [
-            'departments' => Department::select('id', 'name')->orderBy('name')->limit(10)->get(),
-            'roles' => Role::select('id', 'name')->orderBy('name')->limit(10)->get(),
+            'departments' => Department::select('id', 'name')->orderBy('name')->get(),
+            'roles' => Role::select('id', 'name')->orderBy('name')->get(),
         ]);
     }
 
@@ -148,21 +172,10 @@ class StaffController extends Controller
         DB::transaction(function () use ($request) {
 
             $user = User::create([
-                'first_name' => $request->first_name,
-                'last_name' => $request->last_name,
-                'other_name' => $request->other_name,
                 'email' => $request->email,
-                'phone_number' => $request->phone_number,
-                'gender' => $request->gender,
-                'date_of_birth' => $request->date_of_birth,
-                'county' => $request->county,
-                'address' => $request->address,
-                'religion' => $request->religion,
                 'password' => bcrypt($request->phone_number),
-                'is_pwd' => $request->boolean('is_pwd'),
                 'is_active' => true,
-                'disability_type' => $request->disability_type,
-                'medical_condition' => $request->medical_condition,
+                'role' => $request->role_name ?? 'trainer', // Store role for quick access (optional)
             ]);
 
             $user->assignRole($request->role_name);
@@ -183,10 +196,23 @@ class StaffController extends Controller
             $staff = Staff::create([
                 'user_id' => $user->id,
                 'department_id' => $request->department_id,
+                'first_name' => $request->first_name,
+                'last_name' => $request->last_name,
+                'other_name' => $request->other_name,
+                'email' => $request->email,
+                'phone_number' => $request->phone_number,
+                'date_of_birth' => $request->date_of_birth,
+                'county' => $request->county,
+                'address' => $request->address,
+                'gender' => $request->gender,
+                'religion' => $request->religion,
+                'is_pwd' => $request->boolean('is_pwd'),
+                'disability_type' => $request->disability_type,
+                'medical_condition' => $request->medical_condition,
                 'designation' => $request->designation,
                 'staff_number' => $staffNumber,
                 'national_id_number' => $request->national_id_number,
-                'salary' => $request->salary,
+                'salary' => $request->salary ?? 0,
                 'employment_type' => $request->employment_type,
                 'hired_date' => $request->hired_date,
                 'staff_status' => $request->staff_status ?: 'active',
@@ -223,10 +249,49 @@ class StaffController extends Controller
         $staff->load(['user.roles', 'user.nextofkin', 'department']);
 
         return inertia('Staffs/Edit', [
-            'staff' => $staff,
-            'departments' => Department::select('id', 'name')->orderBy('name')->limit(10)->get(),
-            'roles' => Role::select('id', 'name')->orderBy('name')->limit(10)->get(),
+            'staff' => [
+                'id' => $staff->id,
+                'staff_number' => $staff->staff_number,
+                'first_name' => $staff->first_name,
+                'last_name' => $staff->last_name,
+                'other_name' => $staff->other_name,
+                'email' => $staff->email,
+                'phone_number' => $staff->phone_number,
+                'gender' => $staff->gender,
+                'date_of_birth' => $staff->date_of_birth,
+                'county' => $staff->county,
+                'address' => $staff->address,
+                'religion' => $staff->religion,
+                'is_pwd' => $staff->is_pwd,
+                'disability_type' => $staff->disability_type,
+                'medical_condition' => $staff->medical_condition,
+                'designation' => $staff->designation,
+                'national_id_number' => $staff->national_id_number,
+                'salary' => $staff->salary,
+                'employment_type' => $staff->employment_type,
+                'hired_date' => $staff->hired_date,
+                'staff_status' => $staff->staff_status,
+                'highest_qualification' => $staff->highest_qualification,
+                'specialization' => $staff->specialization,
+                'kra_pin' => $staff->kra_pin,
+                'nhif_number' => $staff->nhif_number,
+                'nssf_number' => $staff->nssf_number,
+                'department_id' => $staff->department_id,
+                'department' => $staff->department?->name,
+                'role_name' => $staff->user?->roles->first()?->name,
+                'next_of_kin' => $staff->user?->nextofkin->map(fn ($kin) => [
+                    'first_name' => $kin->first_name,
+                    'last_name' => $kin->last_name,
+                    'relationship' => $kin->relationship,
+                    'phone_number' => $kin->phone_number,
+                    'alternate_phone_number' => $kin->alternate_phone_number,
+                    'email' => $kin->email,
+                ]),
+            ],
+            'departments' => Department::select('id', 'name')->orderBy('name')->get(),
+            'roles' => Role::select('id', 'name')->orderBy('name')->get(),
         ]);
+
     }
 
     // ----------------------------------------------------------------
@@ -238,6 +303,16 @@ class StaffController extends Controller
         DB::transaction(function () use ($request, $staff) {
 
             $staff->user->update([
+                'email' => $request->email,
+                'is_active' => $request->boolean('is_active'),
+                'role' => $request->role_name, // Update role field if used
+            ]);
+
+            $staff->user->syncRoles([$request->role_name]);
+            RbacCache::forgetForUser($staff->user);
+
+            $staff->update([
+                'department_id' => $request->department_id,
                 'first_name' => $request->first_name,
                 'last_name' => $request->last_name,
                 'other_name' => $request->other_name,
@@ -251,20 +326,12 @@ class StaffController extends Controller
                 'is_pwd' => $request->boolean('is_pwd'),
                 'disability_type' => $request->disability_type,
                 'medical_condition' => $request->medical_condition,
-            ]);
-
-            $staff->user->syncRoles([$request->role_name]);
-            RbacCache::forgetForUser($staff->user);
-
-            $staff->update([
-                'department_id' => $request->department_id,
                 'designation' => $request->designation,
-                'staff_number' => $request->staff_number,
                 'national_id_number' => $request->national_id_number,
-                'salary' => $request->salary,
+                'salary' => $request->salary ?? 0,
                 'employment_type' => $request->employment_type,
                 'hired_date' => $request->hired_date,
-                'staff_status' => $request->staff_status,
+                'staff_status' => $request->staff_status ?: 'active',
                 'highest_qualification' => $request->highest_qualification,
                 'specialization' => $request->specialization,
                 'kra_pin' => $request->kra_pin,
@@ -287,6 +354,8 @@ class StaffController extends Controller
                     'email' => $request->kin_email,
                 ]
             );
+                    $staff->user->syncRoles([$request->role_name]);
+RbacCache::forgetForUser($staff->user);
         });
 
         return redirect()->route('staffs.index')->with('success', 'Staff updated successfully.');
@@ -298,8 +367,14 @@ class StaffController extends Controller
 
     public function destroy(Staff $staff)
     {
-        //
+        $staff->delete();
+
+        return redirect()->route('staffs.index')->with('success', 'Staff deleted successfully.');
     }
+
+    // ----------------------------------------------------------------
+    // SEARCH
+    // ----------------------------------------------------------------
 
     public function search(Request $request)
     {
@@ -308,33 +383,20 @@ class StaffController extends Controller
         $query = trim((string) $request->query('q', ''));
 
         $staffs = Staff::query()
-            ->with('user:id,first_name,last_name,email')
             ->where('staff_status', 'active')
             ->when($departmentId, fn ($builder) => $builder->where('department_id', $departmentId))
             ->when($query !== '', function ($builder) use ($query) {
-                $builder->where(function ($searchQuery) use ($query) {
-                    $searchQuery
-                        ->where('staff_number', 'like', "%{$query}%")
+                $builder->where(function ($q) use ($query) {
+                    $q->where('staff_number', 'like', "%{$query}%")
                         ->orWhere('designation', 'like', "%{$query}%")
-                        ->orWhereHas('user', function ($userQuery) use ($query) {
-                            $userQuery
-                                ->where('first_name', 'like', "%{$query}%")
-                                ->orWhere('last_name', 'like', "%{$query}%")
-                                ->orWhere('email', 'like', "%{$query}%");
-                        });
+                        ->orWhere('first_name', 'like', "%{$query}%")
+                        ->orWhere('last_name', 'like', "%{$query}%")
+                        ->orWhere('email', 'like', "%{$query}%");
                 });
             })
             ->orderByDesc('id')
             ->limit($limit)
-            ->get(['id', 'user_id', 'staff_number', 'designation'])
-            ->map(fn (Staff $staff) => [
-                'id' => (string) $staff->id,
-                'name' => collect([
-                    trim(($staff->user?->first_name ?? '').' '.($staff->user?->last_name ?? '')),
-                    $staff->staff_number,
-                    $staff->designation,
-                ])->filter()->implode(' - '),
-            ])
+            ->get(['id', 'staff_number', 'designation', 'first_name', 'last_name', 'email'])
             ->values();
 
         return response()->json($staffs);

@@ -290,7 +290,7 @@ export default function BulkOperations({ enrollments, students }) {
                                                     />
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900">
-                                                    {enrollment.student?.registration_number}{" "}
+                                                    {enrollment.student?.admission_number}{" "}
                                                     - {enrollment.student?.name}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900">
@@ -461,7 +461,7 @@ export default function BulkOperations({ enrollments, students }) {
                                                     />
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900">
-                                                    {student.adm_no}
+                                                    {student.admission_number}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900">
                                                     {student.name}

@@ -13,13 +13,32 @@ class Student extends Model
 
     protected $fillable = [
         'user_id',
-        'registration_number',
-        'previous_school',
+        'department_id',
+        'first_name',
+        'last_name',
+        'other_name',
+        'email',
+        'phone_number',
+        'date_of_birth',
+        'county',
+        'address',
+        'gender',
+        'profile_photo',
+        'religion',
+        'is_pwd',
+        'disability_type',
+        'medical_condition',
+        'admission_number',
         'current_module',
-        'admission_date',
-        'student_status',
+        'previous_school',
         'fee_discount_percentage',
+        'enrollment_status',
     ];
+
+    public function getFullNameAttribute()
+    {
+        return "{$this->first_name} {$this->last_name}" . ($this->other_name ? " {$this->other_name}" : "");
+    }
 
     public function courseEnrollments()
     {
@@ -56,6 +75,16 @@ class Student extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function nextOfKin()
+    {
+        return $this->hasMany(NextOfKin::class, 'user_id', 'user_id');
+    }
+
+    public function department()
+    {
+        return $this->belongsTo(Department::class);
     }
 
     public function ledgerTransactions()

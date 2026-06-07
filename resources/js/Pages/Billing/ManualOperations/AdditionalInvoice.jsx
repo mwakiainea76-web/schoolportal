@@ -9,11 +9,11 @@ const plusDays = (days) =>
         .split("T")[0];
 
 export default function AdditionalInvoice({
-    selectedRegistrationNumber,
+    selectedAdmissionNumber,
     selectedInvoiceKind = "standard_invoice",
 }) {
     const form = useForm({
-        registration_number: selectedRegistrationNumber || "",
+        admission_number: selectedAdmissionNumber || "",
         invoice_kind: selectedInvoiceKind || "standard_invoice",
         description: "",
         amount: "",

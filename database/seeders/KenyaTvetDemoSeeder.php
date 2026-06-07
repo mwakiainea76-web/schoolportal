@@ -629,7 +629,7 @@ class KenyaTvetDemoSeeder extends Seeder
                 'address' => 'Kamakwa, Nyeri',
                 'gender' => 'male',
                 'religion' => 'Christian',
-                'registration' => 'TVET/2026/ICT/001',
+                'admission_number' => 'TVET/2026/ICT/001',
                 'previous_school' => 'Kagumo High School',
                 'course_key' => 'ict_l4',
             ],
@@ -643,7 +643,7 @@ class KenyaTvetDemoSeeder extends Seeder
                 'address' => 'Eldoret, Uasin Gishu',
                 'gender' => 'female',
                 'religion' => 'Christian',
-                'registration' => 'TVET/2026/ELE/002',
+                'admission_number' => 'TVET/2026/ELE/002',
                 'previous_school' => 'Hill School Eldoret',
                 'course_key' => 'electrical_l4',
             ],
@@ -657,7 +657,7 @@ class KenyaTvetDemoSeeder extends Seeder
                 'address' => 'Manyatta, Kisumu',
                 'gender' => 'male',
                 'religion' => 'Christian',
-                'registration' => 'TVET/2026/PLB/003',
+                'admission_number' => 'TVET/2026/PLB/003',
                 'previous_school' => 'Onjiko Boys High School',
                 'course_key' => 'plumbing_l4',
             ],
@@ -671,7 +671,7 @@ class KenyaTvetDemoSeeder extends Seeder
                 'address' => 'Thika, Kiambu',
                 'gender' => 'female',
                 'religion' => 'Christian',
-                'registration' => 'TVET/2026/HOS/004',
+                'admission_number' => 'TVET/2026/HOS/004',
                 'previous_school' => 'Mary Leakey Girls School',
                 'course_key' => 'hospitality_l5',
             ],
@@ -685,7 +685,7 @@ class KenyaTvetDemoSeeder extends Seeder
                 'address' => 'Wote, Makueni',
                 'gender' => 'male',
                 'religion' => 'Christian',
-                'registration' => 'TVET/2026/SCM/005',
+                'admission_number' => 'TVET/2026/SCM/005',
                 'previous_school' => 'Kitondo Secondary School',
                 'course_key' => 'supply_chain_l6',
             ],
@@ -694,30 +694,35 @@ class KenyaTvetDemoSeeder extends Seeder
         foreach ($studentRows as $row) {
             $user = User::firstOrCreate(
                 ['email' => $row['email']],
-                $this->userData(
-                    $row['first_name'],
-                    $row['last_name'],
-                    $row['phone'],
-                    $row['dob'],
-                    $row['county'],
-                    $row['address'],
-                    $row['gender'],
-                    $row['religion'],
-                    'Password@123'
-                )
+                [
+                    'login_id' => $row['admission_number'],
+                    'password' => \Hash::make('Password@123'),
+                    'is_active' => true,
+                    'email_verified_at' => now(),
+                ]
             );
             $user->syncRoles([$studentRole->name]);
-            $user->forceFill(['login_id' => $row['registration']])->save();
 
-            $student = Student::firstOrCreate(
-                ['registration_number' => $row['registration']],
+            $student = Student::updateOrCreate(
+                ['admission_number' => $row['admission_number']],
                 [
                     'user_id' => $user->id,
-                    'previous_school' => $row['previous_school'],
+                    'department_id' => $mappings[$row['course_key']]->course->department_id,
+                    'first_name' => $row['first_name'],
+                    'last_name' => $row['last_name'],
+                    'other_name' => '',
+                    'email' => $row['email'],
+                    'phone_number' => $row['phone'],
+                    'date_of_birth' => $row['dob'],
+                    'county' => $row['county'],
+                    'address' => $row['address'],
+                    'gender' => $row['gender'],
+                    'religion' => $row['religion'],
+                    'admission_number' => $row['admission_number'],
                     'current_module' => '1',
-                    'admission_date' => '2026-01-06',
+                    'previous_school' => $row['previous_school'],
                     'fee_discount_percentage' => 0,
-                    'student_status' => 'active',
+                    'enrollment_status' => 'active',
                 ]
             );
 
@@ -738,7 +743,7 @@ class KenyaTvetDemoSeeder extends Seeder
                 'curriculum_mapping_id' => $mappings[$row['course_key']]->id,
             ]);
 
-            $students[$row['registration']] = [
+            $students[$row['admission_number']] = [
                 'user' => $user,
                 'student' => $student,
                 'course_enrollment' => $courseEnrollment,
@@ -1265,20 +1270,7 @@ class KenyaTvetDemoSeeder extends Seeder
         string $password
     ): array {
         return [
-            'first_name' => $firstName,
-            'last_name' => $lastName,
-            'other_name' => null,
-            'phone_number' => $phone,
-            'date_of_birth' => $dob,
-            'county' => $county,
-            'address' => $address,
-            'gender' => $gender,
-            'profile_photo' => null,
-            'religion' => $religion,
-            'is_pwd' => 'false',
-            'disability_type' => null,
-            'medical_condition' => null,
-            'is_active' => 'true',
+            'is_active' => true,
             'email_verified_at' => now(),
             'password' => $password,
         ];

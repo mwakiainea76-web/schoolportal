@@ -26,7 +26,7 @@ class AcademicAnalyticsService
             ->first();
 
         $eligibleStudents = Student::query()
-            ->where('student_status', 'active')
+            ->where('enrollment_status', 'active')
             ->whereExists(function ($query) {
                 $query->selectRaw('1')
                     ->from('course_enrollments')
@@ -42,7 +42,7 @@ class AcademicAnalyticsService
                 ->whereNull('academic_session_enrollments.deleted_at')
                 ->whereNull('course_enrollments.deleted_at')
                 ->whereNull('students.deleted_at')
-                ->where('students.student_status', 'active')
+                ->where('students.enrollment_status', 'active')
                 ->where('academic_session_enrollments.academic_session_id', $activeSession->id)
                 ->distinct()
                 ->count('students.id')
@@ -54,10 +54,8 @@ class AcademicAnalyticsService
 
         $studentsNotRegistered = $activeSession
             ? Student::query()
-                ->join('users', 'users.id', '=', 'students.user_id')
                 ->whereNull('students.deleted_at')
-                ->whereNull('users.deleted_at')
-                ->where('students.student_status', 'active')
+                ->where('students.enrollment_status', 'active')
                 ->whereExists(function ($query) {
                     $query->selectRaw('1')
                         ->from('course_enrollments')
@@ -73,15 +71,15 @@ class AcademicAnalyticsService
                         ->whereNull('academic_session_enrollments.deleted_at')
                         ->where('academic_session_enrollments.academic_session_id', $activeSession->id);
                 })
-                ->select('students.id', 'students.registration_number', 'students.current_module', 'users.first_name', 'users.last_name')
-                ->orderBy('users.last_name')
-                ->orderBy('users.first_name')
+                ->select('students.id', 'students.admission_number', 'students.current_module', 'students.first_name', 'students.last_name')
+                ->orderBy('students.last_name')
+                ->orderBy('students.first_name')
                 ->limit(10)
                 ->get()
                 ->map(fn ($row) => [
                     'student_id' => (int) $row->id,
-                    'registration_number' => $row->registration_number,
-                    'student_name' => trim($row->first_name.' '.$row->last_name),
+                    'admission_number' => $row->admission_number,
+                    'student_name' => $row->full_name,
                     'current_module' => $row->current_module,
                 ])
                 ->all()
@@ -91,7 +89,7 @@ class AcademicAnalyticsService
             ->select('current_module')
             ->selectRaw('COUNT(*) as total')
             ->whereNull('deleted_at')
-            ->where('student_status', 'active')
+            ->where('enrollment_status', 'active')
             ->groupBy('current_module')
             ->orderBy('current_module')
             ->get()
@@ -127,11 +125,10 @@ class AcademicAnalyticsService
 
         $lecturerLoad = DB::table('academic_timetables')
             ->join('staffs', 'staffs.id', '=', 'academic_timetables.trainer_staff_id')
-            ->join('users', 'users.id', '=', 'staffs.user_id')
             ->whereNull('academic_timetables.deleted_at')
-            ->select('staffs.id', 'staffs.staff_number', 'users.first_name', 'users.last_name')
+            ->select('staffs.id', 'staffs.staff_number', 'staffs.first_name', 'staffs.last_name')
             ->selectRaw('COUNT(academic_timetables.id) as session_count')
-            ->groupBy('staffs.id', 'staffs.staff_number', 'users.first_name', 'users.last_name')
+            ->groupBy('staffs.id', 'staffs.staff_number', 'staffs.first_name', 'staffs.last_name')
             ->orderByDesc('session_count')
             ->limit(10)
             ->get()

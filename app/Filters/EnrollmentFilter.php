@@ -19,11 +19,11 @@ class EnrollmentFilter
     {
         $query->where(function ($q) use ($term) {
             $q->whereHas('student', function ($q2) use ($term) {
-                $q2->where('registration_number', 'like', "%$term%")
+                $q2->where('admission_number', 'like', "%$term%")
+                    ->orWhere('first_name', 'like', "%$term%")
+                    ->orWhere('last_name', 'like', "%$term%")
                     ->orWhereHas('user', function ($q3) use ($term) {
-                        $q3->where('first_name', 'like', "%$term%")
-                            ->orWhere('last_name', 'like', "%$term%")
-                            ->orWhere('email', 'like', "%$term%");
+                        $q3->where('email', 'like', "%$term%");
                     });
             });
         });
