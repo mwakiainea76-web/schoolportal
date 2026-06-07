@@ -20,11 +20,6 @@ import {
 } from "lucide-react";
 
 export const STAFF_NAV_ITEMS = [
-    // ----------------------------------------------------------------
-    // QUICK SECTIONS
-    // Shown only when the user has the relevant permission.
-    // filterNav() in the sidebar handles hiding them automatically.
-    // ----------------------------------------------------------------
     {
         key: "timetable-workspace",
         label: "Timetable Workspace",
