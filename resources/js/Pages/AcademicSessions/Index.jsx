@@ -2,7 +2,6 @@ import { Head, router } from "@inertiajs/react";
 import { useMemo, useState } from "react";
 import SearchSelect from "@/Components/SearchSelect";
 import formatDate from "@/utils/date";
-import AcademicCalendarWorkspaceTabs from "@/Pages/Academic/Partials/AcademicCalendarWorkspaceTabs";
 import AcademicYearCreate from "@/Pages/AcademicYears/Create";
 import AcademicYearEdit from "@/Pages/AcademicYears/Edit";
 import AcademicSessionCreate from "@/Pages/AcademicSessions/Create";
@@ -199,8 +198,6 @@ export default function Index({
             <Head title="Academic Sessions" />
 
             <div className="mx-auto w-full max-w-7xl animate-in fade-in slide-in-from-bottom-4 duration-700">
-                <AcademicCalendarWorkspaceTabs activeTab="sessions" />
-
                 <div className="flex w-full flex-col gap-6 lg:flex-row lg:items-start">
                     <section className="w-full shrink-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:w-[380px] xl:w-[430px]">
                         <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">

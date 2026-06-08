@@ -1,23 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { route } from "ziggy-js";
-
-const buildSearchUrl = (routeName, routeParams, text) => {
-    const params = new URLSearchParams();
-
-    Object.entries(routeParams ?? {}).forEach(([key, value]) => {
-        if (value !== null && value !== undefined && value !== "") {
-            params.set(key, value);
-        }
-    });
-
-    params.set("q", text);
-
-    return route(routeName, { ...routeParams, q: text });
-};
 
 export default function SearchSelect({
     value,
-    selectedLabel = null, // fallback label from backend relations
+    selectedLabel = null,
     routeName = null,
     routeParams = {},
     placeholder = "Search...",
@@ -37,19 +23,24 @@ export default function SearchSelect({
     const wrapperRef = useRef(null);
     const routeParamsKey = JSON.stringify(routeParams ?? {});
 
-    const fetchOptions = async (text = "") => {
-        if (!routeName || disabled) return;
+    const fetchOptions = useCallback(
+        async (text = "") => {
+            if (!routeName || disabled) return;
 
-        const res = await fetch(buildSearchUrl(routeName, routeParams, text));
-        if (!res.ok) {
-            setOptions([]);
-            return;
-        }
+            const res = await fetch(
+                route(routeName, { ...routeParams, q: text }),
+            );
+            if (!res.ok) {
+                setOptions([]);
+                return;
+            }
 
-        const data = await res.json();
-
-        setOptions(Array.isArray(data) ? data : []);
-    };
+            const data = await res.json();
+            setOptions(Array.isArray(data) ? data : []);
+        },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [routeName, disabled, routeParamsKey],
+    );
 
     // -----------------------------
     // EDIT MODE + VALUE HYDRATION
@@ -57,21 +48,12 @@ export default function SearchSelect({
     useEffect(() => {
         if (value === null || value === undefined) return;
 
-        if (isTyping && open) {
-            return;
-        }
-
-        // Keep the typed query visible while the user is actively searching.
         if (value === "") {
-            if (open && query.trim() !== "") {
-                return;
-            }
-
+            if (open && query.trim() !== "") return;
             setQuery("");
             return;
         }
 
-        // 1. match from current options (best case)
         const selected = [...defaultOptions, ...options].find(
             (o) => String(o.id) === String(value),
         );
@@ -80,18 +62,12 @@ export default function SearchSelect({
             setQuery(selected.name);
             return;
         }
-
-        // 2. fallback from backend label (edit mode)
         if (selectedLabel) {
             setQuery(selectedLabel);
             return;
         }
-
-        // 3. fallback if value is already a string (role_name, gender, etc.)
-        if (typeof value === "string") {
-            setQuery(value);
-        }
-    }, [value, selectedLabel, defaultOptions, options, open, query, isTyping]);
+        if (typeof value === "string") setQuery(value);
+    }, [value, selectedLabel, defaultOptions, options, open, query]);
 
     // -----------------------------
     // SEARCH (DEBOUNCED)
@@ -102,29 +78,26 @@ export default function SearchSelect({
         setOpen(true);
 
         clearTimeout(debounceRef.current);
-
         debounceRef.current = setTimeout(async () => {
             try {
                 if (!routeName) return;
 
-                const trimmedText = text.trim();
+                const trimmed = text.trim();
 
-                if (!trimmedText) {
-                    if (preloadOptions) {
-                        await fetchOptions("");
-                    } else {
-                        setOptions(defaultOptions);
-                    }
+                if (!trimmed) {
+                    preloadOptions
+                        ? await fetchOptions("")
+                        : setOptions(defaultOptions);
                     onChange?.({ id: "", name: "" });
                     return;
                 }
 
-                if (routeName && trimmedText.length < minSearchLength) {
+                if (trimmed.length < minSearchLength) {
                     setOptions(defaultOptions);
                     return;
                 }
 
-                await fetchOptions(trimmedText);
+                await fetchOptions(trimmed);
             } catch (err) {
                 console.error("SearchSelect error:", err);
             }
@@ -157,20 +130,18 @@ export default function SearchSelect({
     }, []);
 
     // -----------------------------
-    // SYNC OPTIONS ON PROP CHANGE
+    // PRELOAD ON MOUNT / PARAM CHANGE
     // -----------------------------
     useEffect(() => {
-        setOptions(defaultOptions);
-    }, [defaultOptions]);
-
-    useEffect(() => {
         if (!routeName || !preloadOptions || disabled) return;
-
         fetchOptions("");
-    }, [routeName, preloadOptions, disabled, routeParamsKey]);
+    }, [fetchOptions, routeName, preloadOptions, disabled]);
 
     return (
-        <div ref={wrapperRef} className={`relative w-full ${open ? "z-[60]" : ""}`}>
+        <div
+            ref={wrapperRef}
+            className={`relative w-full ${open ? "z-[60]" : ""}`}
+        >
             <input
                 value={query}
                 onChange={(e) =>
@@ -182,9 +153,7 @@ export default function SearchSelect({
                     if (!disabled) {
                         setIsTyping(false);
                         setOpen(true);
-                        if (preloadOptions && routeName) {
-                            fetchOptions("");
-                        }
+                        if (preloadOptions && routeName) fetchOptions("");
                     }
                 }}
                 placeholder={placeholder}
@@ -196,7 +165,7 @@ export default function SearchSelect({
 
             {open && (
                 <div className="absolute z-[70] mt-1 w-full bg-white border rounded-xl shadow-lg max-h-60 overflow-y-auto">
-                    {!Array.isArray(options) || options.length === 0 ? (
+                    {!options.length ? (
                         <div className="p-3 text-sm text-zinc-400">
                             No results found
                         </div>

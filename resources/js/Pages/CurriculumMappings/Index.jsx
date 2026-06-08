@@ -8,7 +8,6 @@ import Trow from "@/Components/Table/Trow";
 import Tdata from "@/Components/Table/Tdata";
 import formatDate from "@/utils/date";
 import SearchSelect from "@/Components/SearchSelect";
-import CourseWorkspaceTabs from "@/Pages/Courses/Partials/CourseWorkspaceTabs";
 
 export default function CurriculumMappingsIndex({
     curriculumMappings,
@@ -107,9 +106,6 @@ export default function CurriculumMappingsIndex({
             <Head title="Curriculum Mapping" />
 
             <div className="max-w-6xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
-                <div className="mb-6">
-                    <CourseWorkspaceTabs activeTab="mappings" />
-                </div>
                 <form
                     className="relative flex w-full gap-x-7"
                     onSubmit={submit}

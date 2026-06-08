@@ -1,6 +1,5 @@
 import { Head, useForm } from "@inertiajs/react";
 import Form from "./Form";
-import HostelWorkspaceTabs from "@/Pages/Hostels/Partials/HostelWorkspaceTabs";
 
 export default function Edit({ allocation, enrollments, hostels, rooms, beds }) {
     const form = useForm({
@@ -22,7 +21,6 @@ export default function Edit({ allocation, enrollments, hostels, rooms, beds }) 
         <>
             <Head title="Edit Hostel Allocation" />
             <div className="mx-auto max-w-6xl space-y-6">
-                <HostelWorkspaceTabs activeTab="view-allocations" />
                 <Form
                     form={{ ...form, onSubmit }}
                     title={`Edit Hostel Allocation${allocation.admission_number ? ` - ${allocation.admission_number}` : ""}`}

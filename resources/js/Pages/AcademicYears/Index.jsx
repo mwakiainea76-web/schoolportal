@@ -7,7 +7,6 @@ import Tbody from "@/Components/Table/Tbody";
 import Trow from "@/Components/Table/Trow";
 import Tdata from "@/Components/Table/Tdata";
 import formatDate from "@/utils/date";
-import AcademicCalendarWorkspaceTabs from "@/Pages/Academic/Partials/AcademicCalendarWorkspaceTabs";
 import AcademicYearCreate from "@/Pages/AcademicYears/Create";
 import AcademicYearEdit from "@/Pages/AcademicYears/Edit";
 
@@ -133,7 +132,6 @@ export default function Index({
 
             <div className="mx-auto w-full max-w-7xl animate-in fade-in slide-in-from-bottom-4 duration-700">
                 <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                    <AcademicCalendarWorkspaceTabs activeTab="years" />
                     <button
                         type="button"
                         onClick={() => setAddModalOpen(true)}

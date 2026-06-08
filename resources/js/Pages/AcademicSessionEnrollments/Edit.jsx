@@ -1,7 +1,6 @@
 import { useForm, Head, Link } from "@inertiajs/react";
 import InputLabel from "@/Components/InputLabel";
 import InputError from "@/Components/InputError";
-import AcademicCalendarWorkspaceTabs from "@/Pages/Academic/Partials/AcademicCalendarWorkspaceTabs";
 
 const STATUS_STYLES = {
     active: "bg-emerald-100 text-emerald-700",
@@ -28,11 +27,6 @@ export default function Edit({ enrollment, statuses }) {
             <Head title="Edit Enrollment" />
 
             <div className="mx-auto w-full max-w-5xl space-y-6">
-                <AcademicCalendarWorkspaceTabs
-                    activeTab="edit-enrollment"
-                    enrollmentId={enrollment.id}
-                />
-
                 {/* Header */}
                 <div>
                     <h1 className="text-2xl font-semibold text-gray-800">

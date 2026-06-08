@@ -111,10 +111,6 @@ export default function Publish({
             <Head title="Publish Marks" />
 
             <div className="mx-auto max-w-6xl space-y-8">
-                <MarksWorkspaceTabs
-                    activeTab="publish"
-                    canPublish={can_publish}
-                />
                 <div className="rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
                     <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
                         <div>
@@ -370,7 +366,6 @@ export default function Publish({
                         {blocker}
                     </div>
                 )}
-                ma
                 {marks.length > 0 && (
                     <div className="rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
                         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -544,6 +539,12 @@ export default function Publish({
                             </div>
                         )}
                     </div>
+                )}
+            </div>
+        </>
+    );
+}
+                </div>
                 )}
             </div>
         </>

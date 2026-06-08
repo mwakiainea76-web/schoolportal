@@ -35,11 +35,6 @@ export default function Add({
             <Head title="Add Marks" />
 
             <div className="mx-auto max-w-6xl space-y-8">
-                <MarksWorkspaceTabs
-                    activeTab="add"
-                    canPublish={can_publish}
-                />
-
                 <form
                     onSubmit={submit}
                     className="space-y-6 rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm"
@@ -193,6 +188,11 @@ export default function Add({
                         </button>
                     </div>
                 </form>
+            </div>
+        </>
+    );
+}
+            </form>
             </div>
         </>
     );

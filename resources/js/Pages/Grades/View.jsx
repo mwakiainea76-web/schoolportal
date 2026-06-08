@@ -92,8 +92,6 @@ export default function View({
             <Head title="View Marks" />
 
             <div className="mx-auto max-w-6xl space-y-8">
-                <MarksWorkspaceTabs activeTab="view" canPublish={can_publish} />
-
                 <div className="rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
                     <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
                         <div>
@@ -480,4 +478,6 @@ export default function View({
             </div>
         </>
     );
+}
+);
 }

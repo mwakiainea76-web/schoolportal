@@ -2,7 +2,6 @@ import { Head, Link, useForm } from "@inertiajs/react";
 import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import SearchSelect from "@/Components/SearchSelect";
-import TimetableWorkspaceTabs from "@/Pages/Academic/Timetables/Partials/TimetableWorkspaceTabs";
 
 export default function Create({
     departments,
@@ -99,13 +98,6 @@ export default function Create({
             <Head title="Create Timetable" />
 
             <div className="space-y-8">
-                <section>
-                    <TimetableWorkspaceTabs
-                        activeTab="add"
-                        addHref={route("academic.timetables.create")}
-                    />
-                </section>
-
                 <form
                     onSubmit={submit}
                     className="space-y-8 rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm"

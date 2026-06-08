@@ -2,7 +2,6 @@ import { useForm, Head, Link } from "@inertiajs/react";
 import InputLabel from "@/Components/InputLabel";
 import TextInput from "@/Components/TextInput";
 import InputError from "@/Components/InputError";
-import AcademicCalendarWorkspaceTabs from "@/Pages/Academic/Partials/AcademicCalendarWorkspaceTabs";
 
 export default function Create({ activeSession }) {
     const { data, setData, post, processing, errors } = useForm({
@@ -21,8 +20,6 @@ export default function Create({ activeSession }) {
             <Head title="Enroll Student in Session" />
 
             <div className="mx-auto max-w-2xl w-full">
-                <AcademicCalendarWorkspaceTabs activeTab="add-enrollment" />
-
                 <div className="mb-6">
                     <h1 className="text-2xl font-semibold text-gray-800">
                         Enroll Student in Academic Session

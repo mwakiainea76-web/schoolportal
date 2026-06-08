@@ -8,7 +8,7 @@ import Trow from "@/Components/Table/Trow";
 import Tdata from "@/Components/Table/Tdata";
 import formatDate from "@/utils/date";
 import SearchSelect from "@/Components/SearchSelect";
-import AccessWorkspaceTabs from "@/Pages/Roles/Partials/AccessWorkspaceTabs";
+
 export default function Index({ permissions }) {
     const [sortField, setSortField] = useState("name");
     const [sortDirection, setSortDirection] = useState("asc");
@@ -61,9 +61,6 @@ export default function Index({ permissions }) {
             <Head title="Permissions" />
 
             <div className="max-w-4xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
-                <div className="mb-6">
-                    <AccessWorkspaceTabs activeTab="permissions" />
-                </div>
                 {/* SEARCH */}
                 <form className="w-full flex gap-x-7 mb-4" onSubmit={submit}>
                     <SearchSelect

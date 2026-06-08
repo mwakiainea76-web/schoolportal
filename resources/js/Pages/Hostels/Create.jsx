@@ -1,6 +1,5 @@
 import { Head, useForm } from "@inertiajs/react";
 import Form from "./Form";
-import HostelWorkspaceTabs from "./Partials/HostelWorkspaceTabs";
 
 export default function Create() {
     const form = useForm({
@@ -23,7 +22,6 @@ export default function Create() {
         <>
             <Head title="Create Hostel" />
             <div className="mx-auto max-w-6xl space-y-6">
-                <HostelWorkspaceTabs activeTab="add-hostel" />
                 <Form
                     form={{ ...form, onSubmit }}
                     title="Create Hostel"

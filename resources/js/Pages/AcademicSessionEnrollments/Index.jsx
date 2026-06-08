@@ -6,7 +6,6 @@ import THdata from "@/Components/Table/THdata";
 import Tbody from "@/Components/Table/Tbody";
 import Trow from "@/Components/Table/Trow";
 import Tdata from "@/Components/Table/Tdata";
-import AcademicCalendarWorkspaceTabs from "@/Pages/Academic/Partials/AcademicCalendarWorkspaceTabs";
 import formatDate from "@/utils/date";
 import InputLabel from "@/Components/InputLabel";
 import SearchSelect from "@/Components/SearchSelect";
@@ -387,8 +386,6 @@ export default function Index({
             <Head title="Academic Session Enrollments" />
 
             <div className="max-w-7xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
-                <AcademicCalendarWorkspaceTabs activeTab="enrollments" />
-
                 <form
                     className="mb-4 rounded-lg border border-zinc-100 bg-white p-4 shadow-sm"
                     onSubmit={submit}

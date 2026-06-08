@@ -1,6 +1,5 @@
 import { Head, Link, router } from "@inertiajs/react";
 import SearchSelect from "@/Components/SearchSelect";
-import TimetableWorkspaceTabs from "@/Pages/Academic/Timetables/Partials/TimetableWorkspaceTabs";
 
 export default function Index({
     weekly_board,
@@ -144,11 +143,6 @@ export default function Index({
             <div className="space-y-8">
                 <section>
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <TimetableWorkspaceTabs
-                            activeTab="view"
-                            addHref={addTimetableHref}
-                            canAdd={canAddTimetable}
-                        />
                         {!is_trainer ? (
                             <Link
                                 href={route("lecture-rooms.index")}

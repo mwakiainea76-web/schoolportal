@@ -4,7 +4,6 @@ import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import TextInput from "@/Components/TextInput";
 import TextArea from "@/Components/TextArea";
-import DepartmentWorkspaceTabs from "@/Pages/Departments/Partials/DepartmentWorkspaceTabs";
 
 const Edit = ({ department, selectedHod = null }) => {
     const dept = department || null;
@@ -62,9 +61,6 @@ const Edit = ({ department, selectedHod = null }) => {
             <Head title="Edit Department" />
 
             <div className=" mx-auto w-full">
-                <div className="mb-6">
-                    <DepartmentWorkspaceTabs activeTab="departments" />
-                </div>
                 {/* ---------------- FORM ---------------- */}
                 <div className="bg-white rounded-lg border shadow overflow-hidden">
                     <div className="bg-slate-400 text-white text-center py-2 text-sm font-medium">

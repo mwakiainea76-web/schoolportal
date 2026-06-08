@@ -3,7 +3,6 @@ import { useEffect } from "react";
 import InputLabel from "@/Components/InputLabel";
 import TextInput from "@/Components/TextInput";
 import InputError from "@/Components/InputError";
-import AccessWorkspaceTabs from "@/Pages/Roles/Partials/AccessWorkspaceTabs";
 
 export default function EditPermission({ permission }) {
     const { data, setData, put, processing, errors } = useForm({
@@ -29,12 +28,6 @@ export default function EditPermission({ permission }) {
             <Head title="Edit Permission" />
 
             <div className="max-w-4xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
-                <div className="mb-6">
-                    <AccessWorkspaceTabs
-                        activeTab="edit-permission"
-                        permissionId={permission.id}
-                    />
-                </div>
                 <div className="bg-white rounded-lg border border-zinc-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden">
                     <form className="p-10 space-y-8" onSubmit={submit}>
                         {/* Permission Name */}

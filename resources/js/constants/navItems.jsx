@@ -63,6 +63,9 @@ const ACADEMIC_ACTIVE = [
     "academic.sessions.index",
     "academic.sessions.create",
     "academic.sessions.edit",
+    "academic.sessions.enrollments.index",
+    "academic.sessions.enrollments.create",
+    "academic.sessions.enrollments.edit",
 ];
 
 const COURSE_ACTIVE = [
@@ -72,9 +75,9 @@ const COURSE_ACTIVE = [
     "curriculums.index",
     "curriculums.create",
     "curriculums.edit",
-    "curriculum-mappings.index",
-    "curriculum-mappings.create",
-    "curriculum-mappings.edit",
+    "courses.curriculum-mappings.index",
+    "courses.curriculum-mappings.create",
+    "courses.curriculum-mappings.edit",
     "units.index",
     "units.create",
     "units.edit",
@@ -94,22 +97,98 @@ export const STAFF_NAV_ITEMS = [
         permissions: ["academic.sessions.view"],
         children: [
             {
-                routeName: "academic.timetables.index",
-                fallback: "/academic/timetables",
+                key: "timetables-group",
                 label: "Timetables",
-                permission: "academic.sessions.view",
+                children: [
+                    {
+                        routeName: "academic.timetables.index",
+                        fallback: "/academic/timetables",
+                        label: "View Timetable",
+                        permission: "academic.sessions.view",
+                    },
+                    {
+                        routeName: "academic.timetables.create",
+                        fallback: "/academic/timetables/create",
+                        label: "Add Timetable",
+                        permission: "academic.sessions.view", // Adjust permission if needed
+                    },
+                ],
             },
             {
-                routeName: "academic.marks.add.index",
-                fallback: "/academic/marks/add",
+                key: "assessments-group",
                 label: "Assessments",
-                permission: "academic.sessions.view",
+                children: [
+                    {
+                        routeName: "academic.marks.view.index",
+                        fallback: "/academic/marks/view",
+                        label: "View Marks",
+                        permission: "academic.sessions.view",
+                    },
+                    {
+                        routeName: "academic.marks.add.index",
+                        fallback: "/academic/marks/add",
+                        label: "Add Marks",
+                        permission: "academic.sessions.view",
+                    },
+                    {
+                        routeName: "academic.marks.marksheet.index",
+                        fallback: "/academic/marks/marksheet",
+                        label: "Marksheet",
+                        permission: "academic.sessions.view",
+                    },
+                    {
+                        routeName: "academic.marks.publish.index",
+                        fallback: "/academic/marks/publish",
+                        label: "Publish Marks",
+                        permission: "academic.sessions.view",
+                    },
+                ],
             },
             {
-                routeName: "courses.index",
-                fallback: "/courses",
+                key: "courses-group",
                 label: "Courses & Units",
-                activeRouteNames: COURSE_ACTIVE,
+                children: [
+                    {
+                        routeName: "courses.index",
+                        fallback: "/courses",
+                        label: "Courses",
+                    },
+                    {
+                        routeName: "courses.create",
+                        fallback: "/courses/create",
+                        label: "Add Course",
+                    },
+                    {
+                        routeName: "curriculums.index",
+                        fallback: "/curriculums",
+                        label: "Curriculums",
+                    },
+                    {
+                        routeName: "curriculums.create",
+                        fallback: "/curriculums/create",
+                        label: "Add Curriculum",
+                    },
+                    {
+                        routeName: "courses.curriculum-mappings.index",
+                        fallback: "/courses/curriculum-mappings",
+                        label: "Curriculum Mapping",
+                    },
+                    {
+                        routeName: "courses.curriculum-mappings.create",
+                        fallback: "/courses/curriculum-mappings/create",
+                        label: "Add Mapping",
+                    },
+                    {
+                        routeName: "units.index",
+                        fallback: "/units",
+                        label: "Units",
+                    },
+                    {
+                        routeName: "units.create",
+                        fallback: "/units/create",
+                        label: "Add Unit",
+                    },
+                ],
             },
         ],
     },
@@ -199,15 +278,35 @@ export const STAFF_NAV_ITEMS = [
                 label: "Academic Calendar",
                 children: [
                     {
+                        routeName: "academic.years.index",
+                        fallback: "/academic/years",
+                        label: "Academic Years",
+                    },
+                    {
+                        routeName: "academic.years.create",
+                        fallback: "/academic/years/create",
+                        label: "Add Year",
+                    },
+                    {
                         routeName: "academic.sessions.index",
                         fallback: "/academic/sessions",
                         label: "Sessions & Terms",
                         activeRouteNames: ACADEMIC_ACTIVE,
                     },
                     {
+                        routeName: "academic.sessions.create",
+                        fallback: "/academic/sessions/create",
+                        label: "Add Session",
+                    },
+                    {
                         routeName: "academic.sessions.enrollments.index",
                         fallback: "/academic/sessions/enrollments",
                         label: "Enrollments",
+                    },
+                    {
+                        routeName: "academic.sessions.enrollments.create",
+                        fallback: "/academic/sessions/enrollments/create",
+                        label: "Create Enrollment",
                     },
                 ],
             },
@@ -221,9 +320,30 @@ export const STAFF_NAV_ITEMS = [
                         label: "Lecture Rooms",
                     },
                     {
-                        routeName: "hostels.index",
-                        fallback: "/hostels",
+                        key: "hostels-group",
                         label: "Hostels",
+                        children: [
+                            {
+                                routeName: "hostels.index",
+                                fallback: "/hostels",
+                                label: "View Hostels",
+                            },
+                            {
+                                routeName: "hostels.create",
+                                fallback: "/hostels/create",
+                                label: "Add Hostel",
+                            },
+                            {
+                                routeName: "hostel-allocations.index",
+                                fallback: "/hostel-allocations",
+                                label: "View Allocations",
+                            },
+                            {
+                                routeName: "hostel-allocations.create",
+                                fallback: "/hostel-allocations/create",
+                                label: "Add Allocation",
+                            },
+                        ],
                     },
                 ],
             },
@@ -239,9 +359,20 @@ export const STAFF_NAV_ITEMS = [
         permissions: ["departments.view"],
         children: [
             {
-                routeName: "departments.index",
-                fallback: "/departments",
+                key: "departments-group",
                 label: "Departments",
+                children: [
+                    {
+                        routeName: "departments.index",
+                        fallback: "/departments",
+                        label: "View Departments",
+                    },
+                    {
+                        routeName: "departments.create",
+                        fallback: "/departments/create",
+                        label: "Add Department",
+                    },
+                ],
             },
             {
                 routeName: "exam.bodies.index",
@@ -274,8 +405,22 @@ export const STAFF_NAV_ITEMS = [
                     {
                         routeName: "roles.index",
                         fallback: "/roles",
-                        label: "Roles & Permissions",
-                        activeRouteNames: ["roles.index", "roles.create", "roles.edit", "permissions.index"],
+                        label: "Roles",
+                    },
+                    {
+                        routeName: "roles.create",
+                        fallback: "/roles/create",
+                        label: "Add Role",
+                    },
+                    {
+                        routeName: "permissions.index",
+                        fallback: "/permissions",
+                        label: "Permissions",
+                    },
+                    {
+                        routeName: "permissions.create",
+                        fallback: "/permissions/create",
+                        label: "Add Permission",
                     },
                 ],
             },

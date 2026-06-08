@@ -5,7 +5,6 @@ import InputLabel from "@/Components/InputLabel";
 import TextInput from "@/Components/TextInput";
 import TextArea from "@/Components/TextArea";
 import SearchSelect from "@/Components/SearchSelect";
-import CourseWorkspaceTabs from "@/Pages/Courses/Partials/CourseWorkspaceTabs";
 
 export default function Createcourse() {
     const { data, setData, post, processing, errors } = useForm({
@@ -40,9 +39,6 @@ export default function Createcourse() {
             <Head title="Add Course" />
 
             <div className=" mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
-                <div className="mb-6">
-                    <CourseWorkspaceTabs activeTab="add-course" />
-                </div>
                 <div className="bg-white rounded-lg border border-zinc-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden">
                     <form className="p-10 space-y-8" onSubmit={submit}>
                         <div className=" grid grid-cols-1 md:grid-cols-2  xl:grid-cols-3  gap-8">

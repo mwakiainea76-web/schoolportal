@@ -7,7 +7,6 @@ import THdata from "@/Components/Table/THdata";
 import Thead from "@/Components/Table/Thead";
 import Trow from "@/Components/Table/Trow";
 import formatDate from "@/utils/date";
-import HostelWorkspaceTabs from "@/Pages/Hostels/Partials/HostelWorkspaceTabs";
 
 const currency = (amount) =>
     `Ksh ${new Intl.NumberFormat("en-KE", {
@@ -49,8 +48,6 @@ export default function Index({ allocations, filters, hostels, sessions }) {
             <Head title="Hostel Allocations" />
 
             <div className="mx-auto w-full space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                <HostelWorkspaceTabs activeTab="view-allocations" />
-
                 <form
                     className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm"
                     onSubmit={submit}

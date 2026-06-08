@@ -6,7 +6,6 @@ import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import PrimaryButton from "@/Components/PrimaryButton";
 import Modal from "@/Components/Modal";
-import AcademicCalendarWorkspaceTabs from "@/Pages/Academic/Partials/AcademicCalendarWorkspaceTabs";
 
 export default function Edit({
     academic_session,
@@ -131,7 +130,6 @@ export default function Edit({
             />
 
             <div className="max-w-7xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
-                <AcademicCalendarWorkspaceTabs activeTab="sessions" />
                 {content}
             </div>
         </>

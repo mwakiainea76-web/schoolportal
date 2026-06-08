@@ -1,6 +1,5 @@
 import { Head, useForm } from "@inertiajs/react";
 import Form from "./Form";
-import HostelWorkspaceTabs from "@/Pages/Hostels/Partials/HostelWorkspaceTabs";
 
 const today = new Date().toISOString().split("T")[0];
 
@@ -24,7 +23,6 @@ export default function Create({ enrollments, hostels, rooms, beds }) {
         <>
             <Head title="Allocate Hostel Bed" />
             <div className="mx-auto max-w-6xl space-y-6">
-                <HostelWorkspaceTabs activeTab="add-allocation" />
                 <Form
                     form={{ ...form, onSubmit }}
                     title="Allocate Hostel Bed"

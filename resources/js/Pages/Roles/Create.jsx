@@ -4,7 +4,6 @@ import InputLabel from "@/Components/InputLabel";
 import TextInput from "@/Components/TextInput";
 import InputError from "@/Components/InputError";
 import SearchSelect from "@/Components/SearchSelect";
-import AccessWorkspaceTabs from "@/Pages/Roles/Partials/AccessWorkspaceTabs";
 
 export default function Create() {
     const { data, setData, post, processing, errors } = useForm({
@@ -22,9 +21,6 @@ export default function Create() {
             <Head title="Create Role" />
 
             <div className=" mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
-                <div className="mb-6">
-                    <AccessWorkspaceTabs activeTab="add-role" />
-                </div>
                 <div className="bg-white rounded-lg border border-zinc-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden">
                     <form className="p-10 space-y-8" onSubmit={submit}>
                         {/* ROLE NAME */}

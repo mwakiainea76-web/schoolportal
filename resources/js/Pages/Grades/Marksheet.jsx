@@ -109,11 +109,6 @@ export default function Marksheet({
             <Head title="FA Marksheet" />
 
             <div className="mx-auto max-w-7xl space-y-8">
-                <MarksWorkspaceTabs
-                    activeTab="marksheet"
-                    canPublish={can_publish}
-                />
-
                 <form
                     onSubmit={loadMarksheet}
                     className="space-y-6 rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm"
@@ -523,6 +518,11 @@ export default function Marksheet({
                             ) : null}
                         </div>
                     </div>
+                ) : null}
+            </div>
+        </>
+    );
+}
                 ) : null}
             </div>
         </>
