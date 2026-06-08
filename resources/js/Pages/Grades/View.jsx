@@ -2,7 +2,6 @@ import { Head, router, useForm } from "@inertiajs/react";
 import InputLabel from "@/Components/InputLabel";
 import InputError from "@/Components/InputError";
 import SearchSelect from "@/Components/SearchSelect";
-import MarksWorkspaceTabs from "@/Pages/Grades/Partials/MarksWorkspaceTabs";
 
 export default function View({
     filters,
@@ -478,6 +477,4 @@ export default function View({
             </div>
         </>
     );
-}
-);
 }

@@ -2,7 +2,6 @@ import { Head, router, useForm } from "@inertiajs/react";
 import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import SearchSelect from "@/Components/SearchSelect";
-import MarksWorkspaceTabs from "@/Pages/Grades/Partials/MarksWorkspaceTabs";
 import formatDate from "@/utils/date";
 
 export default function Marksheet({
@@ -518,11 +517,6 @@ export default function Marksheet({
                             ) : null}
                         </div>
                     </div>
-                ) : null}
-            </div>
-        </>
-    );
-}
                 ) : null}
             </div>
         </>

@@ -2,7 +2,6 @@ import { Head, Link, useForm } from "@inertiajs/react";
 import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import SearchSelect from "@/Components/SearchSelect";
-import MarksWorkspaceTabs from "@/Pages/Grades/Partials/MarksWorkspaceTabs";
 
 export default function Add({
     filters,
@@ -188,11 +187,6 @@ export default function Add({
                         </button>
                     </div>
                 </form>
-            </div>
-        </>
-    );
-}
-            </form>
             </div>
         </>
     );
