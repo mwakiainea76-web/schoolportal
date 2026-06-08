@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { Head, Link, router } from "@inertiajs/react";
 
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import Table from "@/Components/Table/Table";
 import Thead from "@/Components/Table/Thead";
 import THdata from "@/Components/Table/THdata";
@@ -86,7 +85,7 @@ export default function FeeAssignmentsIndex({ assignments, filters }) {
         return [courseName, certificationName].filter(Boolean).join(" - ");
     };
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Fee Assignments" />
 
             <div className="mx-auto w-full max-w-7xl animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -251,6 +250,6 @@ export default function FeeAssignmentsIndex({ assignments, filters }) {
                     </Tbody>
                 </Table>
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 }

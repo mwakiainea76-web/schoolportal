@@ -1,6 +1,5 @@
 import { Head, Link, router } from "@inertiajs/react";
 import { useState } from "react";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 
 import Table from "@/Components/Table/Table";
 import Thead from "@/Components/Table/Thead";
@@ -87,7 +86,7 @@ export default function InvoiceIndex({
     };
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Student Invoices" />
 
             <div className="mx-auto w-full space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -394,6 +393,6 @@ export default function InvoiceIndex({
                     </Table>
                 </div>
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 }

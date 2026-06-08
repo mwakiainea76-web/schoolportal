@@ -1,6 +1,5 @@
 import { Head, Link, router } from "@inertiajs/react";
 import { useState } from "react";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 
 import Table from "@/Components/Table/Table";
 import Thead from "@/Components/Table/Thead";
@@ -34,7 +33,7 @@ export default function StaffIndex({ staffs }) {
     };
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Staff Management" />
 
             <div className="mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -126,6 +125,6 @@ export default function StaffIndex({ staffs }) {
                     </Tbody>
                 </Table>
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 }

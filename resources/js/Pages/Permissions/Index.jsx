@@ -1,6 +1,5 @@
 import { Head, Link, router } from "@inertiajs/react";
 import { useState } from "react";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import Table from "@/Components/Table/Table";
 import Thead from "@/Components/Table/Thead";
 import THdata from "@/Components/Table/THdata";
@@ -58,7 +57,7 @@ export default function Index({ permissions }) {
     };
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Permissions" />
 
             <div className="max-w-4xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -146,6 +145,6 @@ export default function Index({ permissions }) {
                     </Tbody>
                 </Table>
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 }

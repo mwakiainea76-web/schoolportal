@@ -1,5 +1,4 @@
 import { Head, Link, useForm } from "@inertiajs/react";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import SearchSelect from "@/Components/SearchSelect";
@@ -32,7 +31,7 @@ export default function Add({
     };
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Add Marks" />
 
             <div className="mx-auto max-w-6xl space-y-8">
@@ -180,7 +179,7 @@ export default function Add({
 
                     <div className="flex items-center justify-between pt-2">
                         <Link
-                            href={route("staff.dashboard")}
+                            href={route("dashboard")}
                             className="rounded-xl border border-zinc-200 px-5 py-3 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
                         >
                             Cancel
@@ -195,6 +194,6 @@ export default function Add({
                     </div>
                 </form>
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 }

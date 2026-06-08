@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Head, Link, useForm } from "@inertiajs/react";
 
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import LoadingSpinner from "@/Components/LoadingSpinner";
@@ -160,7 +159,7 @@ export default function BulkAssign({ feePlans, academicYear, departments }) {
     };
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Bulk Fee Assignment" />
 
             <div className="mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -495,7 +494,7 @@ export default function BulkAssign({ feePlans, academicYear, departments }) {
                     </form>
                 </div>
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 }
 

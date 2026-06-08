@@ -1,5 +1,4 @@
 import { Head, Link } from "@inertiajs/react";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import formatDate from "@/utils/date";
 import { ArrowRight, FileText } from "lucide-react";
 
@@ -20,7 +19,7 @@ export default function Index({ statements }) {
     const rows = statements?.data || [];
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="My Fee Statements" />
 
             <div className="mx-auto w-full max-w-7xl space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -188,7 +187,7 @@ export default function Index({ statements }) {
                     ) : null}
                 </section>
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 }
 

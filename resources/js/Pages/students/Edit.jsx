@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Head, Link, useForm } from "@inertiajs/react";
 import axios from "axios";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import TextInput from "@/Components/TextInput";
 import InputLabel from "@/Components/InputLabel";
 import InputError from "@/Components/InputError";
@@ -253,7 +252,7 @@ export default function EditStudent({
     };
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Edit Student" />
 
             <div className="mx-auto w-full">
@@ -779,6 +778,6 @@ export default function EditStudent({
                     </div>
                 </div>
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 }

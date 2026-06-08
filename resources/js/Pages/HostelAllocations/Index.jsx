@@ -1,6 +1,5 @@
 import { Head, Link, router } from "@inertiajs/react";
 import { useState } from "react";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import Table from "@/Components/Table/Table";
 import Tbody from "@/Components/Table/Tbody";
 import Tdata from "@/Components/Table/Tdata";
@@ -46,7 +45,7 @@ export default function Index({ allocations, filters, hostels, sessions }) {
     };
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Hostel Allocations" />
 
             <div className="mx-auto w-full space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -184,6 +183,6 @@ export default function Index({ allocations, filters, hostels, sessions }) {
                     </Tbody>
                 </Table>
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 }

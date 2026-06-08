@@ -5,7 +5,6 @@ import InputLabel from "@/Components/InputLabel";
 import TextInput from "@/Components/TextInput";
 import TextArea from "@/Components/TextArea";
 import SearchSelect from "@/Components/SearchSelect";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 
 const Edit = ({ certification_level, exam_bodies, selectedExamBody }) => {
     const cert = certification_level || null;
@@ -32,7 +31,7 @@ const Edit = ({ certification_level, exam_bodies, selectedExamBody }) => {
     };
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Edit Certification Level" />
 
             <div className="mx-auto w-full">
@@ -171,7 +170,7 @@ const Edit = ({ certification_level, exam_bodies, selectedExamBody }) => {
                     </form>
                 </div>
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 };
 

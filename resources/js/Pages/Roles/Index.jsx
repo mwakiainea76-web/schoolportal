@@ -1,6 +1,5 @@
 import { Head, router, useForm } from "@inertiajs/react";
 import { useEffect, useMemo, useState } from "react";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 
 import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
@@ -244,7 +243,7 @@ export default function RolesIndex({
     };
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Roles & Permissions" />
 
             <div className="mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -632,6 +631,6 @@ export default function RolesIndex({
                     </div>
                 </form>
             </Modal>
-        </AuthenticatedLayout>
+        </>
     );
 }

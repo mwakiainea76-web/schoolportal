@@ -1,5 +1,4 @@
 import { useForm, Head, Link } from "@inertiajs/react";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import InputLabel from "@/Components/InputLabel";
 import InputError from "@/Components/InputError";
 import AcademicCalendarWorkspaceTabs from "@/Pages/Academic/Partials/AcademicCalendarWorkspaceTabs";
@@ -25,7 +24,7 @@ export default function Edit({ enrollment, statuses }) {
     };
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Edit Enrollment" />
 
             <div className="mx-auto w-full max-w-5xl space-y-6">
@@ -136,6 +135,6 @@ export default function Edit({ enrollment, statuses }) {
                     </form>
                 </div>
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 }

@@ -5,7 +5,6 @@ import InputLabel from "@/Components/InputLabel";
 import TextInput from "@/Components/TextInput";
 import TextArea from "@/Components/TextArea";
 import SearchSelect from "@/Components/SearchSelect";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import CourseWorkspaceTabs from "@/Pages/Courses/Partials/CourseWorkspaceTabs";
 
 export default function Createcourse() {
@@ -37,7 +36,7 @@ export default function Createcourse() {
     };
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Add Course" />
 
             <div className=" mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -270,6 +269,6 @@ export default function Createcourse() {
                     </form>
                 </div>
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 }

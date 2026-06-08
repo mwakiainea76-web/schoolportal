@@ -1,5 +1,4 @@
 import { Head, router, useForm } from "@inertiajs/react";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import InputLabel from "@/Components/InputLabel";
 import InputError from "@/Components/InputError";
 import SearchSelect from "@/Components/SearchSelect";
@@ -89,7 +88,7 @@ export default function View({
     };
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="View Marks" />
 
             <div className="mx-auto max-w-6xl space-y-8">
@@ -479,6 +478,6 @@ export default function View({
                     </div>
                 )}
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 }

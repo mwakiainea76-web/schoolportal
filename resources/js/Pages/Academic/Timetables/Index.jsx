@@ -1,5 +1,4 @@
 import { Head, Link, router } from "@inertiajs/react";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import SearchSelect from "@/Components/SearchSelect";
 import TimetableWorkspaceTabs from "@/Pages/Academic/Timetables/Partials/TimetableWorkspaceTabs";
 
@@ -103,7 +102,7 @@ export default function Index({
         : "grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6";
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Department Timetable" />
             <style>{`
                 @media print {
@@ -503,6 +502,6 @@ export default function Index({
                     )}
                 </section>
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 }

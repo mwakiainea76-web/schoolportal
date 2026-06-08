@@ -17,8 +17,11 @@ class AcademicYearFactory extends Factory
      */
     public function definition(): array
     {
+        $year = $this->faker->unique()->year;
+        $academicYear = $year . '/' . ($year + 1);
         return [
-             'academic_year' => $this->faker->unique()->year . '/' . ($this->faker->unique()->year + 1),
+            'academic_year' => $academicYear,
+            'label' => 'Academic Year ' . $academicYear,
             'start_date' => $this->faker->date(),
             'end_date' => $this->faker->date(),
             'is_active' => $this->faker->boolean(20), // 20% chance of being active

@@ -1,6 +1,5 @@
 import { Head, Link, router, useForm } from "@inertiajs/react";
 import { useState } from "react";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import LoadingSpinner from "@/Components/LoadingSpinner";
 
 export default function BulkOperations({ enrollments, students }) {
@@ -145,7 +144,7 @@ export default function BulkOperations({ enrollments, students }) {
     };
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Bulk Operations" />
 
             <div className="mx-auto w-full space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -495,7 +494,7 @@ export default function BulkOperations({ enrollments, students }) {
                     )}
                 </div>
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 }
 

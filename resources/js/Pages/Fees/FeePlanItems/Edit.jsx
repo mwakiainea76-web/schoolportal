@@ -2,7 +2,6 @@ import { Head, Link, useForm } from "@inertiajs/react";
 import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import TextInput from "@/Components/TextInput";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import SearchSelect from "@/Components/SearchSelect";
 
 export default function Edit({ item, feePlans }) {
@@ -21,7 +20,7 @@ export default function Edit({ item, feePlans }) {
     };
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Edit Fee Plan Item" />
 
             <div className="mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -105,6 +104,6 @@ export default function Edit({ item, feePlans }) {
                     </form>
                 </div>
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 }

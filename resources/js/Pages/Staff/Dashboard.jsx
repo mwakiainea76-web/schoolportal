@@ -1,5 +1,4 @@
 import { Head, Link } from "@inertiajs/react";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import {
     BookMarked,
     CalendarDays,
@@ -98,7 +97,7 @@ export default function StaffDashboard({ dashboard }) {
     ];
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Staff Dashboard" />
 
             <div className="animate-in fade-in slide-in-from-bottom-2 duration-700">
@@ -221,6 +220,6 @@ export default function StaffDashboard({ dashboard }) {
                     </div>
                 </div>
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 }

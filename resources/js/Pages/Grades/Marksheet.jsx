@@ -1,5 +1,4 @@
 import { Head, router, useForm } from "@inertiajs/react";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import SearchSelect from "@/Components/SearchSelect";
@@ -106,7 +105,7 @@ export default function Marksheet({
     };
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="FA Marksheet" />
 
             <div className="mx-auto max-w-7xl space-y-8">
@@ -526,6 +525,6 @@ export default function Marksheet({
                     </div>
                 ) : null}
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 }

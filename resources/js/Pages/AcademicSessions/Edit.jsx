@@ -1,5 +1,4 @@
 import React from "react";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head, useForm, Link } from "@inertiajs/react";
 import { useEffect } from "react";
 import TextInput from "@/Components/TextInput";
@@ -126,7 +125,7 @@ export default function Edit({
     }
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head
                 title={`Edit Academic Session - ${academic_session?.session_No}`}
             />
@@ -135,6 +134,6 @@ export default function Edit({
                 <AcademicCalendarWorkspaceTabs activeTab="sessions" />
                 {content}
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 }

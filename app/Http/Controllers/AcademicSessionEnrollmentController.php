@@ -23,18 +23,56 @@ class AcademicSessionEnrollmentController extends Controller
 
     public function index(Request $request)
     {
+        $filters = $request->only([
+            'course_id',
+            'curriculum_id',
+            'academic_year_id',
+            'academic_session_id',
+            'department_id',
+            'year_of_study',
+            'admission_number',
+            'status',
+        ]);
+
         $enrollments = AcademicSessionEnrollment::with([
-            'courseEnrollment.student',
+            'courseEnrollment.student.department',
             'courseEnrollment.curriculumMapping.curriculum',
             'courseEnrollment.curriculumMapping.course',
             'academicSession.academicYear',
         ])
-            ->when($request->search, function ($q) use ($request) {
-                $q->whereHas('courseEnrollment.student', function ($q) use ($request) {
-                    $q->where('admission_number', 'like', "%{$request->search}%")
-                        ->orWhere('first_name', 'like', "%{$request->search}%")
-                        ->orWhere('last_name', 'like', "%{$request->search}%");
+            ->when($filters['admission_number'] ?? null, function ($q, $admissionNumber) {
+                $q->whereHas('courseEnrollment.student', function ($q) use ($admissionNumber) {
+                    $q->where('admission_number', 'like', "%{$admissionNumber}%");
                 });
+            })
+            ->when($filters['department_id'] ?? null, function ($q, $departmentId) {
+                $q->whereHas('courseEnrollment.student', function ($q) use ($departmentId) {
+                    $q->where('department_id', $departmentId);
+                });
+            })
+            ->when($filters['course_id'] ?? null, function ($q, $courseId) {
+                $q->whereHas('courseEnrollment', function ($q) use ($courseId) {
+                    $q->where('course_id', $courseId)
+                        ->orWhereHas('curriculumMapping', fn ($mq) => $mq->where('course_id', $courseId));
+                });
+            })
+            ->when($filters['curriculum_id'] ?? null, function ($q, $curriculumId) {
+                $q->whereHas('courseEnrollment', function ($q) use ($curriculumId) {
+                    $q->where('curriculum_id', $curriculumId)
+                        ->orWhereHas('curriculumMapping', fn ($mq) => $mq->where('curriculum_id', $curriculumId));
+                });
+            })
+            ->when($filters['academic_year_id'] ?? null, function ($q, $yearId) {
+                $q->whereHas('academicSession', fn ($sq) => $sq->where('academic_year_id', $yearId));
+            })
+            ->when($filters['academic_session_id'] ?? null, function ($q, $sessionId) {
+                $q->where('academic_session_id', $sessionId);
+            })
+            ->when($filters['year_of_study'] ?? null, function ($q, $year) {
+                $q->where('year_of_study', $year);
+            })
+            ->when($filters['status'] ?? null, function ($q, $status) {
+                $q->where('status', $status);
             })
             ->orderBy($request->sort ?? 'created_at', $request->direction ?? 'desc')
             ->paginate(15)
@@ -44,6 +82,7 @@ class AcademicSessionEnrollmentController extends Controller
             'id' => $e->id,
             'student_name' => $e->courseEnrollment?->student?->full_name ?? 'N/A',
             'admission_number' => $e->courseEnrollment?->student?->admission_number ?? 'N/A',
+            'department' => $e->courseEnrollment?->student?->department?->name ?? 'N/A',
             'session' => $e->academicSession
                 ? "{$e->academicSession->academicYear->academic_year} - Session {$e->academicSession->session_No}"
                 : 'N/A',
@@ -57,8 +96,47 @@ class AcademicSessionEnrollmentController extends Controller
 
         return Inertia::render('AcademicSessionEnrollments/Index', [
             'enrollments' => $mapped,
+            'filters' => (object) $filters,
+            'selectedFilters' => $this->selectedFilters($filters),
             'statuses' => ['active', 'completed', 'dropped', 'transferred', 'suspended'],
         ]);
+    }
+
+    protected function selectedFilters(array $filters): array
+    {
+        $course = ! empty($filters['course_id'])
+            ? \App\Models\Course::select('id', 'name', 'code', 'certification_level_id')
+                ->with('certificationLevel:id,name')
+                ->find($filters['course_id'])
+            : null;
+
+        $curriculum = ! empty($filters['curriculum_id'])
+            ? \App\Models\Curriculum::select('id', 'name')->find($filters['curriculum_id'])
+            : null;
+
+        $academicYear = ! empty($filters['academic_year_id'])
+            ? \App\Models\AcademicYear::select('id', 'academic_year', 'label')->find($filters['academic_year_id'])
+            : null;
+
+        $academicSession = ! empty($filters['academic_session_id'])
+            ? AcademicSession::with('academicYear:id,academic_year,label')
+                ->select('id', 'academic_year_id', 'session_number', 'session_No', 'label')
+                ->find($filters['academic_session_id'])
+            : null;
+
+        $department = ! empty($filters['department_id'])
+            ? \App\Models\Department::select('id', 'name', 'code')->find($filters['department_id'])
+            : null;
+
+        return [
+            'course' => $course?->display_name ?? $course?->name,
+            'curriculum' => $curriculum?->name,
+            'academic_year' => $academicYear?->name,
+            'academic_session' => $academicSession?->display_name,
+            'department' => $department ? trim($department->code . ' - ' . $department->name, ' -') : null,
+            'year_of_study' => $filters['year_of_study'] ?? null,
+            'admission_number' => $filters['admission_number'] ?? null,
+        ];
     }
 
     public function create()

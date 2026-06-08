@@ -1,6 +1,5 @@
 import { Head, router } from "@inertiajs/react";
 import { useMemo, useState } from "react";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import SearchSelect from "@/Components/SearchSelect";
 import formatDate from "@/utils/date";
 import AcademicCalendarWorkspaceTabs from "@/Pages/Academic/Partials/AcademicCalendarWorkspaceTabs";
@@ -196,7 +195,7 @@ export default function Index({
     };
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Academic Sessions" />
 
             <div className="mx-auto w-full max-w-7xl animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -570,6 +569,6 @@ export default function Index({
                     academic_session={editingSession}
                 />
             ) : null}
-        </AuthenticatedLayout>
+        </>
     );
 }

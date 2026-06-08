@@ -30,7 +30,6 @@ class courseFactory extends Factory
             'description' => $this->faker->sentence,
             'duration_in_months' => 12,
             'initials' => $this->faker->unique()->lexify('CRS???'),
-            'is_active' => $this->faker->boolean(20), // 20% chance of being active
             'certification_level_id' => $certificationLevel,
             'department_id' => Department::factory(),
         ];

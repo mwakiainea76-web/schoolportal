@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { Head, router } from "@inertiajs/react";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import Table from "@/Components/Table/Table";
 import Thead from "@/Components/Table/Thead";
 import THdata from "@/Components/Table/THdata";
@@ -73,7 +72,7 @@ export default function Index({
           : 0;
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Fee Plan Items" />
             <div className="mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
                 {/* Fee Plan Header (when viewing items for a specific fee plan) */}
@@ -201,6 +200,6 @@ export default function Index({
                     />
                 </Modal>
             )}
-        </AuthenticatedLayout>
+        </>
     );
 }

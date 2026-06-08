@@ -1,4 +1,3 @@
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head, router, Link } from "@inertiajs/react";
 import { useState } from "react";
 
@@ -44,7 +43,7 @@ export default function EditRolePermissions({
     };
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Edit Role Permissions" />
 
             <div className="mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -142,6 +141,6 @@ export default function EditRolePermissions({
                     </div>
                 </div>
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 }

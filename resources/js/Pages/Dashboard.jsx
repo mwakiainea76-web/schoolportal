@@ -1248,17 +1248,17 @@ export default function Dashboard({ dashboard }) {
 
     if (dashboard?.type === "student") {
         return (
-            <AuthenticatedLayout>
+            <>
                 <Head title="Dashboard" />
                 <StudentDashboard dashboard={dashboard} fullName={fullName} />
-            </AuthenticatedLayout>
+            </>
         );
     }
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Dashboard" />
             <StaffDashboard dashboard={dashboard} />
-        </AuthenticatedLayout>
+        </>
     );
 }

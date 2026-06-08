@@ -25,6 +25,7 @@ class CurriculumFactory extends Factory
             'is_active' => true,
             'start_date' => now(),
             'end_date' => now()->addMonths(6),
+            'created_by' => \App\Models\User::factory(),
         ];
     }
 }

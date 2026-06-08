@@ -12,7 +12,6 @@ use App\Models\Unit;
 use App\Models\User;
 use App\Services\FeeAssignmentService;
 use App\Services\StudentAcademicContextService;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -25,12 +24,25 @@ class DashboardController extends Controller
         protected StudentAcademicContextService $studentAcademicContextService
     ) {}
 
-    public function redirect(Request $request): RedirectResponse
+    /**
+     * Universal Dashboard Entry Point
+     */
+    public function index(Request $request): Response
     {
-        return redirect()->route($this->dashboardRouteFor($request->user()));
+        $user = $request->user();
+        $user?->loadMissing('roles:id,name');
+        $roles = $user->roles->pluck('name')->map(fn($role) => strtolower($role));
+
+        // Logic for Student Dashboard
+        if ($roles->contains('student')) {
+            return $this->studentDashboard($request);
+        }
+
+        // Logic for Staff/Admin/Trainer Dashboard
+        return $this->staffDashboard($request);
     }
 
-    public function studentDashboard(Request $request): Response
+    protected function studentDashboard(Request $request): Response
     {
         $user = $request->user();
         $student = $user?->student;
@@ -42,10 +54,7 @@ class DashboardController extends Controller
             ->currentCourseEnrollmentForStudent($student);
 
         $curriculumMapping = $courseEnrollment?->curriculumMapping;
-        $curriculumId = $courseEnrollment?->curriculum_id
-            ?? $curriculumMapping?->curriculum_id;
 
-        // ── Active session: select only columns actually used ────────────────
         $activeSession = AcademicSession::select(
             'id', 'academic_year_id', 'session_number', 'session_No', 'label', 'is_active'
         )
@@ -55,7 +64,6 @@ class DashboardController extends Controller
         $activeSessionNumber = $activeSession?->session_number ?? $activeSession?->session_No;
         $activeYearOfStudy = $activeSessionNumber ? (int) ceil($activeSessionNumber / 3) : null;
 
-        // ── Fee assignment & current enrollment (unchanged logic) ────────────
         $activeFeeAssignment = ($activeSession && $courseEnrollment)
             ? $this->feeAssignmentService->resolveActiveAssignment(
                 $activeSession->academic_year_id,
@@ -78,13 +86,10 @@ class DashboardController extends Controller
             ?? $latestSessionEnrollment?->module
             ?? $student?->current_module;
 
-        // ── Module units ─────────────────────────────────────────────────────
         $moduleUnits = ($courseEnrollment && $currentModule)
             ? Unit::query()
                 ->where('curriculum_mapping_id', $courseEnrollment->curriculum_mapping_id)
-                ->where(function ($query) use ($currentModule) {
-                    $query->where('module_taught', $currentModule);
-                })
+                ->where('module_taught', $currentModule)
                 ->orderBy('id')
                 ->get()
             : collect();
@@ -101,7 +106,6 @@ class DashboardController extends Controller
                 ->count()
             : 0;
 
-        // ── Finance: no relation needed, columns are on the invoice itself ───
         $invoices = $student
             ? StudentInvoice::query()
                 ->select('id', 'student_id', 'status', 'amount_due', 'paid_amount', 'balance_due', 'due_date')
@@ -116,7 +120,7 @@ class DashboardController extends Controller
             ->sortBy('due_date')
             ->first();
 
-        return Inertia::render('Dashboard/StudentDashboard', [
+        return Inertia::render('Dashboard', [
             'dashboard' => [
                 'type' => 'student',
                 'student' => $student ? [
@@ -124,27 +128,22 @@ class DashboardController extends Controller
                     'status' => $student->enrollment_status,
                     'current_module' => $student->current_module,
                     'fee_discount_percentage' => $student->fee_discount_percentage,
-                    // admission_date removed — not read by frontend
                 ] : null,
                 'course' => [
-                    'name' => $courseEnrollment?->course?->name
-                        ?? $curriculumMapping?->course?->name,
-                    'version' => $courseEnrollment?->curriculum?->name
-                        ?? $curriculumMapping?->curriculum?->name,
+                    'name' => $courseEnrollment?->course?->name ?? $curriculumMapping?->course?->name,
+                    'version' => $courseEnrollment?->curriculum?->name ?? $curriculumMapping?->curriculum?->name,
                 ],
                 'module_units' => $moduleUnits->map(fn (Unit $unit) => [
                     'id' => $unit->id,
                     'code' => $unit->code,
                     'name' => $unit->name,
                     'credit_factor' => $unit->credit_factor,
-                    // training_hours removed — not read by frontend
                     'is_registered' => $registeredUnitIds->contains($unit->id),
                 ])->values(),
                 'all_units_count' => $allUnitsCount,
                 'latest_session' => $latestSessionEnrollment ? [
                     'session' => $latestSessionEnrollment->academicSession?->display_name,
                     'year_of_study' => $latestSessionEnrollment->year_of_study,
-                    // module, status removed — not read by frontend
                 ] : null,
                 'active_session' => $activeSession?->display_name,
                 'session_registration' => [
@@ -169,48 +168,23 @@ class DashboardController extends Controller
                     'is_complete' => $moduleUnits->isNotEmpty() && $registeredUnitIds->count() === $moduleUnits->count(),
                 ],
                 'finance' => [
-                    // total_due removed — not read by frontend
                     'total_paid' => round((float) $invoices->sum('paid_amount'), 2),
                     'outstanding_balance' => round((float) $invoices->sum('balance_due'), 2),
                     'next_invoice_due_date' => optional($nextInvoice?->due_date)->toDateString(),
-                    // next_invoice_status removed — not read by frontend
                 ],
             ],
         ]);
     }
 
-    public function staffDashboard(Request $request): Response
-    {
-        return Inertia::render('Dashboard/AdminDashboard', [
-            'dashboard' => $this->staffDashboardPayload($request),
-        ]);
-    }
-
-    public function trainerDashboard(Request $request): Response
-    {
-        return Inertia::render('Dashboard/TrainerDashboard', [
-            'dashboard' => $this->staffDashboardPayload($request),
-        ]);
-    }
-
-    protected function staffDashboardPayload(Request $request): array
+    protected function staffDashboard(Request $request): Response
     {
         $user = $request->user();
-        $user?->loadMissing([
-            'roles:id,name',
-        ]);
+        $user?->loadMissing(['roles:id,name']);
 
         $staff = $user ? $this->staffSummaryForUser($user->id) : null;
-        $roleNames = $user?->roles
-            ?->pluck('name')
-            ->filter()
-            ->values()
-            ->all() ?? [];
+        $roleNames = $user?->roles->pluck('name')->map(fn($role) => strtolower($role))->all() ?? [];
         $isTrainer = in_array('trainer', $roleNames, true);
-        $shouldLoadInstitutionStats = in_array($request->route()?->getName(), [
-            'admin.dashboard',
-            'staff.dashboard',
-        ], true);
+        
         $activeSession = $this->activeSessionSummary();
 
         $currentTimetableCount = $isTrainer && $staff
@@ -227,27 +201,29 @@ class DashboardController extends Controller
                 ->count()
             : 0;
 
-        return [
-            'type' => 'staff',
-            'staff_profile' => [
-                'name' => $user?->staff?->full_name,
-                'staff_number' => $staff?->staff_number,
-                'designation' => $staff?->designation,
-                'department_name' => $staff?->department_name,
-                'roles' => $roleNames,
+        return Inertia::render('Dashboard', [
+            'dashboard' => [
+                'type' => 'staff',
+                'staff_profile' => [
+                    'name' => $user?->staff?->full_name,
+                    'staff_number' => $staff?->staff_number,
+                    'designation' => $staff?->designation,
+                    'department_name' => $staff?->department_name,
+                    'roles' => $roleNames,
+                ],
+                'trainer_workspace' => [
+                    'active_session' => $activeSession,
+                    'department_id' => $staff?->department_id ? (string) $staff->department_id : '',
+                    'trainer_staff_id' => $staff?->id ? (string) $staff->id : '',
+                    'timetable_sessions_count' => $currentTimetableCount,
+                    'marks_recorded_count' => $recordedMarksCount,
+                    'can_view_timetable' => $isTrainer && (bool) ($staff?->id && $staff?->department_id),
+                    'can_grade_students' => $isTrainer && (bool) $staff?->id,
+                ],
+                'stats' => $this->institutionStats(),
+                'analytics' => null,
             ],
-            'trainer_workspace' => [
-                'active_session' => $activeSession,
-                'department_id' => $staff?->department_id ? (string) $staff->department_id : '',
-                'trainer_staff_id' => $staff?->id ? (string) $staff->id : '',
-                'timetable_sessions_count' => $currentTimetableCount,
-                'marks_recorded_count' => $recordedMarksCount,
-                'can_view_timetable' => $isTrainer && (bool) ($staff?->id && $staff?->department_id),
-                'can_grade_students' => $isTrainer && (bool) $staff?->id,
-            ],
-            'stats' => $shouldLoadInstitutionStats ? $this->institutionStats() : [],
-            'analytics' => null,
-        ];
+        ]);
     }
 
     protected function activeSessionSummary(): ?array
@@ -274,9 +250,7 @@ class DashboardController extends Controller
 
         $sessionNumber = $session->session_number ?? $session->session_No;
         $yearLabel = $session->academic_year_label ?: $session->academic_year_name;
-        $name = $yearLabel
-            ? "{$yearLabel} - Session {$sessionNumber}"
-            : "Session {$sessionNumber}";
+        $name = $yearLabel ? "{$yearLabel} - Session {$sessionNumber}" : "Session {$sessionNumber}";
 
         return [
             'id' => (string) $session->id,
@@ -313,44 +287,10 @@ class DashboardController extends Controller
         SQL);
 
         return [
-            [
-                'label' => 'Courses',
-                'value' => (int) ($stats->courses_count ?? 0),
-            ],
-            [
-                'label' => 'Curriculums',
-                'value' => (int) ($stats->curricula_count ?? 0),
-            ],
-            [
-                'label' => 'Departments',
-                'value' => (int) ($stats->departments_count ?? 0),
-            ],
-            [
-                'label' => 'Academic Years',
-                'value' => (int) ($stats->academic_years_count ?? 0),
-            ],
+            ['label' => 'Courses', 'value' => (int) ($stats->courses_count ?? 0)],
+            ['label' => 'Curriculums', 'value' => (int) ($stats->curricula_count ?? 0)],
+            ['label' => 'Departments', 'value' => (int) ($stats->departments_count ?? 0)],
+            ['label' => 'Academic Years', 'value' => (int) ($stats->academic_years_count ?? 0)],
         ];
-    }
-
-    private function dashboardRouteFor(?User $user): string
-    {
-        if (! $user) {
-            return 'login';
-        }
-
-        $user->loadMissing('roles:id,name');
-        $roles = $user->roles->pluck('name');
-
-        $staffRoles = ['admin', 'bursar', 'hod', 'lecturer', 'librarian'];
-
-        if ($roles->intersect($staffRoles)->isNotEmpty()) {
-            return 'staff.dashboard';
-        }
-
-        if ($roles->contains('student')) {
-            return 'student.dashboard';
-        }
-
-        return 'dashboard';
     }
 }

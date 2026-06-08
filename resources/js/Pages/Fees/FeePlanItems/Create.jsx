@@ -1,6 +1,5 @@
 import { Head, Link, router, useForm } from "@inertiajs/react";
 import { useEffect } from "react";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import TextInput from "@/Components/TextInput";
@@ -138,9 +137,9 @@ export default function Create({
     }
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Add Fee Plan Item" />
             <div className="mx-auto w-full max-w-3xl">{form}</div>
-        </AuthenticatedLayout>
+        </>
     );
 }

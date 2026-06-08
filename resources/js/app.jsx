@@ -1,38 +1,37 @@
-import '../css/app.css';
 import './bootstrap';
+import '../css/app.css';
 
-import { createInertiaApp } from '@inertiajs/react';
-import { withAuthenticatedLayout } from '@/Layouts/AuthenticatedLayout';
-import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
-
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+import { createInertiaApp } from '@inertiajs/react';
+import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
+import AuthenticatedLayout from './Layouts/AuthenticatedLayout';
+import GuestLayout from './Layouts/GuestLayout';
 
 createInertiaApp({
-    title: (title) => `${title} - ${appName}`,
-    resolve: (name) =>
-        resolvePageComponent(
+    resolve: async (name) => {
+        const page = await resolvePageComponent(
             `./Pages/${name}.jsx`,
             import.meta.glob('./Pages/**/*.jsx'),
-        ).then((module) => {
-            const page = module.default;
+        );
 
-            if (!page.layout && shouldUseAuthenticatedLayout(name)) {
-                page.layout = withAuthenticatedLayout();
+        if (page.default.layout === undefined) {
+            if (name.startsWith('Auth/')) {
+                page.default.layout = (page) => (
+                    <GuestLayout children={page} fullWidth={name === 'Auth/Login'} />
+                );
+            } else {
+                page.default.layout = (page) => (
+                    <AuthenticatedLayout children={page} />
+                );
             }
+        }
 
-            return module;
-        }),
+        return page;
+    },
     setup({ el, App, props }) {
-        const root = createRoot(el);
-
-        root.render(<App {...props} />);
+        createRoot(el).render(<App {...props} />);
     },
     progress: {
-        color: '#4B5563',
+        color: '#4F46E5',
     },
 });
-
-function shouldUseAuthenticatedLayout(name) {
-    return !name.startsWith('Auth/');
-}

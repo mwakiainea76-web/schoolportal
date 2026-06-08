@@ -1,6 +1,5 @@
 import { Head, Link, router } from "@inertiajs/react";
 import { useState } from "react";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import Table from "@/Components/Table/Table";
 import Thead from "@/Components/Table/Thead";
 import THdata from "@/Components/Table/THdata";
@@ -39,7 +38,7 @@ export default function StudentIndex({ students }) {
     };
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Student Management" />
 
             <div className="mx-auto w-full">
@@ -152,6 +151,6 @@ export default function StudentIndex({ students }) {
                     </Tbody>
                 </Table>
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 }

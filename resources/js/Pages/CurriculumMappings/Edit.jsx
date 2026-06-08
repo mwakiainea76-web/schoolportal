@@ -4,7 +4,6 @@ import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import TextArea from "@/Components/TextArea";
 import SearchSelect from "@/Components/SearchSelect";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import CourseWorkspaceTabs from "@/Pages/Courses/Partials/CourseWorkspaceTabs";
 
 export default function EditCurriculum({
@@ -45,7 +44,7 @@ export default function EditCurriculum({
     };
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Edit Curriculum Mapping" />
 
             <div className="mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -144,6 +143,6 @@ export default function EditCurriculum({
                     </form>
                 </div>
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 }

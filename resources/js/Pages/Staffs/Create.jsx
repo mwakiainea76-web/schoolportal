@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Head, Link, useForm, router } from "@inertiajs/react";
 import axios from "axios";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import PersonalStep from "./Forms/PersonalDetails";
 import EmploymentStep from "./Forms/EmploymentDetails";
 import KinStep from "./Forms/KinDetails";
@@ -153,7 +152,7 @@ export default function CreateStaff({ departments, roles }) {
     };
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Staff Onboarding" />
 
             <div className="mx-auto w-full">
@@ -279,6 +278,6 @@ export default function CreateStaff({ departments, roles }) {
                     </div>
                 </div>
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 }

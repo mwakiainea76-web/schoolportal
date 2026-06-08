@@ -5,7 +5,6 @@ import InputLabel from "@/Components/InputLabel";
 import SearchSelect from "@/Components/SearchSelect";
 import TextInput from "@/Components/TextInput";
 import TextArea from "@/Components/TextArea";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import CourseWorkspaceTabs from "@/Pages/Courses/Partials/CourseWorkspaceTabs";
 
 const Create = () => {
@@ -25,7 +24,7 @@ const Create = () => {
     };
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Create Curriculum" />
 
             <div className="mx-auto w-full rounded-lg">
@@ -109,7 +108,7 @@ const Create = () => {
                     </div>
                 </form>
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 };
 

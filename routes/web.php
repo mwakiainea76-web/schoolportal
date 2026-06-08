@@ -39,181 +39,145 @@ use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| ROOT
+| Public & Root Routes
 |--------------------------------------------------------------------------
 */
 
 Route::get('/', fn () => redirect()->route('login'));
 
-Route::get('/dashboard', [DashboardController::class, 'redirect'])
-    ->middleware(['auth', 'verified'])
-    ->name('dashboard');
-
-Route::middleware(['auth', 'verified', 'role:student'])->group(function () {
-    Route::get('/student/dashboard', [DashboardController::class, 'studentDashboard'])
-        ->name('student.dashboard');
-    Route::post('/student/dashboard/register-session', [AcademicSessionEnrollmentController::class, 'registerCurrentStudent'])
-        ->name('student.dashboard.register-session');
-    Route::post('/student/dashboard/register-units', [AcademicSessionEnrollmentController::class, 'registerCurrentStudentUnits'])
-        ->name('student.dashboard.register-units');
-    Route::get('/student/course-units', [UnitController::class, 'studentIndex'])
-        ->name('student.course-units.index');
-    Route::get('/student/results', [StudentMarkController::class, 'studentResultsIndex'])
-        ->name('student.results.index');
-    Route::get('/student/fee-statements', [InvoiceController::class, 'studentStatementsIndex'])
-        ->name('student.fee-statements.index');
-    Route::get('/student/fee-statements/{invoice}', [InvoiceController::class, 'studentStatementShow'])
-        ->name('student.fee-statements.show');
-});
-
-Route::get('/admin/dashboard', [DashboardController::class, 'staffDashboard'])
-    ->middleware(['auth', 'verified', 'non_student'])
-    ->name('admin.dashboard');
-
-Route::get('/staff/dashboard', [DashboardController::class, 'staffDashboard'])
-    ->middleware(['auth', 'verified', 'non_student'])
-    ->name('staff.dashboard');
-
-Route::get('/trainer/dashboard', [DashboardController::class, 'trainerDashboard'])
-    ->middleware(['auth', 'verified', 'role:trainer'])
-    ->name('trainer.dashboard');
-
 /*
 |--------------------------------------------------------------------------
-| AUTH GROUP
+| Authenticated Routes
 |--------------------------------------------------------------------------
 */
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'verified'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | PROFILE
+    | Universal Dashboard
     |--------------------------------------------------------------------------
     */
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Student Specific Actions
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware('role:student')->prefix('student')->name('student.')->group(function () {
+        Route::post('/dashboard/register-session', [AcademicSessionEnrollmentController::class, 'registerCurrentStudent'])->name('dashboard.register-session');
+        Route::post('/dashboard/register-units', [AcademicSessionEnrollmentController::class, 'registerCurrentStudentUnits'])->name('dashboard.register-units');
+        Route::get('/course-units', [UnitController::class, 'studentIndex'])->name('course-units.index');
+        Route::get('/results', [StudentMarkController::class, 'studentResultsIndex'])->name('results.index');
+        Route::get('/fee-statements', [InvoiceController::class, 'studentStatementsIndex'])->name('fee-statements.index');
+        Route::get('/fee-statements/{invoice}', [InvoiceController::class, 'studentStatementShow'])->name('fee-statements.show');
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | User Profile & Global Tools
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('profile')->name('profile.')->group(function () {
+        Route::get('/', [ProfileController::class, 'edit'])->name('edit');
+        Route::patch('/', [ProfileController::class, 'update'])->name('update');
+        Route::delete('/', [ProfileController::class, 'destroy'])->name('destroy');
+    });
+
     Route::get('/online-users', [OnlineUsersController::class, 'index'])->name('online-users.index');
-});
 
-Route::middleware(['auth', 'non_student'])->group(function () {
-    Route::middleware('role:admin')
-        ->get('/settings/performance', [PerformanceDashboardController::class, 'index'])
-        ->name('settings.performance.index');
-
-    Route::middleware('role:admin')
-        ->patch('/settings/performance/errors/{appRequestMetric}/status', [PerformanceDashboardController::class, 'updateErrorStatus'])
-        ->name('settings.performance.errors.update-status');
-
-    Route::middleware('role:admin')
-        ->patch('/settings/performance/endpoints/status', [PerformanceDashboardController::class, 'updateEndpointStatus'])
-        ->name('settings.performance.endpoints.update-status');
-
-    Route::middleware('role:admin')
-        ->get('/settings/logs', [LogViewerController::class, 'index'])
-        ->name('settings.logs.index');
-
-    Route::middleware('role:admin')
-        ->post('/settings/logs/clear', [LogViewerController::class, 'clear'])
-        ->name('settings.logs.clear');
-
-    Route::middleware('role:admin')
-        ->get('/settings/user-monitor', [UserMonitorController::class, 'index'])
-        ->name('settings.user-monitor.index');
-
-    Route::middleware('role:admin')
-        ->get('/settings/security', [SecurityMonitoringController::class, 'index'])
-        ->name('settings.security.index');
-
-    Route::middleware('role:admin')
-        ->post('/settings/security/blocks', [SecurityMonitoringController::class, 'storeBlock'])
-        ->name('settings.security.blocks.store');
-
-    Route::middleware('role:admin')
-        ->put('/settings/security/blocks/{securityBlock}/lift', [SecurityMonitoringController::class, 'liftBlock'])
-        ->name('settings.security.blocks.lift');
+    Route::get('/export/{resource}', [ExportController::class, 'export'])
+         ->middleware('throttle:5,1')
+         ->name('export.resource');
 
     /*
     |--------------------------------------------------------------------------
-    | EXAM BODIES
+    | Staff & Admin Exclusive Routes (Non-Students)
     |--------------------------------------------------------------------------
     */
-    Route::prefix('exam-bodies')->name('exam.bodies.')->group(function () {
-        Route::get('/', [ExamBodyController::class, 'index'])->name('index');
-        Route::get('/search', [ExamBodyController::class, 'search'])->name('search');
-        Route::get('/create', [ExamBodyController::class, 'create'])->name('create');
-        Route::post('/', [ExamBodyController::class, 'store'])->name('store');
-        Route::get('/{exam_body}/edit', [ExamBodyController::class, 'edit'])->name('edit');
-        Route::put('/{exam_body}', [ExamBodyController::class, 'update'])->name('update');
-        Route::delete('/{exam_body}', [ExamBodyController::class, 'destroy'])->name('destroy');
+    Route::middleware('non_student')->group(function () {
 
-        Route::get('/reports', [ExamBodyController::class, 'showReports'])->name('reports');
-    });
+        /*
+        |--------------------------------------------------------------------------
+        | System Administration & Settings
+        |--------------------------------------------------------------------------
+        */
+        Route::middleware('role:admin')->prefix('settings')->name('settings.')->group(function () {
+            Route::prefix('performance')->name('performance.')->group(function () {
+                Route::get('/', [PerformanceDashboardController::class, 'index'])->name('index');
+                Route::patch('/errors/{appRequestMetric}/status', [PerformanceDashboardController::class, 'updateErrorStatus'])->name('errors.update-status');
+                Route::patch('/endpoints/status', [PerformanceDashboardController::class, 'updateEndpointStatus'])->name('endpoints.update-status');
+            });
 
-    /*
-    |--------------------------------------------------------------------------
-    | CERTIFICATION LEVELS
-    |--------------------------------------------------------------------------
-    */
-    Route::prefix('exam-bodies/certification-levels')->name('certification-levels.')->group(function () {
-        Route::get('/', [CertificationLevelController::class, 'index'])->name('index');
-        Route::get('/search', [CertificationLevelController::class, 'search'])->name('search');
-        Route::get('/create', [CertificationLevelController::class, 'create'])->name('create');
-        Route::post('/', [CertificationLevelController::class, 'store'])->name('store');
+            Route::get('/logs', [LogViewerController::class, 'index'])->name('logs.index');
+            Route::post('/logs/clear', [LogViewerController::class, 'clear'])->name('logs.clear');
+            Route::get('/user-monitor', [UserMonitorController::class, 'index'])->name('user-monitor.index');
 
-        Route::get('/{certification_level}/edit', [CertificationLevelController::class, 'edit'])->name('edit');
-        Route::put('/{certification_level}', [CertificationLevelController::class, 'update'])->name('update');
-        Route::delete('/{certification_level}', [CertificationLevelController::class, 'destroy'])->name('destroy');
+            Route::prefix('security')->name('security.')->group(function () {
+                Route::get('/', [SecurityMonitoringController::class, 'index'])->name('index');
+                Route::post('/blocks', [SecurityMonitoringController::class, 'storeBlock'])->name('blocks.store');
+                Route::put('/blocks/{securityBlock}/lift', [SecurityMonitoringController::class, 'liftBlock'])->name('blocks.lift');
+            });
+        });
 
-    });
+        /*
+        |--------------------------------------------------------------------------
+        | Academic Structure (Exam Bodies, Departments, Courses)
+        |--------------------------------------------------------------------------
+        */
+        Route::prefix('exam-bodies')->name('exam.bodies.')->group(function () {
+            Route::get('/', [ExamBodyController::class, 'index'])->name('index');
+            Route::get('/search', [ExamBodyController::class, 'search'])->name('search');
+            Route::get('/create', [ExamBodyController::class, 'create'])->name('create');
+            Route::post('/', [ExamBodyController::class, 'store'])->name('store');
+            Route::get('/{exam_body}/edit', [ExamBodyController::class, 'edit'])->name('edit');
+            Route::put('/{exam_body}', [ExamBodyController::class, 'update'])->name('update');
+            Route::delete('/{exam_body}', [ExamBodyController::class, 'destroy'])->name('destroy');
+            Route::get('/reports', [ExamBodyController::class, 'showReports'])->name('reports');
+        });
 
-    /*
-    |--------------------------------------------------------------------------
-    | DEPARTMENTS
-    |--------------------------------------------------------------------------
-    */
-    Route::prefix('departments')->name('departments.')->group(function () {
-        Route::get('/', [DepartmentController::class, 'index'])->name('index');
-        Route::get('/search', [DepartmentController::class, 'search'])->name('search');
-        Route::get('/create', [DepartmentController::class, 'create'])->name('create');
-        Route::post('/', [DepartmentController::class, 'store'])->name('store');
-        Route::get('/{department}/edit', [DepartmentController::class, 'edit'])->name('edit');
-        Route::put('/{department}', [DepartmentController::class, 'update'])->name('update');
-        Route::delete('/{department}', [DepartmentController::class, 'destroy'])->name('destroy');
+        Route::prefix('exam-bodies/certification-levels')->name('certification-levels.')->group(function () {
+            Route::get('/', [CertificationLevelController::class, 'index'])->name('index');
+            Route::get('/search', [CertificationLevelController::class, 'search'])->name('search');
+            Route::get('/create', [CertificationLevelController::class, 'create'])->name('create');
+            Route::post('/', [CertificationLevelController::class, 'store'])->name('store');
+            Route::get('/{certification_level}/edit', [CertificationLevelController::class, 'edit'])->name('edit');
+            Route::put('/{certification_level}', [CertificationLevelController::class, 'update'])->name('update');
+            Route::delete('/{certification_level}', [CertificationLevelController::class, 'destroy'])->name('destroy');
+        });
 
-    });
+        Route::prefix('departments')->name('departments.')->group(function () {
+            Route::get('/', [DepartmentController::class, 'index'])->name('index');
+            Route::get('/search', [DepartmentController::class, 'search'])->name('search');
+            Route::get('/create', [DepartmentController::class, 'create'])->name('create');
+            Route::post('/', [DepartmentController::class, 'store'])->name('store');
+            Route::get('/{department}/edit', [DepartmentController::class, 'edit'])->name('edit');
+            Route::put('/{department}', [DepartmentController::class, 'update'])->name('update');
+            Route::delete('/{department}', [DepartmentController::class, 'destroy'])->name('destroy');
+        });
 
-    /*
-    |--------------------------------------------------------------------------
-    | COURSE MANAGEMENT
-    |--------------------------------------------------------------------------
-    */
-    Route::group([], function () {
         Route::prefix('courses')->name('courses.')->group(function () {
             Route::get('/', [CourseController::class, 'index'])->name('index');
             Route::get('/create', [CourseController::class, 'create'])->name('create');
             Route::post('/', [CourseController::class, 'store'])->name('store');
             Route::get('/enrollments', [CourseEnrollmentController::class, 'index'])->name('enrollments.index');
             Route::get('/search', [CourseController::class, 'search'])->name('search');
+            Route::get('/{course}/edit', [CourseController::class, 'edit'])->name('edit');
+            Route::put('/{course}', [CourseController::class, 'update'])->name('update');
+            Route::delete('/{course}', [CourseController::class, 'destroy'])->name('destroy');
 
             Route::prefix('curriculums')->name('curriculum-mappings.')->group(function () {
                 Route::get('/', [CurriculumMappingController::class, 'index'])->name('index');
                 Route::get('/search', [CurriculumMappingController::class, 'search'])->name('search');
                 Route::get('/create', [CurriculumMappingController::class, 'create'])->name('create');
                 Route::post('/', [CurriculumMappingController::class, 'store'])->name('store');
-
                 Route::get('/{curriculumMapping}/edit', [CurriculumMappingController::class, 'edit'])->name('edit');
                 Route::put('/{curriculumMapping}', [CurriculumMappingController::class, 'update'])->name('update');
                 Route::patch('/{curriculumMapping}/activate', [CurriculumMappingController::class, 'activate'])->name('activate');
                 Route::patch('/{curriculumMapping}/deactivate', [CurriculumMappingController::class, 'deactivate'])->name('deactivate');
                 Route::delete('/{curriculumMapping}', [CurriculumMappingController::class, 'destroy'])->name('destroy');
-
             });
-
-            Route::get('/{course}/edit', [CourseController::class, 'edit'])->name('edit');
-            Route::put('/{course}', [CourseController::class, 'update'])->name('update');
-            Route::delete('/{course}', [CourseController::class, 'destroy'])->name('destroy');
         });
 
         Route::prefix('units')->name('units.')->group(function () {
@@ -231,7 +195,6 @@ Route::middleware(['auth', 'non_student'])->group(function () {
             Route::get('/create', [CurriculumController::class, 'create'])->name('create');
             Route::post('/', [CurriculumController::class, 'store'])->name('store');
             Route::get('/search', [CurriculumController::class, 'search'])->name('search');
-
             Route::patch('/{curriculum}/disable', [CurriculumController::class, 'disable'])->name('disable');
             Route::patch('/{curriculum}/reactivate', [CurriculumController::class, 'reactivate'])->name('reactivate');
             Route::get('/{curriculum}/edit', [CurriculumController::class, 'edit'])->name('edit');
@@ -239,326 +202,285 @@ Route::middleware(['auth', 'non_student'])->group(function () {
             Route::delete('/{curriculum}', [CurriculumController::class, 'destroy'])->name('destroy');
         });
 
-        Route::get('/lookup/exam-bodies/search', [ExamBodyController::class, 'search'])->name('exam-bodies.search');
-        Route::get('/lookup/curriculum-mappings/search', [CurriculumMappingController::class, 'search'])->name('curriculum-mappings.search');
-    });
+        /*
+        |--------------------------------------------------------------------------
+        | Academic Operations (Calendar, Timetables, Marks)
+        |--------------------------------------------------------------------------
+        */
+        Route::prefix('academic')->name('academic.')->group(function () {
+            Route::prefix('years')->name('years.')->group(function () {
+                Route::get('/', [AcademicYearController::class, 'index'])->name('index');
+                Route::get('/search', [AcademicYearController::class, 'search'])->name('search');
+                Route::get('/create', [AcademicYearController::class, 'create'])->name('create');
+                Route::post('/', [AcademicYearController::class, 'store'])->name('store');
+                Route::get('/{academic_year}/edit', [AcademicYearController::class, 'edit'])->name('edit');
+                Route::put('/{academic_year}', [AcademicYearController::class, 'update'])->name('update');
+                Route::patch('/{academic_year}/status', [AcademicYearController::class, 'updateStatus'])->name('status');
+                Route::delete('/{academic_year}', [AcademicYearController::class, 'destroy'])->name('destroy');
+            });
 
-    /*
-    |--------------------------------------------------------------------------
-    | ACADEMIC YEARS
-    |--------------------------------------------------------------------------
-    */
-    Route::prefix('academic/years')->name('academic.years.')->group(function () {
-        Route::get('/', [AcademicYearController::class, 'index'])->name('index');
-        Route::get('/search', [AcademicYearController::class, 'search'])->name('search');
-        Route::get('/create', [AcademicYearController::class, 'create'])->name('create');
-        Route::post('/', [AcademicYearController::class, 'store'])->name('store');
+            Route::prefix('sessions')->name('sessions.')->group(function () {
+                Route::get('/', [AcademicSessionController::class, 'index'])->name('index');
+                Route::get('/create', [AcademicSessionController::class, 'create'])->name('create');
+                Route::post('/', [AcademicSessionController::class, 'store'])->name('store');
+                Route::get('/search', [AcademicSessionController::class, 'search'])->name('search');
+                Route::get('/{academic_session}/edit', [AcademicSessionController::class, 'edit'])->name('edit');
+                Route::put('/{academic_session}', [AcademicSessionController::class, 'update'])->name('update');
+                Route::patch('/{academic_session}/status', [AcademicSessionController::class, 'updateStatus'])->name('status');
+                Route::delete('/{academic_session}', [AcademicSessionController::class, 'destroy'])->name('destroy');
 
-        Route::get('/{academic_year}/edit', [AcademicYearController::class, 'edit'])->name('edit');
-        Route::put('/{academic_year}', [AcademicYearController::class, 'update'])->name('update');
-        Route::patch('/{academic_year}/status', [AcademicYearController::class, 'updateStatus'])->name('status');
-        Route::delete('/{academic_year}', [AcademicYearController::class, 'destroy'])->name('destroy');
-    });
+                Route::prefix('enrollments')->name('enrollments.')->group(function () {
+                    Route::get('/', [AcademicSessionEnrollmentController::class, 'index'])->name('index');
+                    Route::get('/create', [AcademicSessionEnrollmentController::class, 'create'])->name('create');
+                    Route::post('/', [AcademicSessionEnrollmentController::class, 'store'])->name('store');
+                    Route::get('/{academicSessionEnrollment}/edit', [AcademicSessionEnrollmentController::class, 'edit'])->name('edit');
+                    Route::patch('/{academicSessionEnrollment}', [AcademicSessionEnrollmentController::class, 'update'])->name('update');
+                    Route::delete('/{academicSessionEnrollment}', [AcademicSessionEnrollmentController::class, 'destroy'])->name('destroy');
+                });
+            });
 
-    /*
-    |--------------------------------------------------------------------------
-    | ACADEMIC SESSIONS
-    |--------------------------------------------------------------------------
-    */
-    Route::prefix('academic/sessions')->name('academic.sessions.')->group(function () {
-        Route::get('/', [AcademicSessionController::class, 'index'])->name('index');
-        Route::get('/create', [AcademicSessionController::class, 'create'])->name('create');
-        Route::post('/', [AcademicSessionController::class, 'store'])->name('store');
+            Route::prefix('timetables')->name('timetables.')->group(function () {
+                Route::get('/', [AcademicTimetableController::class, 'index'])->name('index');
+                Route::get('/courses/search', [AcademicTimetableController::class, 'searchCourseMappings'])->name('courses.search');
+                Route::middleware('role:hod|trainer')->group(function () {
+                    Route::get('/create', [AcademicTimetableController::class, 'create'])->name('create');
+                    Route::post('/', [AcademicTimetableController::class, 'store'])->name('store');
+                    Route::get('/{timetable}/edit', [AcademicTimetableController::class, 'edit'])->name('edit');
+                    Route::put('/{timetable}', [AcademicTimetableController::class, 'update'])->name('update');
+                    Route::delete('/{timetable}', [AcademicTimetableController::class, 'destroy'])->name('destroy');
+                });
+                Route::middleware('role:hod')->group(function () {
+                    Route::get('/create/hod', [AcademicTimetableController::class, 'createHod'])->name('hod.create');
+                    Route::get('/hod/courses/search', [AcademicTimetableController::class, 'searchHodCourses'])->name('hod.courses.search');
+                    Route::post('/hod', [AcademicTimetableController::class, 'storeHod'])->name('hod.store');
+                });
+            });
 
-        Route::get('/search', [AcademicSessionController::class, 'search'])->name('search');
+            Route::middleware('role:admin|hod|trainer')->prefix('marks')->name('marks.')->group(function () {
+                Route::get('/', [StudentMarkController::class, 'index'])->name('index');
+                Route::get('/add', [StudentMarkController::class, 'addIndex'])->name('add.index');
+                Route::post('/add', [StudentMarkController::class, 'store'])->name('add.store');
+                Route::get('/view', [StudentMarkController::class, 'viewIndex'])->name('view.index');
+                Route::get('/export', [StudentMarkController::class, 'export'])->middleware('throttle:4,1')->name('export');
+                Route::get('/marksheet', [StudentMarkController::class, 'marksheetIndex'])->name('marksheet.index');
+                Route::get('/marksheet/export', [StudentMarkController::class, 'marksheetExport'])->middleware('throttle:4,1')->name('marksheet.export');
 
-        Route::get('/{academic_session}/edit', [AcademicSessionController::class, 'edit'])->name('edit');
-        Route::put('/{academic_session}', [AcademicSessionController::class, 'update'])->name('update');
-        Route::patch('/{academic_session}/status', [AcademicSessionController::class, 'updateStatus'])->name('status');
-        Route::delete('/{academic_session}', [AcademicSessionController::class, 'destroy'])->name('destroy');
-    });
-
-    Route::prefix('academic/sessions/enrollments')->name('academic.sessions.enrollments.')->group(function () {
-        Route::get('/', [AcademicSessionEnrollmentController::class, 'index'])->name('index');
-        Route::get('/create', [AcademicSessionEnrollmentController::class, 'create'])->name('create');
-        Route::post('/', [AcademicSessionEnrollmentController::class, 'store'])->name('store');
-        Route::get('/{academicSessionEnrollment}/edit', [AcademicSessionEnrollmentController::class, 'edit'])->name('edit');
-        Route::patch('/{academicSessionEnrollment}', [AcademicSessionEnrollmentController::class, 'update'])->name('update');
-        Route::delete('/{academicSessionEnrollment}', [AcademicSessionEnrollmentController::class, 'destroy'])->name('destroy');
-    });
-
-    Route::prefix('academic/timetables')->name('academic.timetables.')->group(function () {
-        Route::get('/', [AcademicTimetableController::class, 'index'])->name('index');
-        Route::get('/courses/search', [AcademicTimetableController::class, 'searchCourseMappings'])->name('courses.search');
-        Route::middleware('role:hod|trainer')->get('/create', [AcademicTimetableController::class, 'create'])->name('create');
-        Route::middleware('role:hod|trainer')->post('/', [AcademicTimetableController::class, 'store'])->name('store');
-        Route::middleware('role:hod')->get('/create/hod', [AcademicTimetableController::class, 'createHod'])->name('hod.create');
-        Route::middleware('role:hod')->get('/hod/courses/search', [AcademicTimetableController::class, 'searchHodCourses'])->name('hod.courses.search');
-        Route::middleware('role:hod')->post('/hod', [AcademicTimetableController::class, 'storeHod'])->name('hod.store');
-        Route::middleware('role:hod|trainer')->get('/{timetable}/edit', [AcademicTimetableController::class, 'edit'])->name('edit');
-        Route::middleware('role:hod|trainer')->put('/{timetable}', [AcademicTimetableController::class, 'update'])->name('update');
-        Route::middleware('role:hod|trainer')->delete('/{timetable}', [AcademicTimetableController::class, 'destroy'])->name('destroy');
-    });
-
-    Route::middleware('role:admin|hod|trainer')->prefix('academic/marks')->name('academic.marks.')->group(function () {
-        Route::get('/', [StudentMarkController::class, 'index'])->name('index');
-        Route::get('/add', [StudentMarkController::class, 'addIndex'])->name('add.index');
-        Route::post('/add', [StudentMarkController::class, 'store'])->name('add.store');
-        Route::get('/view', [StudentMarkController::class, 'viewIndex'])->name('view.index');
-        Route::get('/export', [StudentMarkController::class, 'export'])
-            ->middleware('throttle:4,1')
-            ->name('export');
-        Route::get('/marksheet', [StudentMarkController::class, 'marksheetIndex'])
-            ->name('marksheet.index');
-        Route::get('/marksheet/export', [StudentMarkController::class, 'marksheetExport'])
-            ->middleware('throttle:4,1')
-            ->name('marksheet.export');
-        Route::middleware('role:admin|hod')->group(function () {
-            Route::get('/publish', [StudentMarkController::class, 'publishIndex'])
-                ->name('publish.index');
-            Route::post('/publish', [StudentMarkController::class, 'publishAssessment'])
-                ->name('publish.assessment');
-            Route::post('/{studentMark}/publish-toggle', [StudentMarkController::class, 'togglePublish'])
-                ->name('publish.toggle');
-        });
-    });
-
-    Route::prefix('lecture-rooms')->name('lecture-rooms.')->group(function () {
-        Route::get('/', [LectureRoomController::class, 'index'])->name('index');
-        Route::get('/create', [LectureRoomController::class, 'create'])->name('create');
-        Route::post('/', [LectureRoomController::class, 'store'])->name('store');
-        Route::get('/{lecture_room}/edit', [LectureRoomController::class, 'edit'])->name('edit');
-        Route::put('/{lecture_room}', [LectureRoomController::class, 'update'])->name('update');
-        Route::delete('/{lecture_room}', [LectureRoomController::class, 'destroy'])->name('destroy');
-    });
-
-    Route::middleware('role:admin')->group(function () {
-        Route::prefix('hostels')->name('hostels.')->group(function () {
-            Route::get('/', [HostelController::class, 'index'])->name('index');
-            Route::get('/create', [HostelController::class, 'create'])->name('create');
-            Route::post('/', [HostelController::class, 'store'])->name('store');
-            Route::get('/{hostel}/edit', [HostelController::class, 'edit'])->name('edit');
-            Route::put('/{hostel}', [HostelController::class, 'update'])->name('update');
-            Route::delete('/{hostel}', [HostelController::class, 'destroy'])->name('destroy');
+                Route::middleware('role:admin|hod')->group(function () {
+                    Route::get('/publish', [StudentMarkController::class, 'publishIndex'])->name('publish.index');
+                    Route::post('/publish', [StudentMarkController::class, 'publishAssessment'])->name('publish.assessment');
+                    Route::post('/{studentMark}/publish-toggle', [StudentMarkController::class, 'togglePublish'])->name('publish.toggle');
+                });
+            });
         });
 
-        Route::prefix('hostel-allocations')->name('hostel-allocations.')->group(function () {
-            Route::get('/', [HostelAllocationController::class, 'index'])->name('index');
-            Route::get('/create', [HostelAllocationController::class, 'create'])->name('create');
-            Route::post('/', [HostelAllocationController::class, 'store'])->name('store');
-            Route::get('/{hostel_allocation}/edit', [HostelAllocationController::class, 'edit'])->name('edit');
-            Route::put('/{hostel_allocation}', [HostelAllocationController::class, 'update'])->name('update');
+        Route::prefix('lecture-rooms')->name('lecture-rooms.')->group(function () {
+            Route::get('/', [LectureRoomController::class, 'index'])->name('index');
+            Route::get('/create', [LectureRoomController::class, 'create'])->name('create');
+            Route::post('/', [LectureRoomController::class, 'store'])->name('store');
+            Route::get('/{lecture_room}/edit', [LectureRoomController::class, 'edit'])->name('edit');
+            Route::put('/{lecture_room}', [LectureRoomController::class, 'update'])->name('update');
+            Route::delete('/{lecture_room}', [LectureRoomController::class, 'destroy'])->name('destroy');
         });
-    });
 
-    /*
-    |--------------------------------------------------------------------------
-    | FEES → PLANS
-    |--------------------------------------------------------------------------
-    */
-    Route::prefix('fees/plans')->name('fees.plans.')->group(function () {
-        Route::get('/', [FeePlanController::class, 'index'])->name('index');
-        Route::get('/create', [FeePlanController::class, 'create'])->name('create');
-        Route::post('/', [FeePlanController::class, 'store'])->name('store');
-        Route::get('/search', [FeePlanController::class, 'search'])->name('search');
-
-        Route::get('/{feePlan}/edit', [FeePlanController::class, 'edit'])->name('edit');
-        Route::get('/{feePlan}/items', [FeePlanController::class, 'items'])->name('items');
-        Route::put('/{feePlan}', [FeePlanController::class, 'update'])->name('update');
-        Route::delete('/{feePlan}', [FeePlanController::class, 'destroy'])->name('destroy');
-
-        Route::post('/{feePlan}/approval', [FeePlanController::class, 'approval'])->name('approval');
-    });
-
-    /*
-    |--------------------------------------------------------------------------
-    | FEES → ASSIGNMENTS (CLEAN + FIXED)
-    |--------------------------------------------------------------------------
-    */
-    Route::prefix('fees/assignments')->name('fees.assignments.')->group(function () {
-
-        Route::get('/', [FeeAssignmentController::class, 'index'])->name('index');
-        Route::get('/create', [FeeAssignmentController::class, 'create'])->name('create');
-        Route::post('/', [FeeAssignmentController::class, 'store'])->name('store');
-
-        Route::get('/search', [FeeAssignmentController::class, 'search'])->name('search');
-
-        Route::get('/{feeAssignment}/edit', [FeeAssignmentController::class, 'edit'])->name('edit');
-        Route::put('/{feeAssignment}', [FeeAssignmentController::class, 'update'])->name('update');
-        Route::delete('/{feeAssignment}', [FeeAssignmentController::class, 'destroy'])->name('destroy');
-
-        Route::post('/{id}/restore', [FeeAssignmentController::class, 'restore'])->name('restore');
-        Route::post('/resolve', [FeeAssignmentController::class, 'resolve'])->name('resolve');
-        Route::post('/{feeAssignment}/approval', [FeeAssignmentController::class, 'approval'])->name('approval');
-
-        // BULK
-        Route::get('/bulk', [FeeAssignmentController::class, 'bulk'])->name('bulk');
-        Route::get('/bulk/certification-levels', [FeeAssignmentController::class, 'bulkCertificationLevels'])->name('bulk.certification-levels');
-        Route::get('/bulk/curriculums', [FeeAssignmentController::class, 'bulkCurriculums'])->name('bulk.curriculums');
-        Route::post('/bulk/assign', [FeeAssignmentController::class, 'bulkAssign'])->name('bulk.assign');
-        Route::post('/bulk/replace', [FeeAssignmentController::class, 'bulkReplace'])->name('bulk.replace');
-        Route::post('/bulk/preview', [FeeAssignmentController::class, 'bulkPreview'])->name('bulk.preview');
-    });
-
-    /*
-    |--------------------------------------------------------------------------
-    | FEES → PLAN ITEMS BULK
-    |--------------------------------------------------------------------------
-    */
-    Route::prefix('fees/plans/items')->name('fees.plans.items.')->group(function () {
-        Route::get('/', [FeePlanItemController::class, 'index'])->name('index');
-        Route::get('/create', [FeePlanItemController::class, 'create'])->name('create');
-        Route::post('/', [FeePlanItemController::class, 'store'])->name('store');
-
-        Route::get('/search', [FeePlanItemController::class, 'search'])->name('search');
-
-        Route::get('/{feePlanItem}/edit', [FeePlanItemController::class, 'edit'])->name('edit');
-        Route::put('/{feePlanItem}', [FeePlanItemController::class, 'update'])->name('update');
-        Route::delete('/{feePlanItem}', [FeePlanItemController::class, 'destroy'])->name('destroy');
-
-        Route::post('/bulk-destroy', [FeePlanItemController::class, 'bulkDestroy'])->name('bulk-destroy');
-    });
-
-    /*
-    |--------------------------------------------------------------------------
-    | BILLING
-    |--------------------------------------------------------------------------
-    */
-    Route::middleware('role:admin')->prefix('billing')->name('billing.')->group(function () {
-
-        Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');
-        Route::get('/invoices/create', [InvoiceController::class, 'create'])->name('invoices.create');
-        Route::post('/invoices', [InvoiceController::class, 'store'])->name('invoices.store');
-        Route::get('/ledger', [LedgerTransactionController::class, 'index'])->name('ledger.index');
-        Route::get('/manual-operations', [InvoiceController::class, 'manualOperations'])->name('manual.index');
-        Route::get('/manual-operations/additional-invoice', [InvoiceController::class, 'manualInvoiceCreate'])->name('manual.invoices.create');
-        Route::get('/manual-operations/record-payment', [InvoiceController::class, 'manualPaymentCreate'])->name('manual.payments.create');
-        Route::get('/manual-operations/post-penalty', [InvoiceController::class, 'manualPenaltyCreate'])->name('manual.penalties.create');
-        Route::get('/manual-operations/apply-adjustment', [InvoiceController::class, 'manualAdjustmentCreate'])->name('manual.adjustments.create');
-        Route::post('/manual-invoices', [InvoiceController::class, 'storeManualInvoice'])->name('manual.invoices.store');
-        Route::post('/manual-payments', [InvoiceController::class, 'storePayment'])->name('manual.payments.store');
-        Route::post('/manual-penalties', [InvoiceController::class, 'storePenalty'])->name('manual.penalties.store');
-        Route::post('/manual-adjustments', [InvoiceController::class, 'storeAdjustment'])->name('manual.adjustments.store');
-
-        Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
-        Route::delete('/invoices/{invoice}', [InvoiceController::class, 'destroy'])->name('invoices.destroy');
-
-        Route::post('/invoices/{invoice}/approval', [InvoiceController::class, 'approval'])->name('invoices.approval');
-
-        Route::post('/bulk-invoices', [InvoiceController::class, 'bulkGenerate'])->name('bulk.invoices');
-        Route::post('/bulk-discounts', [InvoiceController::class, 'bulkApplyDiscount'])->name('bulk.discounts');
-        Route::post('/bulk-generate-from-plans', [InvoiceController::class, 'store'])->name('bulk.generate.from.plans');
-
-        Route::get('/bulk-operations', [InvoiceController::class, 'bulkOperations'])->name('bulk.operations');
-    });
-
-    /*
-    |--------------------------------------------------------------------------
-    | STAFFS
-    |--------------------------------------------------------------------------
-    */
-    Route::prefix('staffs')->name('staffs.')->group(function () {
-        Route::get('/', [StaffController::class, 'index'])->name('index');
-        Route::get('/create', [StaffController::class, 'create'])->name('create');
-        Route::post('/', [StaffController::class, 'store'])->name('store');
-
-        Route::get('/{staff}/edit', [StaffController::class, 'edit'])->name('edit');
-        Route::put('/{staff}', [StaffController::class, 'update'])->name('update');
-        Route::delete('/{staff}', [StaffController::class, 'destroy'])->name('destroy');
-
-        Route::post('/validate-step', [StaffController::class, 'validateStep'])->name('validateStep');
-    });
-
-    /*
-    |--------------------------------------------------------------------------
-    | STUDENTS
-    |--------------------------------------------------------------------------
-    */
-    Route::prefix('students')->name('students.')->group(function () {
-        Route::get('/', [StudentController::class, 'index'])->name('index');
-        Route::get('/create', [StudentController::class, 'create'])->name('create');
-        Route::post('/', [StudentController::class, 'store'])->name('store');
-        Route::get('/exam-bodies/{examBody}/curriculums', [StudentController::class, 'examBodyCurriculums'])->name('exam-body-curriculums');
-        Route::get('/courses/{course}/curricula', [StudentController::class, 'curriculumMappings'])->name('course-curricula');
-        Route::get('/cycles/{curriculum}/courses', [StudentController::class, 'cycleCourses'])->name('cycle-courses');
+        /*
+        |--------------------------------------------------------------------------
+        | Hostels
+        |--------------------------------------------------------------------------
+        */
         Route::middleware('role:admin')->group(function () {
-            Route::get('/course-change', [StudentCourseChangeController::class, 'index'])->name('course-change.index');
-            Route::post('/course-change', [StudentCourseChangeController::class, 'store'])->name('course-change.store');
+            Route::prefix('hostels')->name('hostels.')->group(function () {
+                Route::get('/', [HostelController::class, 'index'])->name('index');
+                Route::get('/create', [HostelController::class, 'create'])->name('create');
+                Route::post('/', [HostelController::class, 'store'])->name('store');
+                Route::get('/{hostel}/edit', [HostelController::class, 'edit'])->name('edit');
+                Route::put('/{hostel}', [HostelController::class, 'update'])->name('update');
+                Route::delete('/{hostel}', [HostelController::class, 'destroy'])->name('destroy');
+            });
+
+            Route::prefix('hostel-allocations')->name('hostel-allocations.')->group(function () {
+                Route::get('/', [HostelAllocationController::class, 'index'])->name('index');
+                Route::get('/create', [HostelAllocationController::class, 'create'])->name('create');
+                Route::post('/', [HostelAllocationController::class, 'store'])->name('store');
+                Route::get('/{hostel_allocation}/edit', [HostelAllocationController::class, 'edit'])->name('edit');
+                Route::put('/{hostel_allocation}', [HostelAllocationController::class, 'update'])->name('update');
+            });
         });
-        Route::middleware('role:admin')->get('/{student}/admission-letter', [StudentController::class, 'admissionLetter'])->name('admission-letter');
 
-        Route::get('/{student}/edit', [StudentController::class, 'edit'])->name('edit');
-        Route::put('/{student}', [StudentController::class, 'update'])->name('update');
-        Route::delete('/{student}', [StudentController::class, 'destroy'])->name('destroy');
+        /*
+        |--------------------------------------------------------------------------
+        | Finance & Fees
+        |--------------------------------------------------------------------------
+        */
+        Route::prefix('fees')->name('fees.')->group(function () {
+            Route::prefix('plans')->name('plans.')->group(function () {
+                Route::get('/', [FeePlanController::class, 'index'])->name('index');
+                Route::get('/create', [FeePlanController::class, 'create'])->name('create');
+                Route::post('/', [FeePlanController::class, 'store'])->name('store');
+                Route::get('/search', [FeePlanController::class, 'search'])->name('search');
+                Route::get('/{feePlan}/edit', [FeePlanController::class, 'edit'])->name('edit');
+                Route::get('/{feePlan}/items', [FeePlanController::class, 'items'])->name('items');
+                Route::put('/{feePlan}', [FeePlanController::class, 'update'])->name('update');
+                Route::delete('/{feePlan}', [FeePlanController::class, 'destroy'])->name('destroy');
+                Route::post('/{feePlan}/approval', [FeePlanController::class, 'approval'])->name('approval');
 
-        Route::post('/validate-step', [StudentController::class, 'validateStep'])->name('validateStep');
-        Route::get('/search', [StudentController::class, 'search'])->name('search');
-    });
+                Route::prefix('items')->name('items.')->group(function () {
+                    Route::get('/', [FeePlanItemController::class, 'index'])->name('index');
+                    Route::get('/create', [FeePlanItemController::class, 'create'])->name('create');
+                    Route::post('/', [FeePlanItemController::class, 'store'])->name('store');
+                    Route::get('/search', [FeePlanItemController::class, 'search'])->name('search');
+                    Route::get('/{feePlanItem}/edit', [FeePlanItemController::class, 'edit'])->name('edit');
+                    Route::put('/{feePlanItem}', [FeePlanItemController::class, 'update'])->name('update');
+                    Route::delete('/{feePlanItem}', [FeePlanItemController::class, 'destroy'])->name('destroy');
+                    Route::post('/bulk-destroy', [FeePlanItemController::class, 'bulkDestroy'])->name('bulk-destroy');
+                });
+            });
 
-    /*
-    |--------------------------------------------------------------------------
-    | ROLES
-    |--------------------------------------------------------------------------
-    */
-    Route::prefix('roles')->name('roles.')->group(function () {
-        Route::get('/', [RoleController::class, 'index'])->name('index');
-        Route::get('/create', [RoleController::class, 'create'])->name('create');
-        Route::post('/', [RoleController::class, 'store'])->name('store');
-        Route::get('/search', [RoleController::class, 'search'])->name('search');
-        Route::get('/{role}/edit', [RoleController::class, 'edit'])->name('edit');
-        Route::put('/{role}', [RoleController::class, 'update'])->name('update');
-        Route::delete('/{role}', [RoleController::class, 'destroy'])->name('destroy');
-        Route::get('/{role}/permissions', [RoleController::class, 'editpermission'])->name('permissions.edit');
-        Route::post('/permissions/assign', [RoleController::class, 'assignPermissions'])->name('permissions.assign');
-    });
+            Route::prefix('assignments')->name('assignments.')->group(function () {
+                Route::get('/', [FeeAssignmentController::class, 'index'])->name('index');
+                Route::get('/create', [FeeAssignmentController::class, 'create'])->name('create');
+                Route::post('/', [FeeAssignmentController::class, 'store'])->name('store');
+                Route::get('/search', [FeeAssignmentController::class, 'search'])->name('search');
+                Route::get('/{feeAssignment}/edit', [FeeAssignmentController::class, 'edit'])->name('edit');
+                Route::put('/{feeAssignment}', [FeeAssignmentController::class, 'update'])->name('update');
+                Route::delete('/{feeAssignment}', [FeeAssignmentController::class, 'destroy'])->name('destroy');
+                Route::post('/{id}/restore', [FeeAssignmentController::class, 'restore'])->name('restore');
+                Route::post('/resolve', [FeeAssignmentController::class, 'resolve'])->name('resolve');
+                Route::post('/{feeAssignment}/approval', [FeeAssignmentController::class, 'approval'])->name('approval');
 
-    /*
-    |--------------------------------------------------------------------------
-    | PERMISSIONS
-    |--------------------------------------------------------------------------
-    */
-    Route::prefix('permissions')->name('permissions.')->group(function () {
-        Route::get('/', [PermissionController::class, 'index'])->name('index');
-        Route::get('/create', [PermissionController::class, 'create'])->name('create');
-        Route::post('/', [PermissionController::class, 'store'])->name('store');
-        Route::get('/search', [PermissionController::class, 'search'])->name('search');
-        Route::get('/roles', [PermissionController::class, 'roles'])->name('roles');
-        Route::post('/roles/sync', [PermissionController::class, 'syncRolePermissions'])->name('roles.sync');
-        Route::get('/{permission}/edit', [PermissionController::class, 'edit'])->name('edit');
-        Route::put('/{permission}', [PermissionController::class, 'update'])->name('update');
-        Route::delete('/{permission}', [PermissionController::class, 'destroy'])->name('destroy');
-    });
+                Route::prefix('bulk')->name('bulk.')->group(function () {
+                    Route::get('/', [FeeAssignmentController::class, 'bulk'])->name('index');
+                    Route::get('/certification-levels', [FeeAssignmentController::class, 'bulkCertificationLevels'])->name('certification-levels');
+                    Route::get('/curriculums', [FeeAssignmentController::class, 'bulkCurriculums'])->name('curriculums');
+                    Route::post('/assign', [FeeAssignmentController::class, 'bulkAssign'])->name('assign');
+                    Route::post('/replace', [FeeAssignmentController::class, 'bulkReplace'])->name('replace');
+                    Route::post('/preview', [FeeAssignmentController::class, 'bulkPreview'])->name('preview');
+                });
+            });
+        });
 
-    /*
-    |--------------------------------------------------------------------------
-    | REPORTS
-    |--------------------------------------------------------------------------
-    */
-    Route::prefix('reports')->name('reports.')->group(function () {
-        Route::get('/', [ReportingController::class, 'index'])->name('dashboard');
-        Route::get('/executive', [ReportingController::class, 'executive'])->name('executive');
-        Route::get('/finance', [ReportingController::class, 'finance'])->name('finance');
-        Route::get('/academic', [ReportingController::class, 'academic'])->name('academic');
-        Route::get('/admissions', [ReportingController::class, 'admissions'])->name('admissions');
-        Route::get('/hostel', [ReportingController::class, 'hostel'])->name('hostel');
-        Route::get('/data-quality', [ReportingController::class, 'dataQuality'])->name('data-quality');
-        Route::get('/snapshots', [ReportingController::class, 'snapshots'])->name('snapshots');
-    });
+        Route::middleware('role:admin')->prefix('billing')->name('billing.')->group(function () {
+            Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');
+            Route::get('/invoices/create', [InvoiceController::class, 'create'])->name('invoices.create');
+            Route::post('/invoices', [InvoiceController::class, 'store'])->name('invoices.store');
+            Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
+            Route::delete('/invoices/{invoice}', [InvoiceController::class, 'destroy'])->name('invoices.destroy');
+            Route::post('/invoices/{invoice}/approval', [InvoiceController::class, 'approval'])->name('invoices.approval');
 
-});
+            Route::get('/ledger', [LedgerTransactionController::class, 'index'])->name('ledger.index');
 
+            Route::prefix('manual-operations')->name('manual.')->group(function () {
+                Route::get('/', [InvoiceController::class, 'manualOperations'])->name('index');
+                Route::get('/additional-invoice', [InvoiceController::class, 'manualInvoiceCreate'])->name('invoices.create');
+                Route::get('/record-payment', [InvoiceController::class, 'manualPaymentCreate'])->name('payments.create');
+                Route::get('/post-penalty', [InvoiceController::class, 'manualPenaltyCreate'])->name('penalties.create');
+                Route::get('/apply-adjustment', [InvoiceController::class, 'manualAdjustmentCreate'])->name('adjustments.create');
+                Route::post('/invoices', [InvoiceController::class, 'storeManualInvoice'])->name('invoices.store');
+                Route::post('/payments', [InvoiceController::class, 'storePayment'])->name('payments.store');
+                Route::post('/penalties', [InvoiceController::class, 'storePenalty'])->name('penalties.store');
+                Route::post('/adjustments', [InvoiceController::class, 'storeAdjustment'])->name('adjustments.store');
+            });
 
+            Route::prefix('bulk')->name('bulk.')->group(function () {
+                Route::get('/operations', [InvoiceController::class, 'bulkOperations'])->name('operations');
+                Route::post('/invoices', [InvoiceController::class, 'bulkGenerate'])->name('invoices');
+                Route::post('/discounts', [InvoiceController::class, 'bulkApplyDiscount'])->name('discounts');
+                Route::post('/generate-from-plans', [InvoiceController::class, 'store'])->name('generate.from.plans');
+            });
+        });
 
+        /*
+        |--------------------------------------------------------------------------
+        | Staff Management
+        |--------------------------------------------------------------------------
+        */
+        Route::prefix('staffs')->name('staffs.')->group(function () {
+            Route::get('/', [StaffController::class, 'index'])->name('index');
+            Route::get('/create', [StaffController::class, 'create'])->name('create');
+            Route::post('/', [StaffController::class, 'store'])->name('store');
+            Route::get('/{staff}/edit', [StaffController::class, 'edit'])->name('edit');
+            Route::put('/{staff}', [StaffController::class, 'update'])->name('update');
+            Route::delete('/{staff}', [StaffController::class, 'destroy'])->name('destroy');
+            Route::post('/validate-step', [StaffController::class, 'validateStep'])->name('validateStep');
+        });
 
+        /*
+        |--------------------------------------------------------------------------
+        | Student Management
+        |--------------------------------------------------------------------------
+        */
+        Route::prefix('students')->name('students.')->group(function () {
+            Route::get('/', [StudentController::class, 'index'])->name('index');
+            Route::get('/create', [StudentController::class, 'create'])->name('create');
+            Route::post('/', [StudentController::class, 'store'])->name('store');
+            Route::get('/search', [StudentController::class, 'search'])->name('search');
+            Route::get('/{student}/edit', [StudentController::class, 'edit'])->name('edit');
+            Route::put('/{student}', [StudentController::class, 'update'])->name('update');
+            Route::delete('/{student}', [StudentController::class, 'destroy'])->name('destroy');
+            Route::post('/validate-step', [StudentController::class, 'validateStep'])->name('validateStep');
 
-Route::middleware(['auth'])->group(function () {
-    Route::get('/export/{resource}', [ExportController::class, 'export'])
-         ->middleware('throttle:5,1')
-         ->name('export.resource');
-});
+            Route::get('/exam-bodies/{examBody}/curriculums', [StudentController::class, 'examBodyCurriculums'])->name('exam-body-curriculums');
+            Route::get('/courses/{course}/curricula', [StudentController::class, 'curriculumMappings'])->name('course-curricula');
+            Route::get('/cycles/{curriculum}/courses', [StudentController::class, 'cycleCourses'])->name('cycle-courses');
+
+            Route::middleware('role:admin')->group(function () {
+                Route::get('/course-change', [StudentCourseChangeController::class, 'index'])->name('course-change.index');
+                Route::post('/course-change', [StudentCourseChangeController::class, 'store'])->name('course-change.store');
+                Route::get('/{student}/admission-letter', [StudentController::class, 'admissionLetter'])->name('admission-letter');
+            });
+        });
+
+        /*
+        |--------------------------------------------------------------------------
+        | Roles & Permissions
+        |--------------------------------------------------------------------------
+        */
+        Route::prefix('roles')->name('roles.')->group(function () {
+            Route::get('/', [RoleController::class, 'index'])->name('index');
+            Route::get('/create', [RoleController::class, 'create'])->name('create');
+            Route::post('/', [RoleController::class, 'store'])->name('store');
+            Route::get('/search', [RoleController::class, 'search'])->name('search');
+            Route::get('/{role}/edit', [RoleController::class, 'edit'])->name('edit');
+            Route::put('/{role}', [RoleController::class, 'update'])->name('update');
+            Route::delete('/{role}', [RoleController::class, 'destroy'])->name('destroy');
+            Route::get('/{role}/permissions', [RoleController::class, 'editpermission'])->name('permissions.edit');
+            Route::post('/permissions/assign', [RoleController::class, 'assignPermissions'])->name('permissions.assign');
+        });
+
+        Route::prefix('permissions')->name('permissions.')->group(function () {
+            Route::get('/', [PermissionController::class, 'index'])->name('index');
+            Route::get('/create', [PermissionController::class, 'create'])->name('create');
+            Route::post('/', [PermissionController::class, 'store'])->name('store');
+            Route::get('/search', [PermissionController::class, 'search'])->name('search');
+            Route::get('/roles', [PermissionController::class, 'roles'])->name('roles');
+            Route::post('/roles/sync', [PermissionController::class, 'syncRolePermissions'])->name('roles.sync');
+            Route::get('/{permission}/edit', [PermissionController::class, 'edit'])->name('edit');
+            Route::put('/{permission}', [PermissionController::class, 'update'])->name('update');
+            Route::delete('/{permission}', [PermissionController::class, 'destroy'])->name('destroy');
+        });
+
+        /*
+        |--------------------------------------------------------------------------
+        | Reports & Analytics
+        |--------------------------------------------------------------------------
+        */
+        Route::prefix('reports')->name('reports.')->group(function () {
+            Route::get('/', [ReportingController::class, 'index'])->name('dashboard');
+            Route::get('/executive', [ReportingController::class, 'executive'])->name('executive');
+            Route::get('/finance', [ReportingController::class, 'finance'])->name('finance');
+            Route::get('/academic', [ReportingController::class, 'academic'])->name('academic');
+            Route::get('/admissions', [ReportingController::class, 'admissions'])->name('admissions');
+            Route::get('/hostel', [ReportingController::class, 'hostel'])->name('hostel');
+            Route::get('/data-quality', [ReportingController::class, 'dataQuality'])->name('data-quality');
+            Route::get('/snapshots', [ReportingController::class, 'snapshots'])->name('snapshots');
+        });
+
+    }); // End non_student group
+
+}); // End auth group
+
 /*
 |--------------------------------------------------------------------------
-| AUTH
+| Authentication Routes (Breeze/Fortify style)
 |--------------------------------------------------------------------------
 */
 require __DIR__.'/auth.php';

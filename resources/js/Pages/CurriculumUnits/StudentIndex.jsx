@@ -1,10 +1,9 @@
 import { Head, Link } from "@inertiajs/react";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { BookOpen } from "lucide-react";
 
 export default function StudentIndex({ course, units_by_module }) {
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="My Units" />
 
             <div className="mx-auto w-full max-w-6xl animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -22,7 +21,7 @@ export default function StudentIndex({ course, units_by_module }) {
 
                 <div className="mt-6 flex items-center justify-between">
                     <Link
-                        href={route("student.dashboard")}
+                        href={route("dashboard")}
                         className="text-sm font-medium text-emerald-700 transition hover:text-emerald-800"
                     >
                         Back to dashboard
@@ -94,6 +93,6 @@ export default function StudentIndex({ course, units_by_module }) {
                     )}
                 </div>
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 }

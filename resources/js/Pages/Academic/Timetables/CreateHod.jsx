@@ -1,6 +1,5 @@
 import { Head, Link, router, useForm } from "@inertiajs/react";
 import { useEffect } from "react";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import SearchSelect from "@/Components/SearchSelect";
@@ -147,7 +146,7 @@ export default function CreateHod({
     };
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Create Timetable" />
 
             <div className="space-y-8">
@@ -496,6 +495,6 @@ export default function CreateHod({
                     </div>
                 </form>
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 }

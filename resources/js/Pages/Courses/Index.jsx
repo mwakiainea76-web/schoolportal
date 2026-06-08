@@ -1,6 +1,5 @@
 import { Head, Link, router } from "@inertiajs/react";
 import { useState } from "react";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import Table from "@/Components/Table/Table";
 import Thead from "@/Components/Table/Thead";
 import THdata from "@/Components/Table/THdata";
@@ -11,6 +10,49 @@ import formatDate from "@/utils/date";
 import SearchSelect from "@/Components/SearchSelect";
 import InputLabel from "@/Components/InputLabel";
 import CourseWorkspaceTabs from "@/Pages/Courses/Partials/CourseWorkspaceTabs";
+
+const FILTER_DEFINITIONS = [
+    {
+        key: "course_id",
+        label: "Course Name",
+        routeName: "courses.search",
+        placeholder: "Select active course...",
+        selectedLabelKey: "course",
+    },
+    {
+        key: "curriculum_id",
+        label: "Curriculum",
+        routeName: "curriculums.search",
+        placeholder: "Select curriculum...",
+        selectedLabelKey: "curriculum",
+    },
+    {
+        key: "department_id",
+        label: "Department",
+        routeName: "departments.search",
+        placeholder: "Type to search department...",
+        selectedLabelKey: "department",
+    },
+    {
+        key: "exam_body_id",
+        label: "Exam Body",
+        routeName: "exam-bodies.search",
+        placeholder: "Type to search exam body...",
+        selectedLabelKey: "exam_body",
+    },
+    {
+        key: "certification_level_id",
+        label: "Certification Level",
+        routeName: "certification-levels.search",
+        placeholder: "Type to search level...",
+        selectedLabelKey: "certification_level",
+    },
+];
+
+const FILTER_KEYS = FILTER_DEFINITIONS.map((filter) => filter.key);
+
+const emptyFilterState = () =>
+    FILTER_KEYS.reduce((values, key) => ({ ...values, [key]: "" }), {});
 
 export default function coursesIndex({
     courses,
@@ -29,12 +71,16 @@ export default function coursesIndex({
         pageFilters.direction || "desc",
     );
     const [form, setForm] = useState({
+        ...emptyFilterState(),
         course_id: pageFilters.course_id || "",
         department_id: pageFilters.department_id || "",
         exam_body_id: pageFilters.exam_body_id || "",
         certification_level_id: pageFilters.certification_level_id || "",
         curriculum_id: pageFilters.curriculum_id || "",
     });
+    const [currentFilterKey, setCurrentFilterKey] = useState(
+        FILTER_KEYS.find((key) => pageFilters[key]) || "",
+    );
 
     const setFilter = (key, value) => {
         setForm((current) => ({
@@ -43,13 +89,57 @@ export default function coursesIndex({
         }));
     };
 
-    const currentFilters = () => ({
-        course_id: form.course_id,
-        department_id: form.department_id,
-        exam_body_id: form.exam_body_id,
-        certification_level_id: form.certification_level_id,
-        curriculum_id: form.curriculum_id,
-    });
+    const currentFilters = () =>
+        FILTER_KEYS.reduce((values, key) => ({ ...values, [key]: form[key] }), {});
+
+    const selectedFilterDefinition = FILTER_DEFINITIONS.find(
+        (filter) => filter.key === currentFilterKey,
+    );
+
+    const activeFilters = FILTER_DEFINITIONS.filter((filter) => form[filter.key]);
+
+    const selectFilterColumn = (key) => {
+        setCurrentFilterKey(key);
+    };
+
+    const addCurrentFilter = () => {
+        if (!currentFilterKey || !form[currentFilterKey]) return;
+
+        setCurrentFilterKey("");
+    };
+
+    const clearSingleFilter = (key) => {
+        setFilter(key, "");
+
+        if (currentFilterKey === key) {
+            setCurrentFilterKey("");
+        }
+    };
+
+    const getSelectedOptionLabel = (filter) =>
+        selectedFilters?.[filter.selectedLabelKey] || form[filter.key];
+
+    const renderFilterInput = (filter) => {
+        if (!filter) {
+            return (
+                <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 px-4 py-2 text-sm text-zinc-400">
+                    Select a column to show its input
+                </div>
+            );
+        }
+
+        return (
+            <SearchSelect
+                routeName={filter.routeName}
+                defaultOptions={[]}
+                value={form[filter.key]}
+                selectedLabel={selectedFilters?.[filter.selectedLabelKey]}
+                placeholder={filter.placeholder}
+                preloadOptions
+                onChange={(option) => setFilter(filter.key, option?.id || "")}
+            />
+        );
+    };
 
     const handleSort = (field) => {
         const direction =
@@ -87,13 +177,8 @@ export default function coursesIndex({
     };
 
     const clearFilters = () => {
-        setForm({
-            course_id: "",
-            department_id: "",
-            exam_body_id: "",
-            certification_level_id: "",
-            curriculum_id: "",
-        });
+        setForm(emptyFilterState());
+        setCurrentFilterKey("");
 
         router.get(
             route("courses.index"),
@@ -114,110 +199,89 @@ export default function coursesIndex({
     };
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Courses" />
 
             <div className="max-w-6xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
                 <div className="mb-6">
                     <CourseWorkspaceTabs activeTab="courses" />
                 </div>
-                <form className="mb-4 rounded-lg border border-zinc-100 bg-white p-4 shadow-sm" onSubmit={submit}>
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                <form
+                    className="mb-4 rounded-lg border border-zinc-100 bg-white p-4 shadow-sm"
+                    onSubmit={submit}
+                >
+                    <div className="grid grid-cols-1 items-end gap-3 lg:grid-cols-[minmax(220px,300px)_minmax(300px,1fr)_auto_auto_auto]">
                         <div>
-                            <InputLabel value="Course Name" />
-                            <SearchSelect
-                                routeName="courses.search"
-                                defaultOptions={[]}
-                                value={form.course_id}
-                                selectedLabel={selectedFilters.course}
-                                placeholder="Select active course..."
-                                preloadOptions
-                                onChange={(course) =>
-                                    setFilter("course_id", course.id)
-                                }
-                            />
+                            <InputLabel value="Filter Column" />
+                            <select
+                                value={currentFilterKey}
+                                onChange={(e) => selectFilterColumn(e.target.value)}
+                                className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+                            >
+                                <option value="">Choose column...</option>
+                                {FILTER_DEFINITIONS.map((filter) => (
+                                    <option key={filter.key} value={filter.key}>
+                                        {filter.label}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
 
                         <div>
-                            <InputLabel value="Curriculum" />
-                            <SearchSelect
-                                routeName="curriculums.search"
-                                defaultOptions={[]}
-                                value={form.curriculum_id}
-                                selectedLabel={selectedFilters.curriculum}
-                                placeholder="Select curriculum..."
-                                preloadOptions
-                                onChange={(curriculum) =>
-                                    setFilter("curriculum_id", curriculum.id)
-                                }
+                            <InputLabel
+                                value={selectedFilterDefinition?.label || "Filter Value"}
                             />
+                            {renderFilterInput(selectedFilterDefinition)}
                         </div>
 
-                        <div>
-                            <InputLabel value="Department" />
-                            <SearchSelect
-                                routeName="departments.search"
-                                defaultOptions={[]}
-                                value={form.department_id}
-                                selectedLabel={selectedFilters.department}
-                                placeholder="Type to search department..."
-                                preloadOptions
-                                onChange={(department) =>
-                                    setFilter("department_id", department.id)
-                                }
-                            />
-                        </div>
+                        <button
+                            type="button"
+                            onClick={addCurrentFilter}
+                            disabled={!currentFilterKey || !form[currentFilterKey]}
+                            className="inline-flex h-10 items-center justify-center rounded-lg border border-zinc-300 bg-white px-4 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            + Add filter
+                        </button>
 
-                        <div>
-                            <InputLabel value="Exam Body" />
-                            <SearchSelect
-                                routeName="exam-bodies.search"
-                                defaultOptions={[]}
-                                value={form.exam_body_id}
-                                selectedLabel={selectedFilters.exam_body}
-                                placeholder="Type to search exam body..."
-                                preloadOptions
-                                onChange={(examBody) =>
-                                    setFilter("exam_body_id", examBody.id)
-                                }
-                            />
-                        </div>
-
-                        <div>
-                            <InputLabel value="Certification Level" />
-                            <SearchSelect
-                                routeName="certification-levels.search"
-                                defaultOptions={[]}
-                                value={form.certification_level_id}
-                                selectedLabel={
-                                    selectedFilters.certification_level
-                                }
-                                placeholder="Type to search level..."
-                                preloadOptions
-                                onChange={(level) =>
-                                    setFilter(
-                                        "certification_level_id",
-                                        level.id,
-                                    )
-                                }
-                            />
-                        </div>
-                    </div>
-
-                    <div className="mt-4 flex justify-end gap-3">
                         <button
                             type="button"
                             onClick={clearFilters}
-                            className="rounded bg-zinc-400 px-4 py-2 text-sm text-white hover:bg-zinc-600"
+                            className="inline-flex h-10 items-center justify-center rounded-lg border border-zinc-300 bg-white px-4 text-sm text-zinc-700 hover:bg-zinc-50"
                         >
-                            Clear
+                            Clear all
                         </button>
+
                         <button
-                            className="rounded bg-emerald-600 px-4 py-2 text-sm text-white hover:bg-slate-700"
+                            className="inline-flex h-10 items-center justify-center rounded-lg bg-emerald-600 px-4 text-sm text-white hover:bg-emerald-700"
                             type="submit"
                         >
-                            Search
+                            Apply
                         </button>
+                    </div>
+
+                    <div className="mt-4 border-t border-zinc-100 pt-3">
+
+                        {activeFilters.length ? (
+                            <div className="flex flex-wrap gap-2">
+                                {activeFilters.map((filter) => (
+                                    <button
+                                        key={filter.key}
+                                        type="button"
+                                        onClick={() => clearSingleFilter(filter.key)}
+                                        className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 ring-1 ring-emerald-100 hover:bg-emerald-100"
+                                    >
+                                        <span>
+                                            {filter.label}: {getSelectedOptionLabel(filter)}
+                                        </span>
+                                        <span className="text-emerald-900">×</span>
+                                    </button>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-sm text-zinc-500">
+                                No filters selected. Choose a column above to filter this table.
+                            </p>
+                        )}
                     </div>
                 </form>
 
@@ -314,6 +378,6 @@ export default function coursesIndex({
                     </Tbody>
                 </Table>
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 }

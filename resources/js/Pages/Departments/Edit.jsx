@@ -4,7 +4,6 @@ import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import TextInput from "@/Components/TextInput";
 import TextArea from "@/Components/TextArea";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import DepartmentWorkspaceTabs from "@/Pages/Departments/Partials/DepartmentWorkspaceTabs";
 
 const Edit = ({ department, selectedHod = null }) => {
@@ -59,7 +58,7 @@ const Edit = ({ department, selectedHod = null }) => {
     };
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Edit Department" />
 
             <div className=" mx-auto w-full">
@@ -161,7 +160,7 @@ const Edit = ({ department, selectedHod = null }) => {
                     </form>
                 </div>
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 };
 

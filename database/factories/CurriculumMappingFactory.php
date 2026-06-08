@@ -20,7 +20,8 @@ class CurriculumMappingFactory extends Factory
         return [
             'course_id' => \App\Models\Course::factory(),
             'curriculum_id' => \App\Models\Curriculum::factory(),
-
+            'is_active' => true,
+            'created_by' => \App\Models\User::factory(),
         ];
     }
 }

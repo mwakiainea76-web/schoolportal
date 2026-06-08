@@ -4,7 +4,6 @@ import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import TextArea from "@/Components/TextArea";
 import TextInput from "@/Components/TextInput";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import CourseWorkspaceTabs from "@/Pages/Courses/Partials/CourseWorkspaceTabs";
 
 const Edit = ({ curriculum }) => {
@@ -26,7 +25,7 @@ const Edit = ({ curriculum }) => {
     };
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Edit Curriculum" />
 
             <div className="mx-auto w-full">
@@ -104,7 +103,7 @@ const Edit = ({ curriculum }) => {
                     </div>
                 </form>
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 };
 

@@ -20,6 +20,92 @@ const STATUS_STYLES = {
     deactivated: "bg-slate-100 text-slate-600",
 };
 
+const EMPTY_FILTERS = {
+    course_id: "",
+    curriculum_id: "",
+    academic_year_id: "",
+    academic_session_id: "",
+    department_id: "",
+    year_of_study: "",
+    admission_number: "",
+    status: "",
+};
+
+const FILTER_DEFINITIONS = [
+    {
+        key: "admission_number",
+        label: "Admission Number",
+        type: "text",
+        placeholder: "Search by Reg No...",
+    },
+    {
+        key: "department_id",
+        label: "Department",
+        type: "search",
+        routeName: "departments.search",
+        placeholder: "Search department...",
+        selectedLabelKey: "department",
+    },
+    {
+        key: "course_id",
+        label: "Course",
+        type: "search",
+        routeName: "courses.search",
+        placeholder: "Select course...",
+        selectedLabelKey: "course",
+        clears: ["curriculum_id"],
+    },
+    {
+        key: "curriculum_id",
+        label: "Curriculum",
+        type: "search",
+        routeName: "curriculums.search",
+        placeholder: "Select curriculum...",
+        selectedLabelKey: "curriculum",
+        dependsOn: "course_id",
+        disabledPlaceholder: "Select course first",
+        routeParams: (form) => ({ course_id: form.course_id }),
+    },
+    {
+        key: "academic_year_id",
+        label: "Academic Year",
+        type: "search",
+        routeName: "academic-years.search",
+        placeholder: "Select academic year...",
+        selectedLabelKey: "academic_year",
+        clears: ["academic_session_id"],
+    },
+    {
+        key: "academic_session_id",
+        label: "Academic Session",
+        type: "search",
+        routeName: "academic-sessions.search",
+        placeholder: "Select academic session...",
+        selectedLabelKey: "academic_session",
+        dependsOn: "academic_year_id",
+        disabledPlaceholder: "Select academic year first",
+        routeParams: (form) => ({ academic_year_id: form.academic_year_id }),
+    },
+    {
+        key: "year_of_study",
+        label: "Year of Study",
+        type: "select",
+        placeholder: "All years",
+        options: [
+            { value: "1", label: "Year 1" },
+            { value: "2", label: "Year 2" },
+            { value: "3", label: "Year 3" },
+            { value: "4", label: "Year 4" },
+        ],
+    },
+    {
+        key: "status",
+        label: "Status",
+        type: "status",
+        placeholder: "All statuses",
+    },
+];
+
 const labelStatus = (status) =>
     status ? status.charAt(0).toUpperCase() + status.slice(1) : "-";
 
@@ -35,45 +121,199 @@ export default function Index({
             : {};
 
     const [form, setForm] = useState({
-        course_id: pageFilters.course_id || "",
-        curriculum_id: pageFilters.curriculum_id || "",
-        academic_year_id: pageFilters.academic_year_id || "",
-        academic_session_id: pageFilters.academic_session_id || "",
-        status: pageFilters.status || "",
+        ...EMPTY_FILTERS,
+        ...Object.fromEntries(
+            Object.entries(pageFilters).filter(([key]) => key in EMPTY_FILTERS),
+        ),
     });
 
-    const setFilter = (key, value) => {
+    const [filterLabels, setFilterLabels] = useState({
+        department_id: selectedFilters.department || "",
+        course_id: selectedFilters.course || "",
+        curriculum_id: selectedFilters.curriculum || "",
+        academic_year_id: selectedFilters.academic_year || "",
+        academic_session_id: selectedFilters.academic_session || "",
+    });
+
+    const firstActiveFilter = FILTER_DEFINITIONS.find(
+        (filter) => pageFilters[filter.key],
+    );
+
+    const [currentFilterKey, setCurrentFilterKey] = useState(
+        firstActiveFilter?.key || "",
+    );
+
+    const activeFilters = FILTER_DEFINITIONS.filter((filter) => form[filter.key]);
+
+    const setFilterValue = (key, value, label = "") => {
+        const filter = FILTER_DEFINITIONS.find((item) => item.key === key);
+
+        setForm((current) => {
+            const next = {
+                ...current,
+                [key]: value,
+            };
+
+            filter?.clears?.forEach((childKey) => {
+                next[childKey] = "";
+            });
+
+            return next;
+        });
+
+        if (filter?.type === "search") {
+            setFilterLabels((current) => ({
+                ...current,
+                [key]: label,
+                ...(filter.clears || []).reduce(
+                    (labels, childKey) => ({ ...labels, [childKey]: "" }),
+                    {},
+                ),
+            }));
+        }
+    };
+
+    const selectFilterColumn = (nextKey) => {
+        setCurrentFilterKey(nextKey);
+    };
+
+    const addCurrentFilter = () => {
+        if (!currentFilterKey || !form[currentFilterKey]) {
+            return;
+        }
+
+        setCurrentFilterKey("");
+    };
+
+    const clearSingleFilter = (key) => {
+        const nextEmpty = { [key]: "" };
+
+        if (key === "course_id") {
+            nextEmpty.curriculum_id = "";
+        }
+
+        if (key === "academic_year_id") {
+            nextEmpty.academic_session_id = "";
+        }
+
         setForm((current) => ({
             ...current,
-            [key]: value,
+            ...nextEmpty,
         }));
+
+        setFilterLabels((current) => ({
+            ...current,
+            ...Object.keys(nextEmpty).reduce(
+                (labels, emptyKey) => ({ ...labels, [emptyKey]: "" }),
+                {},
+            ),
+        }));
+
+        if (currentFilterKey && currentFilterKey in nextEmpty) {
+            setCurrentFilterKey("");
+        }
     };
 
     const submit = (e) => {
         e.preventDefault();
 
+        const cleanFilters = Object.fromEntries(
+            Object.entries(form).filter(([, value]) => value !== "" && value !== null),
+        );
+
         router.get(
             route("courses.enrollments.index"),
-            { ...form, page: 1 },
+            { ...cleanFilters, page: 1 },
             { preserveState: true, replace: true },
         );
     };
 
     const clearFilters = () => {
-        const emptyFilters = {
-            course_id: "",
-            curriculum_id: "",
-            academic_year_id: "",
-            academic_session_id: "",
-            status: "",
-        };
-
-        setForm(emptyFilters);
+        setForm(EMPTY_FILTERS);
+        setFilterLabels({});
+        setCurrentFilterKey("");
 
         router.get(
             route("courses.enrollments.index"),
             { page: 1 },
             { preserveState: true, replace: true },
+        );
+    };
+
+    const getSelectedOptionLabel = (filter) => {
+        if (filter.type === "search") {
+            return filterLabels[filter.key] || selectedFilters[filter.selectedLabelKey] || form[filter.key];
+        }
+
+        if (filter.key === "status") {
+            return labelStatus(form.status);
+        }
+
+        if (filter.key === "year_of_study") {
+            return `Year ${form.year_of_study}`;
+        }
+
+        return form[filter.key];
+    };
+
+    const renderFilterInput = (filter) => {
+        if (!filter) {
+            return null;
+        }
+
+        const isDisabled = filter.dependsOn && !form[filter.dependsOn];
+
+        if (filter.type === "text") {
+            return (
+                <input
+                    type="text"
+                    value={form[filter.key]}
+                    onChange={(e) => setFilterValue(filter.key, e.target.value)}
+                    placeholder={filter.placeholder}
+                    className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+                />
+            );
+        }
+
+        if (filter.type === "select" || filter.type === "status") {
+            const options =
+                filter.type === "status"
+                    ? statuses.map((status) => ({
+                          value: status,
+                          label: labelStatus(status),
+                      }))
+                    : filter.options;
+
+            return (
+                <select
+                    value={form[filter.key]}
+                    onChange={(e) => setFilterValue(filter.key, e.target.value)}
+                    className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+                >
+                    <option value="">{filter.placeholder}</option>
+                    {options.map((option) => (
+                        <option key={option.value} value={option.value}>
+                            {option.label}
+                        </option>
+                    ))}
+                </select>
+            );
+        }
+
+        return (
+            <SearchSelect
+                routeName={filter.routeName}
+                routeParams={filter.routeParams ? filter.routeParams(form) : undefined}
+                disabled={Boolean(isDisabled)}
+                defaultOptions={[]}
+                value={form[filter.key]}
+                selectedLabel={filterLabels[filter.key] || selectedFilters[filter.selectedLabelKey]}
+                placeholder={isDisabled ? filter.disabledPlaceholder : filter.placeholder}
+                preloadOptions
+                onChange={(option) =>
+                    setFilterValue(filter.key, option?.id || "", option?.name || option?.label || "")
+                }
+            />
         );
     };
 
@@ -83,126 +323,108 @@ export default function Index({
 
             <div className="max-w-6xl mx-auto w-full">
                 <form
-                    className="mb-4 rounded-lg border border-zinc-100 bg-white p-4 shadow-sm"
-                    onSubmit={submit}
-                >
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                        <div>
-                            <InputLabel value="Course Name" />
-                            <SearchSelect
-                                routeName="courses.search"
-                                defaultOptions={[]}
-                                value={form.course_id}
-                                selectedLabel={selectedFilters.course}
-                                placeholder="Select course..."
-                                preloadOptions
-                                onChange={(course) =>
-                                    setFilter("course_id", course.id)
-                                }
-                            />
-                        </div>
+    className="mb-4 rounded-lg border border-zinc-100 bg-white p-4 shadow-sm"
+    onSubmit={submit}
+>
+    <div className="grid grid-cols-1 items-end gap-3 lg:grid-cols-[minmax(220px,300px)_minmax(300px,1fr)_auto_auto_auto]">
+        <div>
+            <InputLabel value="Filter Column" />
+            <select
+                value={currentFilterKey}
+                onChange={(e) => selectFilterColumn(e.target.value)}
+                className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+            >
+                <option value="">Choose column...</option>
+                {FILTER_DEFINITIONS.map((filter) => (
+                    <option key={filter.key} value={filter.key}>
+                        {filter.label}
+                    </option>
+                ))}
+            </select>
+        </div>
 
-                        <div>
-                            <InputLabel value="Curriculum Name" />
-                            <SearchSelect
-                                routeName="curriculums.search"
-                                defaultOptions={[]}
-                                value={form.curriculum_id}
-                                selectedLabel={selectedFilters.curriculum}
-                                placeholder="Select curriculum..."
-                                preloadOptions
-                                onChange={(curriculum) =>
-                                    setFilter("curriculum_id", curriculum.id)
-                                }
-                            />
-                        </div>
+        <div>
+            <InputLabel
+                value={
+                    currentFilterKey
+                        ? FILTER_DEFINITIONS.find(
+                              (filter) => filter.key === currentFilterKey,
+                          )?.label
+                        : "Filter Value"
+                }
+            />
 
-                        <div>
-                            <InputLabel value="Academic Year" />
-                            <SearchSelect
-                                routeName="academic-years.search"
-                                defaultOptions={[]}
-                                value={form.academic_year_id}
-                                selectedLabel={selectedFilters.academic_year}
-                                placeholder="Select academic year..."
-                                preloadOptions
-                                onChange={(academicYear) => {
-                                    setForm((current) => ({
-                                        ...current,
-                                        academic_year_id: academicYear.id,
-                                        academic_session_id: "",
-                                    }));
-                                }}
-                            />
-                        </div>
+            {currentFilterKey ? (
+                renderFilterInput(
+                    FILTER_DEFINITIONS.find(
+                        (filter) => filter.key === currentFilterKey,
+                    ),
+                )
+            ) : (
+                <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 px-4 py-2 text-sm text-zinc-400">
+                    Select a column to show its input
+                </div>
+            )}
+        </div>
 
-                        <div>
-                            <InputLabel value="Academic Session" />
-                            <SearchSelect
-                                routeName="academic-sessions.search"
-                                routeParams={{
-                                    academic_year_id: form.academic_year_id,
-                                }}
-                                defaultOptions={[]}
-                                value={form.academic_session_id}
-                                selectedLabel={
-                                    selectedFilters.academic_session
-                                }
-                                placeholder="Select academic session..."
-                                preloadOptions
-                                onChange={(academicSession) =>
-                                    setFilter(
-                                        "academic_session_id",
-                                        academicSession.id,
-                                    )
-                                }
-                            />
-                        </div>
+        <button
+            type="button"
+            onClick={addCurrentFilter}
+            disabled={!currentFilterKey || !form[currentFilterKey]}
+            className="inline-flex h-10 items-center justify-center rounded-lg border border-zinc-300 bg-white px-4 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+            + Add filter
+        </button>
 
-                        <div>
-                            <InputLabel value="Status" />
-                            <select
-                                value={form.status}
-                                onChange={(e) =>
-                                    setFilter("status", e.target.value)
-                                }
-                                className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-5 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-emerald-200"
-                            >
-                                <option value="">All statuses</option>
-                                {statuses.map((status) => (
-                                    <option key={status} value={status}>
-                                        {labelStatus(status)}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                    </div>
+        <button
+            type="button"
+            onClick={clearFilters}
+            className="inline-flex h-10 items-center justify-center rounded-lg border border-zinc-300 bg-white px-4 text-sm text-zinc-700 hover:bg-zinc-50"
+        >
+            Clear all
+        </button>
 
-                    <div className="mt-4 flex justify-end gap-3">
-                        <button
-                            type="button"
-                            onClick={clearFilters}
-                            className="rounded bg-zinc-400 px-4 py-2 text-sm text-white hover:bg-zinc-600"
-                        >
-                            Clear
-                        </button>
-                        <button
-                            className="rounded bg-emerald-600 px-4 py-2 text-sm text-white hover:bg-slate-700"
-                            type="submit"
-                        >
-                            Search
-                        </button>
-                    </div>
-                </form>
+        <button
+            className="inline-flex h-10 items-center justify-center rounded-lg bg-emerald-600 px-4 text-sm text-white hover:bg-emerald-700"
+            type="submit"
+        >
+            Apply
+        </button>
+    </div>
+
+    <div className="mt-4 border-t border-zinc-100 pt-3">
+        {activeFilters.length ? (
+            <div className="flex flex-wrap gap-2">
+                {activeFilters.map((filter) => (
+                    <button
+                        key={filter.key}
+                        type="button"
+                        onClick={() => clearSingleFilter(filter.key)}
+                        className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 ring-1 ring-emerald-100 hover:bg-emerald-100"
+                    >
+                        <span>
+                            {filter.label}: {getSelectedOptionLabel(filter)}
+                        </span>
+                        <span className="text-emerald-900">×</span>
+                    </button>
+                ))}
+            </div>
+        ) : (
+            <p className="text-sm text-zinc-500">
+                No filters selected. Choose a column above to filter this table.
+            </p>
+        )}
+    </div>
+</form>
 
                 <Table pagination={courseEnrollments}>
                     <Thead>
                         <THdata>Student</THdata>
                         <THdata>Reg No</THdata>
+                        <THdata>Department</THdata>
                         <THdata>Course</THdata>
-                        <THdata>Curriculum</THdata>
-                        <THdata>Academic Year</THdata>
-                        <THdata>Academic Session</THdata>
+                        <THdata>Year</THdata>
+                        <THdata>Session</THdata>
                         <THdata>Status</THdata>
                         <THdata>Admitted</THdata>
                     </Thead>
@@ -210,18 +432,12 @@ export default function Index({
                         {courseEnrollments?.data?.length ? (
                             courseEnrollments.data.map((item) => (
                                 <Trow key={item.id}>
-                                    <Tdata>
-                                        {item.student_name || "-"}
-                                    </Tdata>
-                                    <Tdata>
-                                        {item.admission_number || "-"}
-                                    </Tdata>
+                                    <Tdata>{item.student_name || "-"}</Tdata>
+                                    <Tdata>{item.admission_number || "-"}</Tdata>
+                                    <Tdata>{item.department ?? "-"}</Tdata>
                                     <Tdata>{item.course ?? "-"}</Tdata>
-                                    <Tdata>{item.curriculum ?? "-"}</Tdata>
-                                    <Tdata>{item.academic_year ?? "-"}</Tdata>
-                                    <Tdata>
-                                        {item.academic_session ?? "-"}
-                                    </Tdata>
+                                    <Tdata>{item.year_of_study ?? "-"}</Tdata>
+                                    <Tdata>{item.academic_session ?? "-"}</Tdata>
                                     <Tdata>
                                         <span
                                             className={`rounded px-2 py-0.5 text-xs ${STATUS_STYLES[item.status] ?? "bg-gray-100 text-gray-600"}`}

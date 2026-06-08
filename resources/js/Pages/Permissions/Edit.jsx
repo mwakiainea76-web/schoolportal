@@ -1,4 +1,3 @@
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head, Link, useForm } from "@inertiajs/react";
 import { useEffect } from "react";
 import InputLabel from "@/Components/InputLabel";
@@ -26,7 +25,7 @@ export default function EditPermission({ permission }) {
     };
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Edit Permission" />
 
             <div className="max-w-4xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -79,6 +78,6 @@ export default function EditPermission({ permission }) {
                     </form>
                 </div>
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 }

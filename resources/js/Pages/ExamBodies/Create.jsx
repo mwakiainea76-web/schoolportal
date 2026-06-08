@@ -3,7 +3,6 @@ import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import TextInput from "@/Components/TextInput";
 import TextArea from "@/Components/TextArea";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 
 export default function AddExamBody() {
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -23,7 +22,7 @@ export default function AddExamBody() {
     };
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Add Exam Body" />
 
             <div className=" mx-auto w-full">
@@ -107,6 +106,6 @@ export default function AddExamBody() {
                     </form>
                 </div>
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 }

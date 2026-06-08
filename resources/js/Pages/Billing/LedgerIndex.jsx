@@ -1,6 +1,5 @@
 import { Head, router } from "@inertiajs/react";
 import { useState } from "react";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import Table from "@/Components/Table/Table";
 import Thead from "@/Components/Table/Thead";
 import THdata from "@/Components/Table/THdata";
@@ -70,7 +69,7 @@ export default function LedgerIndex({
     };
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Financial Ledger" />
 
             <div className="mx-auto w-full space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -259,6 +258,6 @@ export default function LedgerIndex({
                     </Table>
                 </div>
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 }

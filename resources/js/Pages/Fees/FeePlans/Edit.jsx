@@ -3,7 +3,6 @@ import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import TextInput from "@/Components/TextInput";
 import ToggleSwitch from "@/Components/ToggleSwitch";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 
 export default function EditFeePlan({ feePlan }) {
     const { data, setData, put, processing, errors } = useForm({
@@ -21,7 +20,7 @@ export default function EditFeePlan({ feePlan }) {
     };
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Edit Fee Plan" />
 
             <div className="mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -108,6 +107,6 @@ export default function EditFeePlan({ feePlan }) {
                     </form>
                 </div>
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 }

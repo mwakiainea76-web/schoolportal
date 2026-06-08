@@ -5,7 +5,6 @@ import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import TextInput from "@/Components/TextInput";
 import TextArea from "@/Components/TextArea";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 
 const Edit = ({ exam_body }) => {
     const exam = exam_body || null;
@@ -54,7 +53,7 @@ const Edit = ({ exam_body }) => {
     };
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Edit Exam Body" />
 
             <div className="mx-auto w-full">
@@ -132,7 +131,7 @@ const Edit = ({ exam_body }) => {
                     </form>
                 </div>
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 };
 

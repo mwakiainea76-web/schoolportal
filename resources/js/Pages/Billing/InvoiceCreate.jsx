@@ -1,7 +1,6 @@
 import React from "react";
 import { Head, useForm, Link } from "@inertiajs/react";
 
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import SearchSelect from "@/Components/SearchSelect";
 import InputLabel from "@/Components/InputLabel";
 import InputError from "@/Components/InputError";
@@ -28,7 +27,7 @@ export default function InvoiceCreate({ students, enrollments }) {
     };
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Create Invoice" />
 
             <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -126,6 +125,6 @@ export default function InvoiceCreate({ students, enrollments }) {
                     </form>
                 </div>
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 }

@@ -1,5 +1,4 @@
 import { Head, useForm } from "@inertiajs/react";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import Form from "./Form";
 import HostelWorkspaceTabs from "./Partials/HostelWorkspaceTabs";
 
@@ -29,7 +28,7 @@ export default function Edit({ hostel }) {
     };
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Edit Hostel" />
             <div className="mx-auto max-w-6xl space-y-6">
                 <HostelWorkspaceTabs activeTab="view-hostels" />
@@ -41,6 +40,6 @@ export default function Edit({ hostel }) {
                     cancelHref={route("hostels.index")}
                 />
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 }

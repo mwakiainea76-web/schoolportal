@@ -3,7 +3,6 @@ import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import TextInput from "@/Components/TextInput";
 import TextArea from "@/Components/TextArea";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import DepartmentWorkspaceTabs from "@/Pages/Departments/Partials/DepartmentWorkspaceTabs";
 
 export default function CreateDepartment() {
@@ -23,7 +22,7 @@ export default function CreateDepartment() {
     };
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Add Department" />
 
             <div className="mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -154,6 +153,6 @@ export default function CreateDepartment() {
                     </form>
                 </div>
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 }

@@ -1,5 +1,4 @@
 import { Head, Link } from "@inertiajs/react";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import formatDate from "@/utils/date";
 import {
     ArrowLeft,
@@ -25,7 +24,7 @@ const statusClasses = {
 
 export default function Show({ statement }) {
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title={`Fee Statement ${statement.statement_reference}`} />
 
             <div className="mx-auto w-full max-w-7xl space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -234,7 +233,7 @@ export default function Show({ statement }) {
                     </div>
                 </section>
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 }
 

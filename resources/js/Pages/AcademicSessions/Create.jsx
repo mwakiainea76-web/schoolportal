@@ -1,4 +1,3 @@
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head, useForm } from "@inertiajs/react";
 import { useEffect } from "react";
 import TextInput from "@/Components/TextInput";
@@ -103,13 +102,13 @@ export default function Create({
     }
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Create Academic session" />
 
             <div className="max-w-7xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
                 <AcademicCalendarWorkspaceTabs activeTab="add-session" />
                 {content}
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 }

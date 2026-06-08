@@ -1,4 +1,3 @@
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head, Link, useForm } from "@inertiajs/react";
 
 import InputLabel from "@/Components/InputLabel";
@@ -19,7 +18,7 @@ export default function Create() {
     };
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Create Role" />
 
             <div className=" mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -71,6 +70,6 @@ export default function Create() {
                     </form>
                 </div>
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 }

@@ -4,7 +4,6 @@ import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import TextArea from "@/Components/TextArea";
 import SearchSelect from "@/Components/SearchSelect";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import CourseWorkspaceTabs from "@/Pages/Courses/Partials/CourseWorkspaceTabs";
 
 export default function CreateCurriculum() {
@@ -23,7 +22,7 @@ export default function CreateCurriculum() {
     };
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Add Curriculum Mapping" />
 
             <div className="mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -115,6 +114,6 @@ export default function CreateCurriculum() {
                     </form>
                 </div>
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 }

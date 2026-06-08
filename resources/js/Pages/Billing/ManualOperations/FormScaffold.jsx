@@ -1,5 +1,4 @@
 import { Head, Link } from "@inertiajs/react";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import PageLayout from "@/Components/PageLayout";
 
 export default function FormScaffold({
@@ -10,7 +9,7 @@ export default function FormScaffold({
     children,
 }) {
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title={title} />
 
             <PageLayout>
@@ -39,6 +38,6 @@ export default function FormScaffold({
 
                 {children}
             </PageLayout>
-        </AuthenticatedLayout>
+        </>
     );
 }

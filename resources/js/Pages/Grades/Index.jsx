@@ -358,7 +358,7 @@ export default function Index({
 
                         <div className="flex items-center justify-between pt-2">
                             <Link
-                                href={route("staff.dashboard")}
+                                href={route("dashboard")}
                                 className="rounded-xl border border-zinc-200 px-5 py-3 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
                             >
                                 Cancel

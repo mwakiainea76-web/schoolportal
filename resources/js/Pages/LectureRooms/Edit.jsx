@@ -1,5 +1,4 @@
 import { Head, Link, useForm } from "@inertiajs/react";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import SearchSelect from "@/Components/SearchSelect";
@@ -25,7 +24,7 @@ export default function Edit({ lecture_room, departments }) {
     };
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Edit Lecture Room" />
 
             <div className="mx-auto w-full max-w-4xl animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -175,6 +174,6 @@ export default function Edit({ lecture_room, departments }) {
                     </form>
                 </div>
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 }

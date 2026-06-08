@@ -2,7 +2,6 @@ import { useForm, Head, Link } from "@inertiajs/react";
 import InputLabel from "@/Components/InputLabel";
 import TextInput from "@/Components/TextInput";
 import InputError from "@/Components/InputError";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import AcademicCalendarWorkspaceTabs from "@/Pages/Academic/Partials/AcademicCalendarWorkspaceTabs";
 
 export default function Create({ activeSession }) {
@@ -18,7 +17,7 @@ export default function Create({ activeSession }) {
     };
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Enroll Student in Session" />
 
             <div className="mx-auto max-w-2xl w-full">
@@ -100,6 +99,6 @@ export default function Create({ activeSession }) {
                     </div>
                 </form>
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 }

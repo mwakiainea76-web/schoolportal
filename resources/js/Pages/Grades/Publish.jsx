@@ -1,5 +1,4 @@
 import { Head, router, useForm } from "@inertiajs/react";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import InputLabel from "@/Components/InputLabel";
 import InputError from "@/Components/InputError";
 import SearchSelect from "@/Components/SearchSelect";
@@ -108,7 +107,7 @@ export default function Publish({
     };
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Publish Marks" />
 
             <div className="mx-auto max-w-6xl space-y-8">
@@ -547,6 +546,6 @@ export default function Publish({
                     </div>
                 )}
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 }

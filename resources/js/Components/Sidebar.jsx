@@ -21,16 +21,8 @@ export default function Sidebar({
     const { url } = usePage();
     const { can, hasRole } = useRbac();
 
-    const dashboardRouteName = hasRole("student")
-        ? "student.dashboard"
-        : hasRole("trainer") && !hasRole("admin") && !hasRole("hod")
-          ? "trainer.dashboard"
-          : "admin.dashboard";
-    const dashboardFallback = hasRole("student")
-        ? "/student/dashboard"
-        : hasRole("trainer") && !hasRole("admin") && !hasRole("hod")
-          ? "/trainer/dashboard"
-          : "/admin/dashboard";
+    const dashboardRouteName = "dashboard";
+    const dashboardFallback = "/dashboard";
     const dashboardLabel = hasRole("student")
         ? "Student Dashboard"
         : hasRole("trainer") && !hasRole("admin") && !hasRole("hod")

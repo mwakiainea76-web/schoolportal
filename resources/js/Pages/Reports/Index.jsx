@@ -1,7 +1,6 @@
 import { Head, Link } from "@inertiajs/react";
 import { useEffect, useState } from "react";
 
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import InputLabel from "@/Components/InputLabel";
 import LoadingSpinner from "@/Components/LoadingSpinner";
 import TextInput from "@/Components/TextInput";
@@ -315,17 +314,17 @@ export default function ReportsIndex({
 
     if (loading) {
         return (
-            <AuthenticatedLayout>
+            <>
                 <Head title={pageTitle} />
                 <div className="flex h-64 items-center justify-center">
                     <LoadingSpinner size="lg" centered />
                 </div>
-            </AuthenticatedLayout>
+            </>
         );
     }
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title={pageTitle} />
 
             <div className="mx-auto w-full space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -2877,7 +2876,7 @@ export default function ReportsIndex({
                     </>
                 )}
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 }
 

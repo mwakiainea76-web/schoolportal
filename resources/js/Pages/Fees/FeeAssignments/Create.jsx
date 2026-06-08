@@ -5,7 +5,6 @@ import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import SearchSelect from "@/Components/SearchSelect";
 import TextInput from "@/Components/TextInput";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 
 export default function Create({ feePlans, academicYear, curriculums }) {
     const hasAcademicYears = academicYear.length > 0;
@@ -31,7 +30,7 @@ export default function Create({ feePlans, academicYear, curriculums }) {
     };
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Create Fee Assignment" />
 
             <div className="mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -154,6 +153,6 @@ export default function Create({ feePlans, academicYear, curriculums }) {
                     </form>
                 </div>
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 }

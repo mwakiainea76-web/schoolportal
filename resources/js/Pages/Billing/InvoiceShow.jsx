@@ -1,5 +1,4 @@
 import { Head, Link } from "@inertiajs/react";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import formatDate from "@/utils/date";
 import {
     ArrowLeft,
@@ -72,7 +71,7 @@ export default function Show({ invoice, sessionSummary }) {
     const hasAdditionalInvoices = (sessionSummary?.invoice_count || 0) > 1;
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title={`Invoice ${invoice.invoice_number}`} />
 
             <div className="mx-auto w-full max-w-7xl space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -537,7 +536,7 @@ export default function Show({ invoice, sessionSummary }) {
                     </section>
                 </div>
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 }
 

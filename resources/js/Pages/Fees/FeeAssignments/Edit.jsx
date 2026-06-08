@@ -5,7 +5,6 @@ import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import SearchSelect from "@/Components/SearchSelect";
 import TextInput from "@/Components/TextInput";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 
 export default function Edit({
     assignment,
@@ -36,7 +35,7 @@ export default function Edit({
     };
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Edit Fee Assignment" />
 
             <div className="mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -164,6 +163,6 @@ export default function Edit({
                     </form>
                 </div>
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 }

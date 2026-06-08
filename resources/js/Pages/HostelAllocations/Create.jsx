@@ -1,5 +1,4 @@
 import { Head, useForm } from "@inertiajs/react";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import Form from "./Form";
 import HostelWorkspaceTabs from "@/Pages/Hostels/Partials/HostelWorkspaceTabs";
 
@@ -22,7 +21,7 @@ export default function Create({ enrollments, hostels, rooms, beds }) {
     };
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Allocate Hostel Bed" />
             <div className="mx-auto max-w-6xl space-y-6">
                 <HostelWorkspaceTabs activeTab="add-allocation" />
@@ -38,6 +37,6 @@ export default function Create({ enrollments, hostels, rooms, beds }) {
                     beds={beds}
                 />
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 }

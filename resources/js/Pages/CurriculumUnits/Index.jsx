@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { Head, Link, router } from "@inertiajs/react";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import InputLabel from "@/Components/InputLabel";
 import SearchSelect from "@/Components/SearchSelect";
 import Table from "@/Components/Table/Table";
@@ -167,7 +166,7 @@ export default function Index({
     ].filter(Boolean).length;
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title={title} />
 
             <div className="mx-auto w-full max-w-6xl animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -424,6 +423,6 @@ export default function Index({
                     </Tbody>
                 </Table>
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 }

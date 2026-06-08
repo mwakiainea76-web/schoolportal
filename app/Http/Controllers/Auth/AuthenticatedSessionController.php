@@ -54,7 +54,7 @@ class AuthenticatedSessionController extends Controller
             false,
         );
 
-        return redirect()->intended(route($this->dashboardRouteFor($user), absolute: false));
+        return redirect()->intended(route('dashboard', absolute: false));
     }
 
     /**
@@ -69,25 +69,5 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerateToken();
 
         return redirect('/');
-    }
-
-    private function dashboardRouteFor(?User $user): string
-    {
-        if (! $user) {
-            return 'login';
-        }
-
-        $user->loadMissing('roles:id,name');
-        $roles = $user->roles->pluck('name');
-
-        return match (true) {
-            $roles->contains('admin') => 'admin.dashboard',
-            $roles->contains('hod') => 'hod.dashboard',
-            $roles->contains('bursar') => 'bursar.dashboard',
-            $roles->contains('librarian') => 'librarian.dashboard',
-            $roles->contains('trainer') => 'trainer.dashboard',
-            $roles->contains('student') => 'student.dashboard',
-            default => 'student.dashboard',
-        };
     }
 }

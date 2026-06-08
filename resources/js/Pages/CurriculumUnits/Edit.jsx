@@ -1,6 +1,5 @@
 import React from "react";
 import { Head, Link, useForm } from "@inertiajs/react";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import SearchSelect from "@/Components/SearchSelect";
@@ -39,7 +38,7 @@ export default function Edit({ curriculum_mapping, unit, selected_mapping_option
     };
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title={`Edit Unit: ${unit.name}`} />
 
             <div className="mx-auto w-full max-w-7xl animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -247,6 +246,6 @@ export default function Edit({ curriculum_mapping, unit, selected_mapping_option
                     </form>
                 </div>
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 }

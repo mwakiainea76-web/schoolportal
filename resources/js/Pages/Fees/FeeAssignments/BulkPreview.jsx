@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { Head, Link, router, useForm } from "@inertiajs/react";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import SearchSelect from "@/Components/SearchSelect";
@@ -29,7 +28,7 @@ export default function BulkPreview({ affected, toFeePlan, criteria }) {
     };
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Bulk Replace Preview" />
 
             <div className="mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -193,7 +192,7 @@ export default function BulkPreview({ affected, toFeePlan, criteria }) {
                     </div>
                 </div>
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 }
 

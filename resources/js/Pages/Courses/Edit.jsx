@@ -5,7 +5,6 @@ import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import TextInput from "@/Components/TextInput";
 import TextArea from "@/Components/TextArea";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import SearchSelect from "@/Components/SearchSelect";
 import CourseWorkspaceTabs from "@/Pages/Courses/Partials/CourseWorkspaceTabs";
 
@@ -74,7 +73,7 @@ const Edit = ({
     };
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Edit Course" />
 
             <div className="mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -297,7 +296,7 @@ const Edit = ({
                     </form>
                 </div>
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 };
 

@@ -3,7 +3,6 @@ import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import TextInput from "@/Components/TextInput";
 import TextArea from "@/Components/TextArea";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import SearchSelect from "@/Components/SearchSelect";
 
 export default function AddCertificationLevel({
@@ -37,7 +36,7 @@ export default function AddCertificationLevel({
     };
 
     return (
-        <AuthenticatedLayout>
+        <>
             <Head title="Add Certification Level" />
 
             <div className="mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -261,6 +260,6 @@ export default function AddCertificationLevel({
                     </form>
                 </div>
             </div>
-        </AuthenticatedLayout>
+        </>
     );
 }
