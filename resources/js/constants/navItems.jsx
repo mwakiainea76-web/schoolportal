@@ -20,11 +20,12 @@ import {
     ClipboardPenLine,
     Eye,
     Send,
+    Clock,
+    DoorOpen,
 } from "lucide-react";
 
 /**
  * ICON MAPPING
- * High-quality iconography for a professional school portal.
  */
 export const ICONS = {
     dashboard: <LayoutDashboard className="w-5 h-5 shrink-0" />,
@@ -50,11 +51,12 @@ export const ICONS = {
     grading: <ClipboardPenLine className="w-5 h-5 shrink-0" />,
     view: <Eye className="w-5 h-5 shrink-0" />,
     publish: <Send className="w-5 h-5 shrink-0" />,
+    timetable: <Clock className="w-5 h-5 shrink-0" />,
+    lectureRoom: <DoorOpen className="w-5 h-5 shrink-0" />,
 };
 
 /**
  * SHARED CONSTANTS
- * Centralized active-state tracking for complex routes.
  */
 const ACADEMIC_ACTIVE = [
     "academic.years.index",
@@ -68,107 +70,51 @@ const ACADEMIC_ACTIVE = [
     "academic.sessions.enrollments.edit",
 ];
 
-const COURSE_ACTIVE = [
-    "courses.index",
-    "courses.create",
-    "courses.edit",
-    "curriculums.index",
-    "curriculums.create",
-    "curriculums.edit",
-    "courses.curriculum-mappings.index",
-    "courses.curriculum-mappings.create",
-    "courses.curriculum-mappings.edit",
-    "units.index",
-    "units.create",
-    "units.edit",
-];
-
 /**
  * STAFF NAVIGATION
- * Universal, resource-first naming that works regardless of specific role.
  */
 export const STAFF_NAV_ITEMS = [
-    // --- Academics ---
+
+    // --- Courses & Units (standalone) ---
     {
-        key: "academics",
-        label: "Academics",
-        icon: "academic",
-        basePath: "/academic",
-        permissions: ["academic.sessions.view"],
+        key: "courses",
+        label: "Courses & Units",
+        icon: "courses",
+        basePath: "/courses",
+        permissions: ["courses.view"],
         children: [
-            {
-                key: "timetables-group",
-                label: "Timetables",
+              {
+                key: "curriculums-group",
+                label: "Curriculums",
                 children: [
-                    {
-                        routeName: "academic.timetables.index",
-                        fallback: "/academic/timetables",
-                        label: "View Timetable",
-                        permission: "academic.sessions.view",
-                    },
-                    {
-                        routeName: "academic.timetables.create",
-                        fallback: "/academic/timetables/create",
-                        label: "Add Timetable",
-                        permission: "academic.sessions.view", // Adjust permission if needed
-                    },
-                ],
-            },
-            {
-                key: "assessments-group",
-                label: "Assessments",
-                children: [
-                    {
-                        routeName: "academic.marks.view.index",
-                        fallback: "/academic/marks/view",
-                        label: "View Marks",
-                        permission: "academic.sessions.view",
-                    },
-                    {
-                        routeName: "academic.marks.add.index",
-                        fallback: "/academic/marks/add",
-                        label: "Add Marks",
-                        permission: "academic.sessions.view",
-                    },
-                    {
-                        routeName: "academic.marks.marksheet.index",
-                        fallback: "/academic/marks/marksheet",
-                        label: "Marksheet",
-                        permission: "academic.sessions.view",
-                    },
-                    {
-                        routeName: "academic.marks.publish.index",
-                        fallback: "/academic/marks/publish",
-                        label: "Publish Marks",
-                        permission: "academic.sessions.view",
-                    },
-                ],
-            },
-            {
-                key: "courses-group",
-                label: "Courses & Units",
-                children: [
-                    {
-                        routeName: "courses.index",
-                        fallback: "/courses",
-                        label: "Courses",
-                    },
-                    {
-                        routeName: "courses.create",
-                        fallback: "/courses/create",
-                        label: "Add Course",
-                    },
                     {
                         routeName: "curriculums.index",
                         fallback: "/curriculums",
-                        label: "Curriculums",
+                        label: "All Curriculums",
                     },
                     {
                         routeName: "curriculums.create",
                         fallback: "/curriculums/create",
                         label: "Add Curriculum",
                     },
+                 
+                ],
+            },
+            {
+                key: "courses-group",
+                label: "Courses",
+                children: [
                     {
+                        routeName: "courses.index",
+                        fallback: "/courses",
+                        label: "All Courses",
+                    },
+                    {
+                        routeName: "courses.create",
+                        fallback: "/courses/create",
+                        label: "Add Course",
+                    },
+                       {
                         routeName: "courses.curriculum-mappings.index",
                         fallback: "/courses/curriculum-mappings",
                         label: "Curriculum Mapping",
@@ -178,10 +124,17 @@ export const STAFF_NAV_ITEMS = [
                         fallback: "/courses/curriculum-mappings/create",
                         label: "Add Mapping",
                     },
+                ],
+            },
+          
+            {
+                key: "units-group",
+                label: "Units",
+                children: [
                     {
                         routeName: "units.index",
                         fallback: "/units",
-                        label: "Units",
+                        label: "All Units",
                     },
                     {
                         routeName: "units.create",
@@ -192,6 +145,124 @@ export const STAFF_NAV_ITEMS = [
             },
         ],
     },
+
+    // --- Timetables (standalone) ---
+    {
+        key: "timetables",
+        label: "Timetables",
+        icon: "timetable",
+        basePath: "/academic/timetables",
+        permissions: ["academic.sessions.view"],
+        children: [
+            {
+                routeName: "academic.timetables.index",
+                fallback: "/academic/timetables",
+                label: "View Timetables",
+            },
+            {
+                routeName: "academic.timetables.create",
+                fallback: "/academic/timetables/create",
+                label: "Add Timetable",
+            },
+        ],
+    },
+
+    // --- Assessments (standalone) ---
+    {
+        key: "assessments",
+        label: "Assessments",
+        icon: "grading",
+        basePath: "/academic/marks",
+        permissions: ["academic.sessions.view"],
+        children: [
+            {
+                routeName: "academic.marks.view.index",
+                fallback: "/academic/marks/view",
+                label: "View Marks",
+            },
+            {
+                routeName: "academic.marks.add.index",
+                fallback: "/academic/marks/add",
+                label: "Add Marks",
+            },
+            {
+                routeName: "academic.marks.marksheet.index",
+                fallback: "/academic/marks/marksheet",
+                label: "Marksheet",
+            },
+            {
+                routeName: "academic.marks.publish.index",
+                fallback: "/academic/marks/publish",
+                label: "Publish Marks",
+            },
+        ],
+    },
+
+    // --- Hostels (standalone) ---
+    {
+        key: "hostels",
+        label: "Hostels",
+        icon: "hostel",
+        basePath: "/hostels",
+        permissions: ["hostels.view"],
+        children: [
+            {
+                key: "hostel-management",
+                label: "Hostel Management",
+                children: [
+                    {
+                        routeName: "hostels.index",
+                        fallback: "/hostels",
+                        label: "View Hostels",
+                    },
+                    {
+                        routeName: "hostels.create",
+                        fallback: "/hostels/create",
+                        label: "Add Hostel",
+                    },
+                ],
+            },
+            {
+                key: "hostel-allocations",
+                label: "Allocations",
+                children: [
+                    {
+                        routeName: "hostel-allocations.index",
+                        fallback: "/hostel-allocations",
+                        label: "View Allocations",
+                    },
+                    {
+                        routeName: "hostel-allocations.create",
+                        fallback: "/hostel-allocations/create",
+                        label: "Add Allocation",
+                    },
+                ],
+            },
+        ],
+    },
+
+    // --- Lecture Rooms (standalone) ---
+    {
+        key: "lecture-rooms",
+        label: "Lecture Rooms",
+        icon: "lectureRoom",
+        basePath: "/lecture-rooms",
+        permissions: ["lecture-rooms.view"],
+        children: [
+            {
+                routeName: "lecture-rooms.index",
+                fallback: "/lecture-rooms",
+                label: "View Rooms",
+            },
+            {
+                routeName: "lecture-rooms.create",
+                fallback: "/lecture-rooms/create",
+                label: "Add Room",
+            },
+        ],
+    },
+
+  
 
     // --- Analytics ---
     {
@@ -205,12 +276,11 @@ export const STAFF_NAV_ITEMS = [
                 routeName: "reports.executive",
                 fallback: "/reports/executive",
                 label: "Reporting Dashboard",
-                permission: "students.view",
             },
         ],
     },
 
-    // --- Student Records ---
+    // --- Students ---
     {
         key: "students",
         label: "Students",
@@ -310,43 +380,6 @@ export const STAFF_NAV_ITEMS = [
                     },
                 ],
             },
-            {
-                key: "facility-group",
-                label: "Facilities",
-                children: [
-                    {
-                        routeName: "lecture-rooms.index",
-                        fallback: "/lecture-rooms",
-                        label: "Lecture Rooms",
-                    },
-                    {
-                        key: "hostels-group",
-                        label: "Hostels",
-                        children: [
-                            {
-                                routeName: "hostels.index",
-                                fallback: "/hostels",
-                                label: "View Hostels",
-                            },
-                            {
-                                routeName: "hostels.create",
-                                fallback: "/hostels/create",
-                                label: "Add Hostel",
-                            },
-                            {
-                                routeName: "hostel-allocations.index",
-                                fallback: "/hostel-allocations",
-                                label: "View Allocations",
-                            },
-                            {
-                                routeName: "hostel-allocations.create",
-                                fallback: "/hostel-allocations/create",
-                                label: "Add Allocation",
-                            },
-                        ],
-                    },
-                ],
-            },
         ],
     },
 
@@ -382,40 +415,50 @@ export const STAFF_NAV_ITEMS = [
         ],
     },
 
-    // --- Human Resources ---
+    // --- Staffing ---
     {
         key: "staffing",
         label: "Staffing",
         icon: "staffAccess",
         basePath: "/staffs",
-        permissions: ["staffs.view", "roles.view"],
+        permissions: ["staffs.view"],
+        children: [
+            { routeName: "staffs.index", fallback: "/staffs", label: "Staff Directory" },
+            { routeName: "staffs.create", fallback: "/staffs/create", label: "Onboarding" },
+        ],
+    },
+  // --- Access Control (standalone) ---
+    {
+        key: "access-control",
+        label: "Access Control",
+        icon: "roles",
+        basePath: "/roles",
+        permissions: ["roles.view"],
         children: [
             {
-                key: "staff-group",
-                label: "Human Resources",
-                children: [
-                    { routeName: "staffs.index", fallback: "/staffs", label: "Staff Directory" },
-                    { routeName: "staffs.create", fallback: "/staffs/create", label: "Onboarding" },
-                ],
-            },
-            {
-                key: "rbac-group",
-                label: "Access Control",
+                key: "rbac-roles",
+                label: "Roles",
                 children: [
                     {
                         routeName: "roles.index",
                         fallback: "/roles",
-                        label: "Roles",
+                        label: "All Roles",
                     },
                     {
                         routeName: "roles.create",
                         fallback: "/roles/create",
                         label: "Add Role",
                     },
+                ],
+            },
+            {
+                key: "rbac-permissions",
+                label: "Permissions",
+                children: [
                     {
                         routeName: "permissions.index",
                         fallback: "/permissions",
-                        label: "Permissions",
+                        label: "All Permissions",
                     },
                     {
                         routeName: "permissions.create",
@@ -426,7 +469,6 @@ export const STAFF_NAV_ITEMS = [
             },
         ],
     },
-
     // --- System ---
     {
         key: "system",
@@ -456,7 +498,6 @@ export const STAFF_NAV_ITEMS = [
 
 /**
  * STUDENT NAVIGATION
- * Universal naming for students to ensure consistency.
  */
 export const STUDENT_NAV_ITEMS = [
     {

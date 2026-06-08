@@ -1,12 +1,22 @@
 import { jsxs, jsx, Fragment } from "react/jsx-runtime";
 import axios from "axios";
+import { createRoot } from "react-dom/client";
 import { usePage, Link, router, createInertiaApp } from "@inertiajs/react";
 import { useState, useRef, useEffect, createContext, useContext } from "react";
-import { Wallet, UsersRound, UserRound, ShieldCheck, LayoutGrid, BookMarked, Building2, BookOpen, ArrowRightLeft, Settings, UserCog, Landmark, GraduationCap, CalendarClock, School, BarChart3, LayoutDashboard, ChevronLeft } from "lucide-react";
+import { DoorOpen, Clock, Send, Eye, ClipboardPenLine, Presentation, Home, Landmark, UsersRound, UserRound, ShieldCheck, LayoutGrid, BookMarked, Building2, BookOpen, ArrowRightLeft, Settings, UserCog, GraduationCap, CalendarClock, School, BarChart3, LayoutDashboard, ChevronLeft } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
-import { createRoot } from "react-dom/client";
 window.axios = axios;
 window.axios.defaults.headers.common["X-Requested-With"] = "XMLHttpRequest";
+async function resolvePageComponent(path, pages) {
+  for (const p of Array.isArray(path) ? path : [path]) {
+    const page = pages[p];
+    if (typeof page === "undefined") {
+      continue;
+    }
+    return typeof page === "function" ? page() : page;
+  }
+  throw new Error(`Page not found: ${path}`);
+}
 function useRbac() {
   const { props } = usePage();
   const permissions = props.auth?.permissions ?? [];
@@ -37,509 +47,6 @@ function NavLink({ href, label, active, onClick, depth = 0 }) {
     }
   );
 }
-const STAFF_NAV_ITEMS = [
-  {
-    key: "reports",
-    label: "Analytics & Reports",
-    icon: "reports",
-    basePath: "/reports",
-    permissions: ["students.view"],
-    children: [
-      {
-        routeName: "reports.executive",
-        fallback: "/reports/executive",
-        label: "Executive Reports",
-        permission: "students.view"
-      }
-    ]
-  },
-  {
-    key: "academic-setup",
-    label: "Academic Setup",
-    icon: "academicSetup",
-    basePath: "/courses",
-    permissions: [
-      "departments.view",
-      "departments.create",
-      "exam.bodies.view",
-      "exam.bodies.create",
-      "certification.levels.view",
-      "certification.levels.create",
-      "courses.view",
-      "courses.create",
-      "curriculums.view",
-      "curriculums.create",
-      "courses.curriculum-mappings.view",
-      "courses.curriculum-mappings.create",
-      "students.view"
-    ],
-    children: [
-      {
-        key: "institution-structure",
-        label: "Department Workspace",
-        icon: "department",
-        children: [
-          {
-            routeName: "departments.index",
-            fallback: "/departments",
-            label: "Department Workspace",
-            permission: "departments.view",
-            activeRouteNames: [
-              "departments.index",
-              "departments.create",
-              "departments.edit"
-            ]
-          }
-        ]
-      },
-      {
-        key: "course-workspace",
-        label: "Course Workspace",
-        icon: "courses",
-        children: [
-          {
-            routeName: "courses.index",
-            fallback: "/courses",
-            label: "Course Workspace",
-            permission: "courses.view",
-            activeRouteNames: [
-              "courses.index",
-              "courses.create",
-              "courses.edit",
-              "curriculums.index",
-              "curriculums.create",
-              "curriculums.edit",
-              "courses.curriculum-mappings.index",
-              "courses.curriculum-mappings.create",
-              "courses.curriculum-mappings.edit",
-              "units.index",
-              "units.create",
-              "units.edit"
-            ]
-          }
-        ]
-      },
-      {
-        key: "exams-certifications",
-        label: "Exam Workspace",
-        icon: "book",
-        children: [
-          {
-            routeName: "exam.bodies.index",
-            fallback: "/exam-bodies",
-            label: "Exam Workspace",
-            permission: "exam.bodies.view",
-            activeRouteNames: [
-              "exam.bodies.index",
-              "exam.bodies.create",
-              "exam.bodies.edit",
-              "certification-levels.index",
-              "certification-levels.create",
-              "certification-levels.edit"
-            ]
-          }
-        ]
-      }
-    ]
-  },
-  {
-    key: "academic-operations",
-    label: "Academic Operations",
-    icon: "academicOps",
-    basePath: "/academic",
-    permissions: [
-      "academic.years.view",
-      "academic.years.create",
-      "academic.sessions.view",
-      "academic.sessions.create",
-      "students.view"
-    ],
-    children: [
-      {
-        key: "calendar",
-        label: "Academic Calendar",
-        icon: "academic",
-        children: [
-          {
-            routeName: "academic.sessions.index",
-            fallback: "/academic/sessions",
-            label: "Academic Calendar",
-            permission: "academic.years.view",
-            activeRouteNames: [
-              "academic.years.index",
-              "academic.sessions.index",
-              "academic.years.create",
-              "academic.years.edit",
-              "academic.sessions.create",
-              "academic.sessions.edit"
-            ]
-          }
-        ]
-      },
-      {
-        key: "class-planning",
-        label: "Class Planning",
-        icon: "academicOps",
-        children: [
-          {
-            routeName: "academic.timetables.index",
-            fallback: "/academic/timetables",
-            label: "Class Timetable",
-            permission: "academic.sessions.view"
-          },
-          {
-            routeName: "lecture-rooms.index",
-            fallback: "/lecture-rooms",
-            label: "Lecture Rooms",
-            permission: "academic.sessions.view"
-          },
-          {
-            routeName: "lecture-rooms.create",
-            fallback: "/lecture-rooms/create",
-            label: "Add Lecture Room",
-            permission: "academic.sessions.create"
-          },
-          {
-            routeName: "academic.sessions.enrollments.index",
-            fallback: "/academic/sessions/enrollments",
-            label: "Session Enrollments",
-            permission: "students.view"
-          },
-          {
-            routeName: "academic.sessions.enrollments.create",
-            fallback: "/academic/sessions/enrollments/create",
-            label: "Add Session Enrollment",
-            permission: "students.view"
-          }
-        ]
-      }
-    ]
-  },
-  {
-    key: "student-management",
-    label: "Student Management",
-    icon: "students",
-    basePath: "/students",
-    permissions: ["students.view", "students.create"],
-    children: [
-      {
-        key: "student-records",
-        label: "Student Records",
-        icon: "students",
-        children: [
-          {
-            routeName: "students.index",
-            fallback: "/students",
-            label: "Student List",
-            permission: "students.view"
-          },
-          {
-            routeName: "students.create",
-            fallback: "/students/create",
-            label: "Add Student",
-            permission: "students.create"
-          }
-        ]
-      },
-      {
-        key: "student-transfers",
-        label: "Transfers",
-        icon: "transfer",
-        children: [
-          {
-            routeName: "students.course-change.index",
-            fallback: "/students/course-change",
-            label: "Course Transfer",
-            permission: "students.view"
-          }
-        ]
-      }
-    ]
-  },
-  {
-    key: "finance-billing",
-    label: "Finance & Billing",
-    icon: "financeBilling",
-    basePath: "/fees",
-    permissions: ["students.view", "fees.create", "billing.ledger.view"],
-    children: [
-      {
-        key: "fee-setup",
-        label: "Fee Setup",
-        icon: "finance",
-        children: [
-          {
-            routeName: "fees.plans.index",
-            fallback: "/fees/plans",
-            label: "Fee Plans",
-            permission: "students.view"
-          },
-          {
-            routeName: "fees.plans.create",
-            fallback: "/fees/plans/create",
-            label: "Add Fee Plan",
-            permission: "fees.create"
-          },
-          {
-            routeName: "fees.plans.items.index",
-            fallback: "/fees/plans/items",
-            label: "Fee Plan Items",
-            permission: "students.view"
-          },
-          {
-            routeName: "fees.plans.items.create",
-            fallback: "/fees/plans/items/create",
-            label: "Add Fee Plan Item",
-            permission: "fees.create"
-          },
-          {
-            routeName: "fees.assignments.index",
-            fallback: "/fees/assignments",
-            label: "Fee Assignments",
-            permission: "students.view"
-          },
-          {
-            routeName: "fees.assignments.create",
-            fallback: "/fees/assignments/create",
-            label: "Add Fee Assignment",
-            permission: "fees.create"
-          }
-        ]
-      },
-      {
-        key: "billing-operations",
-        label: "Billing Operations",
-        icon: "financeBilling",
-        children: [
-          {
-            routeName: "billing.invoices.index",
-            fallback: "/billing/invoices",
-            label: "Invoices",
-            permission: "students.view"
-          },
-          {
-            routeName: "billing.invoices.create",
-            fallback: "/billing/invoices/create",
-            label: "Add Invoice",
-            permission: "students.view"
-          },
-          {
-            routeName: "billing.manual.index",
-            fallback: "/billing/manual-operations",
-            label: "Manual Billing",
-            permission: "students.view"
-          },
-          {
-            routeName: "billing.manual.invoices.create",
-            fallback: "/billing/manual-operations/additional-invoice",
-            label: "Add Additional Invoice",
-            permission: "students.view"
-          },
-          {
-            routeName: "billing.manual.payments.create",
-            fallback: "/billing/manual-operations/record-payment",
-            label: "Add Payment",
-            permission: "students.view"
-          },
-          {
-            routeName: "billing.manual.penalties.create",
-            fallback: "/billing/manual-operations/post-penalty",
-            label: "Add Penalty",
-            permission: "students.view"
-          },
-          {
-            routeName: "billing.manual.adjustments.create",
-            fallback: "/billing/manual-operations/apply-adjustment",
-            label: "Add Adjustment",
-            permission: "students.view"
-          },
-          {
-            routeName: "billing.ledger.index",
-            fallback: "/billing/ledger",
-            label: "Financial Ledger",
-            permission: "billing.ledger.view"
-          }
-        ]
-      }
-    ]
-  },
-  {
-    key: "staff-access",
-    label: "Staff & Access",
-    icon: "staffAccess",
-    basePath: "/staffs",
-    permissions: [
-      "staffs.view",
-      "staffs.create",
-      "roles.view",
-      "roles.create",
-      "permissions.view",
-      "permissions.create"
-    ],
-    children: [
-      {
-        key: "staff-records",
-        label: "Staff Records",
-        icon: "staff",
-        children: [
-          {
-            routeName: "staffs.index",
-            fallback: "/staffs",
-            label: "Staff List",
-            permission: "staffs.view"
-          },
-          {
-            routeName: "staffs.create",
-            fallback: "/staffs/create",
-            label: "Add Staff",
-            permission: "staffs.create"
-          }
-        ]
-      },
-      {
-        key: "access-control",
-        label: "Access Workspace",
-        icon: "roles",
-        children: [
-          {
-            routeName: "roles.index",
-            fallback: "/roles",
-            label: "Access Workspace",
-            permission: "roles.view",
-            activeRouteNames: [
-              "roles.index",
-              "roles.create",
-              "roles.edit",
-              "permissions.index",
-              "permissions.create",
-              "permissions.edit"
-            ]
-          }
-        ]
-      }
-    ]
-  },
-  {
-    key: "settings",
-    label: "System Administration",
-    icon: "settings",
-    basePath: "/settings",
-    permissions: ["roles.view"],
-    children: [
-      {
-        key: "monitoring",
-        label: "Monitoring & Logs",
-        icon: "settings",
-        children: [
-          {
-            routeName: "settings.performance.index",
-            fallback: "/settings/performance",
-            label: "App Performance",
-            permission: "roles.view"
-          },
-          {
-            routeName: "settings.logs.index",
-            fallback: "/settings/logs",
-            label: "Log Files",
-            permission: "roles.view"
-          },
-          {
-            routeName: "settings.user-monitor.index",
-            fallback: "/settings/user-monitor",
-            label: "User Monitor",
-            permission: "roles.view"
-          },
-          {
-            routeName: "settings.security.index",
-            fallback: "/settings/security",
-            label: "Security Monitor",
-            permission: "roles.view"
-          }
-        ]
-      },
-      {
-        key: "integrations",
-        label: "Integrations",
-        icon: "grid",
-        children: []
-      }
-    ]
-  }
-];
-const STUDENT_NAV_ITEMS = [
-  {
-    key: "student-academics",
-    label: "My Academics",
-    icon: "academic",
-    basePath: "/student/course-units",
-    children: [
-      {
-        key: "student-learning",
-        label: "Academic Records",
-        icon: "book",
-        children: [
-          {
-            routeName: "student.course-units.index",
-            fallback: "/student/course-units",
-            label: "View Registered Units",
-            activeRouteNames: ["student.course-units.index"]
-          },
-          {
-            routeName: "student.results.index",
-            fallback: "/student/results",
-            label: "View Results",
-            activeRouteNames: ["student.results.index"]
-          }
-        ]
-      }
-    ]
-  },
-  {
-    key: "student-finance",
-    label: "My Finance",
-    icon: "finance",
-    basePath: "/student/fee-statements",
-    children: [
-      {
-        key: "student-billing",
-        label: "Statements",
-        icon: "financeBilling",
-        children: [
-          {
-            routeName: "student.fee-statements.index",
-            fallback: "/student/fee-statements",
-            label: "View Statement",
-            activeRouteNames: [
-              "student.fee-statements.index",
-              "student.fee-statements.show"
-            ]
-          }
-        ]
-      }
-    ]
-  },
-  {
-    key: "student-account",
-    label: "My Account",
-    icon: "students",
-    basePath: "/profile",
-    children: [
-      {
-        key: "student-profile",
-        label: "Profile",
-        icon: "users",
-        children: [
-          {
-            routeName: "profile.edit",
-            fallback: "/profile",
-            label: "Profile Settings",
-            activeRouteNames: ["profile.edit"]
-          }
-        ]
-      }
-    ]
-  }
-];
 const ICONS = {
   dashboard: /* @__PURE__ */ jsx(LayoutDashboard, { className: "w-5 h-5 shrink-0" }),
   reports: /* @__PURE__ */ jsx(BarChart3, { className: "w-5 h-5 shrink-0" }),
@@ -558,8 +65,479 @@ const ICONS = {
   roles: /* @__PURE__ */ jsx(ShieldCheck, { className: "w-5 h-5 shrink-0" }),
   staff: /* @__PURE__ */ jsx(UserRound, { className: "w-5 h-5 shrink-0" }),
   users: /* @__PURE__ */ jsx(UsersRound, { className: "w-5 h-5 shrink-0" }),
-  finance: /* @__PURE__ */ jsx(Wallet, { className: "w-5 h-5 shrink-0" })
+  finance: /* @__PURE__ */ jsx(Landmark, { className: "w-5 h-5 shrink-0" }),
+  hostel: /* @__PURE__ */ jsx(Home, { className: "w-5 h-5 shrink-0" }),
+  presentation: /* @__PURE__ */ jsx(Presentation, { className: "w-5 h-5 shrink-0" }),
+  grading: /* @__PURE__ */ jsx(ClipboardPenLine, { className: "w-5 h-5 shrink-0" }),
+  view: /* @__PURE__ */ jsx(Eye, { className: "w-5 h-5 shrink-0" }),
+  publish: /* @__PURE__ */ jsx(Send, { className: "w-5 h-5 shrink-0" }),
+  timetable: /* @__PURE__ */ jsx(Clock, { className: "w-5 h-5 shrink-0" }),
+  lectureRoom: /* @__PURE__ */ jsx(DoorOpen, { className: "w-5 h-5 shrink-0" })
 };
+const ACADEMIC_ACTIVE = [
+  "academic.years.index",
+  "academic.years.create",
+  "academic.years.edit",
+  "academic.sessions.index",
+  "academic.sessions.create",
+  "academic.sessions.edit",
+  "academic.sessions.enrollments.index",
+  "academic.sessions.enrollments.create",
+  "academic.sessions.enrollments.edit"
+];
+const STAFF_NAV_ITEMS = [
+  // --- Courses & Units (standalone) ---
+  {
+    key: "courses",
+    label: "Courses & Units",
+    icon: "courses",
+    basePath: "/courses",
+    permissions: ["courses.view"],
+    children: [
+      {
+        key: "curriculums-group",
+        label: "Curriculums",
+        children: [
+          {
+            routeName: "curriculums.index",
+            fallback: "/curriculums",
+            label: "All Curriculums"
+          },
+          {
+            routeName: "curriculums.create",
+            fallback: "/curriculums/create",
+            label: "Add Curriculum"
+          }
+        ]
+      },
+      {
+        key: "courses-group",
+        label: "Courses",
+        children: [
+          {
+            routeName: "courses.index",
+            fallback: "/courses",
+            label: "All Courses"
+          },
+          {
+            routeName: "courses.create",
+            fallback: "/courses/create",
+            label: "Add Course"
+          },
+          {
+            routeName: "courses.curriculum-mappings.index",
+            fallback: "/courses/curriculum-mappings",
+            label: "Curriculum Mapping"
+          },
+          {
+            routeName: "courses.curriculum-mappings.create",
+            fallback: "/courses/curriculum-mappings/create",
+            label: "Add Mapping"
+          }
+        ]
+      },
+      {
+        key: "units-group",
+        label: "Units",
+        children: [
+          {
+            routeName: "units.index",
+            fallback: "/units",
+            label: "All Units"
+          },
+          {
+            routeName: "units.create",
+            fallback: "/units/create",
+            label: "Add Unit"
+          }
+        ]
+      }
+    ]
+  },
+  // --- Timetables (standalone) ---
+  {
+    key: "timetables",
+    label: "Timetables",
+    icon: "timetable",
+    basePath: "/academic/timetables",
+    permissions: ["academic.sessions.view"],
+    children: [
+      {
+        routeName: "academic.timetables.index",
+        fallback: "/academic/timetables",
+        label: "View Timetables"
+      },
+      {
+        routeName: "academic.timetables.create",
+        fallback: "/academic/timetables/create",
+        label: "Add Timetable"
+      }
+    ]
+  },
+  // --- Assessments (standalone) ---
+  {
+    key: "assessments",
+    label: "Assessments",
+    icon: "grading",
+    basePath: "/academic/marks",
+    permissions: ["academic.sessions.view"],
+    children: [
+      {
+        routeName: "academic.marks.view.index",
+        fallback: "/academic/marks/view",
+        label: "View Marks"
+      },
+      {
+        routeName: "academic.marks.add.index",
+        fallback: "/academic/marks/add",
+        label: "Add Marks"
+      },
+      {
+        routeName: "academic.marks.marksheet.index",
+        fallback: "/academic/marks/marksheet",
+        label: "Marksheet"
+      },
+      {
+        routeName: "academic.marks.publish.index",
+        fallback: "/academic/marks/publish",
+        label: "Publish Marks"
+      }
+    ]
+  },
+  // --- Hostels (standalone) ---
+  {
+    key: "hostels",
+    label: "Hostels",
+    icon: "hostel",
+    basePath: "/hostels",
+    permissions: ["hostels.view"],
+    children: [
+      {
+        key: "hostel-management",
+        label: "Hostel Management",
+        children: [
+          {
+            routeName: "hostels.index",
+            fallback: "/hostels",
+            label: "View Hostels"
+          },
+          {
+            routeName: "hostels.create",
+            fallback: "/hostels/create",
+            label: "Add Hostel"
+          }
+        ]
+      },
+      {
+        key: "hostel-allocations",
+        label: "Allocations",
+        children: [
+          {
+            routeName: "hostel-allocations.index",
+            fallback: "/hostel-allocations",
+            label: "View Allocations"
+          },
+          {
+            routeName: "hostel-allocations.create",
+            fallback: "/hostel-allocations/create",
+            label: "Add Allocation"
+          }
+        ]
+      }
+    ]
+  },
+  // --- Lecture Rooms (standalone) ---
+  {
+    key: "lecture-rooms",
+    label: "Lecture Rooms",
+    icon: "lectureRoom",
+    basePath: "/lecture-rooms",
+    permissions: ["lecture-rooms.view"],
+    children: [
+      {
+        routeName: "lecture-rooms.index",
+        fallback: "/lecture-rooms",
+        label: "View Rooms"
+      },
+      {
+        routeName: "lecture-rooms.create",
+        fallback: "/lecture-rooms/create",
+        label: "Add Room"
+      }
+    ]
+  },
+  // --- Analytics ---
+  {
+    key: "analytics",
+    label: "Analytics",
+    icon: "reports",
+    basePath: "/reports",
+    permissions: ["students.view"],
+    children: [
+      {
+        routeName: "reports.executive",
+        fallback: "/reports/executive",
+        label: "Reporting Dashboard"
+      }
+    ]
+  },
+  // --- Students ---
+  {
+    key: "students",
+    label: "Students",
+    icon: "students",
+    basePath: "/students",
+    permissions: ["students.view"],
+    children: [
+      {
+        routeName: "students.index",
+        fallback: "/students",
+        label: "Student Registry"
+      },
+      {
+        routeName: "students.create",
+        fallback: "/students/create",
+        label: "Admissions",
+        permission: "students.create"
+      },
+      {
+        routeName: "students.course-change.index",
+        fallback: "/students/course-change",
+        label: "Transfers"
+      }
+    ]
+  },
+  // --- Finance ---
+  {
+    key: "finance",
+    label: "Finance",
+    icon: "financeBilling",
+    basePath: "/fees",
+    permissions: ["billing.ledger.view"],
+    children: [
+      {
+        key: "billing-ops",
+        label: "Billing",
+        children: [
+          { routeName: "billing.invoices.index", fallback: "/billing/invoices", label: "Invoices" },
+          { routeName: "billing.manual.index", fallback: "/billing/manual-operations", label: "Direct Billing" },
+          { routeName: "billing.ledger.index", fallback: "/billing/ledger", label: "Financial Ledger" }
+        ]
+      },
+      {
+        key: "fee-setup",
+        label: "Fee Setup",
+        children: [
+          { routeName: "fees.plans.index", fallback: "/fees/plans", label: "Fee Plans" },
+          { routeName: "fees.assignments.index", fallback: "/fees/assignments", label: "Fee Assignments" }
+        ]
+      }
+    ]
+  },
+  // --- Operations ---
+  {
+    key: "operations",
+    label: "Operations",
+    icon: "academicOps",
+    basePath: "/academic",
+    permissions: ["academic.years.view", "students.view"],
+    children: [
+      {
+        key: "calendar-group",
+        label: "Academic Calendar",
+        children: [
+          {
+            routeName: "academic.years.index",
+            fallback: "/academic/years",
+            label: "Academic Years"
+          },
+          {
+            routeName: "academic.years.create",
+            fallback: "/academic/years/create",
+            label: "Add Year"
+          },
+          {
+            routeName: "academic.sessions.index",
+            fallback: "/academic/sessions",
+            label: "Sessions & Terms",
+            activeRouteNames: ACADEMIC_ACTIVE
+          },
+          {
+            routeName: "academic.sessions.create",
+            fallback: "/academic/sessions/create",
+            label: "Add Session"
+          },
+          {
+            routeName: "academic.sessions.enrollments.index",
+            fallback: "/academic/sessions/enrollments",
+            label: "Enrollments"
+          },
+          {
+            routeName: "academic.sessions.enrollments.create",
+            fallback: "/academic/sessions/enrollments/create",
+            label: "Create Enrollment"
+          }
+        ]
+      }
+    ]
+  },
+  // --- Institution ---
+  {
+    key: "institution",
+    label: "Institution",
+    icon: "academicSetup",
+    basePath: "/departments",
+    permissions: ["departments.view"],
+    children: [
+      {
+        key: "departments-group",
+        label: "Departments",
+        children: [
+          {
+            routeName: "departments.index",
+            fallback: "/departments",
+            label: "View Departments"
+          },
+          {
+            routeName: "departments.create",
+            fallback: "/departments/create",
+            label: "Add Department"
+          }
+        ]
+      },
+      {
+        routeName: "exam.bodies.index",
+        fallback: "/exam-bodies",
+        label: "Exam Boards"
+      }
+    ]
+  },
+  // --- Staffing ---
+  {
+    key: "staffing",
+    label: "Staffing",
+    icon: "staffAccess",
+    basePath: "/staffs",
+    permissions: ["staffs.view"],
+    children: [
+      { routeName: "staffs.index", fallback: "/staffs", label: "Staff Directory" },
+      { routeName: "staffs.create", fallback: "/staffs/create", label: "Onboarding" }
+    ]
+  },
+  // --- Access Control (standalone) ---
+  {
+    key: "access-control",
+    label: "Access Control",
+    icon: "roles",
+    basePath: "/roles",
+    permissions: ["roles.view"],
+    children: [
+      {
+        key: "rbac-roles",
+        label: "Roles",
+        children: [
+          {
+            routeName: "roles.index",
+            fallback: "/roles",
+            label: "All Roles"
+          },
+          {
+            routeName: "roles.create",
+            fallback: "/roles/create",
+            label: "Add Role"
+          }
+        ]
+      },
+      {
+        key: "rbac-permissions",
+        label: "Permissions",
+        children: [
+          {
+            routeName: "permissions.index",
+            fallback: "/permissions",
+            label: "All Permissions"
+          },
+          {
+            routeName: "permissions.create",
+            fallback: "/permissions/create",
+            label: "Add Permission"
+          }
+        ]
+      }
+    ]
+  },
+  // --- System ---
+  {
+    key: "system",
+    label: "System",
+    icon: "settings",
+    basePath: "/settings",
+    permissions: ["roles.view"],
+    children: [
+      {
+        routeName: "settings.performance.index",
+        fallback: "/settings/performance",
+        label: "Health Metrics"
+      },
+      {
+        routeName: "settings.logs.index",
+        fallback: "/settings/logs",
+        label: "System Logs"
+      },
+      {
+        routeName: "settings.security.index",
+        fallback: "/settings/security",
+        label: "Security Audit"
+      }
+    ]
+  }
+];
+const STUDENT_NAV_ITEMS = [
+  {
+    key: "academics",
+    label: "Academics",
+    icon: "academic",
+    basePath: "/student",
+    children: [
+      {
+        routeName: "student.course-units.index",
+        fallback: "/student/course-units",
+        label: "Registered Units"
+      },
+      {
+        routeName: "student.results.index",
+        fallback: "/student/results",
+        label: "Examination Results"
+      }
+    ]
+  },
+  {
+    key: "finance",
+    label: "Finance",
+    icon: "finance",
+    basePath: "/student/fee-statements",
+    children: [
+      {
+        routeName: "student.fee-statements.index",
+        fallback: "/student/fee-statements",
+        label: "Fee Statements"
+      }
+    ]
+  },
+  {
+    key: "account",
+    label: "Account",
+    icon: "users",
+    basePath: "/profile",
+    children: [
+      {
+        routeName: "profile.edit",
+        fallback: "/profile",
+        label: "Profile Settings"
+      }
+    ]
+  }
+];
 const safeRoute = (name, fallback) => route().has(name) ? route(name) : fallback;
 const isRouteCurrent = (name, fallback, url, activeRouteNames = []) => {
   const routeNames = [name, ...activeRouteNames].filter(Boolean);
@@ -597,65 +575,13 @@ function Sidebar({
 }) {
   const { url } = usePage();
   const { can, hasRole } = useRbac();
-  const dashboardRouteName = hasRole("student") ? "student.dashboard" : hasRole("trainer") && !hasRole("admin") && !hasRole("hod") ? "trainer.dashboard" : "admin.dashboard";
-  const dashboardFallback = hasRole("student") ? "/student/dashboard" : hasRole("trainer") && !hasRole("admin") && !hasRole("hod") ? "/trainer/dashboard" : "/admin/dashboard";
+  const dashboardRouteName = "dashboard";
+  const dashboardFallback = "/dashboard";
   const dashboardLabel = hasRole("student") ? "Student Dashboard" : hasRole("trainer") && !hasRole("admin") && !hasRole("hod") ? "Trainer Dashboard" : "Admin Dashboard";
   const navItems = hasRole("student") ? STUDENT_NAV_ITEMS : STAFF_NAV_ITEMS;
   const visibleNav = filterNav(navItems, can);
-  const timetableQuickLinks = !hasRole("student") && (hasRole("admin") || hasRole("hod") || hasRole("trainer")) ? [
-    {
-      label: "Timetable Workspace",
-      routeName: "academic.timetables.index",
-      fallback: "/academic/timetables"
-    }
-  ] : [];
-  const marksQuickLinks = !hasRole("student") && (hasRole("admin") || hasRole("hod") || hasRole("trainer")) ? [
-    {
-      label: "Marks Workspace",
-      routeName: "academic.marks.add.index",
-      fallback: "/academic/marks/add"
-    }
-  ] : [];
-  const hostelQuickLinks = hasRole("admin") ? [
-    {
-      label: "Hostel Workspace",
-      routeName: "hostels.index",
-      fallback: "/hostels"
-    }
-  ] : [];
-  const quickSections = [
-    ...timetableQuickLinks.length ? [
-      {
-        key: "timetable-workspace",
-        label: "Timetable Workspace",
-        icon: "academic",
-        basePath: "/academic/timetables",
-        children: timetableQuickLinks
-      }
-    ] : [],
-    ...marksQuickLinks.length ? [
-      {
-        key: "marks-workspace",
-        label: "Marks Workspace",
-        icon: "academic",
-        basePath: "/academic/marks",
-        children: marksQuickLinks
-      }
-    ] : [],
-    ...hostelQuickLinks.length ? [
-      {
-        key: "hostel-workspace",
-        label: "Hostel Workspace",
-        icon: "students",
-        basePath: "/hostel",
-        children: hostelQuickLinks
-      }
-    ] : []
-  ];
   const isChildActive = (child) => {
-    if (child.children) {
-      return child.children.some(isChildActive);
-    }
+    if (child.children) return child.children.some(isChildActive);
     return isRouteCurrent(
       child.routeName,
       child.fallback,
@@ -664,7 +590,7 @@ function Sidebar({
     );
   };
   const isSectionActive = ({ basePath, children }) => url.startsWith(basePath) || children.some(isChildActive);
-  const getActiveKey = () => [...quickSections, ...visibleNav].find(isSectionActive)?.key ?? null;
+  const getActiveKey = () => visibleNav.find(isSectionActive)?.key ?? null;
   const [openMenu, setOpenMenu] = useState(getActiveKey);
   const navRef = useRef(null);
   useEffect(() => {
@@ -672,21 +598,14 @@ function Sidebar({
     if (active) setOpenMenu(active);
   }, [url]);
   useEffect(() => {
-    if (!navRef.current || typeof window === "undefined") {
-      return;
-    }
-    const storedScrollTop = window.sessionStorage.getItem(
-      SIDEBAR_SCROLL_KEY
-    );
-    if (storedScrollTop !== null) {
+    if (!navRef.current || typeof window === "undefined") return;
+    const storedScrollTop = window.sessionStorage.getItem(SIDEBAR_SCROLL_KEY);
+    if (storedScrollTop !== null)
       navRef.current.scrollTop = Number(storedScrollTop);
-    }
   }, [url, collapsed, mobileOpen]);
   const closeMobile = () => mobileOpen && setMobileOpen(false);
   const preserveSidebarScroll = () => {
-    if (!navRef.current || typeof window === "undefined") {
-      return;
-    }
+    if (!navRef.current || typeof window === "undefined") return;
     window.sessionStorage.setItem(
       SIDEBAR_SCROLL_KEY,
       String(navRef.current.scrollTop)
@@ -794,7 +713,7 @@ function Sidebar({
     /* @__PURE__ */ jsxs(
       "aside",
       {
-        className: `fixed lg:static inset-y-0 left-0 z-50 flex flex-col bg-[#1b263b] transform transition duration-300  h-screen overflow-hidden  ${mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"} ${collapsed ? "w-20" : "w-64"}`,
+        className: `fixed lg:static inset-y-0 left-0 z-50 flex flex-col bg-[#1b263b] transform transition duration-300 h-screen overflow-hidden ${mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"} ${collapsed ? "w-20" : "w-64"}`,
         children: [
           /* @__PURE__ */ jsx("div", { className: "h-20 flex items-center px-5 border-b border-white/5", children: /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-3", children: [
             /* @__PURE__ */ jsx("div", { className: "min-w-[32px] h-[32px] bg-emerald-500 rounded-lg flex items-center justify-center text-black", children: /* @__PURE__ */ jsx(
@@ -831,7 +750,6 @@ function Sidebar({
                     ]
                   }
                 ) }),
-                quickSections.map(renderNestedSection),
                 visibleNav.map(renderNestedSection)
               ]
             }
@@ -842,35 +760,104 @@ function Sidebar({
     )
   ] });
 }
-const AuthenticatedLayoutContext = createContext(null);
-function AuthenticatedLayout({ header, children }) {
-  const parentLayout = useContext(AuthenticatedLayoutContext);
-  const { flash } = usePage().props;
-  const user = usePage().props.auth.user;
-  const [open, setOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
+function Navbar({
+  open,
+  setOpen,
+  user,
+  logout,
+  isLoggingOut,
+  setMobileOpen
+}) {
+  return /* @__PURE__ */ jsxs("header", { className: "w-full h-14 shrink-0 bg-white border-b border-zinc-200 flex items-center px-6 sticky top-0 z-20", children: [
+    /* @__PURE__ */ jsx(
+      "button",
+      {
+        onClick: () => setMobileOpen(true),
+        className: "p-2.5 mr-4 rounded-xl hover:bg-zinc-50 text-zinc-400 transition-all hover:text-emerald-600 active:scale-95 lg:hidden",
+        children: /* @__PURE__ */ jsx(
+          "svg",
+          {
+            className: "w-6 h-6",
+            fill: "none",
+            stroke: "currentColor",
+            viewBox: "0 0 24 24",
+            strokeWidth: "2.5",
+            children: /* @__PURE__ */ jsx(
+              "path",
+              {
+                strokeLinecap: "round",
+                strokeLinejoin: "round",
+                d: "M4 6h16M4 12h16M4 18h16"
+              }
+            )
+          }
+        )
+      }
+    ),
+    /* @__PURE__ */ jsxs("div", { className: "ml-auto flex items-center gap-6 relative", children: [
+      /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-bold border border-emerald-100", children: [
+        /* @__PURE__ */ jsxs("span", { className: "relative flex h-2 w-2", children: [
+          /* @__PURE__ */ jsx("span", { className: "animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" }),
+          /* @__PURE__ */ jsx("span", { className: "relative inline-flex rounded-full h-2 w-2 bg-emerald-500" })
+        ] }),
+        "Live Updates"
+      ] }),
+      /* @__PURE__ */ jsxs("div", { className: "relative", children: [
+        /* @__PURE__ */ jsx(
+          "button",
+          {
+            onClick: () => setOpen(!open),
+            className: "flex items-center gap-3 pl-4 border-l border-zinc-200",
+            children: /* @__PURE__ */ jsx("div", { className: "w-9 h-9 rounded-full bg-emerald-500 text-white flex items-center justify-center text-sm font-bold", children: user?.last_name?.charAt(0) })
+          }
+        ),
+        open && /* @__PURE__ */ jsxs("div", { className: "absolute right-0 mt-2 w-52 bg-white border border-zinc-200 rounded-xl shadow-lg overflow-hidden z-50", children: [
+          /* @__PURE__ */ jsxs("div", { className: "px-4 py-3 border-b border-zinc-100", children: [
+            /* @__PURE__ */ jsxs("p", { className: "text-sm font-semibold text-zinc-800 truncate", children: [
+              user?.last_name,
+              " ",
+              user?.first_name
+            ] }),
+            /* @__PURE__ */ jsx("p", { className: "text-xs text-zinc-500 truncate", children: user?.email })
+          ] }),
+          /* @__PURE__ */ jsx("div", { className: "p-1", children: /* @__PURE__ */ jsxs(
+            "button",
+            {
+              onClick: logout,
+              disabled: isLoggingOut,
+              className: "w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition",
+              children: [
+                /* @__PURE__ */ jsx(
+                  "svg",
+                  {
+                    className: "w-4 h-4",
+                    fill: "none",
+                    stroke: "currentColor",
+                    strokeWidth: "2",
+                    viewBox: "0 0 24 24",
+                    children: /* @__PURE__ */ jsx(
+                      "path",
+                      {
+                        strokeLinecap: "round",
+                        strokeLinejoin: "round",
+                        d: "M17 16l4-4m0 0l-4-4m4 4H7"
+                      }
+                    )
+                  }
+                ),
+                isLoggingOut ? "Logging out..." : "Logout"
+              ]
+            }
+          ) })
+        ] })
+      ] })
+    ] })
+  ] });
+}
+function useAuthTabs(user) {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [pageHeader, setPageHeader] = useState(header ?? null);
   const isLoggingOutRef = useRef(false);
   const logoutSyncSentRef = useRef(false);
-  useEffect(() => {
-    if (!parentLayout) {
-      setPageHeader(header ?? null);
-    }
-  }, [header, parentLayout]);
-  useEffect(() => {
-    if (!parentLayout) {
-      return void 0;
-    }
-    parentLayout.setPageHeader(header ?? null);
-    return () => {
-      parentLayout.setPageHeader(null);
-    };
-  }, [header, parentLayout]);
-  if (parentLayout) {
-    return /* @__PURE__ */ jsx(Fragment, { children });
-  }
   const logoutRoute = route("logout");
   const loginRoute = route("login");
   const sessionOwnerStorageKey = "auth.sessionOwner";
@@ -986,14 +973,6 @@ function AuthenticatedLayout({ header, children }) {
     );
   };
   useEffect(() => {
-    if (flash?.success) {
-      toast.success(flash.success);
-    }
-    if (flash?.error) {
-      toast.error(flash.error);
-    }
-  }, [flash]);
-  useEffect(() => {
     if (!user?.id) {
       return void 0;
     }
@@ -1046,7 +1025,47 @@ function AuthenticatedLayout({ header, children }) {
       );
       window.removeEventListener("storage", handleStorage);
     };
-  }, [loginRoute, sessionHeartbeatIntervalMs, user?.id]);
+  }, [loginRoute, user?.id]);
+  return {
+    logout,
+    isLoggingOut
+  };
+}
+const AuthenticatedLayoutContext = createContext(null);
+function AuthenticatedLayout({ header, children }) {
+  const parentLayout = useContext(AuthenticatedLayoutContext);
+  const { flash } = usePage().props;
+  const user = usePage().props.auth.user;
+  const [open, setOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [pageHeader, setPageHeader] = useState(header ?? null);
+  const { logout, isLoggingOut } = useAuthTabs(user);
+  useEffect(() => {
+    if (!parentLayout) {
+      setPageHeader(header ?? null);
+    }
+  }, [header, parentLayout]);
+  useEffect(() => {
+    if (!parentLayout) {
+      return void 0;
+    }
+    parentLayout.setPageHeader(header ?? null);
+    return () => {
+      parentLayout.setPageHeader(null);
+    };
+  }, [header, parentLayout]);
+  useEffect(() => {
+    if (flash?.success) {
+      toast.success(flash.success);
+    }
+    if (flash?.error) {
+      toast.error(flash.error);
+    }
+  }, [flash]);
+  if (parentLayout) {
+    return /* @__PURE__ */ jsx(Fragment, { children });
+  }
   return /* @__PURE__ */ jsx(AuthenticatedLayoutContext.Provider, { value: { setPageHeader }, children: /* @__PURE__ */ jsxs("div", { className: "flex min-h-screen bg-[#F8F9FA] text-zinc-900", children: [
     /* @__PURE__ */ jsx(
       Sidebar,
@@ -1058,92 +1077,18 @@ function AuthenticatedLayout({ header, children }) {
       }
     ),
     /* @__PURE__ */ jsxs("div", { className: "flex-1 flex flex-col h-screen overflow-hidden", children: [
-      /* @__PURE__ */ jsxs("header", { className: "w-full h-14 shrink-0 bg-white border-b border-zinc-200 flex items-center px-6 sticky top-0 z-20", children: [
-        /* @__PURE__ */ jsx(
-          "button",
-          {
-            onClick: () => setMobileOpen(true),
-            className: "p-2.5 mr-4 rounded-xl hover:bg-zinc-50 text-zinc-400 transition-all hover:text-emerald-600 active:scale-95 lg:hidden",
-            children: /* @__PURE__ */ jsx(
-              "svg",
-              {
-                className: "w-6 h-6",
-                fill: "none",
-                stroke: "currentColor",
-                viewBox: "0 0 24 24",
-                strokeWidth: "2.5",
-                children: /* @__PURE__ */ jsx(
-                  "path",
-                  {
-                    strokeLinecap: "round",
-                    strokeLinejoin: "round",
-                    d: "M4 6h16M4 12h16M4 18h16"
-                  }
-                )
-              }
-            )
-          }
-        ),
-        /* @__PURE__ */ jsxs("div", { className: "ml-auto flex items-center gap-6 relative", children: [
-          /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-bold border border-emerald-100", children: [
-            /* @__PURE__ */ jsxs("span", { className: "relative flex h-2 w-2", children: [
-              /* @__PURE__ */ jsx("span", { className: "animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" }),
-              /* @__PURE__ */ jsx("span", { className: "relative inline-flex rounded-full h-2 w-2 bg-emerald-500" })
-            ] }),
-            "Live Updates"
-          ] }),
-          /* @__PURE__ */ jsxs("div", { className: "relative", children: [
-            /* @__PURE__ */ jsx(
-              "button",
-              {
-                onClick: () => setOpen(!open),
-                className: "flex items-center gap-3 pl-4 border-l border-zinc-200",
-                children: /* @__PURE__ */ jsx("div", { className: "w-9 h-9 rounded-full bg-emerald-500 text-white flex items-center justify-center text-sm font-bold", children: user?.last_name?.charAt(0) })
-              }
-            ),
-            open && /* @__PURE__ */ jsxs("div", { className: "absolute right-0 mt-2 w-52 bg-white border border-zinc-200 rounded-xl shadow-lg overflow-hidden z-50", children: [
-              /* @__PURE__ */ jsxs("div", { className: "px-4 py-3 border-b border-zinc-100", children: [
-                /* @__PURE__ */ jsxs("p", { className: "text-sm font-semibold text-zinc-800 truncate", children: [
-                  user?.last_name,
-                  " ",
-                  user?.first_name
-                ] }),
-                /* @__PURE__ */ jsx("p", { className: "text-xs text-zinc-500 truncate", children: user?.email })
-              ] }),
-              /* @__PURE__ */ jsx("div", { className: "p-1", children: /* @__PURE__ */ jsxs(
-                "button",
-                {
-                  onClick: logout,
-                  disabled: isLoggingOut,
-                  className: "w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition",
-                  children: [
-                    /* @__PURE__ */ jsx(
-                      "svg",
-                      {
-                        className: "w-4 h-4",
-                        fill: "none",
-                        stroke: "currentColor",
-                        strokeWidth: "2",
-                        viewBox: "0 0 24 24",
-                        children: /* @__PURE__ */ jsx(
-                          "path",
-                          {
-                            strokeLinecap: "round",
-                            strokeLinejoin: "round",
-                            d: "M17 16l4-4m0 0l-4-4m4 4H7"
-                          }
-                        )
-                      }
-                    ),
-                    isLoggingOut ? "Logging out..." : "Logout"
-                  ]
-                }
-              ) })
-            ] })
-          ] })
-        ] })
-      ] }),
-      /* @__PURE__ */ jsx("main", { className: "flex-1 overflow-y-auto mb-8 w-full", children: /* @__PURE__ */ jsxs("div", { className: "px-10 pt-2 ", children: [
+      /* @__PURE__ */ jsx(
+        Navbar,
+        {
+          open,
+          setOpen,
+          user,
+          logout,
+          isLoggingOut,
+          setMobileOpen
+        }
+      ),
+      /* @__PURE__ */ jsx("main", { className: "flex-1 overflow-y-auto mb-8 w-full", children: /* @__PURE__ */ jsxs("div", { className: "px-10 pt-2", children: [
         pageHeader && /* @__PURE__ */ jsx("div", { className: "mb-8", children: pageHeader }),
         children
       ] }) }),
@@ -1162,41 +1107,48 @@ function AuthenticatedLayout({ header, children }) {
     ] })
   ] }) });
 }
-const withAuthenticatedLayout = (layoutProps = {}) => (page) => /* @__PURE__ */ jsx(AuthenticatedLayout, { ...layoutProps, children: page });
-async function resolvePageComponent(path, pages) {
-  for (const p of Array.isArray(path) ? path : [path]) {
-    const page = pages[p];
-    if (typeof page === "undefined") {
-      continue;
+function ApplicationLogo(props) {
+  return /* @__PURE__ */ jsx(
+    "svg",
+    {
+      ...props,
+      viewBox: "0 0 316 316",
+      xmlns: "http://www.w3.org/2000/svg",
+      children: /* @__PURE__ */ jsx("path", { d: "M305.8 81.125C305.77 80.995 305.69 80.885 305.65 80.755C305.56 80.525 305.49 80.285 305.37 80.075C305.29 79.935 305.17 79.815 305.07 79.685C304.94 79.515 304.83 79.325 304.68 79.175C304.55 79.045 304.39 78.955 304.25 78.845C304.09 78.715 303.95 78.575 303.77 78.475L251.32 48.275C249.97 47.495 248.31 47.495 246.96 48.275L194.51 78.475C194.33 78.575 194.19 78.725 194.03 78.845C193.89 78.955 193.73 79.045 193.6 79.175C193.45 79.325 193.34 79.515 193.21 79.685C193.11 79.815 192.99 79.935 192.91 80.075C192.79 80.285 192.71 80.525 192.63 80.755C192.58 80.875 192.51 80.995 192.48 81.125C192.38 81.495 192.33 81.875 192.33 82.265V139.625L148.62 164.795V52.575C148.62 52.185 148.57 51.805 148.47 51.435C148.44 51.305 148.36 51.195 148.32 51.065C148.23 50.835 148.16 50.595 148.04 50.385C147.96 50.245 147.84 50.125 147.74 49.995C147.61 49.825 147.5 49.635 147.35 49.485C147.22 49.355 147.06 49.265 146.92 49.155C146.76 49.025 146.62 48.885 146.44 48.785L93.99 18.585C92.64 17.805 90.98 17.805 89.63 18.585L37.18 48.785C37 48.885 36.86 49.035 36.7 49.155C36.56 49.265 36.4 49.355 36.27 49.485C36.12 49.635 36.01 49.825 35.88 49.995C35.78 50.125 35.66 50.245 35.58 50.385C35.46 50.595 35.38 50.835 35.3 51.065C35.25 51.185 35.18 51.305 35.15 51.435C35.05 51.805 35 52.185 35 52.575V232.235C35 233.795 35.84 235.245 37.19 236.025L142.1 296.425C142.33 296.555 142.58 296.635 142.82 296.725C142.93 296.765 143.04 296.835 143.16 296.865C143.53 296.965 143.9 297.015 144.28 297.015C144.66 297.015 145.03 296.965 145.4 296.865C145.5 296.835 145.59 296.775 145.69 296.745C145.95 296.655 146.21 296.565 146.45 296.435L251.36 236.035C252.72 235.255 253.55 233.815 253.55 232.245V174.885L303.81 145.945C305.17 145.165 306 143.725 306 142.155V82.265C305.95 81.875 305.89 81.495 305.8 81.125ZM144.2 227.205L100.57 202.515L146.39 176.135L196.66 147.195L240.33 172.335L208.29 190.625L144.2 227.205ZM244.75 114.995V164.795L226.39 154.225L201.03 139.625V89.825L219.39 100.395L244.75 114.995ZM249.12 57.105L292.81 82.265L249.12 107.425L205.43 82.265L249.12 57.105ZM114.49 184.425L96.13 194.995V85.305L121.49 70.705L139.85 60.135V169.815L114.49 184.425ZM91.76 27.425L135.45 52.585L91.76 77.745L48.07 52.585L91.76 27.425ZM43.67 60.135L62.03 70.705L87.39 85.305V202.545V202.555V202.565C87.39 202.735 87.44 202.895 87.46 203.055C87.49 203.265 87.49 203.485 87.55 203.695V203.705C87.6 203.875 87.69 204.035 87.76 204.195C87.84 204.375 87.89 204.575 87.99 204.745C87.99 204.745 87.99 204.755 88 204.755C88.09 204.905 88.22 205.035 88.33 205.175C88.45 205.335 88.55 205.495 88.69 205.635L88.7 205.645C88.82 205.765 88.98 205.855 89.12 205.965C89.28 206.085 89.42 206.225 89.59 206.325C89.6 206.325 89.6 206.325 89.61 206.335C89.62 206.335 89.62 206.345 89.63 206.345L139.87 234.775V285.065L43.67 229.705V60.135ZM244.75 229.705L148.58 285.075V234.775L219.8 194.115L244.75 179.875V229.705ZM297.2 139.625L253.49 164.795V114.995L278.85 100.395L297.21 89.825V139.625H297.2Z" })
     }
-    return typeof page === "function" ? page() : page;
-  }
-  throw new Error(`Page not found: ${path}`);
+  );
 }
-const appName = "Laravel";
+function GuestLayout({ children, fullWidth = false }) {
+  if (fullWidth) {
+    return /* @__PURE__ */ jsx("div", { className: "min-h-screen bg-stone-100", children });
+  }
+  return /* @__PURE__ */ jsx("div", { className: "min-h-screen bg-stone-100", children: /* @__PURE__ */ jsxs("div", { className: "flex min-h-screen flex-col items-center pt-6 sm:justify-center sm:pt-0", children: [
+    /* @__PURE__ */ jsx("div", { className: "mb-6", children: /* @__PURE__ */ jsx(Link, { href: "/", children: /* @__PURE__ */ jsx(ApplicationLogo, { className: "h-20 w-20 fill-current text-gray-500" }) }) }),
+    /* @__PURE__ */ jsx("div", { className: "w-full overflow-hidden bg-white px-6 py-8 shadow-[0_24px_60px_rgba(15,23,42,0.12)] ring-1 ring-zinc-100 sm:max-w-md sm:rounded-[2rem]", children })
+  ] }) });
+}
 createInertiaApp({
-  title: (title) => `${title} - ${appName}`,
-  resolve: (name) => resolvePageComponent(
-    `./Pages/${name}.jsx`,
-    /* @__PURE__ */ Object.assign({ "./Pages/Academic/Exams.jsx": () => import("./assets/Exams-B1m8nPBN.js"), "./Pages/Academic/Partials/AcademicCalendarWorkspaceTabs.jsx": () => import("./assets/AcademicCalendarWorkspaceTabs-BIDzA_tP.js"), "./Pages/Academic/Schedules.jsx": () => import("./assets/Schedules-dezb1yBk.js"), "./Pages/Academic/Timetables/Create.jsx": () => import("./assets/Create-BnuHmSBo.js"), "./Pages/Academic/Timetables/CreateHod.jsx": () => import("./assets/CreateHod-BvQAFVhZ.js"), "./Pages/Academic/Timetables/Edit.jsx": () => import("./assets/Edit-BDXbODDH.js"), "./Pages/Academic/Timetables/Index.jsx": () => import("./assets/Index-DEJvJ3oV.js"), "./Pages/Academic/Timetables/Partials/TimetableWorkspaceTabs.jsx": () => import("./assets/TimetableWorkspaceTabs-zPur6baL.js"), "./Pages/AcademicSessionEnrollments/Create.jsx": () => import("./assets/Create-Dy46LRyv.js"), "./Pages/AcademicSessionEnrollments/Edit.jsx": () => import("./assets/Edit-DgTgF42i.js"), "./Pages/AcademicSessionEnrollments/Index.jsx": () => import("./assets/Index-Diw9j2_3.js"), "./Pages/AcademicSessions/Create.jsx": () => import("./assets/Create-mydU9e3m.js"), "./Pages/AcademicSessions/Edit.jsx": () => import("./assets/Edit-BlHYvLIc.js"), "./Pages/AcademicSessions/Index.jsx": () => import("./assets/Index-Dm6ZyV_G.js"), "./Pages/AcademicYears/Create.jsx": () => import("./assets/Create-ByQn9DKP.js"), "./Pages/AcademicYears/Edit.jsx": () => import("./assets/Edit-CsfoZXW7.js"), "./Pages/AcademicYears/Index.jsx": () => import("./assets/Index-DIh_OmAq.js"), "./Pages/Auth/ConfirmPassword.jsx": () => import("./assets/ConfirmPassword-1ZGPxF5n.js"), "./Pages/Auth/ForgotPassword.jsx": () => import("./assets/ForgotPassword-wdpr9QK9.js"), "./Pages/Auth/Login.jsx": () => import("./assets/Login-CTvY0kss.js"), "./Pages/Auth/Register.jsx": () => import("./assets/Register-BybKZBmQ.js"), "./Pages/Auth/ResetPassword.jsx": () => import("./assets/ResetPassword-pobg1EMW.js"), "./Pages/Auth/VerifyEmail.jsx": () => import("./assets/VerifyEmail-BH-rQcLd.js"), "./Pages/Billing/BulkOperations.jsx": () => import("./assets/BulkOperations-DlvPBJW7.js"), "./Pages/Billing/InvoiceCreate.jsx": () => import("./assets/InvoiceCreate-Hr9JDLYR.js"), "./Pages/Billing/InvoiceIndex.jsx": () => import("./assets/InvoiceIndex-BnRrIn9s.js"), "./Pages/Billing/InvoiceShow.jsx": () => import("./assets/InvoiceShow-BHpIXdvz.js"), "./Pages/Billing/LedgerIndex.jsx": () => import("./assets/LedgerIndex-D8OUIrlY.js"), "./Pages/Billing/ManualOperations/ActionCard.jsx": () => import("./assets/ActionCard-BqjP59Fa.js"), "./Pages/Billing/ManualOperations/AdditionalInvoice.jsx": () => import("./assets/AdditionalInvoice-BuAvutXS.js"), "./Pages/Billing/ManualOperations/AdditionalInvoiceForm.jsx": () => import("./assets/AdditionalInvoiceForm-BqvSp69s.js"), "./Pages/Billing/ManualOperations/ApplyAdjustment.jsx": () => import("./assets/ApplyAdjustment-BbD6PTAM.js"), "./Pages/Billing/ManualOperations/ApplyAdjustmentForm.jsx": () => import("./assets/ApplyAdjustmentForm-B6aG1e3T.js"), "./Pages/Billing/ManualOperations/Fields.jsx": () => import("./assets/Fields-CKoWvqxo.js"), "./Pages/Billing/ManualOperations/FormScaffold.jsx": () => import("./assets/FormScaffold-pJj3vvjR.js"), "./Pages/Billing/ManualOperations/Index.jsx": () => import("./assets/Index-CvJSaLK4.js"), "./Pages/Billing/ManualOperations/PostPenalty.jsx": () => import("./assets/PostPenalty-D4Ia0kOS.js"), "./Pages/Billing/ManualOperations/PostPenaltyForm.jsx": () => import("./assets/PostPenaltyForm-D4WuSM6s.js"), "./Pages/Billing/ManualOperations/RecordPayment.jsx": () => import("./assets/RecordPayment-Dmraagrb.js"), "./Pages/Billing/ManualOperations/RecordPaymentForm.jsx": () => import("./assets/RecordPaymentForm-PUQJ6u3J.js"), "./Pages/Billing/StudentStatements/Index.jsx": () => import("./assets/Index-_VEkGCeO.js"), "./Pages/Billing/StudentStatements/Show.jsx": () => import("./assets/Show-DVg8Wjbx.js"), "./Pages/CertificationLevels/Create.jsx": () => import("./assets/Create-g19Z8DFI.js"), "./Pages/CertificationLevels/Edit.jsx": () => import("./assets/Edit-ChDYV3Tk.js"), "./Pages/CertificationLevels/Index.jsx": () => import("./assets/Index-CJh6c3De.js"), "./Pages/CourseEnrollments/Index.jsx": () => import("./assets/Index-D7uB9saM.js"), "./Pages/Courses/Create.jsx": () => import("./assets/Create-B0afqAmS.js"), "./Pages/Courses/Edit.jsx": () => import("./assets/Edit-CP2ValjM.js"), "./Pages/Courses/Index.jsx": () => import("./assets/Index-DlpIxPZe.js"), "./Pages/Courses/Partials/CourseWorkspaceTabs.jsx": () => import("./assets/CourseWorkspaceTabs-D8YFDE67.js"), "./Pages/Courses/Reports.jsx": () => import("./assets/AssignRole-DvSMr2cA.js").then((n) => n.R), "./Pages/CurriculumMappings/Create.jsx": () => import("./assets/Create-C_v25jJ1.js"), "./Pages/CurriculumMappings/Edit.jsx": () => import("./assets/Edit-DLNhTFC-.js"), "./Pages/CurriculumMappings/Index.jsx": () => import("./assets/Index-BTXLodaP.js"), "./Pages/CurriculumUnits/Create.jsx": () => import("./assets/Create-CZ79atWO.js"), "./Pages/CurriculumUnits/Edit.jsx": () => import("./assets/Edit-C1HqMPp4.js"), "./Pages/CurriculumUnits/Index.jsx": () => import("./assets/Index-DPGSH9Kr.js"), "./Pages/CurriculumUnits/StudentIndex.jsx": () => import("./assets/StudentIndex-BzhiDmTz.js"), "./Pages/Curriculums/Create.jsx": () => import("./assets/Create-CxP-8Gvq.js"), "./Pages/Curriculums/Edit.jsx": () => import("./assets/Edit-qTr992vK.js"), "./Pages/Curriculums/Index.jsx": () => import("./assets/Index-BqEf04Br.js"), "./Pages/Dashboard.jsx": () => import("./assets/Dashboard-DhEMK5dD.js"), "./Pages/Dashboard/AdminDashboard.jsx": () => import("./assets/AdminDashboard-B3JYHkAw.js"), "./Pages/Dashboard/StudentDashboard.jsx": () => import("./assets/StudentDashboard-B3JYHkAw.js"), "./Pages/Dashboard/TrainerDashboard.jsx": () => import("./assets/TrainerDashboard-Cp0qWtb1.js"), "./Pages/Departments/Create.jsx": () => import("./assets/Create-Ziu99JjR.js"), "./Pages/Departments/Edit.jsx": () => import("./assets/Edit-YBLE44va.js"), "./Pages/Departments/Index.jsx": () => import("./assets/Index-BWU_iQf0.js"), "./Pages/Departments/Partials/DepartmentWorkspaceTabs.jsx": () => import("./assets/DepartmentWorkspaceTabs-B9DqQFLw.js"), "./Pages/Error.jsx": () => import("./assets/Error-DR4jYpLA.js"), "./Pages/ExamBodies/Create.jsx": () => import("./assets/Create-FTTa6Wdi.js"), "./Pages/ExamBodies/Edit.jsx": () => import("./assets/Edit-wKjrIYKD.js"), "./Pages/ExamBodies/Index.jsx": () => import("./assets/Index-NuYiuZaX.js"), "./Pages/ExamBodies/Reports.jsx": () => import("./assets/Reports-CplBxbNQ.js"), "./Pages/ExamBodies/Workspace.jsx": () => import("./assets/Workspace-CcRa6Y19.js"), "./Pages/Fees/FeeAssignments/BulkAssign.jsx": () => import("./assets/BulkAssign-BHyulwi8.js"), "./Pages/Fees/FeeAssignments/BulkPreview.jsx": () => import("./assets/BulkPreview-B1RxeLEq.js"), "./Pages/Fees/FeeAssignments/Create.jsx": () => import("./assets/Create-CfVNBQnb.js"), "./Pages/Fees/FeeAssignments/Edit.jsx": () => import("./assets/Edit-Dtm13M47.js"), "./Pages/Fees/FeeAssignments/Index.jsx": () => import("./assets/Index-BVN3S9EF.js"), "./Pages/Fees/FeePlanItems/Create.jsx": () => import("./assets/Create-CiPobT0b.js"), "./Pages/Fees/FeePlanItems/Edit.jsx": () => import("./assets/Edit-ghAj3-gY.js"), "./Pages/Fees/FeePlanItems/EditModal.jsx": () => import("./assets/EditModal-DaHT3mDE.js"), "./Pages/Fees/FeePlanItems/Index.jsx": () => import("./assets/Index-DJxWvlt2.js"), "./Pages/Fees/FeePlans/Create.jsx": () => import("./assets/Create-vPp1ifbI.js"), "./Pages/Fees/FeePlans/Edit.jsx": () => import("./assets/Edit-DL3oIb0O.js"), "./Pages/Fees/FeePlans/Index.jsx": () => import("./assets/Index-CMJ9XL2H.js"), "./Pages/Grades/Add.jsx": () => import("./assets/Add-3bEuFWW_.js"), "./Pages/Grades/Index.jsx": () => import("./assets/Index-BW6KivCi.js"), "./Pages/Grades/Marksheet.jsx": () => import("./assets/Marksheet-CZpqOnO5.js"), "./Pages/Grades/Partials/MarksWorkspaceTabs.jsx": () => import("./assets/MarksWorkspaceTabs-DcBwMEdx.js"), "./Pages/Grades/Publish.jsx": () => import("./assets/Publish-CPAayBJv.js"), "./Pages/Grades/StudentResults.jsx": () => import("./assets/StudentResults-CPoyVgQl.js"), "./Pages/Grades/View.jsx": () => import("./assets/View-BM1z2WEd.js"), "./Pages/Home.jsx": () => import("./assets/Home-Cucyz_fC.js"), "./Pages/HostelAllocations/Create.jsx": () => import("./assets/Create-DWnFVkPV.js"), "./Pages/HostelAllocations/Edit.jsx": () => import("./assets/Edit-NuR_o7t-.js"), "./Pages/HostelAllocations/Form.jsx": () => import("./assets/Form-BTOKKuAS.js"), "./Pages/HostelAllocations/Index.jsx": () => import("./assets/Index-BLxjBAsu.js"), "./Pages/Hostels/Create.jsx": () => import("./assets/Create-DpSY4UAP.js"), "./Pages/Hostels/Edit.jsx": () => import("./assets/Edit-C3DmLgNv.js"), "./Pages/Hostels/Form.jsx": () => import("./assets/Form-CHozdKvX.js"), "./Pages/Hostels/Index.jsx": () => import("./assets/Index-DWBEcW3V.js"), "./Pages/Hostels/Partials/HostelWorkspaceTabs.jsx": () => import("./assets/HostelWorkspaceTabs-Ce9MBAen.js"), "./Pages/LectureRooms/Create.jsx": () => import("./assets/Create-C92ZH-3_.js"), "./Pages/LectureRooms/Edit.jsx": () => import("./assets/Edit-0tv2pml8.js"), "./Pages/LectureRooms/Index.jsx": () => import("./assets/Index-BrGnqzw-.js"), "./Pages/Permissions/Create.jsx": () => import("./assets/Create-D4yiLnCO.js"), "./Pages/Permissions/Edit.jsx": () => import("./assets/Edit-Dkx9Ofwj.js"), "./Pages/Permissions/Index.jsx": () => import("./assets/Index-DFe4AE21.js"), "./Pages/Profile/Edit.jsx": () => import("./assets/Edit-BNv-Laor.js"), "./Pages/Profile/Partials/DeleteUserForm.jsx": () => import("./assets/DeleteUserForm-CCDeHVdY.js"), "./Pages/Profile/Partials/UpdatePasswordForm.jsx": () => import("./assets/UpdatePasswordForm-DG2MrccK.js"), "./Pages/Profile/Partials/UpdateProfileInformationForm.jsx": () => import("./assets/UpdateProfileInformationForm-DBBY2A7G.js"), "./Pages/Reports/Index.jsx": () => import("./assets/Index-DhmliLtN.js"), "./Pages/Roles/AssignRole.jsx": () => import("./assets/AssignRole-DvSMr2cA.js").then((n) => n.A), "./Pages/Roles/Create.jsx": () => import("./assets/Create-CRy8Ll8V.js"), "./Pages/Roles/Edit.jsx": () => import("./assets/Edit-DjUOJjwq.js"), "./Pages/Roles/EditPermissions.jsx": () => import("./assets/EditPermissions-DS4vhbFB.js"), "./Pages/Roles/Index.jsx": () => import("./assets/Index-COsp1eUC.js"), "./Pages/Roles/Partials/AccessWorkspaceTabs.jsx": () => import("./assets/AccessWorkspaceTabs-BJjJkDSw.js"), "./Pages/Settings/LogViewer.jsx": () => import("./assets/LogViewer-BLuGIVGy.js"), "./Pages/Settings/PerformanceDashboard.jsx": () => import("./assets/PerformanceDashboard-9GG_bptN.js"), "./Pages/Settings/SecurityMonitoring.jsx": () => import("./assets/SecurityMonitoring-BZlUF7xa.js"), "./Pages/Settings/UserMonitor.jsx": () => import("./assets/UserMonitor-LToLyFmU.js"), "./Pages/Staff/Dashboard.jsx": () => import("./assets/Dashboard-9T4PBJ_T.js"), "./Pages/Staffs/Create.jsx": () => import("./assets/Create-DFV3GVW2.js"), "./Pages/Staffs/Edit.jsx": () => import("./assets/Edit-B_-67gvM.js"), "./Pages/Staffs/Forms/EmploymentDetails.jsx": () => import("./assets/EmploymentDetails-B4WVKVoV.js"), "./Pages/Staffs/Forms/KinDetails.jsx": () => import("./assets/KinDetails-C2wShOKW.js"), "./Pages/Staffs/Forms/PersonalDetails.jsx": () => import("./assets/PersonalDetails-CU4zA6nf.js"), "./Pages/Staffs/Index.jsx": () => import("./assets/Index-CgH-UDS9.js"), "./Pages/students/CourseChange.jsx": () => import("./assets/CourseChange-DiSRFxkY.js"), "./Pages/students/Create.jsx": () => import("./assets/Create-MYlanp53.js"), "./Pages/students/Edit.jsx": () => import("./assets/Edit-BaPzt1Tw.js"), "./Pages/students/Index.jsx": () => import("./assets/Index-CTcTpglP.js") })
-  ).then((module) => {
-    const page = module.default;
-    if (!page.layout && shouldUseAuthenticatedLayout(name)) {
-      page.layout = withAuthenticatedLayout();
+  resolve: async (name) => {
+    const page = await resolvePageComponent(
+      `./Pages/${name}.jsx`,
+      /* @__PURE__ */ Object.assign({ "./Pages/Academic/Exams.jsx": () => import("./assets/Exams-BmE6O6Uw.js"), "./Pages/Academic/Schedules.jsx": () => import("./assets/Schedules-iGUJMrTn.js"), "./Pages/Academic/Timetables/Create.jsx": () => import("./assets/Create-CzhAitk7.js"), "./Pages/Academic/Timetables/CreateHod.jsx": () => import("./assets/CreateHod-t-6Rk_Yj.js"), "./Pages/Academic/Timetables/Edit.jsx": () => import("./assets/Edit-BeZWAYt3.js"), "./Pages/Academic/Timetables/Index.jsx": () => import("./assets/Index-LUMh5hDd.js"), "./Pages/AcademicSessionEnrollments/Create.jsx": () => import("./assets/Create-BWPQ5ykA.js"), "./Pages/AcademicSessionEnrollments/Edit.jsx": () => import("./assets/Edit-tEt2x9bb.js"), "./Pages/AcademicSessionEnrollments/Index.jsx": () => import("./assets/Index-CEETvRuf.js"), "./Pages/AcademicSessions/Create.jsx": () => import("./assets/Create-CXbfGxYY.js"), "./Pages/AcademicSessions/Edit.jsx": () => import("./assets/Edit-Dt054cCD.js"), "./Pages/AcademicSessions/Index.jsx": () => import("./assets/Index-DtFS955p.js"), "./Pages/AcademicYears/Create.jsx": () => import("./assets/Create-C8xVVcZz.js"), "./Pages/AcademicYears/Edit.jsx": () => import("./assets/Edit-EFvA_1sY.js"), "./Pages/AcademicYears/Index.jsx": () => import("./assets/Index-De5kS7eK.js"), "./Pages/Auth/ConfirmPassword.jsx": () => import("./assets/ConfirmPassword-DFboMMJZ.js"), "./Pages/Auth/ForgotPassword.jsx": () => import("./assets/ForgotPassword-CeJQbQUS.js"), "./Pages/Auth/Login.jsx": () => import("./assets/Login-CTvY0kss.js"), "./Pages/Auth/Register.jsx": () => import("./assets/Register-a9wNU5mE.js"), "./Pages/Auth/ResetPassword.jsx": () => import("./assets/ResetPassword-xnC8nx0r.js"), "./Pages/Auth/VerifyEmail.jsx": () => import("./assets/VerifyEmail-j-RF3ZYH.js"), "./Pages/Billing/BulkOperations.jsx": () => import("./assets/BulkOperations-BZaqEYBI.js"), "./Pages/Billing/InvoiceCreate.jsx": () => import("./assets/InvoiceCreate-BVxYKEQs.js"), "./Pages/Billing/InvoiceIndex.jsx": () => import("./assets/InvoiceIndex-CbEtHYkF.js"), "./Pages/Billing/InvoiceShow.jsx": () => import("./assets/InvoiceShow-BDNbvR3c.js"), "./Pages/Billing/LedgerIndex.jsx": () => import("./assets/LedgerIndex-C2Zt2cgn.js"), "./Pages/Billing/ManualOperations/ActionCard.jsx": () => import("./assets/ActionCard-BqjP59Fa.js"), "./Pages/Billing/ManualOperations/AdditionalInvoice.jsx": () => import("./assets/AdditionalInvoice-BRslT6Lk.js"), "./Pages/Billing/ManualOperations/AdditionalInvoiceForm.jsx": () => import("./assets/AdditionalInvoiceForm-BqvSp69s.js"), "./Pages/Billing/ManualOperations/ApplyAdjustment.jsx": () => import("./assets/ApplyAdjustment-DWaMIq6d.js"), "./Pages/Billing/ManualOperations/ApplyAdjustmentForm.jsx": () => import("./assets/ApplyAdjustmentForm-B6aG1e3T.js"), "./Pages/Billing/ManualOperations/Fields.jsx": () => import("./assets/Fields-CKoWvqxo.js"), "./Pages/Billing/ManualOperations/FormScaffold.jsx": () => import("./assets/FormScaffold-DVDfp30V.js"), "./Pages/Billing/ManualOperations/Index.jsx": () => import("./assets/Index-DOOnHAHe.js"), "./Pages/Billing/ManualOperations/PostPenalty.jsx": () => import("./assets/PostPenalty-dEw8K0fm.js"), "./Pages/Billing/ManualOperations/PostPenaltyForm.jsx": () => import("./assets/PostPenaltyForm-D4WuSM6s.js"), "./Pages/Billing/ManualOperations/RecordPayment.jsx": () => import("./assets/RecordPayment-BiH0lVn6.js"), "./Pages/Billing/ManualOperations/RecordPaymentForm.jsx": () => import("./assets/RecordPaymentForm-PUQJ6u3J.js"), "./Pages/Billing/StudentStatements/Index.jsx": () => import("./assets/Index-3rPCgHKW.js"), "./Pages/Billing/StudentStatements/Show.jsx": () => import("./assets/Show-C_Jmv6M3.js"), "./Pages/CertificationLevels/Create.jsx": () => import("./assets/Create-DiSJVHb7.js"), "./Pages/CertificationLevels/Edit.jsx": () => import("./assets/Edit-Dc3rTVzs.js"), "./Pages/CertificationLevels/Index.jsx": () => import("./assets/Index-DhwYOMiT.js"), "./Pages/CourseEnrollments/Index.jsx": () => import("./assets/Index-CXauZv3s.js"), "./Pages/Courses/Create.jsx": () => import("./assets/Create-BAyed29m.js"), "./Pages/Courses/Edit.jsx": () => import("./assets/Edit-CXQ9NVnW.js"), "./Pages/Courses/Index.jsx": () => import("./assets/Index-C73TybwL.js"), "./Pages/Courses/Reports.jsx": () => import("./assets/AssignRole-DvSMr2cA.js").then((n) => n.R), "./Pages/CurriculumMappings/Create.jsx": () => import("./assets/Create-CVS2EeuA.js"), "./Pages/CurriculumMappings/Edit.jsx": () => import("./assets/Edit-DHsQT9xR.js"), "./Pages/CurriculumMappings/Index.jsx": () => import("./assets/Index-BfYTJ5SZ.js"), "./Pages/CurriculumUnits/Create.jsx": () => import("./assets/Create-D1NpM5D8.js"), "./Pages/CurriculumUnits/Edit.jsx": () => import("./assets/Edit-XeiZ1c5Y.js"), "./Pages/CurriculumUnits/Index.jsx": () => import("./assets/Index-DiYudISD.js"), "./Pages/CurriculumUnits/StudentIndex.jsx": () => import("./assets/StudentIndex-BP1x8jBc.js"), "./Pages/Curriculums/Create.jsx": () => import("./assets/Create-jhrhVigL.js"), "./Pages/Curriculums/Edit.jsx": () => import("./assets/Edit-CiV14jfE.js"), "./Pages/Curriculums/Index.jsx": () => import("./assets/Index-Cu8wfuWy.js"), "./Pages/Dashboard.jsx": () => import("./assets/Dashboard-Bkwy2z_V.js"), "./Pages/Departments/Create.jsx": () => import("./assets/Create-DAl2dDW5.js"), "./Pages/Departments/Edit.jsx": () => import("./assets/Edit-CcletPIR.js"), "./Pages/Departments/Index.jsx": () => import("./assets/Index-8ha1bp99.js"), "./Pages/Error.jsx": () => import("./assets/Error-DR4jYpLA.js"), "./Pages/ExamBodies/Create.jsx": () => import("./assets/Create-DrovKtzY.js"), "./Pages/ExamBodies/Edit.jsx": () => import("./assets/Edit-D_whKe6w.js"), "./Pages/ExamBodies/Index.jsx": () => import("./assets/Index-Dh7565pi.js"), "./Pages/ExamBodies/Reports.jsx": () => import("./assets/Reports-DmHa5u1X.js"), "./Pages/ExamBodies/Workspace.jsx": () => import("./assets/Workspace-BNQYJgg_.js"), "./Pages/Fees/FeeAssignments/BulkAssign.jsx": () => import("./assets/BulkAssign-CZXZN72b.js"), "./Pages/Fees/FeeAssignments/BulkPreview.jsx": () => import("./assets/BulkPreview-FcIBgdoe.js"), "./Pages/Fees/FeeAssignments/Create.jsx": () => import("./assets/Create-DQNCcHQm.js"), "./Pages/Fees/FeeAssignments/Edit.jsx": () => import("./assets/Edit-D6AGGLIm.js"), "./Pages/Fees/FeeAssignments/Index.jsx": () => import("./assets/Index-D2zbxZVA.js"), "./Pages/Fees/FeePlanItems/Create.jsx": () => import("./assets/Create-DDzyuDVT.js"), "./Pages/Fees/FeePlanItems/Edit.jsx": () => import("./assets/Edit-Ct6PW-lN.js"), "./Pages/Fees/FeePlanItems/EditModal.jsx": () => import("./assets/EditModal-CqD4W6Ai.js"), "./Pages/Fees/FeePlanItems/Index.jsx": () => import("./assets/Index-BIoxKl4-.js"), "./Pages/Fees/FeePlans/Create.jsx": () => import("./assets/Create-CE6_2k3s.js"), "./Pages/Fees/FeePlans/Edit.jsx": () => import("./assets/Edit-Dw-jHX6T.js"), "./Pages/Fees/FeePlans/Index.jsx": () => import("./assets/Index-DjI_NYqd.js"), "./Pages/Grades/Add.jsx": () => import("./assets/Add-D4O2YGfg.js"), "./Pages/Grades/Index.jsx": () => import("./assets/Index-D8Up0y2h.js"), "./Pages/Grades/Marksheet.jsx": () => import("./assets/Marksheet-BAJcgRd-.js"), "./Pages/Grades/Publish.jsx": () => import("./assets/Publish-DcNvOG_U.js"), "./Pages/Grades/StudentResults.jsx": () => import("./assets/StudentResults-Cddyw4zO.js"), "./Pages/Grades/View.jsx": () => import("./assets/View-CKzmpSOj.js"), "./Pages/Home.jsx": () => import("./assets/Home-Cucyz_fC.js"), "./Pages/HostelAllocations/Create.jsx": () => import("./assets/Create-BZImS3SV.js"), "./Pages/HostelAllocations/Edit.jsx": () => import("./assets/Edit-CemMRBVT.js"), "./Pages/HostelAllocations/Form.jsx": () => import("./assets/Form-BIypopOm.js"), "./Pages/HostelAllocations/Index.jsx": () => import("./assets/Index-CDzz25-X.js"), "./Pages/Hostels/Create.jsx": () => import("./assets/Create-DvYsWK2w.js"), "./Pages/Hostels/Edit.jsx": () => import("./assets/Edit-CgjEPDgM.js"), "./Pages/Hostels/Form.jsx": () => import("./assets/Form-CHozdKvX.js"), "./Pages/Hostels/Index.jsx": () => import("./assets/Index-BaLMev2r.js"), "./Pages/LectureRooms/Create.jsx": () => import("./assets/Create-DQqTGKp5.js"), "./Pages/LectureRooms/Edit.jsx": () => import("./assets/Edit-DNqrDwnR.js"), "./Pages/LectureRooms/Index.jsx": () => import("./assets/Index-BvibMhT5.js"), "./Pages/Permissions/Create.jsx": () => import("./assets/Create-S088ZXyN.js"), "./Pages/Permissions/Edit.jsx": () => import("./assets/Edit-3KzXuBij.js"), "./Pages/Permissions/Index.jsx": () => import("./assets/Index-BaY5MVUN.js"), "./Pages/Profile/Edit.jsx": () => import("./assets/Edit-CmIdw0Sn.js"), "./Pages/Profile/Partials/DeleteUserForm.jsx": () => import("./assets/DeleteUserForm-CCDeHVdY.js"), "./Pages/Profile/Partials/UpdatePasswordForm.jsx": () => import("./assets/UpdatePasswordForm-DG2MrccK.js"), "./Pages/Profile/Partials/UpdateProfileInformationForm.jsx": () => import("./assets/UpdateProfileInformationForm-DBBY2A7G.js"), "./Pages/Reports/Index.jsx": () => import("./assets/Index-D6bsy5Mm.js"), "./Pages/Roles/AssignRole.jsx": () => import("./assets/AssignRole-DvSMr2cA.js").then((n) => n.A), "./Pages/Roles/Create.jsx": () => import("./assets/Create-DIP16iKu.js"), "./Pages/Roles/Edit.jsx": () => import("./assets/Edit-ZfwSx9NJ.js"), "./Pages/Roles/EditPermissions.jsx": () => import("./assets/EditPermissions-DvlFThP1.js"), "./Pages/Roles/Index.jsx": () => import("./assets/Index-BwGmoLR8.js"), "./Pages/Settings/LogViewer.jsx": () => import("./assets/LogViewer-DN-dRb4d.js"), "./Pages/Settings/PerformanceDashboard.jsx": () => import("./assets/PerformanceDashboard-DBqVvP83.js"), "./Pages/Settings/SecurityMonitoring.jsx": () => import("./assets/SecurityMonitoring-C3ay2Awn.js"), "./Pages/Settings/UserMonitor.jsx": () => import("./assets/UserMonitor-CQtzCj5D.js"), "./Pages/Staff/Dashboard.jsx": () => import("./assets/Dashboard-C-lpnU8E.js"), "./Pages/Staffs/Create.jsx": () => import("./assets/Create-B_ag3M0D.js"), "./Pages/Staffs/Edit.jsx": () => import("./assets/Edit-ChGU0H27.js"), "./Pages/Staffs/Forms/EmploymentDetails.jsx": () => import("./assets/EmploymentDetails-CbiBZLxh.js"), "./Pages/Staffs/Forms/KinDetails.jsx": () => import("./assets/KinDetails-CrWT2Yav.js"), "./Pages/Staffs/Forms/PersonalDetails.jsx": () => import("./assets/PersonalDetails-tBOwT597.js"), "./Pages/Staffs/Index.jsx": () => import("./assets/Index-CYINxFNT.js"), "./Pages/students/CourseChange.jsx": () => import("./assets/CourseChange-ifiAjYWO.js"), "./Pages/students/Create.jsx": () => import("./assets/Create-MNsqmijp.js"), "./Pages/students/Edit.jsx": () => import("./assets/Edit-BhYLcrkq.js"), "./Pages/students/Index.jsx": () => import("./assets/Index-CFlUPH_S.js") })
+    );
+    if (page.default.layout === void 0) {
+      if (name.startsWith("Auth/")) {
+        page.default.layout = (page2) => /* @__PURE__ */ jsx(GuestLayout, { children: page2, fullWidth: name === "Auth/Login" });
+      } else {
+        page.default.layout = (page2) => /* @__PURE__ */ jsx(AuthenticatedLayout, { children: page2 });
+      }
     }
-    return module;
-  }),
+    return page;
+  },
   setup({ el, App, props }) {
-    const root = createRoot(el);
-    root.render(/* @__PURE__ */ jsx(App, { ...props }));
+    createRoot(el).render(/* @__PURE__ */ jsx(App, { ...props }));
   },
   progress: {
-    color: "#4B5563"
+    color: "#4F46E5"
   }
 });
-function shouldUseAuthenticatedLayout(name) {
-  return !name.startsWith("Auth/");
-}
 export {
   AuthenticatedLayout as A,
   useRbac as u
