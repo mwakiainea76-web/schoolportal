@@ -19,12 +19,15 @@ class AcademicYearFactory extends Factory
     {
         $year = $this->faker->unique()->year;
         $academicYear = $year . '/' . ($year + 1);
+        $isActive = $this->faker->boolean(20);
+
         return [
             'academic_year' => $academicYear,
             'label' => 'Academic Year ' . $academicYear,
             'start_date' => $this->faker->date(),
             'end_date' => $this->faker->date(),
-            'is_active' => $this->faker->boolean(20), // 20% chance of being active
+            'status' => $isActive ? 'ongoing' : 'upcoming',
+            'is_active' => $isActive, // 20% chance of being active
         ];
     }
 }

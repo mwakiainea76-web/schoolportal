@@ -24,6 +24,7 @@ class AcademicYear extends Model
         'label',
         'start_date',
         'end_date',
+        'status',
         'is_active',
     ];
 

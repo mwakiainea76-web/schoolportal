@@ -12,11 +12,15 @@ export default function Create({
 }) {
     const { data, setData, post, processing, errors } = useForm({
         academic_year: "",
+        start_date: "",
+        end_date: "",
     });
 
     useEffect(() => {
         if (modalMode && open) {
             setData("academic_year", "");
+            setData("start_date", "");
+            setData("end_date", "");
         }
     }, [modalMode, open]);
 
@@ -47,6 +51,30 @@ export default function Create({
                             error={errors.academic_year}
                         />
                         <InputError message={errors.academic_year} />
+                    </div>
+                    <div>
+                        <InputLabel>Start Date</InputLabel>
+                        <TextInput
+                            type="date"
+                            value={data.start_date}
+                            onChange={(e) =>
+                                setData("start_date", e.target.value)
+                            }
+                            error={errors.start_date}
+                        />
+                        <InputError message={errors.start_date} />
+                    </div>
+                    <div>
+                        <InputLabel>End Date</InputLabel>
+                        <TextInput
+                            type="date"
+                            value={data.end_date}
+                            onChange={(e) =>
+                                setData("end_date", e.target.value)
+                            }
+                            error={errors.end_date}
+                        />
+                        <InputError message={errors.end_date} />
                     </div>
                 </div>
                 <div className="flex justify-between pt-4">

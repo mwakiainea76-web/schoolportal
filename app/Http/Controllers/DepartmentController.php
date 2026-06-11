@@ -36,11 +36,7 @@ class DepartmentController extends Controller
                 'description' => $department->description,
                 'hod_staff_id' => $department->hod_staff_id,
                 'hod' => $department->hod
-                    ? [
-                        'id' => $department->hod->id,
-                        'name' => $department->hod->full_name,
-                        'staff_number' => $department->hod->staff_number,
-                    ]
+                    ? ['name' => $department->hod->full_name]
                     : null,
                 'created_at' => $department->created_at,
             ]);
@@ -72,7 +68,6 @@ class DepartmentController extends Controller
             'department' => $department,
             'selectedHod' => $department->hod
                 ? [
-                    'id' => $department->hod->id,
                     'name' => $this->staffLabel($department->hod),
                     'staff_number' => $department->hod->staff_number,
                 ]
@@ -112,8 +107,8 @@ class DepartmentController extends Controller
     protected function staffLabel($staff): string
     {
         return collect([
+             $staff->staff_number,
             $staff->full_name,
-            $staff->staff_number,
             $staff->designation,
         ])->filter()->implode(' - ');
     }

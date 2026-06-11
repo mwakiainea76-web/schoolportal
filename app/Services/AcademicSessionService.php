@@ -13,6 +13,7 @@ class AcademicSessionService
         $session->session_number = (int) $data['session_No'];
         $session->label = $data['label'] ?? null;
         $session->is_active = false;
+        $session->status = 'upcoming';
         $session->academic_year_id = $data['academic_year_id'];
         $session->save();
 
@@ -37,6 +38,7 @@ class AcademicSessionService
 
         $session->update([
             'is_active' => true,
+            'status' => 'ongoing',
             'start_date' => $session->start_date ?? now(),
             'end_date' => null,
         ]);
@@ -48,8 +50,17 @@ class AcademicSessionService
     {
         $session->update([
             'is_active' => false,
+            'status' => 'completed',
             'start_date' => $session->start_date ?? now(),
             'end_date' => now(),
+        ]);
+    }
+
+    public function hold(AcademicSession $session): void
+    {
+        $session->update([
+            'is_active' => false,
+            'status' => 'on_hold',
         ]);
     }
 
@@ -61,6 +72,7 @@ class AcademicSessionService
 
         $session->update([
             'is_active' => true,
+            'status' => 'ongoing',
             'start_date' => $session->start_date ?? now(),
             'end_date' => null,
         ]);

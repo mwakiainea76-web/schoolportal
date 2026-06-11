@@ -84,13 +84,14 @@ class AcademicSessionController extends Controller
     public function updateStatus(Request $request, AcademicSession $academicSession)
     {
         $action = $request->validate([
-            'action' => ['required', Rule::in(['start', 'end', 'reactivate'])],
+            'action' => ['required', Rule::in(['start', 'end', 'reactivate', 'hold'])],
         ])['action'];
 
         $error = match ($action) {
             'start' => $this->service->start($academicSession),
             'end' => tap(null, fn () => $this->service->end($academicSession)),
             'reactivate' => $this->service->reactivate($academicSession),
+            'hold' => tap(null, fn () => $this->service->hold($academicSession)),
         };
 
         return redirect()->back()
@@ -148,7 +149,7 @@ class AcademicSessionController extends Controller
                 });
             })
             ->orderByDesc('academic_year')
-            ->get(['id', 'academic_year', 'label', 'is_active', 'start_date', 'end_date']);
+            ->get(['id', 'academic_year', 'label', 'is_active', 'status', 'start_date', 'end_date']);
     }
 
     protected function academicSessionsList(Request $request, ?int $academicYearId)

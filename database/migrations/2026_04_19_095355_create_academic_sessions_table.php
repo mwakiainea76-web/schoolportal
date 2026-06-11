@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string('label')->nullable();
             $table->date('start_date')->nullable();
             $table->date('end_date')->nullable();
+            $table->enum('status', ['upcoming', 'ongoing', 'completed', 'on_hold'])->default('upcoming')->index();
             $table->boolean('is_active')->default(false);
             $table->timestamps();
             $table->softDeletes();

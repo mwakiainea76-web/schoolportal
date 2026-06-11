@@ -11,8 +11,9 @@ class AcademicYearService
         return AcademicYear::create([
             'academic_year' => $data['academic_year'],
             'label' => $data['academic_year'],
-            'start_date' => null,
-            'end_date' => null,
+            'start_date' => $data['start_date'] ?? null,
+            'end_date' => $data['end_date'] ?? null,
+            'status' => 'upcoming',
             'is_active' => false,
         ]);
 
@@ -26,6 +27,9 @@ class AcademicYearService
         $academicYear->update([
             'academic_year' => $data['academic_year'],
             'label' => $data['academic_year'],
+            'start_date' => $data['start_date'] ?? null,
+            'end_date' => $data['end_date'] ?? null,
+            'status' => $academicYear->status ?? 'upcoming',
         ]);
 
         return null;
@@ -39,6 +43,7 @@ class AcademicYearService
 
         $academicYear->update([
             'is_active' => true,
+            'status' => 'ongoing',
             'start_date' => $academicYear->start_date ?? now(),
             'end_date' => null,
         ]);
@@ -50,8 +55,17 @@ class AcademicYearService
     {
         $academicYear->update([
             'is_active' => false,
+            'status' => 'completed',
             'start_date' => $academicYear->start_date ?? now(),
             'end_date' => now(),
+        ]);
+    }
+
+    public function hold(AcademicYear $academicYear): void
+    {
+        $academicYear->update([
+            'is_active' => false,
+            'status' => 'on_hold',
         ]);
     }
 
@@ -63,6 +77,7 @@ class AcademicYearService
 
         $academicYear->update([
             'is_active' => true,
+            'status' => 'ongoing',
             'start_date' => $academicYear->start_date ?? now(),
             'end_date' => null,
         ]);

@@ -58,13 +58,14 @@ class AcademicYearController extends Controller
     public function updateStatus(Request $request, AcademicYear $academicYear)
     {
         $action = $request->validate([
-            'action' => ['required', Rule::in(['start', 'end', 'reactivate'])],
+            'action' => ['required', Rule::in(['start', 'end', 'reactivate', 'hold'])],
         ])['action'];
 
         $error = match ($action) {
             'start' => $this->service->start($academicYear),
             'end' => tap(null, fn () => $this->service->end($academicYear)),
             'reactivate' => $this->service->reactivate($academicYear),
+            'hold' => tap(null, fn () => $this->service->hold($academicYear)),
         };
 
         return redirect()

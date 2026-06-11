@@ -6,6 +6,8 @@ import InputError from "@/Components/InputError";
 export default function Create({ activeSession }) {
     const { data, setData, post, processing, errors } = useForm({
         admission_number: "",
+        active_session_id: activeSession ? activeSession.id : null,
+
     });
 
     const submit = (e) => {
@@ -19,7 +21,7 @@ export default function Create({ activeSession }) {
         <>
             <Head title="Enroll Student in Session" />
 
-            <div className="mx-auto max-w-2xl w-full">
+            <div className="mx-auto w-full">
                 <div className="mb-6">
                     <h1 className="text-2xl font-semibold text-gray-800">
                         Enroll Student in Academic Session
@@ -35,7 +37,30 @@ export default function Create({ activeSession }) {
                     className="bg-white p-8 space-y-6 border rounded-lg shadow-sm"
                 >
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Admission Number */}
+                      
+
+                        {/* Active Session — read only */}
+                        <div>
+                            <input name="active_session_id" type="hidden" value={activeSession.id}/>
+                            <InputLabel value="Active Academic Session" />
+                            <TextInput
+                                type="text"
+                                value={
+                                    activeSession
+                                        ? activeSession.name
+                                        : "No active session"
+                                }
+                                disabled
+                                className="mt-1 block w-full bg-gray-100 text-gray-500 cursor-not-allowed"
+                            />
+                            {!activeSession && (
+                                <p className="mt-1 text-xs text-red-500">
+                                    No active session found. Please activate a
+                                    session before enrolling.
+                                </p>
+                            )}
+                        </div>
+                          {/* Admission Number */}
                         <div>
                             <InputLabel
                                 value="Student Admission Number"
@@ -56,26 +81,45 @@ export default function Create({ activeSession }) {
                             />
                             <InputError message={errors.admission_number} />
                         </div>
-
-                        {/* Active Session — read only */}
-                        <div>
-                            <InputLabel value="Active Academic Session" />
+                     <div>
+                            <InputLabel
+                                value="Student Admission Number"
+                                required
+                            />
                             <TextInput
                                 type="text"
-                                value={
-                                    activeSession
-                                        ? activeSession.name
-                                        : "No active session"
+                                name="admission_number"
+                                value={data.admission_number}
+                                onChange={(e) =>
+                                    setData(
+                                        "admission_number",
+                                        e.target.value,
+                                    )
                                 }
-                                disabled
-                                className="mt-1 block w-full bg-gray-100 text-gray-500 cursor-not-allowed"
+                                placeholder="e.g. STD/001/2026"
+                                className="mt-1 block w-full"
                             />
-                            {!activeSession && (
-                                <p className="mt-1 text-xs text-red-500">
-                                    No active session found. Please activate a
-                                    session before enrolling.
-                                </p>
-                            )}
+                            <InputError message={errors.admission_number} />
+                        </div>
+                        <div>
+                            <InputLabel
+                                value="Student Admission Number"
+                                required
+                            />
+                            <TextInput
+                                type="text"
+                                name="admission_number"
+                                value={data.admission_number}
+                                onChange={(e) =>
+                                    setData(
+                                        "admission_number",
+                                        e.target.value,
+                                    )
+                                }
+                                placeholder="e.g. STD/001/2026"
+                                className="mt-1 block w-full"
+                            />
+                            <InputError message={errors.admission_number} />
                         </div>
                     </div>
 

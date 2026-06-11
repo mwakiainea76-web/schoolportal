@@ -10,6 +10,33 @@ import formatDate from "@/utils/date";
 import AcademicYearCreate from "@/Pages/AcademicYears/Create";
 import AcademicYearEdit from "@/Pages/AcademicYears/Edit";
 
+const YEAR_STATUS = {
+    upcoming: {
+        label: "Upcoming",
+        badgeClass: "bg-amber-100 text-amber-700",
+        actionLabel: "Start Year",
+        action: "start",
+    },
+    ongoing: {
+        label: "Ongoing",
+        badgeClass: "bg-green-100 text-green-700",
+        actionLabel: "End Year",
+        action: "end",
+    },
+    completed: {
+        label: "Completed",
+        badgeClass: "bg-red-100 text-red-600",
+        actionLabel: "Reactivate",
+        action: "reactivate",
+    },
+    on_hold: {
+        label: "On hold",
+        badgeClass: "bg-slate-100 text-slate-700",
+        actionLabel: "Activate",
+        action: "start",
+    },
+};
+
 export default function Index({
     academic_years,
     active_academic_year_id = "",
@@ -88,41 +115,18 @@ export default function Index({
     };
 
     const getYearStatus = (year) => {
-        if (year.is_active) {
-            return {
-                label: "Ongoing",
-                badgeClass: "bg-green-100 text-green-700",
-                actionLabel: "End Year",
-                action: "end",
-                disabled: false,
-                helper: "",
-            };
-        }
-
-        if (year.end_date) {
-            return {
-                label: "Completed",
-                badgeClass: "bg-red-100 text-red-600",
-                actionLabel: "Reactivate",
-                action: "reactivate",
-                disabled:
-                    Boolean(active_academic_year_id) &&
-                    String(active_academic_year_id) !== String(year.id),
-                helper:
-                    "You can only reactivate an academic year after ending the previous one.",
-            };
-        }
+        const key = year.status || (year.is_active ? "ongoing" : "upcoming");
+        const status = YEAR_STATUS[key] || YEAR_STATUS.upcoming;
+        const activating = ["start", "reactivate"].includes(status.action);
 
         return {
-            label: "Upcoming",
-            badgeClass: "bg-amber-100 text-amber-700",
-            actionLabel: "Start Year",
-            action: "start",
+            ...status,
             disabled:
+                activating &&
                 Boolean(active_academic_year_id) &&
                 String(active_academic_year_id) !== String(year.id),
             helper:
-                "You can only start an academic year after ending the previous one.",
+                "You can only activate an academic year after ending the previous one.",
         };
     };
 
@@ -276,6 +280,21 @@ export default function Index({
                                                         >
                                                             {status.actionLabel}
                                                         </button>
+                                                        {year.status !==
+                                                        "on_hold" ? (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    updateStatus(
+                                                                        year,
+                                                                        "hold",
+                                                                    )
+                                                                }
+                                                                className="text-slate-700 hover:text-emerald-700 hover:underline"
+                                                            >
+                                                                Put On Hold
+                                                            </button>
+                                                        ) : null}
                                                     </div>
                                                 </Tdata>
                                             </Trow>

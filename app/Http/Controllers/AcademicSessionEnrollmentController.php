@@ -163,8 +163,12 @@ class AcademicSessionEnrollmentController extends Controller
                 'admission_number' => "No student found with admission number '{$request->admission_number}'.",
             ]);
         }
+        $activeSession = AcademicSession::query('id', 'academic_year_id', 'session_number', 'session_No')
+            ->where('id', $request->active_session_id)
+            ->first();
 
         try {
+
             $enrollment = $this->enrollStudentIntoActiveSession($student, auth()->user()?->staff?->id);
         } catch (ValidationException $e) {
             return back()->withInput()->withErrors($this->normalizeSessionRegistrationErrors($e));
