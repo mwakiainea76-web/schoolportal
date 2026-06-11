@@ -1,3 +1,5 @@
+import React from "react";
+
 const Tdata = ({ children, className = "", ...props }) => {
     return (
         <td
@@ -8,4 +10,4 @@ const Tdata = ({ children, className = "", ...props }) => {
         </td>
     );
 };
-export default Tdata;
+export default React.memo(Tdata);

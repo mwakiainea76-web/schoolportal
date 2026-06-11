@@ -54,7 +54,7 @@ export default function EditCurriculum({
                                 <InputLabel value="Exam Body" />
 
                                 <SearchSelect
-                                    routeName="exam-bodies.search"
+                                    routeName="exam.bodies.search"
                                     defaultOptions={[]}
                                     value={data.exam_body_id}
                                     selectedLabel={

@@ -9,6 +9,8 @@ use App\Models\Student;
 use App\Models\StudentMark;
 use App\Models\StudentUnitRegistration;
 use App\Models\Unit;
+use App\Services\Export\Pdf\MarksPdfExport;
+use App\Services\Export\Pdf\MarksheetPdfExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -274,10 +276,6 @@ class StudentMarkController extends Controller
             $this->authorizeHod($request);
         }
 
-        if ($validated['format'] === 'pdf') {
-            abort(501, 'PDF export is not available because no PDF renderer is installed for this project.');
-        }
-
         $unitId = (int) $validated['curriculum_unit_id'];
         $mappingId = isset($validated['curriculum_mapping_id']) ? (int) $validated['curriculum_mapping_id'] : null;
         $unit = $this->resolveSelectedUnit($mappingId, $unitId);
@@ -289,12 +287,6 @@ class StudentMarkController extends Controller
         $academicYearId = isset($validated['academic_year_id']) ? (int) $validated['academic_year_id'] : null;
         $academicSessionId = isset($validated['academic_session_id']) ? (int) $validated['academic_session_id'] : null;
         $format = $validated['format'];
-        $separator = $format === 'excel' ? "\t" : ',';
-        $extension = $format === 'excel' ? 'xls' : 'csv';
-        $contentType = $format === 'excel'
-            ? 'application/vnd.ms-excel; charset=UTF-8'
-            : 'text/csv; charset=UTF-8';
-        $fileName = 'marks-export-'.now()->format('Y-m-d-His').'.'.$extension;
 
         $query = $this->marksQuery(
             $unitId,
@@ -305,6 +297,31 @@ class StudentMarkController extends Controller
         );
 
         set_time_limit(60);
+
+        if ($format === 'pdf') {
+            $export = new MarksPdfExport();
+            $content = $export->render([
+                'curriculum_unit_id' => $unitId,
+                'assessment_type' => $assessmentType,
+                'assessment_number' => $assessmentNumber,
+                'academic_year_id' => $academicYearId,
+                'academic_session_id' => $academicSessionId,
+            ]);
+
+            return response()->streamDownload(function () use ($content) {
+                echo $content;
+            }, $export->filename(), [
+                'Content-Type' => 'application/pdf',
+                'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+            ]);
+        }
+
+        $separator = $format === 'excel' ? "\t" : ',';
+        $extension = $format === 'excel' ? 'xls' : 'csv';
+        $contentType = $format === 'excel'
+            ? 'application/vnd.ms-excel; charset=UTF-8'
+            : 'text/csv; charset=UTF-8';
+        $fileName = 'marks-export-'.now()->format('Y-m-d-His').'.'.$extension;
 
         return response()->streamDownload(function () use ($query, $separator) {
             $handle = fopen('php://output', 'wb');
@@ -412,7 +429,7 @@ class StudentMarkController extends Controller
             'curriculum_unit_id' => ['required', 'integer'],
             'academic_year_id' => ['nullable', 'integer'],
             'academic_session_id' => ['nullable', 'integer'],
-            'format' => ['required', 'in:csv,excel'],
+            'format' => ['required', 'in:csv,excel,pdf'],
         ]);
 
         $mappingId = isset($validated['curriculum_mapping_id']) ? (int) $validated['curriculum_mapping_id'] : null;
@@ -424,15 +441,32 @@ class StudentMarkController extends Controller
         abort_unless($unit, 422, 'Select a valid unit before downloading the marksheet.');
 
         $format = $validated['format'];
+        $query = $this->marksheetRowsQuery($unitId, $academicYearId, $academicSessionId);
+
+        set_time_limit(60);
+
+        if ($format === 'pdf') {
+            $export = new MarksheetPdfExport();
+            $content = $export->render([
+                'curriculum_unit_id' => $unitId,
+                'academic_year_id' => $academicYearId,
+                'academic_session_id' => $academicSessionId,
+            ]);
+
+            return response()->streamDownload(function () use ($content) {
+                echo $content;
+            }, $export->filename(), [
+                'Content-Type' => 'application/pdf',
+                'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+            ]);
+        }
+
         $separator = $format === 'excel' ? "\t" : ',';
         $extension = $format === 'excel' ? 'xls' : 'csv';
         $contentType = $format === 'excel'
             ? 'application/vnd.ms-excel; charset=UTF-8'
             : 'text/csv; charset=UTF-8';
         $fileName = 'marksheet-'.($unit->code ?? 'unit').'-'.now()->format('Y-m-d-His').'.'.$extension;
-        $query = $this->marksheetRowsQuery($unitId, $academicYearId, $academicSessionId);
-
-        set_time_limit(60);
 
         return response()->streamDownload(function () use ($query, $separator) {
             $handle = fopen('php://output', 'wb');

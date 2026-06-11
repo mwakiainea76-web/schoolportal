@@ -116,7 +116,7 @@ export default function Createcourse() {
                                     value="Exam Body"
                                 />
                                 <SearchSelect
-                                    routeName="exam-bodies.search"
+                                    routeName="exam.bodies.search"
                                     defaultOptions={[]}
                                     placeholder="Select exam body..."
                                     value={data.exam_body_id}

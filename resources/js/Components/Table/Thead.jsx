@@ -1,3 +1,5 @@
+import React from "react";
+
 const Thead = ({ children, className = "", ...props }) => {
     return (
         <thead {...props}>
@@ -5,4 +7,4 @@ const Thead = ({ children, className = "", ...props }) => {
         </thead>
     );
 };
-export default Thead;
+export default React.memo(Thead);

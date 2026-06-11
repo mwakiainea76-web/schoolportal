@@ -8,16 +8,25 @@ import Trow from "@/Components/Table/Trow";
 import Tdata from "@/Components/Table/Tdata";
 import SearchSelect from "@/Components/SearchSelect";
 import useRbac from "@/Hooks/UseRBAC";
+import { downloadExport } from "@/utils/exportDownload";
 
 export default function CurriculumIndex({
     curricula,
+    filters = {},
     curriculumOptions = [],
 }) {
-    const [sortField, setSortField] = useState(curricula.sort || "created_at");
-    const [sortDirection, setSortDirection] = useState(
-        curricula.direction || "desc",
+    const pageFilters =
+        filters && typeof filters === "object" && !Array.isArray(filters)
+            ? filters
+            : {};
+    const [sortField, setSortField] = useState(
+        pageFilters.sort || curricula.sort || "created_at",
     );
-    const [searchTerm, setSearchTerm] = useState("");
+    const [sortDirection, setSortDirection] = useState(
+        pageFilters.direction || curricula.direction || "desc",
+    );
+    const [searchTerm, setSearchTerm] = useState(pageFilters.search || "");
+    const [exportFormat, setExportFormat] = useState("pdf");
     const { can } = useRbac();
 
     const handleSort = (field) => {
@@ -29,7 +38,12 @@ export default function CurriculumIndex({
 
         router.get(
             route("curriculums.index"),
-            { sort: field, direction, page: 1 },
+            {
+                search: searchTerm || pageFilters.search || "",
+                sort: field,
+                direction,
+                page: 1,
+            },
             { preserveState: true, replace: true },
         );
     };
@@ -48,6 +62,14 @@ export default function CurriculumIndex({
             { search: searchTerm, sort: sortField, direction: sortDirection },
             { preserveState: true, replace: true },
         );
+    };
+
+    const handleExport = () => {
+        downloadExport("curriculums", exportFormat, {
+            search: searchTerm || pageFilters.search || "",
+            sort: sortField,
+            direction: sortDirection,
+        });
     };
 
     const handleDelete = (id) => {
@@ -92,21 +114,51 @@ export default function CurriculumIndex({
             <div className="mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
                 {can("curriculums.view") ? (
                     <form
-                        className="w-full relative flex gap-x-7"
+                        className="mb-2 flex w-full flex-wrap items-center gap-3"
                         onSubmit={submit}
                     >
-                        <SearchSelect
-                            defaultOptions={curriculumOptions}
-                            placeholder="Select curriculum ..."
-                            onChange={(body) => setSearchTerm(body.name)}
-                        />
+                        <div className="min-w-[200px] flex-1">
+                            <SearchSelect
+                                routeName="curriculums.search"
+                                defaultOptions={curriculumOptions}
+                                placeholder="Select curriculum ..."
+                                onChange={(body) =>
+                                    setSearchTerm(body?.name || "")
+                                }
+                            />
+                        </div>
                         <button
-                            className="px-4 py-1 bg-emerald-600 text-white rounded hover:bg-slate-700"
+                            className="whitespace-nowrap rounded bg-emerald-600 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-slate-700"
                             type="submit"
                         >
                             Search
                         </button>
                     </form>
+                ) : null}
+
+                {can("curriculums.view") ? (
+                    <div className="flex justify-end">
+                        <div className="flex items-center">
+                            <select
+                                value={exportFormat}
+                                onChange={(e) =>
+                                    setExportFormat(e.target.value)
+                                }
+                                className="h-[34px] rounded-l border border-slate-300 border-r-0 bg-white px-3 text-sm text-slate-700 focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-gray-500"
+                            >
+                                <option value="pdf">PDF</option>
+                                <option value="csv">CSV</option>
+                                <option value="excel">Excel</option>
+                            </select>
+                            <button
+                                type="button"
+                                onClick={handleExport}
+                                className="h-[34px] whitespace-nowrap rounded-r bg-gray-400 px-4 text-sm font-medium text-white transition-colors hover:bg-gray-600"
+                            >
+                                Export {exportFormat.toUpperCase()}
+                            </button>
+                        </div>
+                    </div>
                 ) : null}
 
                 <Table
@@ -121,7 +173,7 @@ export default function CurriculumIndex({
                         >
                             Name {renderArrow("name")}
                         </THdata>
-                     
+
                         <THdata>Exam Body</THdata>
                         <THdata>Status</THdata>
 
@@ -138,7 +190,7 @@ export default function CurriculumIndex({
                             curricula.data.map((curriculum) => (
                                 <Trow key={curriculum.id}>
                                     <Tdata>{curriculum.name}</Tdata>
-        
+
                                     <Tdata>
                                         {curriculum.exam_body
                                             ? [curriculum.exam_body.name]

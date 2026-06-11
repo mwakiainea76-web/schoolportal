@@ -378,7 +378,7 @@ RbacCache::forgetForUser($staff->user);
 
     public function search(Request $request)
     {
-        $limit = min(max($request->integer('limit', 10), 1), 25);
+        $limit = min(max($request->integer('limit', 10), 10), 25);
         $departmentId = $request->integer('department_id') ?: null;
         $query = trim((string) $request->query('q', ''));
 
@@ -386,17 +386,30 @@ RbacCache::forgetForUser($staff->user);
             ->where('staff_status', 'active')
             ->when($departmentId, fn ($builder) => $builder->where('department_id', $departmentId))
             ->when($query !== '', function ($builder) use ($query) {
-                $builder->where(function ($q) use ($query) {
-                    $q->where('staff_number', 'like', "%{$query}%")
-                        ->orWhere('designation', 'like', "%{$query}%")
-                        ->orWhere('first_name', 'like', "%{$query}%")
-                        ->orWhere('last_name', 'like', "%{$query}%")
-                        ->orWhere('email', 'like', "%{$query}%");
+                $term = '%'.Str::lower($query).'%';
+
+                $builder->where(function ($q) use ($term) {
+                    $q->whereRaw('LOWER(staff_number) LIKE ?', [$term])
+                        ->orWhereRaw('LOWER(designation) LIKE ?', [$term])
+                        ->orWhereRaw('LOWER(first_name) LIKE ?', [$term])
+                        ->orWhereRaw('LOWER(last_name) LIKE ?', [$term])
+                        ->orWhereRaw('LOWER(email) LIKE ?', [$term]);
                 });
             })
             ->orderByDesc('id')
             ->limit($limit)
-            ->get(['id', 'staff_number', 'designation', 'first_name', 'last_name', 'email'])
+            ->get(['id', 'staff_number', 'designation', 'first_name', 'last_name', 'other_name', 'email'])
+            ->map(fn (Staff $staff) => [
+                'id' => $staff->staff_number,
+                'staff_id' => $staff->id,
+                'staff_number' => $staff->staff_number,
+                'name' => collect([
+                    $staff->full_name,
+                    $staff->staff_number,
+                    $staff->designation,
+                ])->filter()->implode(' - '),
+                'email' => $staff->email,
+            ])
             ->values();
 
         return response()->json($staffs);

@@ -395,6 +395,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         */
         Route::prefix('staffs')->name('staffs.')->group(function () {
             Route::get('/', [StaffController::class, 'index'])->name('index');
+            Route::get('/search', [StaffController::class, 'search'])->name('search');
             Route::get('/create', [StaffController::class, 'create'])->name('create');
             Route::post('/', [StaffController::class, 'store'])->name('store');
             Route::get('/{staff}/edit', [StaffController::class, 'edit'])->name('edit');

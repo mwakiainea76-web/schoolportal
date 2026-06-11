@@ -9,6 +9,7 @@ import Tdata from "@/Components/Table/Tdata";
 import formatDate from "@/utils/date";
 import SearchSelect from "@/Components/SearchSelect";
 import InputLabel from "@/Components/InputLabel";
+import { downloadExport } from "@/utils/exportDownload";
 
 const FILTER_DEFINITIONS = [
     {
@@ -35,7 +36,7 @@ const FILTER_DEFINITIONS = [
     {
         key: "exam_body_id",
         label: "Exam Body",
-        routeName: "exam-bodies.search",
+        routeName: "exam.bodies.search",
         placeholder: "Type to search exam body...",
         selectedLabelKey: "exam_body",
     },
@@ -80,6 +81,7 @@ export default function coursesIndex({
     const [currentFilterKey, setCurrentFilterKey] = useState(
         FILTER_KEYS.find((key) => pageFilters[key]) || "",
     );
+    const [exportFormat, setExportFormat] = useState("pdf");
 
     const setFilter = (key, value) => {
         setForm((current) => ({
@@ -197,6 +199,15 @@ export default function coursesIndex({
         });
     };
 
+    const handleExport = () => {
+        downloadExport("courses", exportFormat, {
+            ...currentFilters(),
+            search: pageFilters.search || "",
+            sort: sortField,
+            direction: sortDirection,
+        });
+    };
+
     return (
         <>
             <Head title="Courses" />
@@ -280,6 +291,27 @@ export default function coursesIndex({
                         )}
                     </div>
                 </form>
+
+                <div className="mb-2 flex justify-end">
+                    <div className="flex items-center">
+                        <select
+                            value={exportFormat}
+                            onChange={(e) => setExportFormat(e.target.value)}
+                            className="h-[34px] rounded-l border border-slate-300 border-r-0 bg-white px-3 text-sm text-slate-700 focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-gray-500"
+                        >
+                            <option value="pdf">PDF</option>
+                            <option value="csv">CSV</option>
+                            <option value="excel">Excel</option>
+                        </select>
+                        <button
+                            type="button"
+                            onClick={handleExport}
+                            className="h-[34px] px-4 bg-gray-400 text-white text-sm font-medium rounded-r hover:bg-gray-600 transition-colors whitespace-nowrap"
+                        >
+                            Export {exportFormat.toUpperCase()}
+                        </button>
+                    </div>
+                </div>
 
                 <Table
                     pagination={courses}

@@ -1,8 +1,16 @@
 import { Head, router, useForm } from "@inertiajs/react";
+import { useState } from "react";
 import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import SearchSelect from "@/Components/SearchSelect";
 import formatDate from "@/utils/date";
+
+const FILTER_DEFINITIONS = [
+    { key: "curriculum_mapping_id", label: "Course Mapping" },
+    { key: "curriculum_unit_id", label: "Unit" },
+    { key: "academic_year_id", label: "Academic Year" },
+    { key: "academic_session_id", label: "Session" },
+];
 
 export default function Marksheet({
     filters,
@@ -21,6 +29,18 @@ export default function Marksheet({
         academic_year_id: filters.academic_year_id || "",
         academic_session_id: filters.academic_session_id || "",
     });
+    const [currentFilterKey, setCurrentFilterKey] = useState(
+        FILTER_DEFINITIONS.find((filter) => filterForm.data[filter.key])?.key ||
+            "",
+    );
+    const [exportFormat, setExportFormat] = useState("pdf");
+
+    const currentFilter = FILTER_DEFINITIONS.find(
+        (filter) => filter.key === currentFilterKey,
+    );
+    const activeFilters = FILTER_DEFINITIONS.filter(
+        (filter) => filterForm.data[filter.key],
+    );
 
     const loadUnits = (mappingId) => {
         router.get(
@@ -42,7 +62,7 @@ export default function Marksheet({
             {
                 curriculum_mapping_id: filterForm.data.curriculum_mapping_id,
                 curriculum_unit_id: filterForm.data.curriculum_unit_id,
-                academic_year_id: academicYear.id || "",
+                academic_year_id: academicYear?.id || "",
                 academic_session_id: "",
             },
             {
@@ -54,20 +74,55 @@ export default function Marksheet({
     };
 
     const loadMarksheet = (event) => {
-        event.preventDefault();
-
+        event?.preventDefault();
         router.get(route("academic.marks.marksheet.index"), filterForm.data, {
             preserveState: true,
             preserveScroll: true,
         });
     };
 
-    const downloadMarksheet = (format) => {
+    const clearFilters = () => {
+        filterForm.setData({
+            curriculum_mapping_id: "",
+            curriculum_unit_id: "",
+            academic_year_id: "",
+            academic_session_id: "",
+        });
+        setCurrentFilterKey("");
+
+        router.get(
+            route("academic.marks.marksheet.index"),
+            {},
+            { preserveState: true, preserveScroll: true, replace: true },
+        );
+    };
+
+    const clearSingleFilter = (key) => {
+        const updates = { [key]: "" };
+
+        if (key === "curriculum_mapping_id") {
+            updates.curriculum_unit_id = "";
+            updates.academic_year_id = "";
+            updates.academic_session_id = "";
+        }
+
+        if (key === "academic_year_id") {
+            updates.academic_session_id = "";
+        }
+
+        filterForm.setData({ ...filterForm.data, ...updates });
+
+        if (currentFilterKey === key) {
+            setCurrentFilterKey("");
+        }
+    };
+
+    const downloadMarksheet = () => {
         const params = new URLSearchParams();
 
         Object.entries({
             ...filterForm.data,
-            format,
+            format: exportFormat,
         }).forEach(([key, value]) => {
             if (value !== null && value !== undefined && value !== "") {
                 params.set(key, value);
@@ -78,6 +133,149 @@ export default function Marksheet({
             `${route("academic.marks.marksheet.export")}?${params.toString()}`,
             "_blank",
             "noopener,noreferrer",
+        );
+    };
+
+    const selectedLabel = (filter) => {
+        const value = filterForm.data[filter.key];
+
+        if (!value) return "";
+
+        if (filter.key === "curriculum_mapping_id") {
+            return (
+                course_mappings.find(
+                    (mapping) => String(mapping.id) === String(value),
+                )?.name || value
+            );
+        }
+
+        if (filter.key === "curriculum_unit_id") {
+            return selected_unit?.display_name || selected_unit?.name || value;
+        }
+
+        if (filter.key === "academic_year_id") {
+            return selected_filters?.academic_year?.name || value;
+        }
+
+        if (filter.key === "academic_session_id") {
+            return selected_filters?.academic_session?.name || value;
+        }
+
+        return value;
+    };
+
+    const renderFilterInput = (filter) => {
+        if (!filter) {
+            return (
+                <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 px-4 py-2 text-sm text-zinc-400">
+                    Select a column to show its input
+                </div>
+            );
+        }
+
+        if (filter.key === "curriculum_mapping_id") {
+            return (
+                <select
+                    value={filterForm.data.curriculum_mapping_id}
+                    onChange={(event) => {
+                        filterForm.setData(
+                            "curriculum_mapping_id",
+                            event.target.value,
+                        );
+                        filterForm.setData("curriculum_unit_id", "");
+                        filterForm.setData("academic_year_id", "");
+                        filterForm.setData("academic_session_id", "");
+                        loadUnits(event.target.value);
+                    }}
+                    className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+                >
+                    <option value="">Select course mapping...</option>
+                    {course_mappings.map((mapping) => (
+                        <option key={mapping.id} value={mapping.id}>
+                            {mapping.name}
+                        </option>
+                    ))}
+                </select>
+            );
+        }
+
+        if (filter.key === "curriculum_unit_id") {
+            return (
+                <SearchSelect
+                    routeName="units.search"
+                    routeParams={{
+                        curriculum_mapping_id:
+                            filterForm.data.curriculum_mapping_id,
+                        limit: 10,
+                    }}
+                    defaultOptions={unit_options}
+                    value={filterForm.data.curriculum_unit_id}
+                    selectedLabel={
+                        selected_unit ? selected_unit.display_name : null
+                    }
+                    placeholder={
+                        filterForm.data.curriculum_mapping_id
+                            ? "Search unit..."
+                            : "Select course mapping first..."
+                    }
+                    preloadOptions
+                    onChange={(unit) =>
+                        filterForm.setData("curriculum_unit_id", unit?.id || "")
+                    }
+                    error={filterForm.errors.curriculum_unit_id}
+                    disabled={!filterForm.data.curriculum_mapping_id}
+                />
+            );
+        }
+
+        if (filter.key === "academic_year_id") {
+            return (
+                <SearchSelect
+                    routeName="academic.years.search"
+                    value={filterForm.data.academic_year_id}
+                    selectedLabel={selected_filters?.academic_year?.name}
+                    placeholder="Select academic year..."
+                    defaultOptions={
+                        filter_options?.academic_years?.map((year) => ({
+                            id: year.value,
+                            name: year.label,
+                        })) ?? []
+                    }
+                    preloadOptions
+                    onChange={(academicYear) => {
+                        filterForm.setData("academic_year_id", academicYear?.id || "");
+                        filterForm.setData("academic_session_id", "");
+                        syncAcademicYear(academicYear);
+                    }}
+                />
+            );
+        }
+
+        return (
+            <SearchSelect
+                routeName="academic.sessions.search"
+                routeParams={{
+                    academic_year_id: filterForm.data.academic_year_id,
+                }}
+                value={filterForm.data.academic_session_id}
+                selectedLabel={selected_filters?.academic_session?.name}
+                placeholder={
+                    filterForm.data.academic_year_id
+                        ? "Search session..."
+                        : "Select academic year first..."
+                }
+                defaultOptions={
+                    filter_options?.sessions?.map((session) => ({
+                        id: session.value,
+                        name: session.label,
+                    })) ?? []
+                }
+                preloadOptions
+                onChange={(session) =>
+                    filterForm.setData("academic_session_id", session?.id || "")
+                }
+                disabled={!filterForm.data.academic_year_id}
+            />
         );
     };
 
@@ -110,185 +308,134 @@ export default function Marksheet({
             <div className="mx-auto max-w-7xl space-y-8">
                 <form
                     onSubmit={loadMarksheet}
-                    className="space-y-6 rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm"
+                    className="rounded-lg border border-zinc-100 bg-white p-4 shadow-sm"
                 >
-                    <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+                    <div className="grid grid-cols-1 items-end gap-3 lg:grid-cols-[minmax(220px,300px)_minmax(300px,1fr)_auto_auto_auto]">
                         <div>
-                            <InputLabel value="Course Mapping" required />
+                            <InputLabel value="Filter Column" />
                             <select
-                                value={filterForm.data.curriculum_mapping_id}
-                                onChange={(event) => {
-                                    filterForm.setData(
-                                        "curriculum_mapping_id",
-                                        event.target.value,
-                                    );
-                                    filterForm.setData(
-                                        "curriculum_unit_id",
-                                        "",
-                                    );
-                                    filterForm.setData("academic_year_id", "");
-                                    filterForm.setData(
-                                        "academic_session_id",
-                                        "",
-                                    );
-                                    loadUnits(event.target.value);
-                                }}
-                                className="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none transition focus:border-emerald-400"
+                                value={currentFilterKey}
+                                onChange={(event) =>
+                                    setCurrentFilterKey(event.target.value)
+                                }
+                                className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
                             >
-                                <option value="">Select course mapping</option>
-                                {course_mappings.map((mapping) => (
-                                    <option key={mapping.id} value={mapping.id}>
-                                        {mapping.name}
+                                <option value="">Choose column...</option>
+                                {FILTER_DEFINITIONS.map((filter) => (
+                                    <option key={filter.key} value={filter.key}>
+                                        {filter.label}
                                     </option>
                                 ))}
                             </select>
-                            <InputError
-                                message={
-                                    filterForm.errors.curriculum_mapping_id
-                                }
-                                className="mt-2"
+                        </div>
+
+                        <div>
+                            <InputLabel
+                                value={currentFilter?.label || "Filter Value"}
                             />
+                            {renderFilterInput(currentFilter)}
                         </div>
 
-                        <div>
-                            <InputLabel value="Unit" required />
-                            <div className="mt-2">
-                                <SearchSelect
-                                    routeName="units.search"
-                                    routeParams={{
-                                        curriculum_mapping_id:
-                                            filterForm.data
-                                                .curriculum_mapping_id,
-                                        limit: 10,
-                                    }}
-                                    defaultOptions={unit_options}
-                                    value={filterForm.data.curriculum_unit_id}
-                                    selectedLabel={
-                                        selected_unit
-                                            ? selected_unit.display_name
-                                            : null
-                                    }
-                                    placeholder={
-                                        filterForm.data.curriculum_mapping_id
-                                            ? "Search unit..."
-                                            : "Select course mapping first..."
-                                    }
-                                    preloadOptions
-                                    onChange={(unit) =>
-                                        filterForm.setData(
-                                            "curriculum_unit_id",
-                                            unit.id || "",
-                                        )
-                                    }
-                                    error={filterForm.errors.curriculum_unit_id}
-                                    disabled={
-                                        !filterForm.data.curriculum_mapping_id
-                                    }
-                                />
-                            </div>
-                            <InputError
-                                message={filterForm.errors.curriculum_unit_id}
-                                className="mt-2"
-                            />
-                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setCurrentFilterKey("")}
+                            disabled={
+                                !currentFilterKey ||
+                                !filterForm.data[currentFilterKey]
+                            }
+                            className="inline-flex h-10 items-center justify-center rounded-lg border border-zinc-300 bg-white px-4 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            + Add filter
+                        </button>
 
-                        <div>
-                            <InputLabel value="Academic Year" />
-                            <div className="mt-2">
-                                <SearchSelect
-                                    routeName="academic.years.search"
-                                    value={filterForm.data.academic_year_id}
-                                    selectedLabel={
-                                        selected_filters?.academic_year?.name
-                                    }
-                                    placeholder="Select academic year..."
-                                    defaultOptions={
-                                        filter_options?.academic_years?.map(
-                                            (year) => ({
-                                                id: year.value,
-                                                name: year.label,
-                                            }),
-                                        ) ?? []
-                                    }
-                                    preloadOptions
-                                    onChange={(academicYear) => {
-                                        filterForm.setData(
-                                            "academic_year_id",
-                                            academicYear.id || "",
-                                        );
-                                        filterForm.setData(
-                                            "academic_session_id",
-                                            "",
-                                        );
-                                        syncAcademicYear(academicYear);
-                                    }}
-                                />
-                            </div>
-                        </div>
+                        <button
+                            type="button"
+                            onClick={clearFilters}
+                            className="inline-flex h-10 items-center justify-center rounded-lg border border-zinc-300 bg-white px-4 text-sm text-zinc-700 hover:bg-zinc-50"
+                        >
+                            Clear all
+                        </button>
 
-                        <div>
-                            <InputLabel value="Session" />
-                            <div className="mt-2">
-                                <SearchSelect
-                                    routeName="academic.sessions.search"
-                                    routeParams={{
-                                        academic_year_id:
-                                            filterForm.data.academic_year_id,
-                                    }}
-                                    value={filterForm.data.academic_session_id}
-                                    selectedLabel={
-                                        selected_filters?.academic_session?.name
-                                    }
-                                    placeholder={
-                                        filterForm.data.academic_year_id
-                                            ? "Search session..."
-                                            : "Select academic year first..."
-                                    }
-                                    defaultOptions={
-                                        filter_options?.sessions?.map(
-                                            (session) => ({
-                                                id: session.value,
-                                                name: session.label,
-                                            }),
-                                        ) ?? []
-                                    }
-                                    preloadOptions
-                                    onChange={(session) =>
-                                        filterForm.setData(
-                                            "academic_session_id",
-                                            session.id || "",
-                                        )
-                                    }
-                                    disabled={!filterForm.data.academic_year_id}
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="flex gap-4">
                         <button
                             type="submit"
                             disabled={!filterForm.data.curriculum_unit_id}
-                            className="rounded-xl bg-emerald-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="inline-flex h-10 items-center justify-center rounded-lg bg-emerald-600 px-4 text-sm text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
                         >
-                            Load Marksheet
+                            Apply
                         </button>
-                        <button
-                            type="button"
-                            onClick={() => downloadMarksheet("csv")}
-                            disabled={!filterForm.data.curriculum_unit_id}
-                            className="rounded-xl border border-zinc-200 bg-white px-6 py-3 text-sm font-semibold text-zinc-900 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                            Download CSV
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => downloadMarksheet("excel")}
-                            disabled={!filterForm.data.curriculum_unit_id}
-                            className="rounded-xl border border-zinc-200 bg-white px-6 py-3 text-sm font-semibold text-zinc-900 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                            Download Excel
-                        </button>
+                    </div>
+
+                    <InputError
+                        message={filterForm.errors.curriculum_mapping_id}
+                        className="mt-2"
+                    />
+                    <InputError
+                        message={filterForm.errors.curriculum_unit_id}
+                        className="mt-2"
+                    />
+
+                    <div className="mt-4 border-t border-zinc-100 pt-3">
+                        {activeFilters.length ? (
+                            <div className="flex flex-wrap gap-2">
+                                {activeFilters.map((filter) => (
+                                    <button
+                                        key={filter.key}
+                                        type="button"
+                                        onClick={() =>
+                                            clearSingleFilter(filter.key)
+                                        }
+                                        className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 ring-1 ring-emerald-100 hover:bg-emerald-100"
+                                    >
+                                        <span>
+                                            {filter.label}:{" "}
+                                            {selectedLabel(filter)}
+                                        </span>
+                                        <span className="text-emerald-900">
+                                            x
+                                        </span>
+                                    </button>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-sm text-zinc-500">
+                                No filters selected. Choose a column above to
+                                filter this table.
+                            </p>
+                        )}
+                    </div>
+
+                    <div className="mt-4 flex flex-col gap-3 border-t border-zinc-100 pt-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="text-sm text-zinc-500">
+                            {selected_unit ? (
+                                <span className="font-semibold text-zinc-800">
+                                    {selected_unit.code} - {selected_unit.name}
+                                </span>
+                            ) : (
+                                "Choose a unit and apply filters to load the marksheet."
+                            )}
+                        </div>
+
+                        <div className="flex items-center">
+                            <select
+                                value={exportFormat}
+                                onChange={(event) =>
+                                    setExportFormat(event.target.value)
+                                }
+                                className="h-[34px] rounded-l border border-slate-300 border-r-0 bg-white px-3 text-sm text-slate-700 focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-gray-500"
+                            >
+                                <option value="pdf">PDF</option>
+                                <option value="csv">CSV</option>
+                                <option value="excel">Excel</option>
+                            </select>
+                            <button
+                                type="button"
+                                onClick={downloadMarksheet}
+                                disabled={!filterForm.data.curriculum_unit_id}
+                                className="h-[34px] whitespace-nowrap rounded-r bg-gray-400 px-4 text-sm font-medium text-white transition-colors hover:bg-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                Export {exportFormat.toUpperCase()}
+                            </button>
+                        </div>
                     </div>
                 </form>
 
@@ -299,32 +446,27 @@ export default function Marksheet({
                 ) : null}
 
                 {selected_unit && !blocker ? (
-                    <div className="overflow-hidden rounded-3xl border border-zinc-300 bg-white p-6 shadow-sm">
-                        <div className="space-y-4 text-[13px] text-zinc-900">
-                            <div className="text-sm font-semibold">
-                                {meta.session_name || ""}
-                            </div>
-
-                            <div className="text-center text-base font-bold uppercase tracking-wide text-blue-800 underline">
+                    <div className="overflow-hidden border border-zinc-200 bg-white px-5 py-6 shadow-sm">
+                        <div className="text-[12px] text-black">
+                            <div className="mb-6 text-center text-[15px] font-semibold uppercase tracking-wide text-blue-800 underline">
                                 Formative Assessment (FA) Marksheet Per Unit of
                                 Competency
                             </div>
 
-                            <div className="grid gap-x-10 gap-y-2 md:grid-cols-3">
+                            <div className="mb-3 grid grid-cols-1 gap-x-10 gap-y-3 md:grid-cols-[1fr_1fr_0.9fr]">
                                 <div>
-                                    <span className="font-semibold">
+                                    <span className="font-bold">
                                         Assessment Center Code:
-                                    </span>{" "}
-                                    {meta.assessment_center_code || ""}
+                                    </span>
                                 </div>
                                 <div>
-                                    <span className="font-semibold">
+                                    <span className="font-bold">
                                         Assessment Center Name:
                                     </span>{" "}
                                     {meta.assessment_center_name || ""}
                                 </div>
                                 <div>
-                                    <span className="font-semibold">
+                                    <span className="font-bold">
                                         Term Dates:
                                     </span>{" "}
                                     From{" "}
@@ -336,92 +478,94 @@ export default function Marksheet({
                                         ? formatDate(meta.term_to)
                                         : ""}
                                 </div>
+                            </div>
+
+                            <div className="mb-3 grid grid-cols-1 gap-x-10 gap-y-3 md:grid-cols-[1fr_1fr_0.9fr]">
                                 <div>
-                                    <span className="font-semibold">
+                                    <span className="font-bold">
                                         Course Code:
                                     </span>{" "}
                                     {meta.course_code || ""}
                                 </div>
                                 <div>
-                                    <span className="font-semibold">
+                                    <span className="font-bold">
                                         Course Title:
                                     </span>{" "}
                                     {meta.course_title || ""}
                                 </div>
                                 <div>
-                                    <span className="font-semibold">
+                                    <span className="font-bold">
                                         Unit Code:
                                     </span>{" "}
                                     {meta.unit_code || ""}
                                 </div>
-                                <div className="md:col-span-3">
-                                    <span className="font-semibold">
-                                        Unit Title:
-                                    </span>{" "}
-                                    {meta.unit_title || ""}
-                                </div>
+                            </div>
+
+                            <div className="mb-5">
+                                <span className="font-bold">Unit Title:</span>{" "}
+                                {meta.unit_title || ""}
                             </div>
 
                             <div className="overflow-x-auto">
-                                <table className="w-full  border-collapse border border-zinc-500 text-[12px]">
+                                <table className="w-full min-w-[980px] border-collapse border border-zinc-500 text-[12px]">
                                     <thead>
                                         <tr className="bg-white">
                                             <th
                                                 rowSpan="2"
-                                                className="border border-zinc-500 bg-zinc-50  text-left"
+                                                className="w-[44px] border border-zinc-500 bg-zinc-50 px-1 py-2 text-left font-bold"
                                             >
                                                 S/N
                                             </th>
                                             <th
                                                 rowSpan="2"
-                                                className="border border-zinc-500 bg-zinc-50  text-left"
+                                                className="w-[220px] border border-zinc-500 bg-zinc-50 px-1 py-2 text-left font-bold"
                                             >
                                                 Candidate&apos;s Reg Code
                                             </th>
                                             <th
                                                 rowSpan="2"
-                                                className="border border-zinc-500 bg-zinc-50  text-left"
+                                                className="w-[180px] border border-zinc-500 bg-zinc-50 px-1 py-2 text-left font-bold"
                                             >
                                                 Candidate&apos;s Name
                                             </th>
                                             <th
                                                 colSpan="4"
-                                                className="border border-zinc-500 bg-zinc-200  text-center"
+                                                className="border border-zinc-500 bg-zinc-200 px-1 py-1 text-center font-bold"
                                             >
                                                 Continuous Theory (CT) Marks
                                                 (100%)
                                             </th>
                                             <th
                                                 colSpan="4"
-                                                className="border border-zinc-500 bg-orange-100  text-center"
+                                                className="border border-zinc-500 bg-orange-50 px-1 py-1 text-center font-bold"
                                             >
                                                 Continuous Practical (CP) Marks
                                                 (100%)
                                             </th>
                                         </tr>
                                         <tr className="bg-white">
-                                            <th className="border border-zinc-500 bg-zinc-100  text-center">
+                                            <th className="w-[80px] border border-zinc-500 bg-zinc-50 px-1 py-1 text-center font-bold">
                                                 FA 1
                                             </th>
-                                            <th className="border border-zinc-500 bg-zinc-100  text-center">
+                                            <th className="w-[80px] border border-zinc-500 bg-zinc-50 px-1 py-1 text-center font-bold">
                                                 FA 2
                                             </th>
-                                            <th className="border border-zinc-500 bg-zinc-100  text-center">
+                                            <th className="w-[80px] border border-zinc-500 bg-zinc-50 px-1 py-1 text-center font-bold">
                                                 FA 3
                                             </th>
-                                            <th className="border border-zinc-500 bg-zinc-200  text-center">
+                                            <th className="w-[140px] border border-zinc-500 bg-zinc-200 px-1 py-1 text-center font-bold">
                                                 Average
                                             </th>
-                                            <th className="border border-zinc-500 bg-orange-50  text-center">
+                                            <th className="w-[92px] border border-zinc-500 bg-orange-50 px-1 py-1 text-center font-bold">
                                                 Pract 1
                                             </th>
-                                            <th className="border border-zinc-500 bg-orange-50  text-center">
+                                            <th className="w-[92px] border border-zinc-500 bg-orange-50 px-1 py-1 text-center font-bold">
                                                 Pract 2
                                             </th>
-                                            <th className="border border-zinc-500 bg-orange-50  text-center">
+                                            <th className="w-[92px] border border-zinc-500 bg-orange-50 px-1 py-1 text-center font-bold">
                                                 Pract 3
                                             </th>
-                                            <th className="border border-zinc-500 bg-orange-100  text-center">
+                                            <th className="w-[140px] border border-zinc-500 bg-orange-100 px-1 py-1 text-center font-bold">
                                                 Average
                                             </th>
                                         </tr>
@@ -434,38 +578,38 @@ export default function Marksheet({
                                                     index
                                                 }
                                             >
-                                                <td className="border border-zinc-500  text-center">
+                                                <td className="border border-zinc-500 px-1 py-1 text-center">
                                                     {`${index + 1}.`}
                                                 </td>
-                                                <td className="border border-zinc-500 ">
+                                                <td className="border border-zinc-500 px-1 py-1">
                                                     {row.admission_number ||
                                                         ""}
                                                 </td>
-                                                <td className="border border-zinc-500 ">
+                                                <td className="border border-zinc-500 px-1 py-1">
                                                     {row.student_name || ""}
                                                 </td>
-                                                <td className="border border-zinc-500  text-center">
+                                                <td className="border border-zinc-500 px-1 py-1 text-center">
                                                     {row.theory?.[1] || ""}
                                                 </td>
-                                                <td className="border border-zinc-500  text-center">
+                                                <td className="border border-zinc-500 px-1 py-1 text-center">
                                                     {row.theory?.[2] || ""}
                                                 </td>
-                                                <td className="border border-zinc-500  text-center">
+                                                <td className="border border-zinc-500 px-1 py-1 text-center">
                                                     {row.theory?.[3] || ""}
                                                 </td>
-                                                <td className="border border-zinc-500 bg-zinc-100  text-center font-semibold text-rose-700">
+                                                <td className="border border-zinc-500 bg-zinc-100 px-1 py-1 text-center font-semibold text-rose-700">
                                                     {row.theory_average || ""}
                                                 </td>
-                                                <td className="border border-zinc-500  text-center">
+                                                <td className="border border-zinc-500 px-1 py-1 text-center">
                                                     {row.practical?.[1] || ""}
                                                 </td>
-                                                <td className="border border-zinc-500  text-center">
+                                                <td className="border border-zinc-500 px-1 py-1 text-center">
                                                     {row.practical?.[2] || ""}
                                                 </td>
-                                                <td className="border border-zinc-500  text-center">
+                                                <td className="border border-zinc-500 px-1 py-1 text-center">
                                                     {row.practical?.[3] || ""}
                                                 </td>
-                                                <td className="border border-zinc-500 bg-orange-50  text-center font-semibold text-rose-700">
+                                                <td className="border border-zinc-500 bg-orange-50 px-1 py-1 text-center font-semibold text-rose-700">
                                                     {row.practical_average ||
                                                         ""}
                                                 </td>

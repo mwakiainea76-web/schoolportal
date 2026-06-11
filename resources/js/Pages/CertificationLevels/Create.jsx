@@ -123,7 +123,7 @@ export default function AddCertificationLevel({
                                 />
 
                                 <SearchSelect
-                                    routeName="exam-bodies.search"
+                                    routeName="exam.bodies.search"
                                     defaultOptions={[]}
                                     value={data.exam_body_id}
                                     selectedLabel={

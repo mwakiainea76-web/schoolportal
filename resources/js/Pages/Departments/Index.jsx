@@ -8,6 +8,7 @@ import Trow from "@/Components/Table/Trow";
 import Tdata from "@/Components/Table/Tdata";
 import formatDate from "@/utils/date";
 import SearchSelect from "@/Components/SearchSelect";
+import { downloadExport } from "@/utils/exportDownload";
 
 export default function DepartmentsIndex({ departments }) {
     const [sortField, setSortField] = useState(
@@ -17,6 +18,7 @@ export default function DepartmentsIndex({ departments }) {
         departments.direction || "desc",
     );
     const [searchTerm, setSearchTerm] = useState("");
+    const [exportFormat, setExportFormat] = useState("pdf");
 
     const handleSort = (field) => {
         const direction =
@@ -46,58 +48,73 @@ export default function DepartmentsIndex({ departments }) {
     };
 
     const handleDelete = (id) => {
-        if (!confirm("Are you sure you want to delete this department?"))
+        if (!confirm("Are you sure you want to delete this department?")) {
             return;
+        }
         router.delete(route("departments.destroy", encodeURIComponent(id)), {
             preserveState: true,
             replace: true,
         });
     };
+
     const handleExport = () => {
-        const params = new URLSearchParams({
+        downloadExport("departments", exportFormat, {
             search: searchTerm || departments.filters?.search || "",
             sort: sortField,
             direction: sortDirection,
         });
-
-        // Create a hidden anchor and click it — triggers download directly
-        const link = document.createElement("a");
-        link.href = `/export/departments?${params}`;
-        link.download = "departments.pdf";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
     };
+
     return (
         <>
             <Head title="Departments" />
 
-            <div className=" mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <div className="mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
+
+                {/* Row 1: Search form */}
                 <form
-                    className="w-full relative flex gap-x-7"
+                    className="w-full flex flex-wrap items-center gap-3 mb-2"
                     onSubmit={submit}
                 >
-                    <SearchSelect
-                        routeName="departments.search"
-                        defaultOptions={departments.data}
-                        placeholder="Type in  department name  ..."
-                        onChange={(body) => setSearchTerm(body.code)}
-                    />
+                    <div className="flex-1 min-w-[200px]">
+                        <SearchSelect
+                            routeName="departments.search"
+                            defaultOptions={departments.data}
+                            placeholder="Type in department name ..."
+                            onChange={(body) => setSearchTerm(body.code)}
+                        />
+                    </div>
                     <button
-                        className="px-4 py-1 bg-emerald-600 text-white rounded hover:bg-slate-700"
                         type="submit"
+                        className="px-4 py-1.5 bg-emerald-600 text-white text-sm font-medium rounded hover:bg-slate-700 transition-colors whitespace-nowrap"
                     >
                         Search
                     </button>
-                    <button
-                        type="button"
-                        onClick={handleExport}
-                        className="px-4 py-1 bg-blue-700 text-white rounded hover:bg-blue-900 flex items-center gap-x-2"
-                    >
-                        <span>⬇</span> Export PDF
-                    </button>
                 </form>
 
+                {/* Row 2: Export group — sits right, just above the table */}
+                <div className="flex justify-end ">
+                    <div className="flex items-center">
+                        <select
+                            value={exportFormat}
+                            onChange={(e) => setExportFormat(e.target.value)}
+                            className="h-[34px] rounded-l border border-slate-300 border-r-0 bg-white px-3 text-sm text-slate-700 focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-gray-500"
+                        >
+                            <option value="pdf">PDF</option>
+                            <option value="csv">CSV</option>
+                            <option value="excel">Excel</option>
+                        </select>
+                        <button
+                            type="button"
+                            onClick={handleExport}
+                            className="h-[34px] px-4 bg-gray-400 text-white text-sm font-medium rounded-r hover:bg-gray-600 transition-colors whitespace-nowrap"
+                        >
+                            Export {exportFormat.toUpperCase()}
+                        </button>
+                    </div>
+                </div>
+
+                {/* Table */}
                 <Table
                     pagination={departments}
                     sortField={sortField}

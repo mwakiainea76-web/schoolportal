@@ -4,10 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreCurriculumUnitRequest;
 use App\Http\Requests\UpdateCurriculumUnitRequest;
-use App\Models\CertificationLevel;
 use App\Models\Course;
 use App\Models\CurriculumMapping;
-use App\Models\ExamBody;
 use App\Models\Unit;
 use App\Services\StudentAcademicContextService;
 use App\Services\UnitService;
@@ -26,8 +24,6 @@ class UnitController extends Controller
             'unit_id',
             'module_taught',
             'course_id',
-            'exam_body_id',
-            'certification_level_id',
             'curriculum_mapping_id',
             'sort',
             'direction',
@@ -56,12 +52,6 @@ class UnitController extends Controller
             ->when($selectedMappingId, fn ($query) => $query->where('curriculum_mapping_id', $selectedMappingId))
             ->when($request->filled('course_id'), function ($query) use ($request) {
                 $query->whereHas('curriculumMapping.course', fn ($courseQuery) => $courseQuery->whereKey($request->integer('course_id')));
-            })
-            ->when($request->filled('exam_body_id'), function ($query) use ($request) {
-                $query->whereHas('curriculumMapping.course.certificationLevel', fn ($levelQuery) => $levelQuery->where('exam_body_id', $request->integer('exam_body_id')));
-            })
-            ->when($request->filled('certification_level_id'), function ($query) use ($request) {
-                $query->whereHas('curriculumMapping.course', fn ($courseQuery) => $courseQuery->where('certification_level_id', $request->integer('certification_level_id')));
             })
             ->orderBy($sortField, $sortDirection)
             ->paginate(40)
@@ -235,22 +225,12 @@ class UnitController extends Controller
                 ->select('id', 'name', 'certification_level_id')
                 ->find($filters['course_id'])
             : null;
-        $examBody = ! empty($filters['exam_body_id'])
-            ? ExamBody::select('id', 'code', 'name')->find($filters['exam_body_id'])
-            : null;
-        $certificationLevel = ! empty($filters['certification_level_id'])
-            ? CertificationLevel::select('id', 'name')->find($filters['certification_level_id'])
-            : null;
 
         return [
             'unit' => $unit
                 ? trim($unit->code.' - '.$unit->name.' (Module '.$unit->module_taught.')', ' -')
                 : null,
             'course' => $course?->display_name,
-            'exam_body' => $examBody
-                ? trim($examBody->code.' - '.$examBody->name, ' -')
-                : null,
-            'certification_level' => $certificationLevel?->name,
         ];
     }
 }

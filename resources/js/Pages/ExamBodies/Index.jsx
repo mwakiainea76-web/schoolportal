@@ -61,7 +61,7 @@ export default function ExamBody({ examBodies }) {
                     onSubmit={submit}
                 >
                     <SearchSelect
-                        routeName="exam-bodies.search"
+                        routeName="exam.bodies.search"
                         defaultOptions={examBodies.data}
                         placeholder="Type  exam body name ..."
                         onChange={(body) => setSearchTerm(body.code)}

@@ -17,9 +17,29 @@ class CurriculumMappingFilter
 
     public function apply(Builder $query, array $filters): Builder
     {
-        return $query
+        $query
             ->when($filters['search'] ?? null, fn ($q, $search) => $this->search($q, $search))
             ->when($filters['sort'] ?? null, fn ($q, $sort) => $this->sort($q, $sort, $filters['direction'] ?? 'desc'));
+
+        if (($filters['course_id'] ?? '') !== '') {
+            $query->where('course_id', $filters['course_id']);
+        }
+
+        if (($filters['curriculum_id'] ?? '') !== '') {
+            $query->where('curriculum_id', $filters['curriculum_id']);
+        }
+
+        if (($filters['exam_body_id'] ?? '') !== '') {
+            $query->whereHas('course.certificationLevel', function ($levelQuery) use ($filters) {
+                $levelQuery->where('exam_body_id', $filters['exam_body_id']);
+            });
+        }
+
+        if (($filters['is_active'] ?? '') !== '' && in_array((string) $filters['is_active'], ['0', '1'], true)) {
+            $query->where('is_active', (bool) $filters['is_active']);
+        }
+
+        return $query;
     }
 
     protected function search(Builder $query, string $search): void
@@ -43,4 +63,3 @@ class CurriculumMappingFilter
         $query->orderBy($column, $direction);
     }
 }
-

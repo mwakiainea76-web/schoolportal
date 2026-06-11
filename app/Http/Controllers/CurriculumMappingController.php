@@ -5,9 +5,10 @@ namespace App\Http\Controllers;
 use App\Filters\CurriculumMappingFilter;
 use App\Http\Requests\StoreCurriculumMappingRequest;
 use App\Http\Requests\UpdateCurriculumMappingRequest;
-use App\Models\ExamBody;
-use App\Models\CurriculumMapping;
+use App\Models\Course;
 use App\Models\Curriculum;
+use App\Models\CurriculumMapping;
+use App\Models\ExamBody;
 use App\Services\CurriculumMappingService;
 use Illuminate\Http\Request;
 
@@ -19,10 +20,20 @@ class CurriculumMappingController extends Controller
 
     public function index(CurriculumMappingFilter $filter)
     {
+        $filters = request()->only([
+            'search',
+            'course_id',
+            'curriculum_id',
+            'exam_body_id',
+            'is_active',
+            'sort',
+            'direction',
+        ]);
+
         $curriculumMappings = CurriculumMapping::query()
             ->tap(fn ($query) => $filter->apply(
                 $query,
-                request()->only(['search', 'sort', 'direction'])
+                $filters
             ))
             ->latest()
             ->with(['course.certificationLevel.examBody', 'curriculum'])
@@ -31,6 +42,8 @@ class CurriculumMappingController extends Controller
 
         return inertia('CurriculumMappings/Index', [
             'curriculumMappings' => $curriculumMappings,
+            'filters' => (object) $filters,
+            'selectedFilters' => $this->selectedIndexFilters($filters),
         ]);
     }
 
@@ -150,6 +163,32 @@ class CurriculumMappingController extends Controller
             ]);
 
         return response()->json($examBodies);
+    }
+
+    protected function selectedIndexFilters(array $filters): array
+    {
+        $course = ($filters['course_id'] ?? '') !== ''
+            ? Course::with('certificationLevel:id,name')->select('id', 'name', 'certification_level_id')->find($filters['course_id'])
+            : null;
+        $curriculum = ($filters['curriculum_id'] ?? '') !== ''
+            ? Curriculum::select('id', 'name')->find($filters['curriculum_id'])
+            : null;
+        $examBody = ($filters['exam_body_id'] ?? '') !== ''
+            ? ExamBody::select('id', 'code', 'name')->find($filters['exam_body_id'])
+            : null;
+
+        return [
+            'course' => $course?->display_name,
+            'curriculum' => $curriculum?->name,
+            'exam_body' => $examBody
+                ? trim($examBody->code.' - '.$examBody->name, ' -')
+                : null,
+            'status' => match ((string) ($filters['is_active'] ?? '')) {
+                '1' => 'Active',
+                '0' => 'Inactive',
+                default => null,
+            },
+        ];
     }
 
 }

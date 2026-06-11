@@ -38,7 +38,7 @@ const Create = () => {
                         <div>
                             <InputLabel value="Exam Body" required />
                             <SearchSelect
-                                routeName="exam-bodies.search"
+                                routeName="exam.bodies.search"
                                 value={data.exam_body_code}
                                 placeholder="Select exam body..."
                                 minSearchLength={0}

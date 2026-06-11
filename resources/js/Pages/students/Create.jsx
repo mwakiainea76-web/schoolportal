@@ -400,7 +400,7 @@ export default function CreateStudent({
                                         <div>
                                             <InputLabel value="Exam Body" required />
                                             <SearchSelect
-                                                routeName="exam-bodies.search"
+                                                routeName="exam.bodies.search"
                                                 defaultOptions={[]}
                                                 value={data.exam_body_id}
                                                 preloadOptions

@@ -9,11 +9,6 @@ class DepartmentPdfExport extends BasePdfExport
 {
     protected string $orientation = 'P';
 
-    public function __construct()
-    {
-        parent::__construct();
-    }
-
     protected function getTitle(): string
     {
         return 'Departments Report';
@@ -26,13 +21,8 @@ class DepartmentPdfExport extends BasePdfExport
 
     protected function addTableHeader(): void
     {
-        $this->pdf->SetFont('Arial', 'B', 9);
-        $this->pdf->SetFillColor(245, 245, 245);
-        $this->pdf->SetTextColor(80, 80, 80);
-        $this->pdf->SetDrawColor(220, 220, 220);
-        $this->pdf->SetLineWidth(0.1);
+        $this->setHeaderStyle();
 
-        // Total = 12 + 22 + 70 + 56 + 30 = 190mm ✅
         $this->pdf->Cell(12, 9, 'S/N', 'B', 0, 'C', true);
         $this->pdf->Cell(22, 9, 'Code', 'B', 0, 'L', true);
         $this->pdf->Cell(70, 9, 'Name', 'B', 0, 'L', true);
@@ -42,31 +32,70 @@ class DepartmentPdfExport extends BasePdfExport
 
     protected function addTableBody(array $filters): void
     {
-        Department::query()
-            ->with('hod')
-            ->when($filters['search'] ?? null, function ($q, $v) {
-                $q->where('name', 'like', "%$v%")
-                    ->orWhere('code', 'like', "%$v%");
-            })
-            ->orderBy('name')
+        $this->query($filters)
             ->chunk($this->chunkSize, function ($departments) {
                 foreach ($departments as $department) {
+                    $this->ensureTableSpace(8);
+
                     $alt = $this->incrementRow();
 
-                    $this->pdf->SetFillColor($alt ? 249 : 255, $alt ? 249 : 255, $alt ? 249 : 255);
-                    $this->pdf->SetTextColor(30, 30, 30);
-                    $this->pdf->SetFont('Arial', '', 9);
-                    $this->pdf->SetDrawColor(235, 235, 235);
+                    $this->resetBodyStyle($alt);
+                    $this->pdf->SetDrawColor(232, 238, 246);
                     $this->pdf->SetLineWidth(0.1);
 
-                    // Total = 12 + 22 + 70 + 56 + 30 = 190mm ✅
                     $this->pdf->Cell(12, 8, $this->rowCount, 'B', 0, 'C', $alt);
-                    $this->pdf->Cell(22, 8, $department->code, 'B', 0, 'L', $alt);
-                    $this->pdf->Cell(70, 8, $department->name, 'B', 0, 'L', $alt);
-                    $this->pdf->Cell(56, 8, $department->hod->name ?? 'N/A', 'B', 0, 'L', $alt);
-                    $this->pdf->Cell(30, 8, $department->created_at->toDateString(), 'B', 1, 'L', $alt);
+                    $this->pdf->Cell(22, 8, $this->pdfText($department->code), 'B', 0, 'L', $alt);
+                    $this->pdf->Cell(70, 8, $this->pdfText($department->name), 'B', 0, 'L', $alt);
+                    $this->pdf->Cell(56, 8, $this->pdfText($department->hod?->full_name ?? 'N/A'), 'B', 0, 'L', $alt);
+                    $this->pdf->Cell(30, 8, $department->created_at->format('F j, Y'), 'B', 1, 'L', $alt);
                 }
-                flush();
             });
+    }
+
+    protected function headings(): array
+    {
+        return ['S/N', 'Code', 'Name', 'HOD', 'Created'];
+    }
+
+    protected function rows(array $filters): iterable
+    {
+        $count = 0;
+
+        foreach ($this->query($filters)->cursor() as $department) {
+            $count++;
+
+            yield [
+                $count,
+                $department->code,
+                $department->name,
+                $department->hod?->full_name ?? 'N/A',
+                $department->created_at->format('F j, Y'),
+            ];
+        }
+    }
+
+    private function query(array $filters)
+    {
+        $sorts = [
+            'id' => 'id',
+            'code' => 'code',
+            'name' => 'name',
+            'created' => 'created_at',
+            'created_at' => 'created_at',
+        ];
+        $sortColumn = $sorts[$filters['sort'] ?? 'created_at'] ?? 'created_at';
+        $direction = in_array($filters['direction'] ?? 'desc', ['asc', 'desc'], true)
+            ? $filters['direction']
+            : 'desc';
+
+        return Department::query()
+            ->with('hod')
+            ->when($filters['search'] ?? null, function ($query, $search) {
+                $query->where(function ($nested) use ($search) {
+                    $nested->where('name', 'like', "%{$search}%")
+                        ->orWhere('code', 'like', "%{$search}%");
+                });
+            })
+            ->orderBy($sortColumn, $direction);
     }
 }

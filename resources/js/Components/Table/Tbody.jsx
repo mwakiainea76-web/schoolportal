@@ -1,3 +1,5 @@
+import React from "react";
+
 const TBody = ({ children, className = "", ...props }) => {
     return (
         <tbody {...props} className={`divide-y divide-slate-100 ${className}`}>
@@ -5,4 +7,4 @@ const TBody = ({ children, className = "", ...props }) => {
         </tbody>
     );
 };
-export default TBody;
+export default React.memo(TBody);

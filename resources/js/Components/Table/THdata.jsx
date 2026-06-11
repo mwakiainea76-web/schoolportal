@@ -1,3 +1,5 @@
+import React from "react";
+
 const THdata = ({ children, className = "", ...props }) => {
     return (
         <th
@@ -8,4 +10,4 @@ const THdata = ({ children, className = "", ...props }) => {
         </th>
     );
 };
-export default THdata;
+export default React.memo(THdata);

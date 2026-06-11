@@ -12,6 +12,7 @@ class CurriculumFilter
         'start_date' => 'start_date',
         'end_date' => 'end_date',
         'created' => 'created_at',
+        'created_at' => 'created_at',
     ];
 
     public function apply(Builder $query, array $filters): Builder
@@ -38,4 +39,3 @@ class CurriculumFilter
         $query->orderBy($column, $direction);
     }
 }
-

@@ -388,7 +388,7 @@ export default function Workspace({
                             <div>
                                 <InputLabel htmlFor="level_exam_body_id" value="Exam Body" />
                                 <SearchSelect
-                                    routeName="exam-bodies.search"
+                                    routeName="exam.bodies.search"
                                     defaultOptions={examBodyOptions}
                                     value={levelForm.data.exam_body_id}
                                     selectedLabel={

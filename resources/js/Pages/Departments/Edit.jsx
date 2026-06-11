@@ -4,6 +4,7 @@ import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import TextInput from "@/Components/TextInput";
 import TextArea from "@/Components/TextArea";
+import SearchSelect from "@/Components/SearchSelect";
 
 const Edit = ({ department, selectedHod = null }) => {
     const dept = department || null;
@@ -101,15 +102,30 @@ const Edit = ({ department, selectedHod = null }) => {
                             </div>
 
                             <div>
-                                <InputLabel value="HOD (Staff number)" />
-                                <TextInput
+                                <InputLabel value="Head of Department" />
+                                <SearchSelect
                                     value={data.hod_staff_number}
+                                    selectedLabel={selectedHod?.name}
+                                    defaultOptions={
+                                        selectedHod
+                                            ? [
+                                                  {
+                                                      ...selectedHod,
+                                                      id: selectedHod.staff_number,
+                                                  },
+                                              ]
+                                            : []
+                                    }
+                                    routeName="staffs.search"
+                                    routeParams={{ limit: 10 }}
+                                    placeholder="Search staff by name, staff number, email..."
+                                    minSearchLength={1}
+                                    preloadOptions={true}
                                     error={errors.hod_staff_number}
-                                    placeholder="Nullable: enter exact staff number"
-                                    onChange={(e) =>
+                                    onChange={(staff) =>
                                         setData(
                                             "hod_staff_number",
-                                            e.target.value,
+                                            staff?.staff_number || staff?.id || "",
                                         )
                                     }
                                 />

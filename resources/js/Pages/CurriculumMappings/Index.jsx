@@ -8,17 +8,150 @@ import Trow from "@/Components/Table/Trow";
 import Tdata from "@/Components/Table/Tdata";
 import formatDate from "@/utils/date";
 import SearchSelect from "@/Components/SearchSelect";
+import InputLabel from "@/Components/InputLabel";
+import { downloadExport } from "@/utils/exportDownload";
+
+const FILTER_DEFINITIONS = [
+    {
+        key: "curriculum_id",
+        label: "Curriculum",
+        routeName: "curriculums.search",
+        placeholder: "Select curriculum...",
+        selectedLabelKey: "curriculum",
+    },
+    {
+        key: "course_id",
+        label: "Course",
+        routeName: "courses.search",
+        placeholder: "Select course...",
+        selectedLabelKey: "course",
+    },
+    {
+        key: "exam_body_id",
+        label: "Exam Body",
+        routeName: "exam.bodies.search",
+        placeholder: "Select exam body...",
+        selectedLabelKey: "exam_body",
+    },
+    {
+        key: "is_active",
+        label: "Status",
+        type: "select",
+        selectedLabelKey: "status",
+        options: [
+            { value: "1", label: "Active" },
+            { value: "0", label: "Inactive" },
+        ],
+    },
+];
+
+const FILTER_KEYS = FILTER_DEFINITIONS.map((filter) => filter.key);
+
+const emptyFilterState = () =>
+    FILTER_KEYS.reduce((values, key) => ({ ...values, [key]: "" }), {});
 
 export default function CurriculumMappingsIndex({
     curriculumMappings,
+    filters = {},
+    selectedFilters = {},
 }) {
+    const pageFilters =
+        filters && typeof filters === "object" && !Array.isArray(filters)
+            ? filters
+            : {};
     const [sortField, setSortField] = useState(
-        curriculumMappings.sort || "created_at",
+        pageFilters.sort || curriculumMappings.sort || "created_at",
     );
     const [sortDirection, setSortDirection] = useState(
-        curriculumMappings.direction || "desc",
+        pageFilters.direction || curriculumMappings.direction || "desc",
     );
-    const [searchTerm, setSearchTerm] = useState("");
+    const [form, setForm] = useState({
+        ...emptyFilterState(),
+        curriculum_id: pageFilters.curriculum_id || "",
+        course_id: pageFilters.course_id || "",
+        exam_body_id: pageFilters.exam_body_id || "",
+        is_active: pageFilters.is_active ?? "",
+    });
+    const [currentFilterKey, setCurrentFilterKey] = useState(
+        FILTER_KEYS.find((key) => pageFilters[key] !== undefined && pageFilters[key] !== "") || "",
+    );
+    const [exportFormat, setExportFormat] = useState("pdf");
+
+    const setFilter = (key, value) => {
+        setForm((current) => ({
+            ...current,
+            [key]: value,
+        }));
+    };
+
+    const currentFilters = () =>
+        FILTER_KEYS.reduce((values, key) => ({ ...values, [key]: form[key] }), {});
+
+    const selectedFilterDefinition = FILTER_DEFINITIONS.find(
+        (filter) => filter.key === currentFilterKey,
+    );
+
+    const activeFilters = FILTER_DEFINITIONS.filter(
+        (filter) => form[filter.key] !== undefined && form[filter.key] !== "",
+    );
+
+    const addCurrentFilter = () => {
+        if (!currentFilterKey || form[currentFilterKey] === "") return;
+
+        setCurrentFilterKey("");
+    };
+
+    const clearSingleFilter = (key) => {
+        setFilter(key, "");
+
+        if (currentFilterKey === key) {
+            setCurrentFilterKey("");
+        }
+    };
+
+    const getSelectedOptionLabel = (filter) =>
+        selectedFilters?.[filter.selectedLabelKey] ||
+        filter.options?.find((option) => option.value === form[filter.key])?.label ||
+        form[filter.key];
+
+    const renderFilterInput = (filter) => {
+        if (!filter) {
+            return (
+                <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 px-4 py-2 text-sm text-zinc-400">
+                    Select a column to show its input
+                </div>
+            );
+        }
+
+        if (filter.type === "select") {
+            return (
+                <select
+                    value={form[filter.key]}
+                    onChange={(e) => setFilter(filter.key, e.target.value)}
+                    className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+                >
+                    <option value="">Choose status...</option>
+                    {filter.options.map((option) => (
+                        <option key={option.value} value={option.value}>
+                            {option.label}
+                        </option>
+                    ))}
+                </select>
+            );
+        }
+
+        return (
+            <SearchSelect
+                routeName={filter.routeName}
+                defaultOptions={[]}
+                value={form[filter.key]}
+                selectedLabel={selectedFilters?.[filter.selectedLabelKey]}
+                placeholder={filter.placeholder}
+                preloadOptions
+                onChange={(option) => setFilter(filter.key, option?.id || "")}
+            />
+        );
+    };
 
     const handleSort = (field) => {
         const direction =
@@ -29,7 +162,12 @@ export default function CurriculumMappingsIndex({
 
         router.get(
             route("courses.curriculum-mappings.index"),
-            { sort: field, direction, page: 1 },
+            {
+                ...currentFilters(),
+                sort: field,
+                direction,
+                page: 1,
+            },
             { preserveState: true, replace: true },
         );
     };
@@ -45,11 +183,34 @@ export default function CurriculumMappingsIndex({
 
         router.get(
             route("courses.curriculum-mappings.index"),
-            { search: searchTerm, sort: sortField, direction: sortDirection },
+            {
+                ...currentFilters(),
+                sort: sortField,
+                direction: sortDirection,
+                page: 1,
+            },
             { preserveState: true, replace: true },
         );
+    };
 
-        setSearchTerm("");
+    const clearFilters = () => {
+        setForm(emptyFilterState());
+        setCurrentFilterKey("");
+
+        router.get(
+            route("courses.curriculum-mappings.index"),
+            { sort: sortField, direction: sortDirection, page: 1 },
+            { preserveState: true, replace: true },
+        );
+    };
+
+    const handleExport = () => {
+        downloadExport("curriculum-mappings", exportFormat, {
+            ...currentFilters(),
+            search: pageFilters.search || "",
+            sort: sortField,
+            direction: sortDirection,
+        });
     };
 
     const handleDelete = (id) => {
@@ -105,25 +266,105 @@ export default function CurriculumMappingsIndex({
         <>
             <Head title="Curriculum Mapping" />
 
-            <div className="max-w-6xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <div className="mx-auto w-full max-w-6xl animate-in fade-in slide-in-from-bottom-4 duration-700">
                 <form
-                    className="relative flex w-full gap-x-7"
+                    className="mb-4 rounded-lg border border-zinc-100 bg-white p-4 shadow-sm"
                     onSubmit={submit}
                 >
-                    <SearchSelect
-                        routeName="curriculums.search"
-                        defaultOptions={[]}
-                        placeholder="Select curriculum ..."
-                        preloadOptions
-                        onChange={(body) => setSearchTerm(body.name ?? "")}
-                    />
-                    <button
-                        className="rounded bg-emerald-600 px-4 py-1 text-white hover:bg-slate-700"
-                        type="submit"
-                    >
-                        Search
-                    </button>
+                    <div className="grid grid-cols-1 items-end gap-3 lg:grid-cols-[minmax(220px,300px)_minmax(300px,1fr)_auto_auto_auto]">
+                        <div>
+                            <InputLabel value="Filter Column" />
+                            <select
+                                value={currentFilterKey}
+                                onChange={(e) => setCurrentFilterKey(e.target.value)}
+                                className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+                            >
+                                <option value="">Choose column...</option>
+                                {FILTER_DEFINITIONS.map((filter) => (
+                                    <option key={filter.key} value={filter.key}>
+                                        {filter.label}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div>
+                            <InputLabel
+                                value={selectedFilterDefinition?.label || "Filter Value"}
+                            />
+                            {renderFilterInput(selectedFilterDefinition)}
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={addCurrentFilter}
+                            disabled={!currentFilterKey || form[currentFilterKey] === ""}
+                            className="inline-flex h-10 items-center justify-center rounded-lg border border-zinc-300 bg-white px-4 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            + Add filter
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={clearFilters}
+                            className="inline-flex h-10 items-center justify-center rounded-lg border border-zinc-300 bg-white px-4 text-sm text-zinc-700 hover:bg-zinc-50"
+                        >
+                            Clear all
+                        </button>
+
+                        <button
+                            className="inline-flex h-10 items-center justify-center rounded-lg bg-emerald-600 px-4 text-sm text-white hover:bg-emerald-700"
+                            type="submit"
+                        >
+                            Apply
+                        </button>
+                    </div>
+
+                    <div className="mt-4 border-t border-zinc-100 pt-3">
+                        {activeFilters.length ? (
+                            <div className="flex flex-wrap gap-2">
+                                {activeFilters.map((filter) => (
+                                    <button
+                                        key={filter.key}
+                                        type="button"
+                                        onClick={() => clearSingleFilter(filter.key)}
+                                        className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 ring-1 ring-emerald-100 hover:bg-emerald-100"
+                                    >
+                                        <span>
+                                            {filter.label}: {getSelectedOptionLabel(filter)}
+                                        </span>
+                                        <span className="text-emerald-900">x</span>
+                                    </button>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-sm text-zinc-500">
+                                No filters selected. Choose a column above to filter this table.
+                            </p>
+                        )}
+                    </div>
                 </form>
+
+                <div className="mb-2 flex justify-end">
+                    <div className="flex items-center">
+                        <select
+                            value={exportFormat}
+                            onChange={(e) => setExportFormat(e.target.value)}
+                            className="h-[34px] rounded-l border border-slate-300 border-r-0 bg-white px-3 text-sm text-slate-700 focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-gray-500"
+                        >
+                            <option value="pdf">PDF</option>
+                            <option value="csv">CSV</option>
+                            <option value="excel">Excel</option>
+                        </select>
+                        <button
+                            type="button"
+                            onClick={handleExport}
+                            className="h-[34px] whitespace-nowrap rounded-r bg-gray-400 px-4 text-sm font-medium text-white transition-colors hover:bg-gray-600"
+                        >
+                            Export {exportFormat.toUpperCase()}
+                        </button>
+                    </div>
+                </div>
 
                 <Table
                     pagination={curriculumMappings}

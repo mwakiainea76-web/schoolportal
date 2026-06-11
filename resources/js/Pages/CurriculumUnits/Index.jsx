@@ -1,13 +1,49 @@
 import React, { useState } from "react";
 import { Head, Link, router } from "@inertiajs/react";
-import InputLabel from "@/Components/InputLabel";
 import SearchSelect from "@/Components/SearchSelect";
+import InputLabel from "@/Components/InputLabel";
 import Table from "@/Components/Table/Table";
 import Thead from "@/Components/Table/Thead";
 import THdata from "@/Components/Table/THdata";
 import Tbody from "@/Components/Table/Tbody";
 import Trow from "@/Components/Table/Trow";
 import Tdata from "@/Components/Table/Tdata";
+import { downloadExport } from "@/utils/exportDownload";
+
+const FILTER_DEFINITIONS = [
+    {
+        key: "unit_id",
+        label: "Unit Name",
+        routeName: "units.search",
+        placeholder: "Type in unit name...",
+        selectedLabelKey: "unit",
+    },
+    {
+        key: "course_id",
+        label: "Course",
+        routeName: "courses.search",
+        placeholder: "Select active course...",
+        selectedLabelKey: "course",
+        routeParams: {
+            versioned_only: 1,
+        },
+    },
+    {
+        key: "module_taught",
+        label: "Module Taught",
+        type: "select",
+        selectedLabelKey: "module_taught",
+        options: [1, 2, 3, 4, 5, 6].map((module) => ({
+            value: String(module),
+            label: `Module ${module}`,
+        })),
+    },
+];
+
+const FILTER_KEYS = FILTER_DEFINITIONS.map((filter) => filter.key);
+
+const emptyFilterState = () =>
+    FILTER_KEYS.reduce((values, key) => ({ ...values, [key]: "" }), {});
 
 export default function Index({
     curriculum_mapping,
@@ -27,18 +63,21 @@ export default function Index({
     const [sortDirection, setSortDirection] = useState(
         pageFilters.direction || units.direction || "asc",
     );
+    const [exportFormat, setExportFormat] = useState("pdf");
     const [form, setForm] = useState({
+        ...emptyFilterState(),
         unit_id: pageFilters.unit_id || "",
         module_taught: pageFilters.module_taught || "",
         course_id: pageFilters.course_id || "",
-        exam_body_id: pageFilters.exam_body_id || "",
-        certification_level_id: pageFilters.certification_level_id || "",
         curriculum_mapping_id:
             pageFilters.curriculum_mapping_id ||
             selected_mapping_option?.id ||
             curriculum_mapping?.id ||
             "",
     });
+    const [currentFilterKey, setCurrentFilterKey] = useState(
+        FILTER_KEYS.find((key) => pageFilters[key]) || "",
+    );
 
     const setFilter = (key, value) => {
         setForm((current) => {
@@ -47,26 +86,12 @@ export default function Index({
                 [key]: value,
             };
 
-            if (key === "exam_body_id") {
-                next.course_id = "";
-                next.certification_level_id = "";
-                next.unit_id = "";
-                next.curriculum_mapping_id = "";
-            }
-
             if (
                 key === "course_id" ||
-                key === "certification_level_id" ||
+                key === "module_taught" ||
                 key === "curriculum_mapping_id"
             ) {
                 next.unit_id = "";
-            }
-
-            if (
-                key === "course_id" ||
-                key === "certification_level_id"
-            ) {
-                next.curriculum_mapping_id = "";
             }
 
             return next;
@@ -74,18 +99,122 @@ export default function Index({
     };
 
     const effectiveCurriculumMappingId =
-        form.course_id || form.exam_body_id || form.certification_level_id
+        form.course_id
             ? ""
             : form.curriculum_mapping_id;
 
     const currentFilters = () => ({
-        unit_id: form.unit_id,
-        module_taught: form.module_taught,
-        course_id: form.course_id,
-        exam_body_id: form.exam_body_id,
-        certification_level_id: form.certification_level_id,
+        ...FILTER_KEYS.reduce(
+            (values, key) => ({ ...values, [key]: form[key] }),
+            {},
+        ),
         curriculum_mapping_id: effectiveCurriculumMappingId,
     });
+
+    const selectedFilterDefinition = FILTER_DEFINITIONS.find(
+        (filter) => filter.key === currentFilterKey,
+    );
+
+    const activeFilters = FILTER_DEFINITIONS.filter((filter) => form[filter.key]);
+
+    const addCurrentFilter = () => {
+        if (!currentFilterKey || !form[currentFilterKey]) return;
+
+        setCurrentFilterKey("");
+    };
+
+    const clearSingleFilter = (key) => {
+        setFilter(key, "");
+
+        if (currentFilterKey === key) {
+            setCurrentFilterKey("");
+        }
+    };
+
+    const clearFilters = () => {
+        setForm((current) => ({
+            ...current,
+            ...emptyFilterState(),
+            curriculum_mapping_id:
+                pageFilters.curriculum_mapping_id ||
+                selected_mapping_option?.id ||
+                curriculum_mapping?.id ||
+                "",
+        }));
+        setCurrentFilterKey("");
+
+        router.get(
+            route("units.index"),
+            {
+                curriculum_mapping_id:
+                    pageFilters.curriculum_mapping_id ||
+                    selected_mapping_option?.id ||
+                    curriculum_mapping?.id ||
+                    "",
+                sort: sortField,
+                direction: sortDirection,
+                page: 1,
+            },
+            { preserveState: true, replace: true },
+        );
+    };
+
+    const getSelectedOptionLabel = (filter) =>
+        selectedFilters?.[filter.selectedLabelKey] ||
+        filter.options?.find((option) => option.value === form[filter.key])
+            ?.label ||
+        form[filter.key];
+
+    const renderFilterInput = (filter) => {
+        if (!filter) {
+            return (
+                <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 px-4 py-2 text-sm text-zinc-400">
+                    Select a column to show its input
+                </div>
+            );
+        }
+
+        if (filter.type === "select") {
+            return (
+                <select
+                    value={form[filter.key]}
+                    onChange={(e) => setFilter(filter.key, e.target.value)}
+                    className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+                >
+                    <option value="">Choose module...</option>
+                    {filter.options.map((option) => (
+                        <option key={option.value} value={option.value}>
+                            {option.label}
+                        </option>
+                    ))}
+                </select>
+            );
+        }
+
+        const routeParams =
+            filter.key === "unit_id"
+                ? {
+                      curriculum_mapping_id:
+                          effectiveCurriculumMappingId || "",
+                      module_taught: form.module_taught || "",
+                      course_id: form.course_id || "",
+                  }
+                : filter.routeParams || {};
+
+        return (
+            <SearchSelect
+                routeName={filter.routeName}
+                defaultOptions={[]}
+                value={form[filter.key]}
+                selectedLabel={selectedFilters?.[filter.selectedLabelKey]}
+                routeParams={routeParams}
+                placeholder={filter.placeholder}
+                preloadOptions
+                minSearchLength={filter.key === "unit_id" ? 2 : undefined}
+                onChange={(option) => setFilter(filter.key, option?.id || "")}
+            />
+        );
+    };
 
     const applyFilters = (
         nextSort = sortField,
@@ -106,23 +235,6 @@ export default function Index({
     const submit = (e) => {
         e.preventDefault();
         applyFilters(sortField, sortDirection);
-    };
-
-    const clearFilters = () => {
-        setForm({
-            unit_id: "",
-            module_taught: "",
-            course_id: "",
-            exam_body_id: "",
-            certification_level_id: "",
-            curriculum_mapping_id: "",
-        });
-
-        router.get(
-            route("units.index"),
-            { sort: sortField, direction: sortDirection, page: 1 },
-            { preserveState: true, replace: true },
-        );
     };
 
     const handleSort = (field) => {
@@ -151,169 +263,135 @@ export default function Index({
         });
     };
 
+    const handleExport = () => {
+        downloadExport("units", exportFormat, {
+            ...currentFilters(),
+            sort: sortField,
+            direction: sortDirection,
+        });
+    };
+
     const title = curriculum_mapping
         ? `Units for ${curriculum_mapping.curriculum?.name}`
         : "Units";
     const subtitle = curriculum_mapping?.course?.name || "All units";
-    const displayedFiltersCount = [
-        form.unit_id,
-        form.module_taught,
-        form.course_id,
-        form.exam_body_id,
-        form.certification_level_id,
-        form.curriculum_mapping_id,
-    ].filter(Boolean).length;
+    const displayedFiltersCount = activeFilters.length;
 
     return (
         <>
             <Head title={title} />
 
             <div className="mx-auto w-full max-w-6xl animate-in fade-in slide-in-from-bottom-4 duration-700">
+
+
                 <form
                     className="mb-4 rounded-lg border border-zinc-100 bg-white p-4 shadow-sm"
                     onSubmit={submit}
                 >
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    <div className="grid grid-cols-1 items-end gap-3 lg:grid-cols-[minmax(220px,300px)_minmax(300px,1fr)_auto_auto_auto]">
                         <div>
-                            <InputLabel value="Unit Name" />
-                            <SearchSelect
-                                routeName="units.search"
-                                defaultOptions={[]}
-                                value={form.unit_id}
-                                selectedLabel={selectedFilters.unit}
-                                routeParams={{
-                                    curriculum_mapping_id:
-                                        effectiveCurriculumMappingId || "",
-                                    module_taught: form.module_taught || "",
-                                    course_id: form.course_id || "",
-                                    exam_body_id: form.exam_body_id || "",
-                                    certification_level_id:
-                                        form.certification_level_id || "",
-                                }}
-                                placeholder="Select unit..."
-                                preloadOptions
-                                minSearchLength={2}
-                                onChange={(unit) =>
-                                    setFilter("unit_id", unit.id)
+                            <InputLabel value="Filter Column" />
+                            <select
+                                value={currentFilterKey}
+                                onChange={(e) =>
+                                    setCurrentFilterKey(e.target.value)
                                 }
-                            />
+                                className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+                            >
+                                <option value="">Choose column...</option>
+                                {FILTER_DEFINITIONS.map((filter) => (
+                                    <option key={filter.key} value={filter.key}>
+                                        {filter.label}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
 
                         <div>
-                            <InputLabel value="Module Taught" />
-                            <SearchSelect
-                                defaultOptions={[1, 2, 3, 4, 5, 6].map(
-                                    (module) => ({
-                                        id: String(module),
-                                        name: `Module ${module}`,
-                                    }),
-                                )}
-                                value={form.module_taught}
-                                placeholder="Select module..."
-                                onChange={(module) =>
-                                    setFilter("module_taught", module.id)
+                            <InputLabel
+                                value={
+                                    selectedFilterDefinition?.label ||
+                                    "Filter Value"
                                 }
                             />
+                            {renderFilterInput(selectedFilterDefinition)}
                         </div>
 
-                        <div>
-                            <InputLabel value="Curriculum Course" />
-                            <SearchSelect
-                                routeName="courses.search"
-                                defaultOptions={[]}
-                                value={form.course_id}
-                                selectedLabel={selectedFilters.course}
-                                routeParams={{
-                                    versioned_only: 1,
-                                    exam_body_id: form.exam_body_id || "",
-                                }}
-                                placeholder="Select active course..."
-                                preloadOptions
-                                onChange={(course) =>
-                                    setFilter("course_id", course.id)
-                                }
-                            />
-                        </div>
+                        <button
+                            type="button"
+                            onClick={addCurrentFilter}
+                            disabled={!currentFilterKey || !form[currentFilterKey]}
+                            className="inline-flex h-10 items-center justify-center rounded-lg border border-zinc-300 bg-white px-4 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            + Add filter
+                        </button>
 
-                        <div>
-                            <InputLabel value="Exam Body" />
-                            <SearchSelect
-                                routeName="exam-bodies.search"
-                                defaultOptions={[]}
-                                value={form.exam_body_id}
-                                selectedLabel={selectedFilters.exam_body}
-                                placeholder="Type to search exam body..."
-                                preloadOptions
-                                onChange={(examBody) =>
-                                    setFilter("exam_body_id", examBody.id)
-                                }
-                            />
-                        </div>
-
-                        <div>
-                            <InputLabel value="Certification Level" />
-                            <SearchSelect
-                                routeName="certification-levels.search"
-                                defaultOptions={[]}
-                                value={form.certification_level_id}
-                                selectedLabel={
-                                    selectedFilters.certification_level
-                                }
-                                routeParams={{
-                                    exam_body_id: form.exam_body_id || "",
-                                }}
-                                placeholder="Type to search level..."
-                                preloadOptions
-                                onChange={(level) =>
-                                    setFilter(
-                                        "certification_level_id",
-                                        level.id,
-                                    )
-                                }
-                            />
-                        </div>
-                    </div>
-
-                    <div className="mt-4 flex justify-end gap-3">
                         <button
                             type="button"
                             onClick={clearFilters}
-                            className="rounded bg-zinc-400 px-4 py-2 text-sm text-white hover:bg-zinc-600"
+                            className="inline-flex h-10 items-center justify-center rounded-lg border border-zinc-300 bg-white px-4 text-sm text-zinc-700 hover:bg-zinc-50"
                         >
-                            Clear
+                            Clear all
                         </button>
+
                         <button
-                            className="rounded bg-emerald-600 px-4 py-2 text-sm text-white hover:bg-slate-700"
+                            className="inline-flex h-10 items-center justify-center rounded-lg bg-emerald-600 px-4 text-sm text-white hover:bg-emerald-700"
                             type="submit"
                         >
-                            Search
+                            Apply
                         </button>
+                    </div>
+
+                    <div className="mt-4 border-t border-zinc-100 pt-3">
+                        {activeFilters.length ? (
+                            <div className="flex flex-wrap gap-2">
+                                {activeFilters.map((filter) => (
+                                    <button
+                                        key={filter.key}
+                                        type="button"
+                                        onClick={() =>
+                                            clearSingleFilter(filter.key)
+                                        }
+                                        className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 ring-1 ring-emerald-100 hover:bg-emerald-100"
+                                    >
+                                        <span>
+                                            {filter.label}:{" "}
+                                            {getSelectedOptionLabel(filter)}
+                                        </span>
+                                        <span className="text-emerald-900">
+                                            x
+                                        </span>
+                                    </button>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-sm text-zinc-500">
+                                No filters selected. Choose a column above to
+                                filter this table.
+                            </p>
+                        )}
                     </div>
                 </form>
 
-                <div className="mb-6 flex items-center justify-between">
-                    <div>
-                        <h1 className="text-2xl font-bold text-zinc-900">
-                            {title}
-                        </h1>
-                        <p className="text-zinc-500">
-                            {subtitle}
-                            {displayedFiltersCount
-                                ? ` | ${displayedFiltersCount} filter${displayedFiltersCount > 1 ? "s" : ""} applied`
-                                : ""}
-                        </p>
+                <div className="mb-2 flex justify-end">
+                    <div className="flex items-center">
+                        <select
+                            value={exportFormat}
+                            onChange={(e) => setExportFormat(e.target.value)}
+                            className="h-[34px] rounded-l border border-slate-300 border-r-0 bg-white px-3 text-sm text-slate-700 focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-gray-500"
+                        >
+                            <option value="pdf">PDF</option>
+                            <option value="csv">CSV</option>
+                            <option value="excel">Excel</option>
+                        </select>
+                        <button
+                            type="button"
+                            onClick={handleExport}
+                            className="h-[34px] whitespace-nowrap rounded-r bg-gray-400 px-4 text-sm font-medium text-white transition-colors hover:bg-gray-600"
+                        >
+                            Export {exportFormat.toUpperCase()}
+                        </button>
                     </div>
-                    <Link
-                        href={route("units.create", {
-                            curriculum_mapping_id:
-                                selected_mapping_option?.id ||
-                                curriculum_mapping?.id ||
-                                "",
-                        })}
-                        className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-500"
-                    >
-                        Add Unit
-                    </Link>
                 </div>
 
                 <Table

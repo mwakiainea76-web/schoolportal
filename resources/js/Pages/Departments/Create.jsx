@@ -3,6 +3,7 @@ import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import TextInput from "@/Components/TextInput";
 import TextArea from "@/Components/TextArea";
+import SearchSelect from "@/Components/SearchSelect";
 
 export default function CreateDepartment() {
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -79,19 +80,19 @@ export default function CreateDepartment() {
                             </div>
 
                             <div>
-                                <InputLabel value="HOD (Staff number)" />
-                                <TextInput
-                                    id="hod_staff_number"
-                                    error={errors.hod_staff_number}
-                                    type="text"
-                                    name="hod_staff_number"
-                                    className="mt-1 block w-full"
-                                    placeholder="Nullable: enter exact staff number"
+                                <InputLabel value="Head of Department" />
+                                <SearchSelect
                                     value={data.hod_staff_number}
-                                    onChange={(e) =>
+                                    routeName="staffs.search"
+                                    routeParams={{ limit: 10 }}
+                                    placeholder="Search staff by name, staff number, email..."
+                                    minSearchLength={1}
+                                    preloadOptions={true}
+                                    error={errors.hod_staff_number}
+                                    onChange={(staff) =>
                                         setData(
                                             "hod_staff_number",
-                                            e.target.value,
+                                            staff?.staff_number || staff?.id || "",
                                         )
                                     }
                                 />

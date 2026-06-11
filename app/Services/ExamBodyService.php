@@ -60,15 +60,18 @@ class ExamBodyService
     {
         return ExamBody::query()
             ->when($q, function ($query) use ($q) {
-                $query->where('name', 'like', "{$q}%")
-                      ->orWhere('code', 'like', "{$q}%");
+                $term = '%'.mb_strtolower($q).'%';
+
+                $query->whereRaw('LOWER(name) LIKE ?', [$term])
+                    ->orWhereRaw('LOWER(code) LIKE ?', [$term]);
             })
             ->orderBy('name')
             ->limit(10)
             ->get()
             ->map(fn ($b) => [
                 'id' => $b->id,
-                'name' => $b->code . ' - ' . $b->name,
+                'code' => $b->code,
+                'name' => $b->code.' - '.$b->name,
             ]);
     }
 }

@@ -17,11 +17,13 @@ class CurriculumController extends Controller
 
     public function index(CurriculumFilter $filter)
     {
+        $filters = request()->only(['search', 'sort', 'direction']);
+
         $curricula = Curriculum::query()
             ->with('examBody:id,code,name')
             ->tap(fn ($query) => $filter->apply(
                 $query,
-                request()->only(['search', 'sort', 'direction'])
+                $filters
             ))
             ->latest()
             ->paginate(10)
@@ -29,6 +31,7 @@ class CurriculumController extends Controller
 
         return inertia('Curriculums/Index', [
             'curricula' => $curricula,
+            'filters' => (object) $filters,
             'curriculumOptions' => $this->curriculumOptions(),
         ]);
     }
