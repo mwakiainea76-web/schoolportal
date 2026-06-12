@@ -208,23 +208,30 @@ export default function Index({
         <>
             <Head title="Academic Sessions" />
 
-            <div className="mx-auto w-full max-w-7xl animate-in fade-in slide-in-from-bottom-4 duration-700">
-                <div className="flex w-full flex-col gap-6 lg:flex-row lg:items-start">
-                    <section className="w-full shrink-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:w-[380px] xl:w-[430px]">
-                        <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-                            <h2 className="text-lg font-semibold text-slate-900">
+            <div className="w-full max-w-none animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <div className="mb-8 grid w-full grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                    <section className="w-full min-w-0">
+                        <div className="mb-4">
+                            <h1 className="text-2xl font-semibold text-slate-900">
                                 Academic Years
-                            </h2>
+                            </h1>
+                        </div>
+
+                        <div className="min-h-[30rem] w-full rounded-lg border border-zinc-100 bg-white p-6 shadow-sm">
+                        <div className="mb-6 flex items-start justify-between gap-4">
+                            <h3 className="text-xl font-medium text-zinc-600">
+                                Academic Years
+                            </h3>
                             <button
                                 type="button"
                                 onClick={() => setAddYearModalOpen(true)}
-                                className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700"
+                                className="shrink-0 rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-800"
                             >
-                                + Add Academic Year
+                                Add Academic Year
                             </button>
                         </div>
 
-                        <div className="border-b border-slate-100 px-6 py-5">
+                        <div className="mb-6">
                             <form
                                 className="flex flex-col gap-3 md:flex-row"
                                 onSubmit={submitYearSearch}
@@ -275,7 +282,7 @@ export default function Index({
                             </form>
                         </div>
 
-                        <div className="divide-y divide-slate-100">
+                        <div className="space-y-4">
                             {academic_years.length > 0 ? (
                                 academic_years.map((year) => {
                                     const isSelected =
@@ -300,10 +307,10 @@ export default function Index({
                                                     selectAcademicYear(year);
                                                 }
                                             }}
-                                            className={`block w-full px-6 py-5 text-left transition ${
+                                            className={`block w-full rounded-lg border px-5 py-5 text-left shadow-sm transition ${
                                                 isSelected
-                                                    ? "bg-emerald-50"
-                                                    : "bg-white hover:bg-slate-50"
+                                                    ? "border-emerald-100 bg-emerald-50"
+                                                    : "border-zinc-100 bg-zinc-50 hover:bg-white"
                                             }`}
                                         >
                                             <div className="flex items-start justify-between gap-4">
@@ -411,35 +418,39 @@ export default function Index({
                                     );
                                 })
                             ) : (
-                                <div className="px-6 py-10 text-center text-sm text-slate-500">
+                                <div className="rounded-lg border border-dashed border-zinc-200 px-5 py-10 text-center text-sm text-zinc-500">
                                     No academic years found.
                                 </div>
                             )}
                         </div>
+                        </div>
                     </section>
 
-                    <section className="min-h-[260px] w-full min-w-0 flex-1 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                        <div className="flex flex-col gap-4 border-b border-slate-100 px-6 py-4 lg:flex-row lg:items-center lg:justify-between">
-                            <div>
-                                <h2 className="text-lg font-semibold text-slate-900">
-                                    Sessions for{" "}
-                                    <span className="text-slate-600">
-                                        {selectedYear?.academic_year ??
-                                            "No year selected"}
-                                    </span>
-                                </h2>
-                            </div>
+                    <section className="w-full min-w-0">
+                        <div className="mb-4 flex justify-center">
+                            <h2 className="text-lg font-semibold text-slate-900">
+                                Academic Sessions
+                            </h2>
+                        </div>
+
+                        <div className="min-h-[30rem] w-full rounded-lg border border-zinc-100 bg-white p-6 shadow-sm">
+                        <div className="mb-6 flex items-start justify-between gap-4">
+                            <h3 className="text-xl font-medium text-zinc-600">
+                                Sessions for{" "}
+                                {selectedYear?.academic_year ??
+                                    "No year selected"}
+                            </h3>
                             <button
                                 type="button"
                                 onClick={() => setAddSessionModalOpen(true)}
                                 disabled={!selectedYear}
-                                className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                                className="shrink-0 rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-zinc-300"
                             >
-                                + Add Academic Session
+                                Add Academic Session
                             </button>
                         </div>
 
-                        <div className="px-6 py-6">
+                        <div>
                             {selected_academic_year_id ? (
                                 academic_sessions.length > 0 ? (
                                     <div className="space-y-4">
@@ -450,7 +461,7 @@ export default function Index({
                                             return (
                                                 <div
                                                     key={session.id}
-                                                    className="rounded-2xl border border-slate-200 bg-white px-5 py-4"
+                                                    className="rounded-lg border border-zinc-100 bg-zinc-50 px-5 py-5 shadow-sm"
                                                 >
                                                     <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                                                         <div>
@@ -558,17 +569,18 @@ export default function Index({
                                         })}
                                     </div>
                                 ) : (
-                                    <div className="px-6 py-16 text-center text-sm text-slate-500">
+                                    <div className="rounded-lg border border-dashed border-zinc-200 px-5 py-10 text-center text-sm text-zinc-500">
                                         No sessions found for the selected
                                         academic year.
                                     </div>
                                 )
                             ) : (
-                                <div className="px-6 py-16 text-center text-sm text-slate-500">
+                                <div className="rounded-lg border border-dashed border-zinc-200 px-5 py-10 text-center text-sm text-zinc-500">
                                     Select an academic year to view its
                                     sessions.
                                 </div>
                             )}
+                        </div>
                         </div>
                     </section>
                 </div>

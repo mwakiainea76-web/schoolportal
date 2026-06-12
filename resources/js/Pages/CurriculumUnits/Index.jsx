@@ -19,14 +19,11 @@ const FILTER_DEFINITIONS = [
         selectedLabelKey: "unit",
     },
     {
-        key: "course_id",
+        key: "curriculum_mapping_id",
         label: "Course",
-        routeName: "courses.search",
-        placeholder: "Select active course...",
-        selectedLabelKey: "course",
-        routeParams: {
-            versioned_only: 1,
-        },
+        routeName: "courses.curriculum-mappings.search",
+        placeholder: "Search course curriculum...",
+        selectedLabelKey: "curriculum_mapping",
     },
     {
         key: "module_taught",
@@ -87,7 +84,6 @@ export default function Index({
             };
 
             if (
-                key === "course_id" ||
                 key === "module_taught" ||
                 key === "curriculum_mapping_id"
             ) {
@@ -98,10 +94,7 @@ export default function Index({
         });
     };
 
-    const effectiveCurriculumMappingId =
-        form.course_id
-            ? ""
-            : form.curriculum_mapping_id;
+    const effectiveCurriculumMappingId = form.curriculum_mapping_id;
 
     const currentFilters = () => ({
         ...FILTER_KEYS.reduce(
@@ -197,7 +190,6 @@ export default function Index({
                       curriculum_mapping_id:
                           effectiveCurriculumMappingId || "",
                       module_taught: form.module_taught || "",
-                      course_id: form.course_id || "",
                   }
                 : filter.routeParams || {};
 
@@ -419,7 +411,6 @@ export default function Index({
                             Module {renderArrow("module_taught")}
                         </THdata>
                         <THdata>Course</THdata>
-                        <THdata>Exam Body</THdata>
                         <THdata>Certification Level</THdata>
                         <THdata className="text-center">Compulsory</THdata>
                         <THdata className="text-center">Actions</THdata>
@@ -439,12 +430,6 @@ export default function Index({
                                     <Tdata>
                                         {item.curriculum_mapping?.course
                                             ?.name || "-"}
-                                    </Tdata>
-                                    <Tdata>
-                                        {item.curriculum_mapping?.course
-                                            ?.certification_level?.exam_body
-                                            ? `${item.curriculum_mapping.course.certification_level.exam_body.code} - ${item.curriculum_mapping.course.certification_level.exam_body.name}`
-                                            : "-"}
                                     </Tdata>
                                     <Tdata>
                                         {item.curriculum_mapping?.course
@@ -487,7 +472,7 @@ export default function Index({
                         ) : (
                             <Trow>
                                 <Tdata
-                                    colSpan="8"
+                                    colSpan="7"
                                     className="py-12 text-center text-zinc-400"
                                 >
                                     No units found for the selected filters.

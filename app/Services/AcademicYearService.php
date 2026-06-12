@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\AcademicYear;
+use Illuminate\Support\Facades\DB;
 
 class AcademicYearService
 {
@@ -53,20 +54,37 @@ class AcademicYearService
 
     public function end(AcademicYear $academicYear): void
     {
-        $academicYear->update([
-            'is_active' => false,
-            'status' => 'completed',
-            'start_date' => $academicYear->start_date ?? now(),
-            'end_date' => now(),
-        ]);
+        DB::transaction(function () use ($academicYear) {
+            $endedAt = now();
+
+            $academicYear->update([
+                'is_active' => false,
+                'status' => 'completed',
+                'start_date' => $academicYear->start_date ?? $endedAt,
+                'end_date' => $endedAt,
+            ]);
+
+            $academicYear->academicSessions()->update([
+                'is_active' => false,
+                'status' => 'completed',
+                'end_date' => $endedAt,
+            ]);
+        });
     }
 
     public function hold(AcademicYear $academicYear): void
     {
-        $academicYear->update([
-            'is_active' => false,
-            'status' => 'on_hold',
-        ]);
+        DB::transaction(function () use ($academicYear) {
+            $academicYear->update([
+                'is_active' => false,
+                'status' => 'on_hold',
+            ]);
+
+            $academicYear->academicSessions()->update([
+                'is_active' => false,
+                'status' => 'on_hold',
+            ]);
+        });
     }
 
     public function reactivate(AcademicYear $academicYear): ?string
@@ -87,7 +105,10 @@ class AcademicYearService
 
     public function delete(AcademicYear $academicYear): void
     {
-        $academicYear->delete();
+        DB::transaction(function () use ($academicYear) {
+            $academicYear->academicSessions()->delete();
+            $academicYear->delete();
+        });
     }
 
     protected function hasAnotherActiveYear(AcademicYear $academicYear): bool

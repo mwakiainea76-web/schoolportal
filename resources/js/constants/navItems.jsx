@@ -348,35 +348,15 @@ export const STAFF_NAV_ITEMS = [
                 label: "Academic Calendar",
                 children: [
                     {
-                        routeName: "academic.years.index",
-                        fallback: "/academic/years",
-                        label: "Academic Years",
-                    },
-                    {
-                        routeName: "academic.years.create",
-                        fallback: "/academic/years/create",
-                        label: "Add Year",
-                    },
-                    {
                         routeName: "academic.sessions.index",
                         fallback: "/academic/sessions",
-                        label: "Sessions & Terms",
+                        label: "Academic Years & Sessions",
                         activeRouteNames: ACADEMIC_ACTIVE,
-                    },
-                    {
-                        routeName: "academic.sessions.create",
-                        fallback: "/academic/sessions/create",
-                        label: "Add Session",
                     },
                     {
                         routeName: "academic.sessions.enrollments.index",
                         fallback: "/academic/sessions/enrollments",
                         label: "Enrollments",
-                    },
-                    {
-                        routeName: "academic.sessions.enrollments.create",
-                        fallback: "/academic/sessions/enrollments/create",
-                        label: "Create Enrollment",
                     },
                 ],
             },

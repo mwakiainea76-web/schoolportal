@@ -172,9 +172,6 @@ class UnitController extends Controller
             ->when($request->filled('course_id'), function ($builder) use ($request) {
                 $builder->whereHas('curriculumMapping.course', fn ($courseQuery) => $courseQuery->whereKey($request->integer('course_id')));
             })
-            ->when($request->filled('exam_body_id'), function ($builder) use ($request) {
-                $builder->whereHas('curriculumMapping.course.certificationLevel', fn ($levelQuery) => $levelQuery->where('exam_body_id', $request->integer('exam_body_id')));
-            })
             ->when($request->filled('certification_level_id'), function ($builder) use ($request) {
                 $builder->whereHas('curriculumMapping.course', fn ($courseQuery) => $courseQuery->where('certification_level_id', $request->integer('certification_level_id')));
             })
@@ -225,12 +222,27 @@ class UnitController extends Controller
                 ->select('id', 'name', 'certification_level_id')
                 ->find($filters['course_id'])
             : null;
+        $mapping = ! empty($filters['curriculum_mapping_id'])
+            ? CurriculumMapping::query()
+                ->with([
+                    'course:id,name,certification_level_id',
+                    'course.certificationLevel:id,name',
+                    'curriculum:id,name',
+                ])
+                ->find($filters['curriculum_mapping_id'])
+            : null;
 
         return [
             'unit' => $unit
                 ? trim($unit->code.' - '.$unit->name.' (Module '.$unit->module_taught.')', ' -')
                 : null,
             'course' => $course?->display_name,
+            'curriculum_mapping' => $mapping
+                ? collect([
+                    $mapping->curriculum?->name,
+                    $mapping->course?->display_name ?? $mapping->course?->name,
+                ])->filter()->implode(' - ')
+                : null,
         ];
     }
 }

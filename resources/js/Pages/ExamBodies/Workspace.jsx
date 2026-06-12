@@ -168,20 +168,27 @@ export default function Workspace({
         <>
             <Head title="Exams & Certifications" />
 
-            <div className="mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
-                <div className="mb-8 grid grid-cols-1 items-start gap-6 md:grid-cols-[minmax(280px,0.75fr)_minmax(420px,1.25fr)]">
-                    <section>
+            <div className="w-full max-w-none animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <div className="mb-8 grid w-full grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                    <section className="w-full min-w-0">
                         <div className="mb-4">
                             <h1 className="text-2xl font-semibold text-slate-900">
                                 Exam Bodies
                             </h1>
                         </div>
 
-                        <div className="min-h-[30rem] rounded-lg border border-zinc-100 bg-white p-6 shadow-sm">
-                            <div className="mb-6">
+                        <div className="min-h-[30rem] w-full rounded-lg border border-zinc-100 bg-white p-6 shadow-sm">
+                            <div className="mb-6 flex items-start justify-between gap-4">
                                 <h3 className="text-xl font-medium text-zinc-600">
                                     Exam Bodies
                                 </h3>
+                                <button
+                                    type="button"
+                                    onClick={() => openExamBodyModal()}
+                                    className="shrink-0 rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-800"
+                                >
+                                    Add Exam Board
+                                </button>
                             </div>
 
                             <div className="space-y-4">
@@ -241,18 +248,26 @@ export default function Workspace({
                         </div>
                     </section>
 
-                    <section>
+                    <section className="w-full min-w-0">
                         <div className="mb-4 flex justify-center">
                             <h2 className="text-lg font-semibold text-slate-900">
                                 Certifications
                             </h2>
                         </div>
 
-                        <div className="rounded-lg border border-zinc-100 bg-white p-6 shadow-sm">
-                            <div className="mb-6">
+                        <div className="w-full rounded-lg border border-zinc-100 bg-white p-6 shadow-sm">
+                            <div className="mb-6 flex items-start justify-between gap-4">
                                 <h3 className="text-xl font-medium text-zinc-600">
                                     Levels for {activeExamBody?.code ?? "Exam Body"}
                                 </h3>
+                                <button
+                                    type="button"
+                                    onClick={() => openLevelModal()}
+                                    disabled={!activeExamBody}
+                                    className="shrink-0 rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-zinc-300"
+                                >
+                                    Add Certification
+                                </button>
                             </div>
 
                             <div className="space-y-4">
