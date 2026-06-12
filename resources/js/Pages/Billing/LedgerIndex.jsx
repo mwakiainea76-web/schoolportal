@@ -33,15 +33,17 @@ export default function LedgerIndex({
         academic_session_id: filters.academic_session_id || "",
     });
 
+    const currentQuery = (extra = {}) => ({
+        ...localFilters,
+        sort: sortField,
+        direction: sortDirection,
+        ...extra,
+    });
+
     const applyFilters = (extra = {}) => {
         router.get(
             route("billing.ledger.index"),
-            {
-                ...localFilters,
-                sort: sortField,
-                direction: sortDirection,
-                ...extra,
-            },
+            currentQuery(extra),
             {
                 preserveState: true,
                 replace: true,
@@ -62,10 +64,28 @@ export default function LedgerIndex({
         return sortDirection === "asc" ? "^" : "v";
     };
 
-    const updateFilter = (key, value) => {
-        const updated = { ...localFilters, [key]: value };
-        setLocalFilters(updated);
-        applyFilters({ [key]: value });
+    const setFilter = (key, value) => {
+        setLocalFilters((current) => ({ ...current, [key]: value }));
+    };
+
+    const submit = (event) => {
+        event.preventDefault();
+        applyFilters({ page: 1 });
+    };
+
+    const resetFilters = () => {
+        const reset = {
+            search: "",
+            type: "",
+            academic_session_id: "",
+        };
+
+        setLocalFilters(reset);
+        router.get(
+            route("billing.ledger.index"),
+            { sort: sortField, direction: sortDirection, page: 1 },
+            { preserveState: true, replace: true },
+        );
     };
 
     return (
@@ -106,24 +126,29 @@ export default function LedgerIndex({
                     </div>
                 </div>
 
-                <div className="rounded-2xl border border-zinc-100 bg-white p-4 shadow-sm">
-                    <div className="grid gap-4 md:grid-cols-4">
+                <form
+                    className="mb-2 flex w-full flex-wrap items-center gap-3"
+                    onSubmit={submit}
+                >
+                    <div className="min-w-[220px] flex-1">
                         <input
                             type="text"
                             value={localFilters.search}
                             onChange={(e) =>
-                                updateFilter("search", e.target.value)
+                                setFilter("search", e.target.value)
                             }
                             placeholder="Search reference, invoice, student..."
-                            className="rounded-xl border border-zinc-200 px-3 py-2"
+                            className="h-[34px] w-full rounded border border-slate-300 px-3 text-sm text-slate-700 focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-gray-500"
                         />
+                    </div>
 
+                    <div className="min-w-[160px]">
                         <select
                             value={localFilters.type}
                             onChange={(e) =>
-                                updateFilter("type", e.target.value)
+                                setFilter("type", e.target.value)
                             }
-                            className="rounded-xl border border-zinc-200 px-3 py-2"
+                            className="h-[34px] w-full rounded border border-slate-300 bg-white px-3 text-sm text-slate-700 focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-gray-500"
                         >
                             <option value="">All Types</option>
                             {types.map((type) => (
@@ -132,16 +157,18 @@ export default function LedgerIndex({
                                 </option>
                             ))}
                         </select>
+                    </div>
 
+                    <div className="min-w-[220px]">
                         <select
                             value={localFilters.academic_session_id}
                             onChange={(e) =>
-                                updateFilter(
+                                setFilter(
                                     "academic_session_id",
                                     e.target.value,
                                 )
                             }
-                            className="rounded-xl border border-zinc-200 px-3 py-2"
+                            className="h-[34px] w-full rounded border border-slate-300 bg-white px-3 text-sm text-slate-700 focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-gray-500"
                         >
                             <option value="">All Sessions</option>
                             {sessions.map((session) => (
@@ -150,23 +177,23 @@ export default function LedgerIndex({
                                 </option>
                             ))}
                         </select>
-
-                        <button
-                            onClick={() => {
-                                const reset = {
-                                    search: "",
-                                    type: "",
-                                    academic_session_id: "",
-                                };
-                                setLocalFilters(reset);
-                                router.get(route("billing.ledger.index"));
-                            }}
-                            className="rounded-xl bg-zinc-500 px-4 py-2 text-white transition hover:bg-zinc-600"
-                        >
-                            Reset
-                        </button>
                     </div>
-                </div>
+
+                    <button
+                        type="submit"
+                        className="h-[34px] rounded bg-emerald-600 px-4 text-sm font-medium text-white transition-colors hover:bg-slate-700"
+                    >
+                        Search
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={resetFilters}
+                        className="h-[34px] rounded bg-zinc-500 px-4 text-sm font-medium text-white transition-colors hover:bg-zinc-600"
+                    >
+                        Reset
+                    </button>
+                </form>
 
                 <div className="overflow-hidden rounded-2xl border border-zinc-100 bg-white shadow-sm">
                     <Table
