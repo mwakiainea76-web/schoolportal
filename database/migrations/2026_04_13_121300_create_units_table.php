@@ -18,12 +18,10 @@ return new class extends Migration
             $table->unsignedSmallInteger('credit_factor');
             $table->unsignedSmallInteger('training_hours');
             $table->string('description')->nullable();
-
             $table->foreignId('curriculum_mapping_id')
                 ->constrained('curriculum_mappings')
                 ->cascadeOnDelete()
                 ->cascadeOnUpdate();
-
             $table->unsignedSmallInteger('module_taught')->nullable();
             $table->timestamps();
             $table->softDeletes();

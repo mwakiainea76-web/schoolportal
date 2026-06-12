@@ -35,9 +35,10 @@ class AcademicSessionEnrollmentController extends Controller
         ]);
 
         $enrollments = AcademicSessionEnrollment::with([
-            'courseEnrollment.student.department',
+            'courseEnrollment.student',
             'courseEnrollment.curriculumMapping.curriculum',
-            'courseEnrollment.curriculumMapping.course',
+            'courseEnrollment.curriculumMapping.course.department',
+            'courseEnrollment.course.department',
             'academicSession.academicYear',
         ])
             ->when($filters['admission_number'] ?? null, function ($q, $admissionNumber) {
@@ -46,8 +47,9 @@ class AcademicSessionEnrollmentController extends Controller
                 });
             })
             ->when($filters['department_id'] ?? null, function ($q, $departmentId) {
-                $q->whereHas('courseEnrollment.student', function ($q) use ($departmentId) {
-                    $q->where('department_id', $departmentId);
+                $q->whereHas('courseEnrollment', function ($q) use ($departmentId) {
+                    $q->whereHas('course', fn ($courseQuery) => $courseQuery->where('department_id', $departmentId))
+                        ->orWhereHas('curriculumMapping.course', fn ($courseQuery) => $courseQuery->where('department_id', $departmentId));
                 });
             })
             ->when($filters['course_id'] ?? null, function ($q, $courseId) {
@@ -82,7 +84,9 @@ class AcademicSessionEnrollmentController extends Controller
             'id' => $e->id,
             'student_name' => $e->courseEnrollment?->student?->full_name ?? 'N/A',
             'admission_number' => $e->courseEnrollment?->student?->admission_number ?? 'N/A',
-            'department' => $e->courseEnrollment?->student?->department?->name ?? 'N/A',
+            'department' => $e->courseEnrollment?->course?->department?->name
+                ?? $e->courseEnrollment?->curriculumMapping?->course?->department?->name
+                ?? 'N/A',
             'session' => $e->academicSession
                 ? "{$e->academicSession->academicYear->academic_year} - Session {$e->academicSession->session_No}"
                 : 'N/A',
@@ -202,7 +206,7 @@ class AcademicSessionEnrollmentController extends Controller
         $sessionNumber = $enrollment->session_number;
 
         return redirect()
-            ->route('student.dashboard')
+            ->route('dashboard')
             ->with('success', "You have been registered for {$activeSession->academicYear->academic_year} - Session {$sessionNumber}. Your session invoice has been generated.");
     }
 
@@ -226,7 +230,7 @@ class AcademicSessionEnrollmentController extends Controller
         }
 
         return redirect()
-            ->route('student.dashboard')
+            ->route('dashboard')
             ->with('success', "You have registered {$result['registered_count']} unit(s) for {$result['session_name']}.");
     }
 

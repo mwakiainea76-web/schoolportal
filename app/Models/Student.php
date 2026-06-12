@@ -13,7 +13,6 @@ class Student extends Model
 
     protected $fillable = [
         'user_id',
-        'department_id',
         'first_name',
         'last_name',
         'other_name',
@@ -80,11 +79,6 @@ class Student extends Model
     public function nextOfKin()
     {
         return $this->hasMany(NextOfKin::class, 'user_id', 'user_id');
-    }
-
-    public function department()
-    {
-        return $this->belongsTo(Department::class);
     }
 
     public function ledgerTransactions()

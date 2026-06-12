@@ -16,8 +16,6 @@ return new class extends Migration
             $table->foreignId('user_id')
                 ->constrained('users', 'id')
                 ->cascadeOnDelete();
-            $table->foreignId('department_id')
-                ->constrained('departments', 'id');
             
             // Identity Fields
             $table->string('first_name');
@@ -51,7 +49,6 @@ return new class extends Migration
             $table->softDeletes();
 
             $table->index('user_id');
-            $table->index('department_id');
             $table->index('enrollment_status');
         });
 

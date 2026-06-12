@@ -438,9 +438,6 @@ export default function BulkOperations({ enrollments, students }) {
                                             <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">
                                                 Name
                                             </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider">
-                                                Department
-                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-zinc-200">
@@ -464,9 +461,6 @@ export default function BulkOperations({ enrollments, students }) {
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900">
                                                     {student.name}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-zinc-900">
-                                                    {student.department?.name}
                                                 </td>
                                             </tr>
                                         ))}
@@ -497,4 +491,3 @@ export default function BulkOperations({ enrollments, students }) {
         </>
     );
 }
-

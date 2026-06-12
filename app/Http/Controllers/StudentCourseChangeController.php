@@ -9,6 +9,7 @@ use App\Models\CurriculumMapping;
 use App\Models\CurriculumTransfer;
 use App\Models\Student;
 use App\Models\User;
+use App\Services\AdmissionNumberService;
 use App\Support\RbacCache;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -47,7 +48,7 @@ class StudentCourseChangeController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, AdmissionNumberService $admissionNumbers): RedirectResponse
     {
         $validated = $request->validate([
             'admission_number' => ['required', 'string', 'max:100'],
@@ -55,7 +56,7 @@ class StudentCourseChangeController extends Controller
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        $result = DB::transaction(function () use ($request, $validated) {
+        $result = DB::transaction(function () use ($request, $validated, $admissionNumbers) {
             $student = Student::query()
                 ->where('admission_number', trim($validated['admission_number']))
                 ->where('enrollment_status', 'active')
@@ -121,7 +122,7 @@ class StudentCourseChangeController extends Controller
             }
 
             $oldAdmissionNumber = $student->admission_number;
-            $newAdmissionNumber = $this->generateAdmissionNumber();
+            $newAdmissionNumber = $admissionNumbers->generateForCourse($newMapping->course_id);
             $generatedEmail = $this->generatedTransferEmail($newAdmissionNumber);
 
             $newUser = User::create([
@@ -301,34 +302,6 @@ class StudentCourseChangeController extends Controller
         }
 
         return trim(($mapping->curriculum?->name ?? 'Curriculum').' - '.($mapping->course?->display_name ?? $mapping->course?->name ?? 'Course'), ' -');
-    }
-
-    protected function generateAdmissionNumber(): string
-    {
-        $year = now()->year;
-        $month = now()->format('m');
-
-        $last = Student::query()
-            ->whereYear('created_at', $year)
-            ->lockForUpdate()
-            ->latest('id')
-            ->value('admission_number');
-
-        $next = $last ? ((int) substr($last, -4)) + 1 : 1;
-        $sequence = str_pad((string) $next, 4, '0', STR_PAD_LEFT);
-
-        $candidate = "STD/{$year}/{$month}/{$sequence}";
-
-        while (
-            Student::query()->where('admission_number', $candidate)->exists()
-            || User::query()->where('login_id', $candidate)->exists()
-        ) {
-            $next++;
-            $sequence = str_pad((string) $next, 4, '0', STR_PAD_LEFT);
-            $candidate = "STD/{$year}/{$month}/{$sequence}";
-        }
-
-        return $candidate;
     }
 
     protected function generatedTransferEmail(string $admissionNumber): string

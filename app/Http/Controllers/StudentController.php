@@ -12,6 +12,7 @@ use App\Models\CurriculumMapping;
 use App\Models\ExamBody;
 use App\Models\Student;
 use App\Models\User;
+use App\Services\AdmissionNumberService;
 use App\Support\RbacCache;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
@@ -82,26 +83,6 @@ class StudentController extends Controller
     }
 
     // ----------------------------------------------------------------
-    // ADMISSION NUMBER GENERATION
-    // ----------------------------------------------------------------
-
-    private function generateAdmissionNumber(): string
-    {
-        $year = now()->year;
-        $month = now()->format('m');
-
-        $last = Student::whereYear('created_at', $year)
-            ->lockForUpdate()
-            ->latest('id')
-            ->value('admission_number');
-
-        $next = $last ? ((int) substr($last, -4)) + 1 : 1;
-        $sequence = str_pad($next, 4, '0', STR_PAD_LEFT);
-
-        return "STD/{$year}/{$month}/{$sequence}";
-    }
-
-    // ----------------------------------------------------------------
     // INDEX
     // ----------------------------------------------------------------
 
@@ -153,39 +134,23 @@ class StudentController extends Controller
     // STORE
     // ----------------------------------------------------------------
 
-    public function store(StoreStudentRequest $request)
+    public function store(StoreStudentRequest $request, AdmissionNumberService $admissionNumbers)
     {
-        DB::transaction(function () use ($request) {
+        DB::transaction(function () use ($request, $admissionNumbers) {
 
             $user = User::create([
                 'email' => $request->email,
                 'password' => bcrypt($request->phone_number),
                 'is_active' => true,
-                'role' => 'student',
             ]);
 
             $user->assignRole('student');
             RbacCache::forgetForUser($user);
 
-            // Generate unique admission number (retry up to 5 times on collision)
-            $admissionNumber = null;
-            for ($i = 0; $i < 5; $i++) {
-                $candidate = $this->generateAdmissionNumber();
-                if (! Student::where('admission_number', $candidate)->exists()) {
-                    $admissionNumber = $candidate;
-                    break;
-                }
-            }
-
-            throw_if(
-                ! $admissionNumber,
-                \RuntimeException::class,
-                'Failed to generate a unique admission number.'
-            );
+            $admissionNumber = $admissionNumbers->generateForCourse($request->integer('course_id'));
 
             $student = Student::create([
                 'user_id' => $user->id,
-                'department_id' => $request->department_id,
                 'first_name' => $request->first_name,
                 'last_name' => $request->last_name,
                 'other_name' => $request->other_name,

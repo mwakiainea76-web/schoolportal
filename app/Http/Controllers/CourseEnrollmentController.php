@@ -25,10 +25,11 @@ class CourseEnrollmentController extends Controller
         ]);
 
         $courseEnrollments = CourseEnrollment::with([
-            'student.department',
-            'course:id,name,code',
+            'student',
+            'course:id,name,code,department_id',
+            'course.department:id,name',
             'curriculum:id,name',
-            'curriculumMapping.course',
+            'curriculumMapping.course.department:id,name',
             'curriculumMapping.curriculum',
             'academicSessionEnrollments.academicSession.academicYear',
         ])
@@ -53,7 +54,11 @@ class CourseEnrollmentController extends Controller
                 $query->whereHas('academicSessionEnrollments', fn ($sessionEnrollmentQuery) => $sessionEnrollmentQuery->where('academic_session_id', $academicSessionId));
             })
             ->when($filters['department_id'] ?? null, function ($query, $departmentId) {
-                $query->whereHas('student', fn ($studentQuery) => $studentQuery->where('department_id', $departmentId));
+                $query->where(function ($departmentQuery) use ($departmentId) {
+                    $departmentQuery
+                        ->whereHas('course', fn ($courseQuery) => $courseQuery->where('department_id', $departmentId))
+                        ->orWhereHas('curriculumMapping.course', fn ($courseQuery) => $courseQuery->where('department_id', $departmentId));
+                });
             })
             ->when($filters['year_of_study'] ?? null, function ($query, $year) {
                 $query->whereHas('academicSessionEnrollments', fn ($sessionQuery) => $sessionQuery->where('year_of_study', $year));
@@ -75,7 +80,8 @@ class CourseEnrollmentController extends Controller
                     'id' => $enrollment->id,
                     'student_name' => $enrollment->student?->full_name,
                     'admission_number' => $enrollment->student?->admission_number,
-                    'department' => $enrollment->student?->department?->name,
+                    'department' => $enrollment->course?->department?->name
+                        ?? $enrollment->curriculumMapping?->course?->department?->name,
                     'course' => $enrollment->course?->name
                         ?? $enrollment->curriculumMapping?->course?->name,
                     'curriculum' => $enrollment->curriculum?->name

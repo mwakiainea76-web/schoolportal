@@ -707,7 +707,6 @@ class KenyaTvetDemoSeeder extends Seeder
                 ['admission_number' => $row['admission_number']],
                 [
                     'user_id' => $user->id,
-                    'department_id' => $mappings[$row['course_key']]->course->department_id,
                     'first_name' => $row['first_name'],
                     'last_name' => $row['last_name'],
                     'other_name' => '',

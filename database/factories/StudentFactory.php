@@ -2,7 +2,6 @@
 
 namespace Database\Factories;
 
-use App\Models\Department;
 use App\Models\User;
 use App\Models\Student;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -21,7 +20,6 @@ class StudentFactory extends Factory
     {
         return [
             'user_id' => User::factory(),
-            'department_id' => Department::factory(),
             'first_name' => fake()->firstName(),
             'last_name' => fake()->lastName(),
             'other_name' => fake()->optional()->firstName(),

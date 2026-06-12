@@ -477,7 +477,7 @@ class FeeAssignmentController extends Controller
         });
 
         return redirect()
-            ->route('fees.assignments.bulk')
+            ->route('fees.assignments.bulk.index')
             ->with('success', 'Curriculum fee assignments updated successfully.');
     }
 
@@ -609,4 +609,3 @@ class FeeAssignmentController extends Controller
         ];
     }
 }
-

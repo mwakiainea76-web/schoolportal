@@ -175,7 +175,6 @@ class StaffController extends Controller
                 'email' => $request->email,
                 'password' => bcrypt($request->phone_number),
                 'is_active' => true,
-                'role' => $request->role_name ?? 'trainer', // Store role for quick access (optional)
             ]);
 
             $user->assignRole($request->role_name);
@@ -305,7 +304,6 @@ class StaffController extends Controller
             $staff->user->update([
                 'email' => $request->email,
                 'is_active' => $request->boolean('is_active'),
-                'role' => $request->role_name, // Update role field if used
             ]);
 
             $staff->user->syncRoles([$request->role_name]);

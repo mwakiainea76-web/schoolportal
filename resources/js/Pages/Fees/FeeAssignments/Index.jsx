@@ -111,7 +111,7 @@ export default function FeeAssignmentsIndex({ assignments, filters }) {
 
                     <div className="flex gap-3">
                         <Link
-                            href={route("fees.assignments.bulk")}
+                            href={route("fees.assignments.bulk.index")}
                             className="rounded bg-blue-600 px-4 py-1 text-white transition hover:bg-blue-800"
                         >
                             Bulk Assign
