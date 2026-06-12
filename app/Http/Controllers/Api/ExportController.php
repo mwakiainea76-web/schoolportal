@@ -34,6 +34,7 @@ class ExportController extends Controller
         abort_unless($service instanceof BasePdfExport, 500, 'Invalid PDF export service.');
 
         $filters = $request->except(['format']);
+        $filters = $this->scopeFiltersForHod($request, $resource, $filters);
         $content = $format === 'pdf'
             ? $service->render($filters)
             : $service->renderDelimited($filters, $format);
@@ -45,5 +46,27 @@ class ExportController extends Controller
             'Cache-Control' => 'no-cache, no-store',
             'Pragma' => 'no-cache',
         ]);
+    }
+
+    private function scopeFiltersForHod(Request $request, string $resource, array $filters): array
+    {
+        $departmentId = $request->user()?->staff?->department_id;
+
+        if (
+            ! $departmentId
+            || ! $request->user()?->hasRole('hod')
+            || $request->user()?->hasRole('admin')
+            || ! in_array($resource, ['courses', 'units'], true)
+        ) {
+            return $filters;
+        }
+
+        $filters['department_id'] = (string) $departmentId;
+
+        if ($resource === 'courses') {
+            $filters['versioned_only'] = '1';
+        }
+
+        return $filters;
     }
 }

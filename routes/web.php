@@ -358,7 +358,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             });
         });
 
-        Route::middleware('role:admin')->prefix('billing')->name('billing.')->group(function () {
+        Route::middleware('role:admin|bursar')->prefix('billing')->name('billing.')->group(function () {
             Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');
             Route::get('/invoices/create', [InvoiceController::class, 'create'])->name('invoices.create');
             Route::post('/invoices', [InvoiceController::class, 'store'])->name('invoices.store');

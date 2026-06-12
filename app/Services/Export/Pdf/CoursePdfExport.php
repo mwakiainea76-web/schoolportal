@@ -106,6 +106,13 @@ class CoursePdfExport extends BasePdfExport
             })
             ->when($filters['course_id'] ?? null, fn ($query, $courseId) => $query->whereKey($courseId))
             ->when($filters['department_id'] ?? null, fn ($query, $departmentId) => $query->where('department_id', $departmentId))
+            ->when($filters['versioned_only'] ?? null, function ($query) {
+                $query->whereHas('curriculumMappings', function ($mappingQuery) {
+                    $mappingQuery
+                        ->where('is_active', true)
+                        ->whereHas('curriculum', fn ($curriculumQuery) => $curriculumQuery->where('is_active', true));
+                });
+            })
             ->when($filters['exam_body_id'] ?? null, function ($query, $examBodyId) {
                 $query->whereHas('certificationLevel', fn ($levelQuery) => $levelQuery->where('exam_body_id', $examBodyId));
             })

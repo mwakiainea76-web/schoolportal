@@ -23,6 +23,8 @@ class StaffController extends Controller
 
     public function validateStep(Request $request): \Illuminate\Http\JsonResponse
     {
+        abort_if($this->shouldScopeToHodDepartment($request), 403);
+
         $step = (int) $request->input('step');
 
         $staffId = $request->input('_staff_id');
@@ -113,8 +115,17 @@ class StaffController extends Controller
 
     public function index(Request $request, StaffFilter $filter)
     {
+        $filters = $request->all();
+        $hodDepartmentId = $this->shouldScopeToHodDepartment($request)
+            ? $this->currentDepartmentId($request)
+            : null;
+
+        if ($hodDepartmentId) {
+            $filters['department_id'] = $hodDepartmentId;
+        }
+
         $staffs = $filter
-            ->apply(Staff::query(), $request->all())
+            ->apply(Staff::query(), $filters)
             ->select([
                 'staffs.id',
                 'staffs.user_id',
@@ -150,13 +161,18 @@ class StaffController extends Controller
             'roles' => $staff->user?->roles->pluck('name'),
         ]);
 
-        return inertia('Staffs/Index', compact('staffs'));
+        return inertia('Staffs/Index', [
+            'staffs' => $staffs,
+            'can_manage_staffs' => ! $this->shouldScopeToHodDepartment($request),
+        ]);
     }  // ----------------------------------------------------------------
     // CREATE
     // ----------------------------------------------------------------
 
     public function create()
     {
+        abort_if($this->shouldScopeToHodDepartment(request()), 403);
+
         return inertia('Staffs/Create', [
             'departments' => Department::select('id', 'name')->orderBy('name')->get(),
             'roles' => Role::select('id', 'name')->orderBy('name')->get(),
@@ -169,6 +185,8 @@ class StaffController extends Controller
 
     public function store(StoreStaffRequest $request)
     {
+        abort_if($this->shouldScopeToHodDepartment($request), 403);
+
         DB::transaction(function () use ($request) {
 
             $user = User::create([
@@ -245,6 +263,8 @@ class StaffController extends Controller
 
     public function edit(Staff $staff)
     {
+        abort_if($this->shouldScopeToHodDepartment(request()), 403);
+
         $staff->load(['user.roles', 'user.nextofkin', 'department']);
 
         return inertia('Staffs/Edit', [
@@ -299,6 +319,8 @@ class StaffController extends Controller
 
     public function update(UpdateStaffRequest $request, Staff $staff)
     {
+        abort_if($this->shouldScopeToHodDepartment($request), 403);
+
         DB::transaction(function () use ($request, $staff) {
 
             $staff->user->update([
@@ -365,6 +387,8 @@ RbacCache::forgetForUser($staff->user);
 
     public function destroy(Staff $staff)
     {
+        abort_if($this->shouldScopeToHodDepartment(request()), 403);
+
         $staff->delete();
 
         return redirect()->route('staffs.index')->with('success', 'Staff deleted successfully.');
@@ -377,7 +401,9 @@ RbacCache::forgetForUser($staff->user);
     public function search(Request $request)
     {
         $limit = min(max($request->integer('limit', 10), 10), 25);
-        $departmentId = $request->integer('department_id') ?: null;
+        $departmentId = $this->shouldScopeToHodDepartment($request)
+            ? $this->currentDepartmentId($request)
+            : ($request->integer('department_id') ?: null);
         $query = trim((string) $request->query('q', ''));
 
         $staffs = Staff::query()
@@ -411,5 +437,21 @@ RbacCache::forgetForUser($staff->user);
             ->values();
 
         return response()->json($staffs);
+    }
+
+    protected function shouldScopeToHodDepartment(Request $request): bool
+    {
+        return (bool) (
+            $request->user()?->hasRole('hod')
+            && ! $request->user()?->hasRole('admin')
+            && $this->currentDepartmentId($request)
+        );
+    }
+
+    protected function currentDepartmentId(Request $request): ?int
+    {
+        return $request->user()?->staff?->department_id
+            ? (int) $request->user()->staff->department_id
+            : null;
     }
 }

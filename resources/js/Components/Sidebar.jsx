@@ -30,7 +30,7 @@ export default function Sidebar({
           : "Admin Dashboard";
 
     const navItems = hasRole("student") ? STUDENT_NAV_ITEMS : STAFF_NAV_ITEMS;
-    const visibleNav = filterNav(navItems, can);
+    const visibleNav = filterNav(navItems, can, hasRole);
 
     const isChildActive = (child) => {
         if (child.children) return child.children.some(isChildActive);

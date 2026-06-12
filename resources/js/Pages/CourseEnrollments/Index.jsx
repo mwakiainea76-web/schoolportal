@@ -113,6 +113,7 @@ export default function Index({
     courseEnrollments,
     filters = {},
     selectedFilters = {},
+    is_hod = false,
     statuses = [],
 }) {
     const pageFilters =
@@ -135,7 +136,11 @@ export default function Index({
         academic_session_id: selectedFilters.academic_session || "",
     });
 
-    const firstActiveFilter = FILTER_DEFINITIONS.find(
+    const visibleFilterDefinitions = is_hod
+        ? FILTER_DEFINITIONS.filter((filter) => filter.key !== "department_id")
+        : FILTER_DEFINITIONS;
+
+    const firstActiveFilter = visibleFilterDefinitions.find(
         (filter) => pageFilters[filter.key],
     );
 
@@ -143,10 +148,10 @@ export default function Index({
         firstActiveFilter?.key || "",
     );
 
-    const activeFilters = FILTER_DEFINITIONS.filter((filter) => form[filter.key]);
+    const activeFilters = visibleFilterDefinitions.filter((filter) => form[filter.key]);
 
     const setFilterValue = (key, value, label = "") => {
-        const filter = FILTER_DEFINITIONS.find((item) => item.key === key);
+        const filter = visibleFilterDefinitions.find((item) => item.key === key);
 
         setForm((current) => {
             const next = {
@@ -335,7 +340,7 @@ export default function Index({
                 className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
             >
                 <option value="">Choose column...</option>
-                {FILTER_DEFINITIONS.map((filter) => (
+                {visibleFilterDefinitions.map((filter) => (
                     <option key={filter.key} value={filter.key}>
                         {filter.label}
                     </option>
@@ -347,7 +352,7 @@ export default function Index({
             <InputLabel
                 value={
                     currentFilterKey
-                        ? FILTER_DEFINITIONS.find(
+                        ? visibleFilterDefinitions.find(
                               (filter) => filter.key === currentFilterKey,
                           )?.label
                         : "Filter Value"
@@ -356,7 +361,7 @@ export default function Index({
 
             {currentFilterKey ? (
                 renderFilterInput(
-                    FILTER_DEFINITIONS.find(
+                    visibleFilterDefinitions.find(
                         (filter) => filter.key === currentFilterKey,
                     ),
                 )

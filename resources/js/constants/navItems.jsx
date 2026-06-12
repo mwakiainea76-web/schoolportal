@@ -82,10 +82,12 @@ export const STAFF_NAV_ITEMS = [
         icon: "courses",
         basePath: "/courses",
         permissions: ["courses.view"],
+        roles: ["hod"],
         children: [
               {
                 key: "curriculums-group",
                 label: "Curriculums",
+                exceptRoles: ["hod"],
                 children: [
                     {
                         routeName: "curriculums.index",
@@ -110,19 +112,27 @@ export const STAFF_NAV_ITEMS = [
                         label: "All Courses",
                     },
                     {
+                        routeName: "courses.enrollments.index",
+                        fallback: "/courses/enrollments",
+                        label: "Course Enrollments",
+                    },
+                    {
                         routeName: "courses.create",
                         fallback: "/courses/create",
                         label: "Add Course",
+                        exceptRoles: ["hod"],
                     },
                        {
                         routeName: "courses.curriculum-mappings.index",
                         fallback: "/courses/curriculum-mappings",
                         label: "Curriculum Mapping",
+                        exceptRoles: ["hod"],
                     },
                     {
                         routeName: "courses.curriculum-mappings.create",
                         fallback: "/courses/curriculum-mappings/create",
                         label: "Add Mapping",
+                        exceptRoles: ["hod"],
                     },
                 ],
             },
@@ -140,6 +150,7 @@ export const STAFF_NAV_ITEMS = [
                         routeName: "units.create",
                         fallback: "/units/create",
                         label: "Add Unit",
+                        exceptRoles: ["hod"],
                     },
                 ],
             },
@@ -153,6 +164,7 @@ export const STAFF_NAV_ITEMS = [
         icon: "timetable",
         basePath: "/academic/timetables",
         permissions: ["academic.sessions.view"],
+        roles: ["hod"],
         children: [
             {
                 routeName: "academic.timetables.index",
@@ -160,9 +172,16 @@ export const STAFF_NAV_ITEMS = [
                 label: "View Timetables",
             },
             {
+                routeName: "academic.timetables.hod.create",
+                fallback: "/academic/timetables/create/hod",
+                label: "Add Timetable",
+                roles: ["hod"],
+            },
+            {
                 routeName: "academic.timetables.create",
                 fallback: "/academic/timetables/create",
                 label: "Add Timetable",
+                exceptRoles: ["hod"],
             },
         ],
     },
@@ -174,6 +193,7 @@ export const STAFF_NAV_ITEMS = [
         icon: "grading",
         basePath: "/academic/marks",
         permissions: ["academic.sessions.view"],
+        roles: ["hod"],
         children: [
             {
                 routeName: "academic.marks.view.index",
@@ -314,6 +334,7 @@ export const STAFF_NAV_ITEMS = [
         icon: "financeBilling",
         basePath: "/fees",
         permissions: ["billing.ledger.view"],
+        roles: ["bursar"],
         children: [
             {
                 key: "billing-ops",
@@ -402,9 +423,15 @@ export const STAFF_NAV_ITEMS = [
         icon: "staffAccess",
         basePath: "/staffs",
         permissions: ["staffs.view"],
+        roles: ["hod"],
         children: [
             { routeName: "staffs.index", fallback: "/staffs", label: "Staff Directory" },
-            { routeName: "staffs.create", fallback: "/staffs/create", label: "Onboarding" },
+            {
+                routeName: "staffs.create",
+                fallback: "/staffs/create",
+                label: "Onboarding",
+                exceptRoles: ["hod"],
+            },
         ],
     },
   // --- Access Control (standalone) ---

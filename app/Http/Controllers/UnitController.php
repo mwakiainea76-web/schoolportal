@@ -30,9 +30,15 @@ class UnitController extends Controller
         ]);
 
         $selectedMappingId = $request->integer('curriculum_mapping_id') ?: null;
+        $hodDepartmentId = $this->shouldScopeToHodDepartment($request)
+            ? $this->currentDepartmentId($request)
+            : null;
         $selectedMapping = $selectedMappingId
             ? CurriculumMapping::query()
                 ->with(['course.certificationLevel', 'curriculum'])
+                ->when($hodDepartmentId, function ($query) use ($hodDepartmentId) {
+                    $query->whereHas('course', fn ($courseQuery) => $courseQuery->where('department_id', $hodDepartmentId));
+                })
                 ->find($selectedMappingId)
             : null;
 
@@ -47,6 +53,14 @@ class UnitController extends Controller
 
         $units = Unit::query()
             ->with(['curriculumMapping.course.certificationLevel', 'curriculumMapping.curriculum'])
+            ->when($hodDepartmentId, function ($query) use ($hodDepartmentId) {
+                $query->whereHas('curriculumMapping', function ($mappingQuery) use ($hodDepartmentId) {
+                    $mappingQuery
+                        ->where('is_active', true)
+                        ->whereHas('curriculum', fn ($curriculumQuery) => $curriculumQuery->where('is_active', true))
+                        ->whereHas('course', fn ($courseQuery) => $courseQuery->where('department_id', $hodDepartmentId));
+                });
+            })
             ->when($request->filled('unit_id'), fn ($query) => $query->whereKey($request->integer('unit_id')))
             ->when($request->filled('module_taught'), fn ($query) => $query->where('module_taught', $request->integer('module_taught')))
             ->when($selectedMappingId, fn ($query) => $query->where('curriculum_mapping_id', $selectedMappingId))
@@ -63,6 +77,7 @@ class UnitController extends Controller
             'units' => $units,
             'filters' => (object) $filters,
             'selectedFilters' => $this->selectedIndexFilters($filters),
+            'can_manage_units' => ! $this->shouldScopeToHodDepartment($request),
         ]);
     }
 
@@ -105,6 +120,8 @@ class UnitController extends Controller
 
     public function create(Request $request)
     {
+        abort_if($this->shouldScopeToHodDepartment($request), 403);
+
         $selectedMappingId = $request->integer('curriculum_mapping_id') ?: null;
         $selectedMapping = $selectedMappingId
             ? CurriculumMapping::query()
@@ -120,6 +137,8 @@ class UnitController extends Controller
 
     public function store(StoreCurriculumUnitRequest $request)
     {
+        abort_if($this->shouldScopeToHodDepartment($request), 403);
+
         $data = $request->validated();
         $unit = $this->service->store($data);
 
@@ -129,6 +148,8 @@ class UnitController extends Controller
 
     public function edit(Unit $unit)
     {
+        abort_if($this->shouldScopeToHodDepartment(request()), 403);
+
         $unit->load([
             'curriculumMapping.course',
             'curriculumMapping.course.certificationLevel',
@@ -144,6 +165,8 @@ class UnitController extends Controller
 
     public function update(UpdateCurriculumUnitRequest $request, Unit $unit)
     {
+        abort_if($this->shouldScopeToHodDepartment($request), 403);
+
         $data = $request->validated();
         $this->service->update($unit, $data);
 
@@ -153,6 +176,8 @@ class UnitController extends Controller
 
     public function destroy(Unit $unit)
     {
+        abort_if($this->shouldScopeToHodDepartment(request()), 403);
+
         $mappingId = $unit->curriculum_mapping_id;
 
         $this->service->delete($unit);
@@ -165,9 +190,20 @@ class UnitController extends Controller
     {
         $limit = min(max($request->integer('limit', 10), 1), 25);
         $query = trim((string) $request->query('q', ''));
+        $hodDepartmentId = $this->shouldScopeToHodDepartment($request)
+            ? $this->currentDepartmentId($request)
+            : null;
 
         $units = Unit::query()
             ->with(['curriculumMapping.course:id,name', 'curriculumMapping.curriculum:id,name'])
+            ->when($hodDepartmentId, function ($builder) use ($hodDepartmentId) {
+                $builder->whereHas('curriculumMapping', function ($mappingQuery) use ($hodDepartmentId) {
+                    $mappingQuery
+                        ->where('is_active', true)
+                        ->whereHas('curriculum', fn ($curriculumQuery) => $curriculumQuery->where('is_active', true))
+                        ->whereHas('course', fn ($courseQuery) => $courseQuery->where('department_id', $hodDepartmentId));
+                });
+            })
             ->when($request->filled('curriculum_mapping_id'), fn ($builder) => $builder->where('curriculum_mapping_id', $request->integer('curriculum_mapping_id')))
             ->when($request->filled('course_id'), function ($builder) use ($request) {
                 $builder->whereHas('curriculumMapping.course', fn ($courseQuery) => $courseQuery->whereKey($request->integer('course_id')));
@@ -244,5 +280,21 @@ class UnitController extends Controller
                 ])->filter()->implode(' - ')
                 : null,
         ];
+    }
+
+    protected function shouldScopeToHodDepartment(Request $request): bool
+    {
+        return (bool) (
+            $request->user()?->hasRole('hod')
+            && ! $request->user()?->hasRole('admin')
+            && $this->currentDepartmentId($request)
+        );
+    }
+
+    protected function currentDepartmentId(Request $request): ?int
+    {
+        return $request->user()?->staff?->department_id
+            ? (int) $request->user()->staff->department_id
+            : null;
     }
 }

@@ -58,6 +58,7 @@ export default function coursesIndex({
     courses,
     filters = {},
     selectedFilters = {},
+    can_manage_courses = true,
 }) {
     const pageFilters =
         filters && !Array.isArray(filters) && typeof filters === "object"
@@ -357,7 +358,7 @@ export default function coursesIndex({
                         >
                             Created {renderArrow("created_at")}
                         </THdata>
-                        <THdata>Actions</THdata>
+                        {can_manage_courses ? <THdata>Actions</THdata> : null}
                     </Thead>
 
                     <Tbody>
@@ -375,30 +376,35 @@ export default function coursesIndex({
                                     <Tdata>
                                         {formatDate(course.created_at)}
                                     </Tdata>
-                                    <Tdata>
-                                        <div className="flex items-center justify-center gap-x-10">
-                                            <Link
-                                                href={route(
-                                                    "courses.edit",
-                                                    encodeURIComponent(course.id),
-                                                )}
-                                                className="text-emerald-600 hover:underline"
-                                            >
-                                                Edit
-                                            </Link>
-                                            <button
-                                                onClick={() => handleDelete(course.id)}
-                                                className="text-red-600 hover:underline"
-                                            >
-                                                Delete
-                                            </button>
-                                        </div>
-                                    </Tdata>
+                                    {can_manage_courses ? (
+                                        <Tdata>
+                                            <div className="flex items-center justify-center gap-x-10">
+                                                <Link
+                                                    href={route(
+                                                        "courses.edit",
+                                                        encodeURIComponent(course.id),
+                                                    )}
+                                                    className="text-emerald-600 hover:underline"
+                                                >
+                                                    Edit
+                                                </Link>
+                                                <button
+                                                    onClick={() => handleDelete(course.id)}
+                                                    className="text-red-600 hover:underline"
+                                                >
+                                                    Delete
+                                                </button>
+                                            </div>
+                                        </Tdata>
+                                    ) : null}
                                 </Trow>
                             ))
                         ) : (
                             <Trow>
-                                <Tdata colSpan="8" className="py-4 text-center">
+                                <Tdata
+                                    colSpan={can_manage_courses ? "8" : "7"}
+                                    className="py-4 text-center"
+                                >
                                     No courses found.
                                 </Tdata>
                             </Trow>

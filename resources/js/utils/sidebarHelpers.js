@@ -11,7 +11,23 @@ export const isRouteCurrent = (name, fallback, url, activeRouteNames = []) => {
     return url === fallback;
 };
 
-const filterChildren = (children, can) =>
+const roleAllowed = (item, hasRole) => {
+    if (hasRole("admin")) {
+        return true;
+    }
+
+    if (item.roles?.length && !item.roles.some((role) => hasRole(role))) {
+        return false;
+    }
+
+    if (item.exceptRoles?.some((role) => hasRole(role))) {
+        return false;
+    }
+
+    return true;
+};
+
+const filterChildren = (children, can, hasRole) =>
     children
         .map((child) => {
             if (!child.children) {
@@ -20,10 +36,14 @@ const filterChildren = (children, can) =>
 
             return {
                 ...child,
-                children: filterChildren(child.children, can),
+                children: filterChildren(child.children, can, hasRole),
             };
         })
         .filter((child) => {
+            if (!roleAllowed(child, hasRole)) {
+                return false;
+            }
+
             if (child.children) {
                 return child.children.length > 0;
             }
@@ -31,14 +51,15 @@ const filterChildren = (children, can) =>
             return !child.permission || can(child.permission);
         });
 
-export const filterNav = (items, can) =>
+export const filterNav = (items, can, hasRole) =>
     items
         .map((item) => ({
             ...item,
-            children: filterChildren(item.children, can),
+            children: filterChildren(item.children, can, hasRole),
         }))
         .filter(
             (item) =>
                 item.children.length > 0 &&
-                (!item.permissions || item.permissions.some((p) => can(p))),
+                roleAllowed(item, hasRole) &&
+                (!item.permissions || item.permissions.some((p) => can(p)) || item.roles?.some((role) => hasRole(role))),
         );

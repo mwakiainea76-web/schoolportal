@@ -29,7 +29,7 @@ class StudentMarkController extends Controller
     public function addIndex(Request $request): Response
     {
         [$mappingId, $unitId, $type, $number] = $this->parseSelectionFilters($request);
-        $selectedUnit = $this->resolveSelectedUnit($mappingId, $unitId);
+        $selectedUnit = $this->resolveSelectedUnit($mappingId, $unitId, $request);
 
         return Inertia::render('Grades/Add', [
             'filters' => $this->selectionFiltersArray($mappingId, $unitId, $type, $number),
@@ -43,7 +43,7 @@ class StudentMarkController extends Controller
     public function viewIndex(Request $request): Response
     {
         [$mappingId, $unitId, $type, $number, $academicSessionId, $academicYearId] = $this->parseSelectionFilters($request, true);
-        $selectedUnit = $this->resolveSelectedUnit($mappingId, $unitId);
+        $selectedUnit = $this->resolveSelectedUnit($mappingId, $unitId, $request);
         $submittedMarks = null;
 
         if ($selectedUnit && $request->boolean('search_marks')) {
@@ -86,7 +86,7 @@ class StudentMarkController extends Controller
         ]);
 
         $unitId = (int) $validated['curriculum_unit_id'];
-        $unit = $this->resolveSelectedUnit(null, $unitId);
+        $unit = $this->resolveSelectedUnit(null, $unitId, $request);
 
         if (! $unit) {
             throw ValidationException::withMessages([
@@ -172,7 +172,7 @@ class StudentMarkController extends Controller
         $this->authorizeHod($request);
 
         [$mappingId, $unitId, $type, $number, $academicSessionId, $academicYearId] = $this->parseSelectionFilters($request, true);
-        $selectedUnit = $this->resolveSelectedUnit($mappingId, $unitId);
+        $selectedUnit = $this->resolveSelectedUnit($mappingId, $unitId, $request);
         $submittedMarks = null;
 
         if ($selectedUnit && $request->boolean('search_marks')) {
@@ -219,7 +219,7 @@ class StudentMarkController extends Controller
         ]);
 
         $unitId = (int) $validated['curriculum_unit_id'];
-        $unit = $this->resolveSelectedUnit(null, $unitId);
+        $unit = $this->resolveSelectedUnit(null, $unitId, $request);
 
         if (! $unit) {
             throw ValidationException::withMessages([
@@ -278,7 +278,7 @@ class StudentMarkController extends Controller
 
         $unitId = (int) $validated['curriculum_unit_id'];
         $mappingId = isset($validated['curriculum_mapping_id']) ? (int) $validated['curriculum_mapping_id'] : null;
-        $unit = $this->resolveSelectedUnit($mappingId, $unitId);
+        $unit = $this->resolveSelectedUnit($mappingId, $unitId, $request);
 
         abort_unless($unit, 422, 'Select a valid unit before exporting marks.');
 
@@ -363,6 +363,12 @@ class StudentMarkController extends Controller
         $this->authorizeHod($request);
 
         $validated = $request->validate(['action' => ['required', 'in:publish,unpublish']]);
+        $studentMark->loadMissing('curriculumUnit.curriculumMapping.course:id,department_id');
+        abort_if(
+            $this->shouldScopeMarksToDepartment($request)
+            && (int) ($studentMark->curriculumUnit?->curriculumMapping?->course?->department_id ?? 0) !== $this->currentDepartmentId($request),
+            403
+        );
 
         $studentMark->update(['is_published' => $validated['action'] === 'publish']);
 
@@ -387,7 +393,7 @@ class StudentMarkController extends Controller
         $unitId = isset($validated['curriculum_unit_id']) ? (int) $validated['curriculum_unit_id'] : null;
         $academicYearId = isset($validated['academic_year_id']) ? (int) $validated['academic_year_id'] : null;
         $academicSessionId = isset($validated['academic_session_id']) ? (int) $validated['academic_session_id'] : null;
-        $selectedUnit = $this->resolveSelectedUnit($mappingId, $unitId);
+        $selectedUnit = $this->resolveSelectedUnit($mappingId, $unitId, $request);
         $sheet = $selectedUnit
             ? $this->buildMarksheet(
                 $selectedUnit,
@@ -436,7 +442,7 @@ class StudentMarkController extends Controller
         $unitId = (int) $validated['curriculum_unit_id'];
         $academicYearId = isset($validated['academic_year_id']) ? (int) $validated['academic_year_id'] : null;
         $academicSessionId = isset($validated['academic_session_id']) ? (int) $validated['academic_session_id'] : null;
-        $unit = $this->resolveSelectedUnit($mappingId, $unitId);
+        $unit = $this->resolveSelectedUnit($mappingId, $unitId, $request);
 
         abort_unless($unit, 422, 'Select a valid unit before downloading the marksheet.');
 
@@ -683,7 +689,7 @@ class StudentMarkController extends Controller
             ->first();
     }
 
-    private function resolveSelectedUnit(?int $mappingId, ?int $unitId): ?Unit
+    private function resolveSelectedUnit(?int $mappingId, ?int $unitId, ?Request $request = null): ?Unit
     {
         if (! $unitId) {
             return null;
@@ -696,6 +702,13 @@ class StudentMarkController extends Controller
             ])
             ->where('units.id', $unitId)
             ->when($mappingId, fn ($query) => $query->where('units.curriculum_mapping_id', $mappingId))
+            ->when(
+                $request && $this->shouldScopeMarksToDepartment($request),
+                fn ($query) => $query->whereHas(
+                    'curriculumMapping.course',
+                    fn ($courseQuery) => $courseQuery->where('department_id', $this->currentDepartmentId($request))
+                )
+            )
             ->first();
     }
 

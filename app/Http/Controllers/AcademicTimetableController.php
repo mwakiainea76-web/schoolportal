@@ -164,6 +164,7 @@ class AcademicTimetableController extends Controller
             'current_department_id' => $currentDepartmentId ? (string) $currentDepartmentId : '',
             'is_hod' => $isHod,
             'is_trainer' => $isTrainerOnly,
+            'can_manage_timetables' => $this->canManageTimetable($request),
             'should_load_timetable' => $shouldLoadTimetable,
             'current_session_note' => ! $supportsAcademicSessions
                 ? 'Timetable session scoping is not available yet in this database. Run the latest migration to enable academic-session filtering.'
@@ -350,7 +351,7 @@ class AcademicTimetableController extends Controller
 
         $timetable->load([
             'department:id,name',
-            'trainer:id,first_name,last_name,staff_number',
+            'trainer:id,first_name,last_name,other_name,staff_number',
             'lectureRoom:id,name,code,department_id',
             'curriculumUnit:id,name,code,curriculum_mapping_id,module_taught',
             'curriculumUnits:id,name,code,curriculum_mapping_id,module_taught',
@@ -410,7 +411,7 @@ class AcademicTimetableController extends Controller
         return AcademicTimetable::query()->with([
             'academicSession:id,academic_year_id,session_number,session_No,label,is_active',
             'department:id,name',
-            'trainer:id,first_name,last_name,staff_number',
+            'trainer:id,first_name,last_name,other_name,staff_number',
             'lectureRoom:id,name,code,department_id',
             'curriculumUnit:id,name,code,curriculum_mapping_id,module_taught',
             'curriculumUnits:id,name,code,curriculum_mapping_id,module_taught',
@@ -757,6 +758,9 @@ class AcademicTimetableController extends Controller
     {
         $user = $request->user();
 
-        return (bool) ($user?->hasRole('hod') || $user?->hasRole('trainer'));
+        return (bool) (
+            ($user?->hasRole('trainer') && ! $user?->hasRole('hod'))
+            || $user?->hasRole('admin')
+        );
     }
 }

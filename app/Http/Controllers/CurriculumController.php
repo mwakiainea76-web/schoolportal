@@ -107,11 +107,18 @@ class CurriculumController extends Controller
     public function search(Request $request)
     {
         $q = $request->q;
+        $courseId = $request->integer('course_id') ?: null;
 
         $curricula = Curriculum::query()
+            ->when($courseId, function ($query) use ($courseId) {
+                $query->whereHas('curriculumMappings', fn ($mappingQuery) => $mappingQuery->where('course_id', $courseId));
+            })
             ->when($q, function ($query) use ($q) {
-                $query->where('name', 'like', "%{$q}%")
-                    ->orWhere('description', 'like', "%{$q}%");
+                $query->where(function ($searchQuery) use ($q) {
+                    $searchQuery
+                        ->where('name', 'like', "%{$q}%")
+                        ->orWhere('description', 'like', "%{$q}%");
+                });
             })
             ->orderBy('name')
             ->limit(10)

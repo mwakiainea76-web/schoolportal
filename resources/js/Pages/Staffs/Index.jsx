@@ -9,7 +9,7 @@ import Trow from "@/Components/Table/Trow";
 import Tdata from "@/Components/Table/Tdata";
 import TextInput from "@/Components/TextInput";
 
-export default function StaffIndex({ staffs }) {
+export default function StaffIndex({ staffs, can_manage_staffs = true }) {
     const [searchTerm, setSearchTerm] = useState("");
 
     const submit = (e) => {
@@ -64,9 +64,11 @@ export default function StaffIndex({ staffs }) {
                         <THdata>Role</THdata>
                         <THdata>Department</THdata>
                         <THdata>Status</THdata>
-                        <THdata>
-                            <p className="text-center">Actions</p>
-                        </THdata>
+                        {can_manage_staffs ? (
+                            <THdata>
+                                <p className="text-center">Actions</p>
+                            </THdata>
+                        ) : null}
                     </Thead>
 
                     <Tbody>
@@ -89,35 +91,40 @@ export default function StaffIndex({ staffs }) {
 
                                     <Tdata>{staff?.staff_status}</Tdata>
 
-                                    <Tdata>
-                                        <div className="flex items-center justify-center gap-x-10">
-                                            {/* EDIT */}
-                                            <Link
-                                                href={route(
-                                                    "staffs.edit",
-                                                    staff.id,
-                                                )}
-                                                className="text-emerald-600 hover:underline"
-                                            >
-                                                Edit
-                                            </Link>
+                                    {can_manage_staffs ? (
+                                        <Tdata>
+                                            <div className="flex items-center justify-center gap-x-10">
+                                                {/* EDIT */}
+                                                <Link
+                                                    href={route(
+                                                        "staffs.edit",
+                                                        staff.id,
+                                                    )}
+                                                    className="text-emerald-600 hover:underline"
+                                                >
+                                                    Edit
+                                                </Link>
 
-                                            {/* DELETE */}
-                                            <button
-                                                onClick={() =>
-                                                    handleDelete(staff.id)
-                                                }
-                                                className="text-red-600 hover:underline"
-                                            >
-                                                Delete
-                                            </button>
-                                        </div>
-                                    </Tdata>
+                                                {/* DELETE */}
+                                                <button
+                                                    onClick={() =>
+                                                        handleDelete(staff.id)
+                                                    }
+                                                    className="text-red-600 hover:underline"
+                                                >
+                                                    Delete
+                                                </button>
+                                            </div>
+                                        </Tdata>
+                                    ) : null}
                                 </Trow>
                             ))
                         ) : (
                             <Trow>
-                                <Tdata colSpan="7" className="text-center py-4">
+                                <Tdata
+                                    colSpan={can_manage_staffs ? "7" : "6"}
+                                    className="text-center py-4"
+                                >
                                     No staff found.
                                 </Tdata>
                             </Trow>

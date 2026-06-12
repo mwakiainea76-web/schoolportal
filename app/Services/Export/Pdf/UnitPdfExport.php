@@ -96,6 +96,9 @@ class UnitPdfExport extends BasePdfExport
             ->when(($filters['course_id'] ?? '') !== '', function ($query) use ($filters) {
                 $query->whereHas('curriculumMapping.course', fn ($courseQuery) => $courseQuery->whereKey($filters['course_id']));
             })
+            ->when(($filters['department_id'] ?? '') !== '', function ($query) use ($filters) {
+                $query->whereHas('curriculumMapping.course', fn ($courseQuery) => $courseQuery->where('department_id', $filters['department_id']));
+            })
             ->when(($filters['curriculum_mapping_id'] ?? '') !== '', fn ($query) => $query->where('curriculum_mapping_id', $filters['curriculum_mapping_id']))
             ->orderBy($sortColumn, $direction)
             ->orderBy('code');

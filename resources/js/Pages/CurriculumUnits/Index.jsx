@@ -48,6 +48,7 @@ export default function Index({
     filters = {},
     selectedFilters = {},
     units,
+    can_manage_units = true,
 }) {
     const pageFilters =
         filters && !Array.isArray(filters) && typeof filters === "object"
@@ -413,7 +414,9 @@ export default function Index({
                         <THdata>Course</THdata>
                         <THdata>Certification Level</THdata>
                         <THdata className="text-center">Compulsory</THdata>
-                        <THdata className="text-center">Actions</THdata>
+                        {can_manage_units ? (
+                            <THdata className="text-center">Actions</THdata>
+                        ) : null}
                     </Thead>
 
                     <Tbody>
@@ -446,33 +449,35 @@ export default function Index({
                                             </span>
                                         )}
                                     </Tdata>
-                                    <Tdata>
-                                        <div className="flex items-center justify-center gap-x-6">
-                                            <Link
-                                                href={route(
-                                                    "units.edit",
-                                                    item.id,
-                                                )}
-                                                className="text-emerald-600 hover:underline"
-                                            >
-                                                Edit
-                                            </Link>
-                                            <button
-                                                onClick={() =>
-                                                    handleDelete(item.id)
-                                                }
-                                                className="text-red-600 hover:underline"
-                                            >
-                                                Delete
-                                            </button>
-                                        </div>
-                                    </Tdata>
+                                    {can_manage_units ? (
+                                        <Tdata>
+                                            <div className="flex items-center justify-center gap-x-6">
+                                                <Link
+                                                    href={route(
+                                                        "units.edit",
+                                                        item.id,
+                                                    )}
+                                                    className="text-emerald-600 hover:underline"
+                                                >
+                                                    Edit
+                                                </Link>
+                                                <button
+                                                    onClick={() =>
+                                                        handleDelete(item.id)
+                                                    }
+                                                    className="text-red-600 hover:underline"
+                                                >
+                                                    Delete
+                                                </button>
+                                            </div>
+                                        </Tdata>
+                                    ) : null}
                                 </Trow>
                             ))
                         ) : (
                             <Trow>
                                 <Tdata
-                                    colSpan="7"
+                                    colSpan={can_manage_units ? "7" : "6"}
                                     className="py-12 text-center text-zinc-400"
                                 >
                                     No units found for the selected filters.

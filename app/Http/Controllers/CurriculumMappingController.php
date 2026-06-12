@@ -115,12 +115,21 @@ class CurriculumMappingController extends Controller
     {
         $limit = min(max($request->integer('limit', 10), 1), 25);
         $query = trim((string) $request->query('q', ''));
+        $hodDepartmentId = $this->shouldScopeToHodDepartment($request)
+            ? $this->currentDepartmentId($request)
+            : null;
 
         $mappings = CurriculumMapping::query()
             ->with([
                 'course:id,name,code',
                 'curriculum:id,name',
             ])
+            ->when($hodDepartmentId, function ($builder) use ($hodDepartmentId) {
+                $builder
+                    ->where('is_active', true)
+                    ->whereHas('curriculum', fn ($curriculumQuery) => $curriculumQuery->where('is_active', true))
+                    ->whereHas('course', fn ($courseQuery) => $courseQuery->where('department_id', $hodDepartmentId));
+            })
             ->when($query !== '', function ($builder) use ($query) {
                 $builder->where(function ($mappingQuery) use ($query) {
                     $mappingQuery
@@ -189,6 +198,22 @@ class CurriculumMappingController extends Controller
                 default => null,
             },
         ];
+    }
+
+    protected function shouldScopeToHodDepartment(Request $request): bool
+    {
+        return (bool) (
+            $request->user()?->hasRole('hod')
+            && ! $request->user()?->hasRole('admin')
+            && $this->currentDepartmentId($request)
+        );
+    }
+
+    protected function currentDepartmentId(Request $request): ?int
+    {
+        return $request->user()?->staff?->department_id
+            ? (int) $request->user()->staff->department_id
+            : null;
     }
 
 }

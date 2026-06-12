@@ -24,6 +24,7 @@ class CourseController extends Controller
 
     public function index(CourseFilter $filter)
     {
+        $request = request();
         $filters = request()->only([
             'search',
             'course_id',
@@ -45,6 +46,15 @@ class CourseController extends Controller
                 $query,
                 $filters
             ))
+            ->when($this->shouldScopeToHodDepartment($request), function ($query) use ($request) {
+                $query
+                    ->where('department_id', $this->currentDepartmentId($request))
+                    ->whereHas('curriculumMappings', function ($mappingQuery) {
+                        $mappingQuery
+                            ->where('is_active', true)
+                            ->whereHas('curriculum', fn ($curriculumQuery) => $curriculumQuery->where('is_active', true));
+                    });
+            })
             ->latest('created_at')
             ->paginate(10)
             ->withQueryString()
@@ -62,16 +72,21 @@ class CourseController extends Controller
             'courses' => $courses,
             'filters' => (object) $filters,
             'selectedFilters' => $this->selectedIndexFilters($filters),
+            'can_manage_courses' => ! $this->shouldScopeToHodDepartment($request),
         ]);
     }
 
     public function create()
     {
+        abort_if($this->shouldScopeToHodDepartment(request()), 403);
+
         return inertia('Courses/Create');
     }
 
     public function store(StorecourseRequest $request)
     {
+        abort_if($this->shouldScopeToHodDepartment($request), 403);
+
         $this->service->create($request->validated());
 
         return redirect()
@@ -81,6 +96,8 @@ class CourseController extends Controller
 
     public function edit(Course $course)
     {
+        abort_if($this->shouldScopeToHodDepartment(request()), 403);
+
         $course->load([
             'department:id,name',
             'certificationLevel:id,exam_body_id,name',
@@ -108,6 +125,8 @@ class CourseController extends Controller
 
     public function update(UpdatecourseRequest $request, Course $course)
     {
+        abort_if($this->shouldScopeToHodDepartment($request), 403);
+
         $this->service->update($course, $request->validated());
 
         return redirect()
@@ -117,6 +136,8 @@ class CourseController extends Controller
 
     public function destroy(Course $course)
     {
+        abort_if($this->shouldScopeToHodDepartment(request()), 403);
+
         $result = $this->service->delete($course);
 
         if (! $result['status']) {
@@ -134,12 +155,24 @@ class CourseController extends Controller
     {
         $limit = min(max((int) $request->integer('limit', 10), 1), 25);
         $departmentId = $request->integer('department_id') ?: null;
+        $hodDepartmentId = $this->shouldScopeToHodDepartment($request)
+            ? $this->currentDepartmentId($request)
+            : null;
         $query = trim((string) $request->query('q', ''));
         $versionedOnly = $request->boolean('versioned_only');
         $plainName = $request->boolean('plain_name');
 
         $courses = Course::query()
             ->with('certificationLevel:id,name')
+            ->when($hodDepartmentId, function ($builder) use ($hodDepartmentId) {
+                $builder
+                    ->where('department_id', $hodDepartmentId)
+                    ->whereHas('curriculumMappings', function ($mappingQuery) {
+                        $mappingQuery
+                            ->where('is_active', true)
+                            ->whereHas('curriculum', fn ($curriculumQuery) => $curriculumQuery->where('is_active', true));
+                    });
+            })
             ->when($departmentId, fn ($builder) => $builder->where('department_id', $departmentId))
             ->when($versionedOnly, function ($builder) {
                 $builder->whereHas('curriculumMappings', function ($mappingQuery) {
@@ -197,5 +230,21 @@ class CourseController extends Controller
             'certification_level' => $certificationLevel?->name,
             'curriculum' => $curriculum?->name,
         ];
+    }
+
+    protected function shouldScopeToHodDepartment(Request $request): bool
+    {
+        return (bool) (
+            $request->user()?->hasRole('hod')
+            && ! $request->user()?->hasRole('admin')
+            && $this->currentDepartmentId($request)
+        );
+    }
+
+    protected function currentDepartmentId(Request $request): ?int
+    {
+        return $request->user()?->staff?->department_id
+            ? (int) $request->user()->staff->department_id
+            : null;
     }
 }

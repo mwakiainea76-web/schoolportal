@@ -6,7 +6,8 @@ import { I as InputError } from "./InputError-CBvD_6aD.js";
 import "react";
 function Create({ activeSession }) {
   const { data, setData, post, processing, errors } = useForm({
-    admission_number: ""
+    admission_number: "",
+    active_session_id: activeSession ? activeSession.id : null
   });
   const submit = (e) => {
     e.preventDefault();
@@ -16,7 +17,7 @@ function Create({ activeSession }) {
   };
   return /* @__PURE__ */ jsxs(Fragment, { children: [
     /* @__PURE__ */ jsx(Head, { title: "Enroll Student in Session" }),
-    /* @__PURE__ */ jsxs("div", { className: "mx-auto max-w-2xl w-full", children: [
+    /* @__PURE__ */ jsxs("div", { className: "mx-auto w-full", children: [
       /* @__PURE__ */ jsxs("div", { className: "mb-6", children: [
         /* @__PURE__ */ jsx("h1", { className: "text-2xl font-semibold text-gray-800", children: "Enroll Student in Academic Session" }),
         /* @__PURE__ */ jsx("p", { className: "text-sm text-gray-500", children: "The system will automatically detect the current active session and calculate the student's module." })
@@ -28,6 +29,20 @@ function Create({ activeSession }) {
           className: "bg-white p-8 space-y-6 border rounded-lg shadow-sm",
           children: [
             /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-1 md:grid-cols-2 gap-6", children: [
+              /* @__PURE__ */ jsxs("div", { children: [
+                /* @__PURE__ */ jsx("input", { name: "active_session_id", type: "hidden", value: activeSession.id }),
+                /* @__PURE__ */ jsx(InputLabel, { value: "Active Academic Session" }),
+                /* @__PURE__ */ jsx(
+                  TextInput,
+                  {
+                    type: "text",
+                    value: activeSession ? activeSession.name : "No active session",
+                    disabled: true,
+                    className: "mt-1 block w-full bg-gray-100 text-gray-500 cursor-not-allowed"
+                  }
+                ),
+                !activeSession && /* @__PURE__ */ jsx("p", { className: "mt-1 text-xs text-red-500", children: "No active session found. Please activate a session before enrolling." })
+              ] }),
               /* @__PURE__ */ jsxs("div", { children: [
                 /* @__PURE__ */ jsx(
                   InputLabel,
@@ -53,17 +68,52 @@ function Create({ activeSession }) {
                 /* @__PURE__ */ jsx(InputError, { message: errors.admission_number })
               ] }),
               /* @__PURE__ */ jsxs("div", { children: [
-                /* @__PURE__ */ jsx(InputLabel, { value: "Active Academic Session" }),
+                /* @__PURE__ */ jsx(
+                  InputLabel,
+                  {
+                    value: "Student Admission Number",
+                    required: true
+                  }
+                ),
                 /* @__PURE__ */ jsx(
                   TextInput,
                   {
                     type: "text",
-                    value: activeSession ? activeSession.name : "No active session",
-                    disabled: true,
-                    className: "mt-1 block w-full bg-gray-100 text-gray-500 cursor-not-allowed"
+                    name: "admission_number",
+                    value: data.admission_number,
+                    onChange: (e) => setData(
+                      "admission_number",
+                      e.target.value
+                    ),
+                    placeholder: "e.g. STD/001/2026",
+                    className: "mt-1 block w-full"
                   }
                 ),
-                !activeSession && /* @__PURE__ */ jsx("p", { className: "mt-1 text-xs text-red-500", children: "No active session found. Please activate a session before enrolling." })
+                /* @__PURE__ */ jsx(InputError, { message: errors.admission_number })
+              ] }),
+              /* @__PURE__ */ jsxs("div", { children: [
+                /* @__PURE__ */ jsx(
+                  InputLabel,
+                  {
+                    value: "Student Admission Number",
+                    required: true
+                  }
+                ),
+                /* @__PURE__ */ jsx(
+                  TextInput,
+                  {
+                    type: "text",
+                    name: "admission_number",
+                    value: data.admission_number,
+                    onChange: (e) => setData(
+                      "admission_number",
+                      e.target.value
+                    ),
+                    placeholder: "e.g. STD/001/2026",
+                    className: "mt-1 block w-full"
+                  }
+                ),
+                /* @__PURE__ */ jsx(InputError, { message: errors.admission_number })
               ] })
             ] }),
             /* @__PURE__ */ jsxs("div", { className: "flex justify-between pt-4", children: [

@@ -13,6 +13,9 @@ class CourseEnrollmentController extends Controller
 {
     public function index(Request $request)
     {
+        $hodDepartmentId = $this->shouldScopeToHodDepartment($request)
+            ? $this->currentDepartmentId($request)
+            : null;
         $filters = $request->only([
             'course_id',
             'curriculum_id',
@@ -24,6 +27,10 @@ class CourseEnrollmentController extends Controller
             'status',
         ]);
 
+        if ($hodDepartmentId) {
+            unset($filters['department_id']);
+        }
+
         $courseEnrollments = CourseEnrollment::with([
             'student',
             'course:id,name,code,department_id',
@@ -33,6 +40,13 @@ class CourseEnrollmentController extends Controller
             'curriculumMapping.curriculum',
             'academicSessionEnrollments.academicSession.academicYear',
         ])
+            ->when($hodDepartmentId, function ($query) use ($hodDepartmentId) {
+                $query->where(function ($departmentQuery) use ($hodDepartmentId) {
+                    $departmentQuery
+                        ->whereHas('course', fn ($courseQuery) => $courseQuery->where('department_id', $hodDepartmentId))
+                        ->orWhereHas('curriculumMapping.course', fn ($courseQuery) => $courseQuery->where('department_id', $hodDepartmentId));
+                });
+            })
             ->when($filters['course_id'] ?? null, function ($query, $courseId) {
                 $query->where(function ($courseQuery) use ($courseId) {
                     $courseQuery
@@ -97,7 +111,8 @@ class CourseEnrollmentController extends Controller
         return inertia('CourseEnrollments/Index', [
             'courseEnrollments' => $courseEnrollments,
             'filters' => (object) $filters,
-            'selectedFilters' => $this->selectedFilters($filters),
+            'selectedFilters' => $this->selectedFilters($filters, $request),
+            'is_hod' => (bool) $hodDepartmentId,
             'statuses' => [
                 'active',
                 'deferred',
@@ -110,11 +125,16 @@ class CourseEnrollmentController extends Controller
         ]);
     }
 
-    protected function selectedFilters(array $filters): array
+    protected function selectedFilters(array $filters, Request $request): array
     {
+        $hodDepartmentId = $this->shouldScopeToHodDepartment($request)
+            ? $this->currentDepartmentId($request)
+            : null;
+
         $course = ! empty($filters['course_id'])
             ? Course::select('id', 'name', 'code', 'certification_level_id')
                 ->with('certificationLevel:id,name')
+                ->when($hodDepartmentId, fn ($query) => $query->where('department_id', $hodDepartmentId))
                 ->find($filters['course_id'])
             : null;
 
@@ -145,5 +165,21 @@ class CourseEnrollmentController extends Controller
             'year_of_study' => $filters['year_of_study'] ?? null,
             'admission_number' => $filters['admission_number'] ?? null,
         ];
+    }
+
+    protected function shouldScopeToHodDepartment(Request $request): bool
+    {
+        return (bool) (
+            $request->user()?->hasRole('hod')
+            && ! $request->user()?->hasRole('admin')
+            && $this->currentDepartmentId($request)
+        );
+    }
+
+    protected function currentDepartmentId(Request $request): ?int
+    {
+        return $request->user()?->staff?->department_id
+            ? (int) $request->user()->staff->department_id
+            : null;
     }
 }

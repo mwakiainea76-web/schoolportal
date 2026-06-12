@@ -346,8 +346,7 @@ function BulkOperations({ enrollments, students }) {
                 }
               ) }),
               /* @__PURE__ */ jsx("th", { className: "px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider", children: "Student ID" }),
-              /* @__PURE__ */ jsx("th", { className: "px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider", children: "Name" }),
-              /* @__PURE__ */ jsx("th", { className: "px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider", children: "Department" })
+              /* @__PURE__ */ jsx("th", { className: "px-6 py-3 text-left text-xs font-medium text-zinc-500 uppercase tracking-wider", children: "Name" })
             ] }) }),
             /* @__PURE__ */ jsx("tbody", { className: "bg-white divide-y divide-zinc-200", children: students.map((student) => /* @__PURE__ */ jsxs("tr", { children: [
               /* @__PURE__ */ jsx("td", { className: "px-6 py-4 whitespace-nowrap", children: /* @__PURE__ */ jsx(
@@ -363,8 +362,7 @@ function BulkOperations({ enrollments, students }) {
                 }
               ) }),
               /* @__PURE__ */ jsx("td", { className: "px-6 py-4 whitespace-nowrap text-sm text-zinc-900", children: student.admission_number }),
-              /* @__PURE__ */ jsx("td", { className: "px-6 py-4 whitespace-nowrap text-sm text-zinc-900", children: student.name }),
-              /* @__PURE__ */ jsx("td", { className: "px-6 py-4 whitespace-nowrap text-sm text-zinc-900", children: student.department?.name })
+              /* @__PURE__ */ jsx("td", { className: "px-6 py-4 whitespace-nowrap text-sm text-zinc-900", children: student.name })
             ] }, student.id)) })
           ] }) }),
           /* @__PURE__ */ jsx(
