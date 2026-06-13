@@ -20,6 +20,14 @@ class User extends Authenticatable
         'is_active',
     ];
 
+    protected $appends = [
+        'first_name',
+        'last_name',
+        'full_name',
+        'phone_number',
+        'address',
+    ];
+
     protected $hidden = [
         'password',
         'remember_token',
@@ -80,6 +88,16 @@ class User extends Authenticatable
     public function getFullNameAttribute(): ?string
     {
         return $this->profile()?->full_name;
+    }
+
+    public function getPhoneNumberAttribute(): ?string
+    {
+        return $this->profile()?->phone_number;
+    }
+
+    public function getAddressAttribute(): ?string
+    {
+        return $this->profile()?->address;
     }
 
     protected function casts(): array

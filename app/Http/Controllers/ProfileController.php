@@ -18,9 +18,18 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): Response
     {
+        $user = $request->user();
+        $user->load([
+            'student.courseEnrollment.course',
+            'student.courseEnrollment.curriculum',
+            'staff.department',
+            'roles'
+        ]);
+
         return Inertia::render('Profile/Edit', [
-            'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
+            'mustVerifyEmail' => $user instanceof MustVerifyEmail,
             'status' => session('status'),
+            'user' => $user,
         ]);
     }
 
@@ -46,6 +55,8 @@ class ProfileController extends Controller
         $profileData = [
             'first_name' => $validated['first_name'],
             'last_name' => $validated['last_name'],
+            'phone_number' => $validated['phone_number'] ?? null,
+            'address' => $validated['address'] ?? null,
         ];
 
         if ($user->staff) {
