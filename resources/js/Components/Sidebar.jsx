@@ -25,9 +25,15 @@ export default function Sidebar({
     const dashboardFallback = "/dashboard";
     const dashboardLabel = hasRole("student")
         ? "Student Dashboard"
+        : hasRole("bursar") && !hasRole("admin")
+          ? "Bursar Dashboard"
+          : hasRole("hod") && !hasRole("admin")
+            ? "HOD Dashboard"
         : hasRole("trainer") && !hasRole("admin") && !hasRole("hod")
           ? "Trainer Dashboard"
-          : "Admin Dashboard";
+          : hasRole("admin")
+            ? "Admin Dashboard"
+            : "Staff Dashboard";
 
     const navItems = hasRole("student") ? STUDENT_NAV_ITEMS : STAFF_NAV_ITEMS;
     const visibleNav = filterNav(navItems, can, hasRole);

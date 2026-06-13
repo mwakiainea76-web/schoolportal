@@ -184,6 +184,8 @@ class DashboardController extends Controller
         $staff = $user ? $this->staffSummaryForUser($user->id) : null;
         $roleNames = $user?->roles->pluck('name')->map(fn($role) => strtolower($role))->all() ?? [];
         $isTrainer = in_array('trainer', $roleNames, true);
+        $primaryRole = $this->resolveDashboardRole($roleNames);
+        $roleContext = $this->dashboardRoleContext($primaryRole, $roleNames);
         
         $activeSession = $this->activeSessionSummary();
 
@@ -203,7 +205,7 @@ class DashboardController extends Controller
 
         return Inertia::render('Dashboard', [
             'dashboard' => [
-                'type' => 'staff',
+                'type' => $primaryRole,
                 'staff_profile' => [
                     'name' => $user?->staff?->full_name,
                     'staff_number' => $staff?->staff_number,
@@ -211,6 +213,7 @@ class DashboardController extends Controller
                     'department_name' => $staff?->department_name,
                     'roles' => $roleNames,
                 ],
+                'role_context' => $roleContext,
                 'trainer_workspace' => [
                     'active_session' => $activeSession,
                     'department_id' => $staff?->department_id ? (string) $staff->department_id : '',
@@ -292,5 +295,61 @@ class DashboardController extends Controller
             ['label' => 'Departments', 'value' => (int) ($stats->departments_count ?? 0)],
             ['label' => 'Academic Years', 'value' => (int) ($stats->academic_years_count ?? 0)],
         ];
+    }
+
+    protected function resolveDashboardRole(array $roleNames): string
+    {
+        return match (true) {
+            in_array('admin', $roleNames, true) => 'admin',
+            in_array('bursar', $roleNames, true) => 'bursar',
+            in_array('hod', $roleNames, true) => 'hod',
+            in_array('trainer', $roleNames, true) => 'trainer',
+            default => 'staff',
+        };
+    }
+
+    protected function dashboardRoleContext(string $primaryRole, array $roleNames): array
+    {
+        return [
+            'primary_role' => $primaryRole,
+            'dashboard_title' => match ($primaryRole) {
+                'bursar' => 'Finance Overview',
+                'hod' => 'Department Overview',
+                'trainer' => 'Teaching Overview',
+                'staff' => 'Staff Overview',
+                default => 'Institution Overview',
+            },
+            'dashboard_description' => match ($primaryRole) {
+                'bursar' => 'Track collections, balances, and the finance analytics that matter to bursary operations.',
+                'hod' => 'Monitor teaching delivery, academic progress, and department-level academic signals.',
+                'trainer' => 'Focus on your timetable, marks workflow, and teaching activity in the current session.',
+                'staff' => 'Access your workspace and the analytics available to your account.',
+                default => 'Monitor institution-wide operations across academic, finance, admissions, hostel, and data quality workflows.',
+            },
+            'analytics_sections' => $this->analyticsSectionsForRoles($roleNames),
+        ];
+    }
+
+    protected function analyticsSectionsForRoles(array $roleNames): array
+    {
+        if (in_array('admin', $roleNames, true)) {
+            return ['executive', 'finance', 'academic', 'admissions', 'hostel', 'data_quality', 'snapshot_trends'];
+        }
+
+        $sections = [];
+
+        if (in_array('bursar', $roleNames, true)) {
+            $sections = array_merge($sections, ['executive', 'finance', 'snapshot_trends']);
+        }
+
+        if (in_array('hod', $roleNames, true)) {
+            $sections = array_merge($sections, ['executive', 'academic', 'admissions', 'snapshot_trends']);
+        }
+
+        if (in_array('trainer', $roleNames, true)) {
+            $sections = array_merge($sections, ['academic']);
+        }
+
+        return array_values(array_unique($sections));
     }
 }

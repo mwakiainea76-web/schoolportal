@@ -115,6 +115,8 @@ class ReportingController extends Controller
 
     public function executiveSummary(Request $request, ExecutiveAnalyticsService $executiveAnalyticsService): JsonResponse
     {
+        $this->authorizeAnalyticsSection($request, 'executive');
+
         return response()->json(
             $executiveAnalyticsService->summary($request->all())
         );
@@ -122,6 +124,8 @@ class ReportingController extends Controller
 
     public function financeSummary(Request $request, FinanceAnalyticsService $financeAnalyticsService): JsonResponse
     {
+        $this->authorizeAnalyticsSection($request, 'finance');
+
         return response()->json(
             $financeAnalyticsService->summary($request->all())
         );
@@ -129,6 +133,8 @@ class ReportingController extends Controller
 
     public function academicSummary(Request $request, AcademicAnalyticsService $academicAnalyticsService): JsonResponse
     {
+        $this->authorizeAnalyticsSection($request, 'academic');
+
         return response()->json(
             $academicAnalyticsService->summary($request->all())
         );
@@ -136,6 +142,8 @@ class ReportingController extends Controller
 
     public function admissionsSummary(Request $request, AdmissionsAnalyticsService $admissionsAnalyticsService): JsonResponse
     {
+        $this->authorizeAnalyticsSection($request, 'admissions');
+
         return response()->json(
             $admissionsAnalyticsService->summary($request->all())
         );
@@ -143,6 +151,8 @@ class ReportingController extends Controller
 
     public function hostelSummary(Request $request, HostelAnalyticsService $hostelAnalyticsService): JsonResponse
     {
+        $this->authorizeAnalyticsSection($request, 'hostel');
+
         return response()->json(
             $hostelAnalyticsService->summary($request->all())
         );
@@ -150,6 +160,8 @@ class ReportingController extends Controller
 
     public function dataQualitySummary(Request $request, DataQualityAnalyticsService $dataQualityAnalyticsService): JsonResponse
     {
+        $this->authorizeAnalyticsSection($request, 'data_quality');
+
         return response()->json(
             $dataQualityAnalyticsService->summary($request->all())
         );
@@ -157,9 +169,36 @@ class ReportingController extends Controller
 
     public function snapshotTrends(Request $request, AnalyticsSnapshotReadService $analyticsSnapshotReadService): JsonResponse
     {
+        $this->authorizeAnalyticsSection($request, 'snapshot_trends');
+
         return response()->json(
             $analyticsSnapshotReadService->trendSummary((int) $request->integer('days', 30))
         );
+    }
+
+    protected function authorizeAnalyticsSection(Request $request, string $section): void
+    {
+        $user = $request->user();
+
+        if ($user?->hasRole('admin')) {
+            return;
+        }
+
+        $allowedSections = [];
+
+        if ($user?->hasRole('bursar')) {
+            $allowedSections = array_merge($allowedSections, ['executive', 'finance', 'snapshot_trends']);
+        }
+
+        if ($user?->hasRole('hod')) {
+            $allowedSections = array_merge($allowedSections, ['executive', 'academic', 'admissions', 'snapshot_trends']);
+        }
+
+        if ($user?->hasRole('trainer')) {
+            $allowedSections = array_merge($allowedSections, ['academic']);
+        }
+
+        abort_unless(in_array($section, array_unique($allowedSections), true), 403);
     }
 
     public function outstandingBalance(Request $request): JsonResponse

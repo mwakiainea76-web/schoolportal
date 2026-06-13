@@ -77,7 +77,7 @@ export default function Login({ status, canResetPassword }) {
                                 </p>
                             </div>
 
-                            <div className="rounded-[2rem] bg-white p-6 shadow-[0_24px_60px_rgba(15,23,42,0.12)] ring-1 ring-zinc-100 sm:p-8">
+                            <div className="rounded-lg bg-white p-6 shadow-[0_24px_60px_rgba(15,23,42,0.12)] ring-1 ring-zinc-100 sm:p-8">
                                 {status && (
                                     <div className="mb-5 rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
                                         {status}
