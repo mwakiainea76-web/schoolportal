@@ -35,6 +35,17 @@ const FILTER_DEFINITIONS = [
             label: `Module ${module}`,
         })),
     },
+    {
+        key: "scope",
+        label: "Scope",
+        type: "select",
+        selectedLabelKey: "scope",
+        options: [
+            { value: "basic", label: "Basic" },
+            { value: "common", label: "Common" },
+            { value: "core", label: "Core" },
+        ],
+    },
 ];
 
 const FILTER_KEYS = FILTER_DEFINITIONS.map((filter) => filter.key);
@@ -66,6 +77,7 @@ export default function Index({
         ...emptyFilterState(),
         unit_id: pageFilters.unit_id || "",
         module_taught: pageFilters.module_taught || "",
+        scope: pageFilters.scope || "",
         course_id: pageFilters.course_id || "",
         curriculum_mapping_id:
             pageFilters.curriculum_mapping_id ||
@@ -168,14 +180,24 @@ export default function Index({
             );
         }
 
+        const requiresCourseSelection =
+            filter.key === "module_taught" || filter.key === "scope";
+        const isDisabled =
+            requiresCourseSelection && !effectiveCurriculumMappingId;
+
         if (filter.type === "select") {
             return (
                 <select
                     value={form[filter.key]}
+                    disabled={isDisabled}
                     onChange={(e) => setFilter(filter.key, e.target.value)}
-                    className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+                    className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-zinc-100"
                 >
-                    <option value="">Choose module...</option>
+                    <option value="">
+                        {isDisabled
+                            ? "Select course first..."
+                            : `Choose ${filter.label.toLowerCase()}...`}
+                    </option>
                     {filter.options.map((option) => (
                         <option key={option.value} value={option.value}>
                             {option.label}
@@ -411,9 +433,9 @@ export default function Index({
                         >
                             Module {renderArrow("module_taught")}
                         </THdata>
+                        <THdata className="text-center">Scope</THdata>
                         <THdata>Course</THdata>
                         <THdata>Certification Level</THdata>
-                        <THdata className="text-center">Compulsory</THdata>
                         {can_manage_units ? (
                             <THdata className="text-center">Actions</THdata>
                         ) : null}
@@ -430,6 +452,11 @@ export default function Index({
                                     <Tdata className="text-center">
                                         {item.module_taught}
                                     </Tdata>
+                                    <Tdata className="text-center">
+                                        <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium capitalize text-zinc-700">
+                                            {item.scope || "core"}
+                                        </span>
+                                    </Tdata>
                                     <Tdata>
                                         {item.curriculum_mapping?.course
                                             ?.name || "-"}
@@ -437,17 +464,6 @@ export default function Index({
                                     <Tdata>
                                         {item.curriculum_mapping?.course
                                             ?.certification_level?.name || "-"}
-                                    </Tdata>
-                                    <Tdata className="text-center">
-                                        {item.is_compulsory ? (
-                                            <span className="text-emerald-600">
-                                                Yes
-                                            </span>
-                                        ) : (
-                                            <span className="text-zinc-400">
-                                                No
-                                            </span>
-                                        )}
                                     </Tdata>
                                     {can_manage_units ? (
                                         <Tdata>

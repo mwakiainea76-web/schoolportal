@@ -36,11 +36,8 @@ class StoreUnitRequest extends FormRequest
             'credit_factor' => ['required', 'integer', 'min:1'],
             'training_hours' => ['required', 'integer', 'min:1'],
             'description' => ['nullable', 'string', 'max:255'],
+            'scope' => ['required', Rule::in(['basic', 'common', 'core'])],
             'module_taught' => ['required', 'integer', 'min:1', 'max:6'],
-            'semester' => ['nullable', 'integer', 'min:1', 'max:12'],
-            'module' => ['nullable', 'integer', 'min:1', 'max:6'],
-            'is_compulsory' => ['sometimes', 'boolean'],
-            'sort_order' => ['nullable', 'integer', 'min:0'],
         ];
     }
 }

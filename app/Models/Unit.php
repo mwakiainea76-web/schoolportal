@@ -19,22 +19,16 @@ class Unit extends Model
         'credit_factor',
         'training_hours',
         'description',
+        'scope',
         'curriculum_mapping_id',
         'module_taught',
-        'semester',
-        'module',
-        'is_compulsory',
-        'sort_order',
     ];
 
     protected $casts = [
-        'is_compulsory' => 'boolean',
         'credit_factor' => 'integer',
         'training_hours' => 'integer',
+        'scope' => 'string',
         'module_taught' => 'integer',
-        'semester' => 'integer',
-        'module' => 'integer',
-        'sort_order' => 'integer',
     ];
 
     public function curriculumMapping()

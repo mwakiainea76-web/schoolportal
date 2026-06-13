@@ -67,8 +67,8 @@ class StoreHodAcademicTimetableRequest extends StoreAcademicTimetableRequest
             }
 
             $trainer = Staff::query()->find($trainerId);
-            if (! $trainer || (int) $trainer->department_id !== $staffDepartmentId) {
-                $validator->errors()->add('trainer_staff_id', 'Selected trainer must belong to your department.');
+            if (! $trainer) {
+                $validator->errors()->add('trainer_staff_id', 'Selected trainer could not be found.');
             }
 
             $lectureRoom = LectureRoom::query()->find($lectureRoomId);
@@ -80,13 +80,6 @@ class StoreHodAcademicTimetableRequest extends StoreAcademicTimetableRequest
                 ->with([
                     'curriculumMapping.course:id,department_id',
                     'curriculumMapping.curriculum:id,is_active',
-                ])
-                ->withCount([
-                    'timetableSessions as scoped_timetable_sessions_count' => function ($query) use ($academicSessionId) {
-                        if ($academicSessionId) {
-                            $query->where('academic_timetables.academic_session_id', $academicSessionId);
-                        }
-                    },
                 ])
                 ->whereIn('id', $curriculumUnitIds)
                 ->get()
@@ -116,12 +109,6 @@ class StoreHodAcademicTimetableRequest extends StoreAcademicTimetableRequest
 
                     break;
                 }
-
-                if ((int) $curriculumUnit->scoped_timetable_sessions_count > 0) {
-                    $validator->errors()->add('curriculum_unit_ids', 'One or more selected curriculum units have already been assigned to a timetable.');
-
-                    break;
-                }
             }
 
             $submittedSessions = $this->submittedSessions();
@@ -143,8 +130,19 @@ class StoreHodAcademicTimetableRequest extends StoreAcademicTimetableRequest
                 }
                 $seenSessions[] = $session['signature'];
 
-                $classOverlap = $this->overlappingConflictsFor($existingConflicts, $session)
+                $overlappingSessions = $this->overlappingConflictsFor($existingConflicts, $session);
+                $mergeableSlots = $overlappingSessions->filter(
+                    fn (AcademicTimetable $timetable) => $this->canMergeIntoOccupiedSlot(
+                        $timetable,
+                        $trainerId,
+                        $lectureRoomId,
+                        $session
+                    )
+                );
+
+                $classOverlap = $overlappingSessions
                     ->filter(fn (AcademicTimetable $timetable) => (int) $timetable->department_id === $departmentId)
+                    ->reject(fn (AcademicTimetable $timetable) => $mergeableSlots->contains(fn (AcademicTimetable $mergeableTimetable) => (int) $mergeableTimetable->id === (int) $timetable->id))
                     ->contains(function (AcademicTimetable $timetable) use ($curriculumMappingId, $moduleNumber) {
                         return $timetable->curriculumUnits->contains(function ($unit) use ($curriculumMappingId, $moduleNumber) {
                             return (int) $unit->curriculum_mapping_id === $curriculumMappingId

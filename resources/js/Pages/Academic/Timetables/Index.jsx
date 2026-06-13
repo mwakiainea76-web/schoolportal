@@ -14,6 +14,7 @@ export default function Index({
     days,
     is_hod,
     is_trainer,
+    can_manage_timetables,
     should_load_timetable,
     current_session_note,
 }) {
@@ -113,7 +114,7 @@ export default function Index({
     const addTimetableHref = is_hod
         ? route("academic.timetables.hod.create")
         : route("academic.timetables.create");
-    const canAddTimetable = is_hod || is_trainer;
+    const canAddTimetable = is_hod || Boolean(can_manage_timetables);
     const handleDownloadPdf = () => {
         window.print();
     };

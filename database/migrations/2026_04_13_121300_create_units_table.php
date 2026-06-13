@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('code');
             $table->string('name')->index();
+            $table->string('scope', 20)->default('core');
             $table->unsignedSmallInteger('credit_factor');
             $table->unsignedSmallInteger('training_hours');
             $table->string('description')->nullable();
@@ -31,6 +32,7 @@ return new class extends Migration
 
             $table->index(['curriculum_mapping_id', 'module_taught'], 'units_mapping_module_taught_index');
             $table->index(['curriculum_mapping_id', 'module_taught', 'id'], 'units_mapping_module_taught_id_index');
+            $table->index('scope');
         });
     }
 

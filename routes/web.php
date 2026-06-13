@@ -242,7 +242,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::prefix('timetables')->name('timetables.')->group(function () {
                 Route::get('/', [AcademicTimetableController::class, 'index'])->name('index');
                 Route::get('/courses/search', [AcademicTimetableController::class, 'searchCourseMappings'])->name('courses.search');
-                Route::middleware('role:hod|trainer')->group(function () {
+                Route::middleware('role:admin|hod|trainer')->group(function () {
                     Route::get('/create', [AcademicTimetableController::class, 'create'])->name('create');
                     Route::post('/', [AcademicTimetableController::class, 'store'])->name('store');
                     Route::get('/{timetable}/edit', [AcademicTimetableController::class, 'edit'])->name('edit');

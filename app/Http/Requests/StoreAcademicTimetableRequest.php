@@ -9,6 +9,7 @@ use App\Models\Staff;
 use App\Models\LectureRoom;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Schema;
 
@@ -23,6 +24,8 @@ class StoreAcademicTimetableRequest extends FormRequest
     {
         return [
             'department_id' => ['required', 'exists:departments,id'],
+            'curriculum_mapping_id' => ['required', 'exists:curriculum_mappings,id'],
+            'module_number' => ['required', 'integer', 'min:1'],
             'trainer_staff_id' => ['required', 'exists:staffs,id'],
             'lecture_room_id' => ['required', 'exists:lecture_rooms,id'],
             'curriculum_unit_ids' => ['required', 'array', 'min:1'],
@@ -48,6 +51,8 @@ class StoreAcademicTimetableRequest extends FormRequest
         }
 
         $departmentId = (int) $this->integer('department_id');
+        $curriculumMappingId = (int) $this->integer('curriculum_mapping_id');
+        $moduleNumber = (int) $this->integer('module_number');
         $trainerId = (int) $this->integer('trainer_staff_id');
         $lectureRoomId = (int) $this->integer('lecture_room_id');
         $academicSessionId = $this->resolveCurrentAcademicSessionId();
@@ -63,8 +68,8 @@ class StoreAcademicTimetableRequest extends FormRequest
         }
 
         $trainer = Staff::query()->find($trainerId);
-        if (! $trainer || (int) $trainer->department_id !== $departmentId) {
-            $validator->errors()->add('trainer_staff_id', 'Selected trainer must belong to the chosen department.');
+        if (! $trainer) {
+            $validator->errors()->add('trainer_staff_id', 'Selected trainer could not be found.');
         }
 
         $lectureRoom = LectureRoom::query()->find($lectureRoomId);
@@ -80,8 +85,13 @@ class StoreAcademicTimetableRequest extends FormRequest
 
         foreach ($curriculumUnitIds as $curriculumUnitId) {
             $curriculumUnit = $curriculumUnits->get($curriculumUnitId);
-            if (! $curriculumUnit || (int) $curriculumUnit->curriculumMapping?->course?->department_id !== $departmentId) {
-                $validator->errors()->add('curriculum_unit_ids', 'Every selected curriculum unit must belong to the chosen department.');
+            if (
+                ! $curriculumUnit
+                || (int) $curriculumUnit->curriculumMapping?->course?->department_id !== $departmentId
+                || (int) ($curriculumUnit->curriculum_mapping_id ?? 0) !== $curriculumMappingId
+                || (int) ($curriculumUnit->module_taught ?? 0) !== $moduleNumber
+            ) {
+                $validator->errors()->add('curriculum_unit_ids', 'Every selected curriculum unit must belong to the chosen department, selected course version mapping, and selected module.');
                 break;
             }
         }
@@ -105,23 +115,55 @@ class StoreAcademicTimetableRequest extends FormRequest
             $seenSessions[] = $signature;
 
             $overlappingSessions = $this->overlappingConflictsFor($existingConflicts, $session);
+            $mergeableSlots = $overlappingSessions->filter(
+                fn (AcademicTimetable $timetable) => $this->canMergeIntoOccupiedSlot(
+                    $timetable,
+                    $trainerId,
+                    $lectureRoomId,
+                    $session
+                )
+            );
+            $conflictingTrainerSlots = $overlappingSessions
+                ->filter(fn (AcademicTimetable $timetable) => (int) $timetable->trainer_staff_id === $trainerId)
+                ->reject(fn (AcademicTimetable $timetable) => $mergeableSlots->contains(fn (AcademicTimetable $mergeableTimetable) => (int) $mergeableTimetable->id === (int) $timetable->id));
+            $conflictingLectureRoomSlots = $overlappingSessions
+                ->filter(fn (AcademicTimetable $timetable) => (int) $timetable->lecture_room_id === $lectureRoomId)
+                ->reject(fn (AcademicTimetable $timetable) => $mergeableSlots->contains(fn (AcademicTimetable $mergeableTimetable) => (int) $mergeableTimetable->id === (int) $timetable->id));
+            $conflictingCurriculumUnitSlots = $overlappingSessions
+                ->filter(function (AcademicTimetable $timetable) use ($curriculumUnitIds) {
+                    return $timetable->curriculumUnits
+                        ->pluck('id')
+                        ->map(fn ($id) => (int) $id)
+                        ->intersect($curriculumUnitIds)
+                        ->isNotEmpty();
+                });
 
-            if ($overlappingSessions->contains(fn (AcademicTimetable $timetable) => (int) $timetable->trainer_staff_id === $trainerId)) {
+            if ($conflictingTrainerSlots->isNotEmpty()) {
                 $validator->errors()->add("sessions.{$session['index']}.start_time", "Session {$row} overlaps with another timetable slot already assigned to this trainer.");
             }
 
-            if ($overlappingSessions->contains(fn (AcademicTimetable $timetable) => (int) $timetable->lecture_room_id === $lectureRoomId)) {
+            if ($conflictingLectureRoomSlots->isNotEmpty()) {
                 $validator->errors()->add("sessions.{$session['index']}.start_time", "Session {$row} overlaps with another timetable slot already assigned to this lecture room.");
             }
 
-            if ($overlappingSessions->contains(function (AcademicTimetable $timetable) use ($curriculumUnitIds) {
-                return $timetable->curriculumUnits
-                    ->pluck('id')
-                    ->map(fn ($id) => (int) $id)
-                    ->intersect($curriculumUnitIds)
-                    ->isNotEmpty();
-            })) {
+            if ($conflictingCurriculumUnitSlots->isNotEmpty()) {
                 $validator->errors()->add("sessions.{$session['index']}.start_time", "Session {$row} overlaps with another timetable slot already assigned to one of the selected curriculum units.");
+            }
+
+            if ($overlappingSessions->isNotEmpty() && $mergeableSlots->isEmpty()) {
+                $occupiedExactSlot = $overlappingSessions->contains(fn (AcademicTimetable $timetable) => $this->isExactSlotMatch(
+                    $timetable,
+                    $trainerId,
+                    $lectureRoomId,
+                    $session
+                ));
+
+                if ($occupiedExactSlot) {
+                    $validator->errors()->add(
+                        "sessions.{$session['index']}.start_time",
+                        "Session {$row} already exists in that room, with that trainer, at that same time. A shared slot is only allowed when every selected session matches that occupied slot exactly."
+                    );
+                }
             }
         }
     }
@@ -186,5 +228,27 @@ class StoreAcademicTimetableRequest extends FormRequest
             ->filter(fn (AcademicTimetable $timetable) => (string) $timetable->start_time < $session['end'])
             ->filter(fn (AcademicTimetable $timetable) => (string) $timetable->end_time > $session['start'])
             ->values();
+    }
+
+    protected function canMergeIntoOccupiedSlot(
+        AcademicTimetable $timetable,
+        int $trainerId,
+        int $lectureRoomId,
+        array $session
+    ): bool {
+        return $this->isExactSlotMatch($timetable, $trainerId, $lectureRoomId, $session);
+    }
+
+    protected function isExactSlotMatch(
+        AcademicTimetable $timetable,
+        int $trainerId,
+        int $lectureRoomId,
+        array $session
+    ): bool {
+        return (int) $timetable->trainer_staff_id === $trainerId
+            && (int) $timetable->lecture_room_id === $lectureRoomId
+            && (string) $timetable->day_of_week === (string) Arr::get($session, 'day')
+            && substr((string) $timetable->start_time, 0, 5) === (string) Arr::get($session, 'start')
+            && substr((string) $timetable->end_time, 0, 5) === (string) Arr::get($session, 'end');
     }
 }

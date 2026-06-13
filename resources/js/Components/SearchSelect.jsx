@@ -23,6 +23,12 @@ export default function SearchSelect({
     const wrapperRef = useRef(null);
     const routeParamsKey = JSON.stringify(routeParams ?? {});
 
+    useEffect(() => {
+        if (!routeName) {
+            setOptions(defaultOptions);
+        }
+    }, [defaultOptions, routeName]);
+
     const fetchOptions = useCallback(
         async (text = "") => {
             if (!routeName || disabled) return;

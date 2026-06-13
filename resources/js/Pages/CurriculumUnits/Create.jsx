@@ -5,26 +5,28 @@ import InputLabel from "@/Components/InputLabel";
 import SearchSelect from "@/Components/SearchSelect";
 import TextInput from "@/Components/TextInput";
 
-export default function Create({ curriculum_mapping, selected_mapping_option }) {
+export default function Create({
+    curriculum_mapping,
+    selected_mapping_option,
+}) {
     const { data, setData, post, processing, errors } = useForm({
-        curriculum_mapping_id: selected_mapping_option?.id || curriculum_mapping?.id || "",
+        curriculum_mapping_id:
+            selected_mapping_option?.id || curriculum_mapping?.id || "",
         code: "",
         name: "",
         credit_factor: "",
         training_hours: "",
         description: "",
+        scope: "core",
         module_taught: "",
-        semester: "",
-        module: "",
-        is_compulsory: true,
-        sort_order: 0,
     });
 
     const selectedMappingLabel =
         selected_mapping_option?.name ||
         [
             curriculum_mapping?.curriculum?.name,
-            curriculum_mapping?.course?.display_name || curriculum_mapping?.course?.name,
+            curriculum_mapping?.course?.display_name ||
+                curriculum_mapping?.course?.name,
         ]
             .filter(Boolean)
             .join(" - ");
@@ -41,7 +43,7 @@ export default function Create({ curriculum_mapping, selected_mapping_option }) 
             <div className="mx-auto w-full max-w-7xl animate-in fade-in slide-in-from-bottom-4 duration-700">
                 <div className="overflow-hidden rounded-lg border border-zinc-100 bg-white shadow-sm">
                     <form className="space-y-6 p-8" onSubmit={submit}>
-                        <div className="rounded-xl border border-emerald-100 bg-emerald-50/60 p-4">
+                        <div className="rounded-xl border  p-4">
                             <InputLabel
                                 htmlFor="curriculum_mapping_id"
                                 value="Versioned Course"
@@ -50,12 +52,20 @@ export default function Create({ curriculum_mapping, selected_mapping_option }) 
                                 <SearchSelect
                                     value={data.curriculum_mapping_id}
                                     selectedLabel={selectedMappingLabel}
-                                    routeName="curriculum-mappings.search"
+                                    defaultOptions={
+                                        selected_mapping_option
+                                            ? [selected_mapping_option]
+                                            : []
+                                    }
+                                    routeName="courses.curriculum-mappings.search"
                                     preloadOptions
                                     minSearchLength={2}
                                     placeholder="Search active course by code, name, curriculum, or level..."
                                     onChange={(item) =>
-                                        setData("curriculum_mapping_id", item.id || "")
+                                        setData(
+                                            "curriculum_mapping_id",
+                                            item.id || "",
+                                        )
                                     }
                                     error={errors.curriculum_mapping_id}
                                 />
@@ -78,10 +88,15 @@ export default function Create({ curriculum_mapping, selected_mapping_option }) 
                                     type="text"
                                     className="mt-1 block w-full"
                                     value={data.code}
-                                    onChange={(e) => setData("code", e.target.value)}
+                                    onChange={(e) =>
+                                        setData("code", e.target.value)
+                                    }
                                     required
                                 />
-                                <InputError message={errors.code} className="mt-2" />
+                                <InputError
+                                    message={errors.code}
+                                    className="mt-2"
+                                />
                             </div>
 
                             <div>
@@ -91,20 +106,30 @@ export default function Create({ curriculum_mapping, selected_mapping_option }) 
                                     type="text"
                                     className="mt-1 block w-full"
                                     value={data.name}
-                                    onChange={(e) => setData("name", e.target.value)}
+                                    onChange={(e) =>
+                                        setData("name", e.target.value)
+                                    }
                                     required
                                 />
-                                <InputError message={errors.name} className="mt-2" />
+                                <InputError
+                                    message={errors.name}
+                                    className="mt-2"
+                                />
                             </div>
 
                             <div>
-                                <InputLabel htmlFor="credit_factor" value="Credit Factor" />
+                                <InputLabel
+                                    htmlFor="credit_factor"
+                                    value="Credit Factor"
+                                />
                                 <TextInput
                                     id="credit_factor"
                                     type="number"
                                     className="mt-1 block w-full"
                                     value={data.credit_factor}
-                                    onChange={(e) => setData("credit_factor", e.target.value)}
+                                    onChange={(e) =>
+                                        setData("credit_factor", e.target.value)
+                                    }
                                     required
                                     min="1"
                                 />
@@ -115,13 +140,21 @@ export default function Create({ curriculum_mapping, selected_mapping_option }) 
                             </div>
 
                             <div>
-                                <InputLabel htmlFor="training_hours" value="Training Hours" />
+                                <InputLabel
+                                    htmlFor="training_hours"
+                                    value="Training Hours"
+                                />
                                 <TextInput
                                     id="training_hours"
                                     type="number"
                                     className="mt-1 block w-full"
                                     value={data.training_hours}
-                                    onChange={(e) => setData("training_hours", e.target.value)}
+                                    onChange={(e) =>
+                                        setData(
+                                            "training_hours",
+                                            e.target.value,
+                                        )
+                                    }
                                     required
                                     min="1"
                                 />
@@ -132,13 +165,42 @@ export default function Create({ curriculum_mapping, selected_mapping_option }) 
                             </div>
 
                             <div>
-                                <InputLabel htmlFor="module_taught" value="Module Taught" />
+                                <InputLabel
+                                    htmlFor="scope"
+                                    value="Unit Scope"
+                                />
+                                <select
+                                    id="scope"
+                                    className="mt-1 block w-full rounded-md border-zinc-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
+                                    value={data.scope}
+                                    onChange={(e) =>
+                                        setData("scope", e.target.value)
+                                    }
+                                    required
+                                >
+                                    <option value="basic">Basic</option>
+                                    <option value="common">Common</option>
+                                    <option value="core">Core</option>
+                                </select>
+                                <InputError
+                                    message={errors.scope}
+                                    className="mt-2"
+                                />
+                            </div>
+
+                            <div>
+                                <InputLabel
+                                    htmlFor="module_taught"
+                                    value="Module Taught"
+                                />
                                 <TextInput
                                     id="module_taught"
                                     type="number"
                                     className="mt-1 block w-full"
                                     value={data.module_taught}
-                                    onChange={(e) => setData("module_taught", e.target.value)}
+                                    onChange={(e) =>
+                                        setData("module_taught", e.target.value)
+                                    }
                                     required
                                     min="1"
                                     max="6"
@@ -149,80 +211,34 @@ export default function Create({ curriculum_mapping, selected_mapping_option }) 
                                 />
                             </div>
 
-                            <div>
-                                <InputLabel htmlFor="semester" value="Semester (Optional)" />
-                                <TextInput
-                                    id="semester"
-                                    type="number"
-                                    className="mt-1 block w-full"
-                                    value={data.semester}
-                                    onChange={(e) => setData("semester", e.target.value)}
-                                    min="1"
-                                    max="12"
-                                />
-                                <InputError message={errors.semester} className="mt-2" />
-                            </div>
-
-                            <div>
-                                <InputLabel htmlFor="module" value="Module Slot (Optional)" />
-                                <TextInput
-                                    id="module"
-                                    type="number"
-                                    className="mt-1 block w-full"
-                                    value={data.module}
-                                    onChange={(e) => setData("module", e.target.value)}
-                                    min="1"
-                                    max="6"
-                                />
-                                <InputError message={errors.module} className="mt-2" />
-                            </div>
-
-                            <div>
-                                <InputLabel htmlFor="sort_order" value="Sort Order" />
-                                <TextInput
-                                    id="sort_order"
-                                    type="number"
-                                    className="mt-1 block w-full"
-                                    value={data.sort_order}
-                                    onChange={(e) => setData("sort_order", e.target.value)}
-                                    min="0"
-                                />
-                                <InputError message={errors.sort_order} className="mt-2" />
-                            </div>
-
-                            <div className="flex items-center gap-2 pt-8">
-                                <input
-                                    id="is_compulsory"
-                                    type="checkbox"
-                                    className="rounded border-zinc-300 text-emerald-600 shadow-sm focus:ring-emerald-500"
-                                    checked={data.is_compulsory}
-                                    onChange={(e) => setData("is_compulsory", e.target.checked)}
-                                />
-                                <InputLabel htmlFor="is_compulsory" value="Compulsory Unit" />
-                            </div>
                         </div>
 
                         <div>
-                            <InputLabel htmlFor="description" value="Description (Optional)" />
+                            <InputLabel
+                                htmlFor="description"
+                                value="Description (Optional)"
+                            />
                             <textarea
                                 id="description"
                                 className="mt-1 block w-full rounded-md border-zinc-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
                                 rows="3"
                                 value={data.description}
-                                onChange={(e) => setData("description", e.target.value)}
+                                onChange={(e) =>
+                                    setData("description", e.target.value)
+                                }
                             />
-                            <InputError message={errors.description} className="mt-2" />
+                            <InputError
+                                message={errors.description}
+                                className="mt-2"
+                            />
                         </div>
 
                         <div className="flex justify-end gap-x-4 border-t border-zinc-100 pt-6">
                             <Link
-                                href={route(
-                                    "units.index",
-                                    {
-                                        curriculum_mapping_id:
-                                            data.curriculum_mapping_id || "",
-                                    },
-                                )}
+                                href={route("units.index", {
+                                    curriculum_mapping_id:
+                                        data.curriculum_mapping_id || "",
+                                })}
                                 className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 shadow-sm hover:bg-zinc-50"
                             >
                                 Cancel

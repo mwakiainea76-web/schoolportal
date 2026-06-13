@@ -185,10 +185,12 @@ class AcademicTimetableController extends Controller
 
         return inertia('Academic/Timetables/Create', [
             'departments' => $this->departmentOptions(),
+            'course_options' => $this->courseMappingOptions(),
             'trainers' => $this->trainerOptions(),
             'lecture_rooms' => $this->lectureRoomOptions(),
             'curriculum_units' => $this->curriculumUnitOptions(),
             'days' => $this->dayOptions(),
+            'is_admin' => (bool) $request->user()?->hasRole('admin'),
             'current_department_id' => $currentDepartmentId ? (string) $currentDepartmentId : '',
             'selected_department_id' => $selectedDepartmentId ? (string) $selectedDepartmentId : '',
         ]);
@@ -220,28 +222,16 @@ class AcademicTimetableController extends Controller
         $department = $request->user()?->staff?->department;
         abort_unless($department, 403, 'Your staff profile is not linked to a department.');
 
-        $selectedCurriculumMappingId = $request->integer('curriculum_mapping_id') ?: null;
-        $selectedModuleNumber = $request->integer('module_number') ?: null;
-
         return inertia('Academic/Timetables/CreateHod', [
             'department' => [
                 'id' => (string) $department->id,
                 'name' => $department->name,
             ],
-            'course_options' => $this->hodcourseOptions((int) $department->id, $selectedCurriculumMappingId),
-            'modules' => $this->hodModuleOptions((int) $department->id, $selectedCurriculumMappingId),
-            'available_units' => $this->hodAvailableUnitOptions(
-                (int) $department->id,
-                $selectedCurriculumMappingId,
-                $selectedModuleNumber
-            ),
-            'trainers' => $this->trainerOptions((int) $department->id),
+            'course_options' => $this->courseMappingOptions((int) $department->id),
+            'curriculum_units' => $this->curriculumUnitOptions((int) $department->id),
+            'trainers' => $this->trainerOptions(),
             'lecture_rooms' => $this->lectureRoomOptions((int) $department->id),
             'days' => $this->dayOptions(),
-            'filters' => [
-                'curriculum_mapping_id' => $selectedCurriculumMappingId ? (string) $selectedCurriculumMappingId : '',
-                'module_number' => $selectedModuleNumber ? (string) $selectedModuleNumber : '',
-            ],
         ]);
     }
 
@@ -257,10 +247,8 @@ class AcademicTimetableController extends Controller
 
         $this->persistTimetableSessions($validated, $actorStaffId, $currentSession->id);
 
-        return to_route('academic.timetables.hod.create', [
-            'curriculum_mapping_id' => $validated['curriculum_mapping_id'],
-            'module_number' => $validated['module_number'],
-        ])->with('success', 'Timetable sessions created successfully.');
+        return to_route('academic.timetables.hod.create')
+            ->with('success', 'Timetable sessions created successfully.');
     }
 
     public function searchHodcourses(Request $request)
@@ -513,29 +501,82 @@ class AcademicTimetableController extends Controller
 
     protected function curriculumUnitOptions(?int $departmentId = null): array
     {
+        $currentSessionId = $this->supportsAcademicSessionScoping()
+            ? $this->currentAcademicSession()?->id
+            : null;
+
         return Unit::query()
             ->with([
                 'curriculumMapping.course:id,name,department_id',
                 'curriculumMapping.curriculum:id,name',
+                'timetableSessions' => fn ($query) => $query
+                    ->when($currentSessionId, fn ($builder) => $builder->where('academic_timetables.academic_session_id', $currentSessionId))
+                    ->with([
+                        'trainer:id,first_name,last_name,other_name,staff_number',
+                        'lectureRoom:id,name,code',
+                    ]),
             ])
             ->when($departmentId, function ($query, $departmentId) {
                 $query->whereHas('curriculumMapping.course', fn ($courseQuery) => $courseQuery->where('department_id', $departmentId));
             })
             ->get()
-            ->map(fn (Unit $unit) => [
-                'id' => (string) $unit->id,
-                'name' => ($unit->curriculumMapping?->curriculum?->name ?? 'No Version').
-                    ' / '.
-                    ($unit->curriculumMapping?->course?->name ?? 'No Course').
-                    ' / Module '.
-                    ($unit->module_taught ?? '').
-                    ' / '.
-                    ($unit->code ?? '').
-                    ' - '.
-                    ($unit->name ?? 'No Unit'),
-                'department_id' => (string) ($unit->curriculumMapping?->course?->department_id ?? ''),
-            ])
+            ->map(function (Unit $unit) {
+                $assignedTimetables = $unit->timetableSessions
+                    ->map(fn (AcademicTimetable $timetable) => [
+                        'id' => (string) $timetable->id,
+                        'trainer_staff_id' => $timetable->trainer_staff_id ? (string) $timetable->trainer_staff_id : '',
+                        'trainer_name' => $timetable->trainer?->full_name,
+                        'lecture_room_id' => $timetable->lecture_room_id ? (string) $timetable->lecture_room_id : '',
+                        'lecture_room_name' => trim(($timetable->lectureRoom?->code ?? '').' - '.($timetable->lectureRoom?->name ?? ''), ' -'),
+                        'day_of_week' => (string) $timetable->day_of_week,
+                        'day_label' => ucfirst((string) $timetable->day_of_week),
+                        'start_time' => substr((string) $timetable->start_time, 0, 5),
+                        'end_time' => substr((string) $timetable->end_time, 0, 5),
+                        'time_range' => substr((string) $timetable->start_time, 0, 5).' - '.substr((string) $timetable->end_time, 0, 5),
+                    ])
+                    ->values()
+                    ->all();
+
+                return [
+                    'assigned_timetable' => $assignedTimetables[0] ?? null,
+                    'assigned_timetables' => $assignedTimetables,
+                    'id' => (string) $unit->id,
+                    'curriculum_mapping_id' => (string) $unit->curriculum_mapping_id,
+                    'module_taught' => $unit->module_taught ? (string) $unit->module_taught : '',
+                    'scope' => $unit->scope ?? 'core',
+                    'name' => trim(
+                        ($unit->code ?? 'No Code').
+                        ' - '.
+                        ($unit->name ?? 'No Unit').
+                        ' - Module '.
+                        ($unit->module_taught ?? '')
+                    ),
+                    'department_id' => (string) ($unit->curriculumMapping?->course?->department_id ?? ''),
+                ];
+            })
             ->sortBy('name')
+            ->values()
+            ->all();
+    }
+
+    protected function courseMappingOptions(?int $departmentId = null): array
+    {
+        return CurriculumMapping::query()
+            ->with([
+                'course:id,name,department_id',
+                'curriculum:id,name,is_active',
+            ])
+            ->where('is_active', true)
+            ->whereHas('curriculum', fn ($query) => $query->where('is_active', true))
+            ->whereHas('units')
+            ->when($departmentId, fn ($query) => $query->whereHas('course', fn ($courseQuery) => $courseQuery->where('department_id', $departmentId)))
+            ->latest('curriculum_mappings.id')
+            ->get(['id', 'course_id', 'curriculum_id'])
+            ->map(fn (CurriculumMapping $mapping) => [
+                'id' => (string) $mapping->id,
+                'department_id' => (string) ($mapping->course?->department_id ?? ''),
+                'name' => trim(($mapping->curriculum?->name ?? '').' - '.($mapping->course?->name ?? ''), ' -'),
+            ])
             ->values()
             ->all();
     }
@@ -645,55 +686,6 @@ class AcademicTimetableController extends Controller
                 'id' => (string) (int) $moduleNumber,
                 'name' => 'Module '.(int) $moduleNumber,
             ])
-            ->values()
-            ->all();
-    }
-
-    protected function hodAvailableUnitOptions(
-        int $departmentId,
-        ?int $curriculumMappingId,
-        ?int $moduleNumber
-    ): array {
-        if (! $curriculumMappingId || ! $moduleNumber) {
-            return [];
-        }
-
-        $currentSessionId = $this->supportsAcademicSessionScoping()
-            ? $this->currentAcademicSession()?->id
-            : null;
-
-        return Unit::query()
-            ->with([
-                'curriculumMapping.course:id,name,department_id',
-                'curriculumMapping.curriculum:id,name,is_active',
-            ])
-            ->whereDoesntHave('timetableSessions', function ($query) use ($currentSessionId) {
-                if ($currentSessionId) {
-                    $query->where('academic_timetables.academic_session_id', $currentSessionId);
-                }
-            })
-            ->where('module_taught', $moduleNumber)
-            ->whereHas('curriculumMapping', function ($query) use ($departmentId, $curriculumMappingId) {
-                $query
-                    ->where('is_active', true)
-                    ->where('id', $curriculumMappingId)
-                    ->whereHas('course', fn ($courseQuery) => $courseQuery->where('department_id', $departmentId))
-                    ->whereHas('curriculum', fn ($curriculumQuery) => $curriculumQuery->where('is_active', true));
-            })
-            ->get()
-            ->map(fn (Unit $unit) => [
-                'id' => (string) $unit->id,
-                'name' => ($unit->curriculumMapping?->curriculum?->name ?? 'No Version').
-                    ' / '.
-                    ($unit->curriculumMapping?->course?->name ?? 'No Course').
-                    ' / Module '.
-                    ($unit->module_taught ?? '').
-                    ' / '.
-                    ($unit->code ?? '').
-                    ' - '.
-                    ($unit->name ?? 'No Unit'),
-            ])
-            ->sortBy('name')
             ->values()
             ->all();
     }

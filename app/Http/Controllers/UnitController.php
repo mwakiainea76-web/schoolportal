@@ -23,6 +23,7 @@ class UnitController extends Controller
         $filters = $request->only([
             'unit_id',
             'module_taught',
+            'scope',
             'course_id',
             'curriculum_mapping_id',
             'sort',
@@ -63,6 +64,7 @@ class UnitController extends Controller
             })
             ->when($request->filled('unit_id'), fn ($query) => $query->whereKey($request->integer('unit_id')))
             ->when($request->filled('module_taught'), fn ($query) => $query->where('module_taught', $request->integer('module_taught')))
+            ->when($request->filled('scope'), fn ($query) => $query->where('scope', $request->string('scope')->toString()))
             ->when($selectedMappingId, fn ($query) => $query->where('curriculum_mapping_id', $selectedMappingId))
             ->when($request->filled('course_id'), function ($query) use ($request) {
                 $query->whereHas('curriculumMapping.course', fn ($courseQuery) => $courseQuery->whereKey($request->integer('course_id')));
@@ -271,6 +273,9 @@ class UnitController extends Controller
         return [
             'unit' => $unit
                 ? trim($unit->code.' - '.$unit->name.' (Module '.$unit->module_taught.')', ' -')
+                : null,
+            'scope' => ($filters['scope'] ?? '') !== ''
+                ? ucfirst((string) $filters['scope'])
                 : null,
             'course' => $course?->display_name,
             'curriculum_mapping' => $mapping

@@ -62,6 +62,14 @@ return new class extends Migration
             $table->index('department_id');
             $table->index('staff_status');
         });
+
+        Schema::table('departments', function (Blueprint $table) {
+            $table->foreign('hod_staff_id')
+                ->references('id')
+                ->on('staffs')
+                ->nullOnDelete()
+                ->cascadeOnUpdate();
+        });
     }
 
     /**
@@ -69,6 +77,10 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::table('departments', function (Blueprint $table) {
+            $table->dropForeign(['hod_staff_id']);
+        });
+
         Schema::dropIfExists('staffs');
     }
 };
