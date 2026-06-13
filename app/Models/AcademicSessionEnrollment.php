@@ -31,45 +31,40 @@ class AcademicSessionEnrollment extends Model
     protected $casts = [
         'module' => 'integer',
         'year_of_study' => 'integer',
+        'session_number' => 'integer',
     ];
 
     /**
-     * Boot method to set year_of_study automatically based on session_No
-     * Every 3 sessions = 1 year of study
-     * Sessions 1-3 = Year 1, Sessions 4-6 = Year 2, etc.
+     * Keep module-derived study progress consistent at the model level.
      */
     protected static function booted()
     {
         static::creating(function ($enrollment) {
-            if ($enrollment->academic_session_id && ! $enrollment->year_of_study) {
-                $enrollment->year_of_study = $enrollment->calculateYearOfStudy();
+            if ($enrollment->module) {
+                $enrollment->syncStudyProgressFromModule();
             }
         });
 
         static::updating(function ($enrollment) {
-            if ($enrollment->isDirty('academic_session_id') && ! $enrollment->isDirty('year_of_study')) {
-                $enrollment->year_of_study = $enrollment->calculateYearOfStudy();
+            if ($enrollment->isDirty('module') && $enrollment->module) {
+                $enrollment->syncStudyProgressFromModule();
             }
         });
     }
 
-    /**
-     * Calculate year of study from academic session's session number.
-     * Formula: year = ceil(session_No / 3)
-     */
-    public function calculateYearOfStudy(): int
+    public function syncStudyProgressFromModule(): void
     {
-        if (! $this->academicSession) {
-            $session = AcademicSession::find($this->academic_session_id);
-        } else {
-            $session = $this->academicSession;
+        $moduleNumber = (int) $this->module;
+
+        if ($moduleNumber < 1) {
+            $this->year_of_study = 1;
+            $this->session_number = 1;
+
+            return;
         }
 
-        if (! $session || ! $session->session_No) {
-            return 1; // Default to year 1 if no session found
-        }
-
-        return (int) ceil($session->session_No / 3);
+        $this->year_of_study = (int) intdiv($moduleNumber - 1, 3) + 1;
+        $this->session_number = (int) (($moduleNumber - 1) % 3) + 1;
     }
 
     public function courseEnrollment()

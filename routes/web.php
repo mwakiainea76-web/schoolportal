@@ -233,11 +233,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
                 Route::prefix('enrollments')->name('enrollments.')->group(function () {
                     Route::get('/', [AcademicSessionEnrollmentController::class, 'index'])->name('index');
-                    Route::get('/create', [AcademicSessionEnrollmentController::class, 'create'])->name('create');
-                    Route::post('/', [AcademicSessionEnrollmentController::class, 'store'])->name('store');
                     Route::get('/{academicSessionEnrollment}/edit', [AcademicSessionEnrollmentController::class, 'edit'])->name('edit');
                     Route::patch('/{academicSessionEnrollment}', [AcademicSessionEnrollmentController::class, 'update'])->name('update');
                     Route::delete('/{academicSessionEnrollment}', [AcademicSessionEnrollmentController::class, 'destroy'])->name('destroy');
+
+                    Route::middleware('role:admin')->group(function () {
+                        Route::get('/create', [AcademicSessionEnrollmentController::class, 'create'])->name('create');
+                        Route::post('/', [AcademicSessionEnrollmentController::class, 'store'])->name('store');
+                    });
                 });
             });
 
@@ -433,6 +436,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::middleware('role:admin')->group(function () {
                 Route::get('/reset-password', [AdminPasswordResetController::class, 'createStudent'])->name('password-reset.create');
                 Route::post('/reset-password', [AdminPasswordResetController::class, 'storeStudent'])->name('password-reset.store');
+                Route::get('/session-enrollment', [AcademicSessionEnrollmentController::class, 'create'])->name('session-enrollment.create');
+                Route::post('/session-enrollment', [AcademicSessionEnrollmentController::class, 'store'])->name('session-enrollment.store');
                 Route::get('/course-change', [StudentCourseChangeController::class, 'index'])->name('course-change.index');
                 Route::post('/course-change', [StudentCourseChangeController::class, 'store'])->name('course-change.store');
                 Route::get('/{student}/admission-letter', [StudentController::class, 'admissionLetter'])->name('admission-letter');

@@ -74,7 +74,6 @@ const ACADEMIC_ACTIVE = [
  * STAFF NAVIGATION
  */
 export const STAFF_NAV_ITEMS = [
-
     // --- Courses & Units (standalone) ---
     {
         key: "courses",
@@ -84,7 +83,7 @@ export const STAFF_NAV_ITEMS = [
         permissions: ["courses.view"],
         roles: ["hod"],
         children: [
-              {
+            {
                 key: "curriculums-group",
                 label: "Curriculums",
                 exceptRoles: ["hod"],
@@ -99,7 +98,6 @@ export const STAFF_NAV_ITEMS = [
                         fallback: "/curriculums/create",
                         label: "Add Curriculum",
                     },
-                 
                 ],
             },
             {
@@ -122,7 +120,7 @@ export const STAFF_NAV_ITEMS = [
                         label: "Add Course",
                         exceptRoles: ["hod"],
                     },
-                       {
+                    {
                         routeName: "courses.curriculum-mappings.index",
                         fallback: "/courses/curriculum-mappings",
                         label: "Curriculum Mapping",
@@ -136,7 +134,7 @@ export const STAFF_NAV_ITEMS = [
                     },
                 ],
             },
-          
+
             {
                 key: "units-group",
                 label: "Units",
@@ -282,8 +280,6 @@ export const STAFF_NAV_ITEMS = [
         ],
     },
 
-  
-
     // --- Analytics ---
     {
         key: "analytics",
@@ -320,6 +316,12 @@ export const STAFF_NAV_ITEMS = [
                 permission: "students.create",
             },
             {
+                routeName: "students.session-enrollment.create",
+                fallback: "/students/session-enrollment",
+                label: "Session Enrolment",
+                roles: ["admin"],
+            },
+            {
                 routeName: "students.password-reset.create",
                 fallback: "/students/reset-password",
                 label: "Reset Password",
@@ -328,7 +330,7 @@ export const STAFF_NAV_ITEMS = [
             {
                 routeName: "students.course-change.index",
                 fallback: "/students/course-change",
-                label: "Transfers",
+                label: "Course Transfer",
             },
         ],
     },
@@ -346,17 +348,37 @@ export const STAFF_NAV_ITEMS = [
                 key: "billing-ops",
                 label: "Billing",
                 children: [
-                    { routeName: "billing.invoices.index", fallback: "/billing/invoices", label: "Invoices" },
-                    { routeName: "billing.manual.index", fallback: "/billing/manual-operations", label: "Direct Billing" },
-                    { routeName: "billing.ledger.index", fallback: "/billing/ledger", label: "Financial Ledger" },
+                    {
+                        routeName: "billing.invoices.index",
+                        fallback: "/billing/invoices",
+                        label: "Invoices",
+                    },
+                    {
+                        routeName: "billing.manual.index",
+                        fallback: "/billing/manual-operations",
+                        label: "Direct Billing",
+                    },
+                    {
+                        routeName: "billing.ledger.index",
+                        fallback: "/billing/ledger",
+                        label: "Financial Ledger",
+                    },
                 ],
             },
             {
                 key: "fee-setup",
                 label: "Fee Setup",
                 children: [
-                    { routeName: "fees.plans.index", fallback: "/fees/plans", label: "Fee Plans" },
-                    { routeName: "fees.assignments.index", fallback: "/fees/assignments", label: "Fee Assignments" },
+                    {
+                        routeName: "fees.plans.index",
+                        fallback: "/fees/plans",
+                        label: "Fee Plans",
+                    },
+                    {
+                        routeName: "fees.assignments.index",
+                        fallback: "/fees/assignments",
+                        label: "Fee Assignments",
+                    },
                 ],
             },
         ],
@@ -431,7 +453,11 @@ export const STAFF_NAV_ITEMS = [
         permissions: ["staffs.view"],
         roles: ["hod"],
         children: [
-            { routeName: "staffs.index", fallback: "/staffs", label: "Staff Directory" },
+            {
+                routeName: "staffs.index",
+                fallback: "/staffs",
+                label: "Staff Directory",
+            },
             {
                 routeName: "staffs.create",
                 fallback: "/staffs/create",
@@ -446,7 +472,7 @@ export const STAFF_NAV_ITEMS = [
             },
         ],
     },
-  // --- Access Control (standalone) ---
+    // --- Access Control (standalone) ---
     {
         key: "access-control",
         label: "Access Control",

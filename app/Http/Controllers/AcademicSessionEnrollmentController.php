@@ -152,7 +152,8 @@ class AcademicSessionEnrollmentController extends Controller
         return Inertia::render('AcademicSessionEnrollments/Create', [
             'activeSession' => $activeSession ? [
                 'id' => $activeSession->id,
-                'name' => "{$activeSession->academicYear->academic_year} - Session {$activeSession->session_No}",
+                'name' => "{$activeSession->academicYear->academic_year} - Session ".($activeSession->session_number ?? $activeSession->session_No),
+                'session_number' => (int) ($activeSession->session_number ?? $activeSession->session_No ?? 1),
             ] : null,
         ]);
     }
@@ -167,23 +168,32 @@ class AcademicSessionEnrollmentController extends Controller
                 'admission_number' => "No student found with admission number '{$request->admission_number}'.",
             ]);
         }
-        $activeSession = AcademicSession::query('id', 'academic_year_id', 'session_number', 'session_No')
+        $activeSession = AcademicSession::query()
             ->where('id', $request->active_session_id)
             ->first();
 
         try {
+            $moduleNumber = (int) $request->integer('module_number');
+            $studyProgress = $this->deriveStudyProgressFromModule($moduleNumber);
 
-            $enrollment = $this->enrollStudentIntoActiveSession($student, auth()->user()?->staff?->id);
+            $enrollment = $this->enrollStudentIntoConfiguredSession(
+                $student,
+                $activeSession,
+                $moduleNumber,
+                $studyProgress['year_of_study'],
+                $studyProgress['session_number'],
+                auth()->user()?->staff?->id
+            );
         } catch (ValidationException $e) {
-            return back()->withInput()->withErrors($this->normalizeSessionRegistrationErrors($e));
+            return back()->withInput()->withErrors($e->errors());
         }
 
         $activeSession = $enrollment->academicSession;
         $sessionNumber = $enrollment->session_number;
 
         return redirect()
-            ->route('academic.sessions.enrollments.index')
-            ->with('success', "Student successfully enrolled in {$activeSession->academicYear->academic_year} - Session {$sessionNumber}. The session invoice has been generated.");
+            ->route('students.session-enrollment.create')
+            ->with('success', "Student successfully enrolled in {$activeSession->academicYear->academic_year} - Session {$sessionNumber} for module {$enrollment->module}. The session invoice has been generated.");
     }
 
     public function registerCurrentStudent(Request $request)
@@ -281,16 +291,6 @@ class AcademicSessionEnrollmentController extends Controller
 
     protected function enrollStudentIntoActiveSession(Student $student, ?int $creatorStaffId = null): AcademicSessionEnrollment
     {
-        $courseEnrollment = CourseEnrollment::where('student_id', $student->id)
-            ->latest()
-            ->first();
-
-        if (! $courseEnrollment) {
-            throw ValidationException::withMessages([
-                'session_registration' => "Student '{$student->admission_number}' is not enrolled in any course.",
-            ]);
-        }
-
         $activeSession = AcademicSession::with('academicYear')
             ->where('is_active', true)
             ->first();
@@ -301,31 +301,81 @@ class AcademicSessionEnrollmentController extends Controller
             ]);
         }
 
+        $moduleNumber = max(1, (int) ($student->current_module ?: 1));
+        $studyProgress = $this->deriveStudyProgressFromModule($moduleNumber);
+
+        return $this->enrollStudentIntoConfiguredSession(
+            $student,
+            $activeSession,
+            $moduleNumber,
+            $studyProgress['year_of_study'],
+            $studyProgress['session_number'],
+            $creatorStaffId
+        );
+    }
+
+    protected function enrollStudentIntoConfiguredSession(
+        Student $student,
+        ?AcademicSession $activeSession,
+        int $moduleNumber,
+        int $yearOfStudy,
+        int $sessionNumber,
+        ?int $creatorStaffId = null
+    ): AcademicSessionEnrollment {
+        $courseEnrollment = CourseEnrollment::where('student_id', $student->id)
+            ->latest()
+            ->first();
+
+        if (! $courseEnrollment) {
+            throw ValidationException::withMessages([
+                'session_registration' => "Student '{$student->admission_number}' is not enrolled in any course.",
+            ]);
+        }
+
+        if (! $activeSession) {
+            throw ValidationException::withMessages([
+                'session_registration' => 'No active academic session found. Please contact the school office.',
+            ]);
+        }
+
+        $activeSessionNumber = (int) ($activeSession->session_number ?? $activeSession->session_No ?? 1);
+
+        if ($sessionNumber !== $activeSessionNumber) {
+            throw ValidationException::withMessages([
+                'module_number' => "Module {$moduleNumber} maps to Session {$sessionNumber}, but the current active session is Session {$activeSessionNumber}.",
+            ]);
+        }
+
         $alreadyEnrolled = AcademicSessionEnrollment::where('course_enrollment_id', $courseEnrollment->id)
             ->where('academic_session_id', $activeSession->id)
             ->exists();
 
         if ($alreadyEnrolled) {
             throw ValidationException::withMessages([
-                'session_registration' => "You are already registered for {$activeSession->academicYear->academic_year} - Session {$activeSession->session_No}.",
+                'session_registration' => "You are already registered for {$activeSession->academicYear->academic_year} - Session {$activeSessionNumber}.",
             ]);
         }
 
-        $sessionNumber = $activeSession->session_number ?? $activeSession->session_No ?? 1;
-
-        if ($sessionNumber > 3) {
-            throw ValidationException::withMessages([
-                'session_registration' => 'An academic year can only have 3 modules/sessions.',
-            ]);
-        }
-
-        return DB::transaction(function () use ($courseEnrollment, $activeSession, $sessionNumber, $creatorStaffId) {
+        return DB::transaction(function () use (
+            $courseEnrollment,
+            $activeSession,
+            $student,
+            $moduleNumber,
+            $yearOfStudy,
+            $sessionNumber,
+            $creatorStaffId
+        ) {
             $enrollment = AcademicSessionEnrollment::create([
                 'course_enrollment_id' => $courseEnrollment->id,
                 'academic_session_id' => $activeSession->id,
-                'module' => $sessionNumber,
+                'module' => $moduleNumber,
+                'year_of_study' => $yearOfStudy,
                 'session_number' => $sessionNumber,
                 'status' => 'active',
+            ]);
+
+            $student->update([
+                'current_module' => (string) $moduleNumber,
             ]);
 
             $this->billingService->createInvoiceForEnrollment(
@@ -335,6 +385,14 @@ class AcademicSessionEnrollmentController extends Controller
 
             return $enrollment;
         });
+    }
+
+    protected function deriveStudyProgressFromModule(int $moduleNumber): array
+    {
+        return [
+            'year_of_study' => (int) intdiv($moduleNumber - 1, 3) + 1,
+            'session_number' => (int) (($moduleNumber - 1) % 3) + 1,
+        ];
     }
 
     protected function registerUnitsForCurrentStudent(Student $student, \Illuminate\Support\Collection $selectedUnitIds): array

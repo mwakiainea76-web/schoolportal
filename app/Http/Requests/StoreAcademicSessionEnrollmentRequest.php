@@ -25,6 +25,8 @@ class StoreAcademicSessionEnrollmentRequest extends FormRequest
 
         return [
             'admission_number' => ['required', 'string', 'exists:students,admission_number'],
+            'active_session_id' => ['required', 'exists:academic_sessions,id'],
+            'module_number' => ['required', 'integer', 'min:1'],
         ];
 
     }
