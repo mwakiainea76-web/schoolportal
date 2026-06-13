@@ -218,12 +218,20 @@ export default function StudentDashboard({ dashboard, fullName }) {
                                 Units assigned to your current module.
                             </p>
                         </div>
-                        <Link
-                            href={route("student.course-units.index")}
-                            className="text-sm font-medium text-emerald-700 transition hover:text-emerald-800"
-                        >
-                            View all units
-                        </Link>
+                        <div className="flex gap-4">
+                            <Link
+                                href={route("student.registered-units.index")}
+                                className="text-sm font-medium text-emerald-700 transition hover:text-emerald-800"
+                            >
+                                Registered Units
+                            </Link>
+                            <Link
+                                href={route("student.course-units.index")}
+                                className="text-sm font-medium text-zinc-500 transition hover:text-zinc-700"
+                            >
+                                All Units
+                            </Link>
+                        </div>
                     </div>
 
                     <div className="mt-6">

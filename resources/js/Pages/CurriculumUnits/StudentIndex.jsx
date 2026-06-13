@@ -26,6 +26,13 @@ export default function StudentIndex({ course, units_by_module }) {
                     >
                         Back to dashboard
                     </Link>
+
+                    <Link
+                        href={route("student.registered-units.index")}
+                        className="text-sm font-medium text-zinc-600 transition hover:text-zinc-900"
+                    >
+                        View recently registered units
+                    </Link>
                 </div>
 
                 <div className="mt-6 space-y-6">

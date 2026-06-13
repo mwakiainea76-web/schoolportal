@@ -516,6 +516,11 @@ export const STUDENT_NAV_ITEMS = [
             {
                 routeName: "student.course-units.index",
                 fallback: "/student/course-units",
+                label: "All Units",
+            },
+            {
+                routeName: "student.registered-units.index",
+                fallback: "/student/registered-units",
                 label: "Registered Units",
             },
             {

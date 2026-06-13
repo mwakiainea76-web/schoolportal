@@ -120,6 +120,36 @@ class UnitController extends Controller
         ]);
     }
 
+    public function registeredUnitsIndex(Request $request)
+    {
+        $student = $request->user()?->student;
+        $latestSessionEnrollment = $this->studentAcademicContextService->latestSessionEnrollmentForStudent($student);
+
+        $registeredUnits = $latestSessionEnrollment
+            ? $latestSessionEnrollment->unitRegistrations()
+                ->with('curriculumUnit')
+                ->get()
+                ->pluck('curriculumUnit')
+                ->filter()
+            : collect();
+
+        return inertia('CurriculumUnits/RegisteredUnits', [
+            'session' => $latestSessionEnrollment ? [
+                'name' => $latestSessionEnrollment->academicSession?->display_name,
+                'module' => $latestSessionEnrollment->module,
+                'year_of_study' => $latestSessionEnrollment->year_of_study,
+            ] : null,
+            'units' => $registeredUnits->map(fn (Unit $unit) => [
+                'id' => $unit->id,
+                'code' => $unit->code,
+                'name' => $unit->name,
+                'credit_factor' => $unit->credit_factor,
+                'training_hours' => $unit->training_hours,
+                'module_taught' => $unit->module_taught,
+            ])->values(),
+        ]);
+    }
+
     public function create(Request $request)
     {
         abort_if($this->shouldScopeToHodDepartment($request), 403);
