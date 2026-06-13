@@ -10,14 +10,24 @@ function StudentIndex({ course, units_by_module }) {
         /* @__PURE__ */ jsx("h1", { className: "mt-3 text-3xl font-bold tracking-tight", children: course?.name ?? "Course not assigned" }),
         /* @__PURE__ */ jsx("p", { className: "mt-2 text-sm text-slate-300", children: course?.version ?? "Course version not assigned" })
       ] }),
-      /* @__PURE__ */ jsx("div", { className: "mt-6 flex items-center justify-between", children: /* @__PURE__ */ jsx(
-        Link,
-        {
-          href: route("dashboard"),
-          className: "text-sm font-medium text-emerald-700 transition hover:text-emerald-800",
-          children: "Back to dashboard"
-        }
-      ) }),
+      /* @__PURE__ */ jsxs("div", { className: "mt-6 flex items-center justify-between", children: [
+        /* @__PURE__ */ jsx(
+          Link,
+          {
+            href: route("dashboard"),
+            className: "text-sm font-medium text-emerald-700 transition hover:text-emerald-800",
+            children: "Back to dashboard"
+          }
+        ),
+        /* @__PURE__ */ jsx(
+          Link,
+          {
+            href: route("student.registered-units.index"),
+            className: "text-sm font-medium text-zinc-600 transition hover:text-zinc-900",
+            children: "View recently registered units"
+          }
+        )
+      ] }),
       /* @__PURE__ */ jsx("div", { className: "mt-6 space-y-6", children: units_by_module?.length ? units_by_module.map((group) => /* @__PURE__ */ jsxs(
         "section",
         {

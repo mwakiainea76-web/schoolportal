@@ -4,7 +4,7 @@ import AdminDashboard from "./AdminDashboard-CBz6pXa2.js";
 import BursarDashboard from "./BursarDashboard-BvQIHkzm.js";
 import GenericStaffDashboard from "./GenericStaffDashboard-DTtooqUk.js";
 import HodDashboard from "./HodDashboard-D00r_kpV.js";
-import StudentDashboard from "./StudentDashboard-FyN07rmZ.js";
+import StudentDashboard from "./StudentDashboard-BYQRqyEz.js";
 import TrainerDashboard from "./TrainerDashboard-vDJdoz9-.js";
 import "react";
 import "lucide-react";

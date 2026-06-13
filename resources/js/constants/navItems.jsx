@@ -320,6 +320,12 @@ export const STAFF_NAV_ITEMS = [
                 permission: "students.create",
             },
             {
+                routeName: "students.password-reset.create",
+                fallback: "/students/reset-password",
+                label: "Reset Password",
+                roles: ["admin"],
+            },
+            {
                 routeName: "students.course-change.index",
                 fallback: "/students/course-change",
                 label: "Transfers",
@@ -432,6 +438,12 @@ export const STAFF_NAV_ITEMS = [
                 label: "Onboarding",
                 exceptRoles: ["hod"],
             },
+            {
+                routeName: "staffs.password-reset.create",
+                fallback: "/staffs/reset-password",
+                label: "Reset Password",
+                roles: ["admin"],
+            },
         ],
     },
   // --- Access Control (standalone) ---
@@ -498,6 +510,19 @@ export const STAFF_NAV_ITEMS = [
                 routeName: "settings.security.index",
                 fallback: "/settings/security",
                 label: "Security Audit",
+            },
+        ],
+    },
+    {
+        key: "account",
+        label: "Account",
+        icon: "users",
+        basePath: "/profile",
+        children: [
+            {
+                routeName: "profile.edit",
+                fallback: "/profile",
+                label: "Profile Settings",
             },
         ],
     },

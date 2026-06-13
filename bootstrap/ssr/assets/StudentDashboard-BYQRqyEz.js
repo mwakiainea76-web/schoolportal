@@ -169,14 +169,24 @@ function StudentDashboard({ dashboard, fullName }) {
             /* @__PURE__ */ jsx("h2", { className: "text-xl font-semibold text-zinc-900", children: "This Module's Units" }),
             /* @__PURE__ */ jsx("p", { className: "mt-1 text-sm text-zinc-500", children: "Units assigned to your current module." })
           ] }),
-          /* @__PURE__ */ jsx(
-            Link,
-            {
-              href: route("student.course-units.index"),
-              className: "text-sm font-medium text-emerald-700 transition hover:text-emerald-800",
-              children: "View all units"
-            }
-          )
+          /* @__PURE__ */ jsxs("div", { className: "flex gap-4", children: [
+            /* @__PURE__ */ jsx(
+              Link,
+              {
+                href: route("student.registered-units.index"),
+                className: "text-sm font-medium text-emerald-700 transition hover:text-emerald-800",
+                children: "Registered Units"
+              }
+            ),
+            /* @__PURE__ */ jsx(
+              Link,
+              {
+                href: route("student.course-units.index"),
+                className: "text-sm font-medium text-zinc-500 transition hover:text-zinc-700",
+                children: "All Units"
+              }
+            )
+          ] })
         ] }),
         /* @__PURE__ */ jsxs("div", { className: "mt-6", children: [
           !dashboard.latest_session && dashboard.unit_registration?.blocker ? /* @__PURE__ */ jsxs("div", { className: "rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm", children: [

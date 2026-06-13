@@ -4,7 +4,7 @@
   "resources/css/app.css": [],
   "resources/js/Components/ApplicationLogo.jsx": [],
   "resources/js/Components/Checkbox.jsx": [
-    "/build/assets/StudentDashboard-FyN07rmZ.js"
+    "/build/assets/StudentDashboard-BYQRqyEz.js"
   ],
   "resources/js/Components/DangerButton.jsx": [
     "/build/assets/DeleteUserForm-CCDeHVdY.js"
@@ -226,8 +226,11 @@
   "resources/js/Pages/CurriculumUnits/Index.jsx": [
     "/build/assets/Index-Dkwmuw_4.js"
   ],
+  "resources/js/Pages/CurriculumUnits/RegisteredUnits.jsx": [
+    "/build/assets/RegisteredUnits-CROZgz83.js"
+  ],
   "resources/js/Pages/CurriculumUnits/StudentIndex.jsx": [
-    "/build/assets/StudentIndex-BP1x8jBc.js"
+    "/build/assets/StudentIndex-D-fcpAs1.js"
   ],
   "resources/js/Pages/Curriculums/Create.jsx": [
     "/build/assets/Create-s8w7r4ks.js"
@@ -239,7 +242,7 @@
     "/build/assets/Index-BQ-1QTf0.js"
   ],
   "resources/js/Pages/Dashboard.jsx": [
-    "/build/assets/Dashboard-DwwsRW3c.js"
+    "/build/assets/Dashboard-CSduujSr.js"
   ],
   "resources/js/Pages/Dashboards/AdminDashboard.jsx": [
     "/build/assets/AdminDashboard-CBz6pXa2.js"
@@ -254,7 +257,7 @@
     "/build/assets/HodDashboard-D00r_kpV.js"
   ],
   "resources/js/Pages/Dashboards/StudentDashboard.jsx": [
-    "/build/assets/StudentDashboard-FyN07rmZ.js"
+    "/build/assets/StudentDashboard-BYQRqyEz.js"
   ],
   "resources/js/Pages/Dashboards/TrainerDashboard.jsx": [
     "/build/assets/TrainerDashboard-vDJdoz9-.js"
@@ -386,16 +389,16 @@
     "/build/assets/Index-66-jywzP.js"
   ],
   "resources/js/Pages/Profile/Edit.jsx": [
-    "/build/assets/Edit-CmIdw0Sn.js"
+    "/build/assets/Edit-q5TknVZF.js"
   ],
   "resources/js/Pages/Profile/Partials/DeleteUserForm.jsx": [
     "/build/assets/DeleteUserForm-CCDeHVdY.js"
   ],
   "resources/js/Pages/Profile/Partials/UpdatePasswordForm.jsx": [
-    "/build/assets/UpdatePasswordForm-DG2MrccK.js"
+    "/build/assets/UpdatePasswordForm-DxqsXSv4.js"
   ],
   "resources/js/Pages/Profile/Partials/UpdateProfileInformationForm.jsx": [
-    "/build/assets/UpdateProfileInformationForm-DBBY2A7G.js"
+    "/build/assets/UpdateProfileInformationForm-Bkby2YAl.js"
   ],
   "resources/js/Pages/Reports/Index.jsx": [
     "/build/assets/Index-Tz6yrY7N.js"
@@ -439,6 +442,9 @@
   "resources/js/Pages/Staffs/Index.jsx": [
     "/build/assets/Index-Bp3eRaHw.js"
   ],
+  "resources/js/Pages/Staffs/ResetPassword.jsx": [
+    "/build/assets/ResetPassword-DZStubSC.js"
+  ],
   "resources/js/Pages/students/CourseChange.jsx": [
     "/build/assets/CourseChange-ifiAjYWO.js"
   ],
@@ -450,6 +456,9 @@
   ],
   "resources/js/Pages/students/Index.jsx": [
     "/build/assets/Index-BiRnJpMR.js"
+  ],
+  "resources/js/Pages/students/ResetPassword.jsx": [
+    "/build/assets/ResetPassword-CeGcemrW.js"
   ],
   "resources/js/app.jsx": [],
   "resources/js/bootstrap.js": [],

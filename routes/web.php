@@ -4,6 +4,7 @@ use App\Http\Controllers\AcademicSessionController;
 use App\Http\Controllers\AcademicSessionEnrollmentController;
 use App\Http\Controllers\AcademicTimetableController;
 use App\Http\Controllers\AcademicYearController;
+use App\Http\Controllers\AdminPasswordResetController;
 use App\Http\Controllers\Api\ExportController;
 use App\Http\Controllers\CertificationLevelController;
 use App\Http\Controllers\CourseController;
@@ -403,6 +404,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::put('/{staff}', [StaffController::class, 'update'])->name('update');
             Route::delete('/{staff}', [StaffController::class, 'destroy'])->name('destroy');
             Route::post('/validate-step', [StaffController::class, 'validateStep'])->name('validateStep');
+
+            Route::middleware('role:admin')->group(function () {
+                Route::get('/reset-password', [AdminPasswordResetController::class, 'createStaff'])->name('password-reset.create');
+                Route::post('/reset-password', [AdminPasswordResetController::class, 'storeStaff'])->name('password-reset.store');
+            });
         });
 
         /*
@@ -425,6 +431,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('/cycles/{curriculum}/courses', [StudentController::class, 'cycleCourses'])->name('cycle-courses');
 
             Route::middleware('role:admin')->group(function () {
+                Route::get('/reset-password', [AdminPasswordResetController::class, 'createStudent'])->name('password-reset.create');
+                Route::post('/reset-password', [AdminPasswordResetController::class, 'storeStudent'])->name('password-reset.store');
                 Route::get('/course-change', [StudentCourseChangeController::class, 'index'])->name('course-change.index');
                 Route::post('/course-change', [StudentCourseChangeController::class, 'store'])->name('course-change.store');
                 Route::get('/{student}/admission-letter', [StudentController::class, 'admissionLetter'])->name('admission-letter');

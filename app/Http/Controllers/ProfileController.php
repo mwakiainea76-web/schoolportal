@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\ProfileUpdateRequest;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -20,8 +20,11 @@ class ProfileController extends Controller
     {
         $user = $request->user();
         $user->load([
+            'nextOfKin',
             'student.courseEnrollment.course',
             'student.courseEnrollment.curriculum',
+            'student.courseEnrollment.curriculumMapping.course',
+            'student.courseEnrollment.curriculumMapping.curriculum',
             'staff.department',
             'roles'
         ]);
@@ -36,36 +39,9 @@ class ProfileController extends Controller
     /**
      * Update the user's profile information.
      */
-    public function update(ProfileUpdateRequest $request): RedirectResponse
+    public function update(Request $request): RedirectResponse
     {
-        $user = $request->user();
-        $validated = $request->validated();
-
-        $user->fill([
-            'email' => $validated['email'],
-        ]);
-
-        if ($user->isDirty('email')) {
-            $user->email_verified_at = null;
-        }
-
-        $user->save();
-
-        // Update profile details in staff or student table
-        $profileData = [
-            'first_name' => $validated['first_name'],
-            'last_name' => $validated['last_name'],
-            'phone_number' => $validated['phone_number'] ?? null,
-            'address' => $validated['address'] ?? null,
-        ];
-
-        if ($user->staff) {
-            $user->staff->update($profileData);
-        } elseif ($user->student) {
-            $user->student->update($profileData);
-        }
-
-        return Redirect::route('profile.edit');
+        throw new HttpException(403, 'Profile details are managed by the administrator.');
     }
 
     /**

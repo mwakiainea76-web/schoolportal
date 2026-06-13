@@ -22,7 +22,7 @@ class ProfileTest extends TestCase
         $response->assertOk();
     }
 
-    public function test_profile_information_can_be_updated(): void
+    public function test_profile_information_is_read_only_for_the_user(): void
     {
         $user = User::factory()->create();
         $department = Department::factory()->create();
@@ -51,18 +51,17 @@ class ProfileTest extends TestCase
                 'email' => 'test@example.com',
             ]);
 
-        $response
-            ->assertSessionHasNoErrors()
-            ->assertRedirect('/profile');
+        $response->assertStatus(403);
 
         $user->refresh();
+        $staff = $user->staff()->first();
 
-        $this->assertSame('Test User', $user->full_name);
-        $this->assertSame('test@example.com', $user->email);
-        $this->assertNull($user->email_verified_at);
+        $this->assertSame('Old', $staff?->first_name);
+        $this->assertSame('Name', $staff?->last_name);
+        $this->assertNotSame('test@example.com', $user->email);
     }
 
-    public function test_email_verification_status_is_unchanged_when_the_email_address_is_unchanged(): void
+    public function test_email_verification_status_remains_unchanged_when_profile_edit_is_blocked(): void
     {
         $user = User::factory()->create();
         $department = Department::factory()->create();
@@ -91,9 +90,7 @@ class ProfileTest extends TestCase
                 'email' => $user->email,
             ]);
 
-        $response
-            ->assertSessionHasNoErrors()
-            ->assertRedirect('/profile');
+        $response->assertStatus(403);
 
         $this->assertNotNull($user->refresh()->email_verified_at);
     }
