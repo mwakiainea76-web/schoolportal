@@ -240,6 +240,11 @@ class ManualAcademicSessionEnrollmentTest extends TestCase
             'enrollment_status' => 'deferred',
         ]);
 
+        $this->assertDatabaseHas('users', [
+            'id' => $student->user_id,
+            'is_active' => false,
+        ]);
+
         $this->assertDatabaseHas('student_status_logs', [
             'student_id' => $student->id,
             'status' => 'deferred',

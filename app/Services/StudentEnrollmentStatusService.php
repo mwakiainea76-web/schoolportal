@@ -11,6 +11,8 @@ class StudentEnrollmentStatusService
 {
     public function ensureCurrentStatusLogged(Student $student, array $extra = []): ?StudentStatusLog
     {
+        $this->syncUserActiveState($student, $student->enrollment_status);
+
         if ($student->statusLogs()->exists()) {
             return $student->statusLogs()
                 ->latest('effective_date')
@@ -35,6 +37,8 @@ class StudentEnrollmentStatusService
     public function updateEnrollmentStatus(Student $student, string $status, array $extra = []): ?StudentStatusLog
     {
         $normalizedStatus = strtolower(trim($status));
+
+        $this->syncUserActiveState($student, $normalizedStatus);
 
         if ($student->enrollment_status === $normalizedStatus) {
             return $this->ensureCurrentStatusLogged($student, $extra);
@@ -64,5 +68,22 @@ class StudentEnrollmentStatusService
         }
 
         return Carbon::parse($value)->toDateString();
+    }
+
+    private function syncUserActiveState(Student $student, string $status): void
+    {
+        if (! $student->user) {
+            return;
+        }
+
+        $shouldBeActive = $status === 'active';
+
+        if ((bool) $student->user->is_active === $shouldBeActive) {
+            return;
+        }
+
+        $student->user->update([
+            'is_active' => $shouldBeActive,
+        ]);
     }
 }

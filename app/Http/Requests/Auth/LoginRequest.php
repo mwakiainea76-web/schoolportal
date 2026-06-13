@@ -99,7 +99,7 @@ class LoginRequest extends FormRequest
             );
 
             throw ValidationException::withMessages([
-                'login' => 'This account has been deactivated. Please contact the administrator for assistance.',
+                'login' => 'Your account is locked. Contact administrator.',
             ]);
         }
 
