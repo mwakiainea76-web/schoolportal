@@ -32,7 +32,9 @@ class StudentController extends Controller
         $step = (int) $request->input('step');
 
         $studentId = $request->input('_student_id');
-        $ignoreStudentId = Student::find($studentId)?->id;
+        $student = Student::find($studentId);
+        $ignoreStudentId = $student?->id;
+        $ignoreUserId = $student?->user_id;
 
         $rules = match ($step) {
             1 => [
@@ -42,8 +44,8 @@ class StudentController extends Controller
                 'email' => [
                     'required', 'email', 'max:255',
                     $ignoreStudentId
-                        ? Rule::unique('students', 'email')->ignore($ignoreStudentId)
-                        : Rule::unique('students', 'email'),
+                        ? Rule::unique('users', 'email')->ignore($ignoreUserId)
+                        : Rule::unique('users', 'email'),
                 ],
                 'phone_number' => ['required', 'string', 'max:15'],
                 'gender' => ['required', 'string'],
@@ -57,6 +59,12 @@ class StudentController extends Controller
             ],
             2 => [
                 'previous_school' => ['required', 'string', 'max:255'],
+                'course_id' => $request->filled('_student_id')
+                    ? ['nullable', 'exists:courses,id']
+                    : ['required', 'exists:courses,id'],
+                'exam_body_id' => $request->filled('_student_id')
+                    ? ['nullable', 'exists:exam_bodies,id']
+                    : ['required', 'exists:exam_bodies,id'],
                 'curriculum_id' => $request->filled('_student_id')
                     ? ['nullable', 'exists:curricula,id']
                     : ['required', 'exists:curricula,id'],

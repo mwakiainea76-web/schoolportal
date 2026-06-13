@@ -12,7 +12,6 @@ use App\Support\RbacCache;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 use Spatie\Permission\Models\Role;
 
 class StaffController extends Controller
@@ -27,62 +26,15 @@ class StaffController extends Controller
 
         $step = (int) $request->input('step');
 
-        $staffId = $request->input('_staff_id');
-        $ignoreStaffId = Staff::find($staffId)?->id;
+        $staff = $request->filled('_staff_id')
+            ? Staff::find($request->input('_staff_id'))
+            : null;
 
-        $rules = match ($step) {
-            1 => [
-                'first_name' => ['required', 'string', 'max:255'],
-                'last_name' => ['required', 'string', 'max:255'],
-                'other_name' => ['nullable', 'string', 'max:255'],
-                'email' => [
-                    'required', 'email', 'max:255',
-                    $ignoreStaffId
-                        ? Rule::unique('staffs', 'email')->ignore($ignoreStaffId)
-                        : Rule::unique('staffs', 'email'),
-                ],
-                'phone_number' => ['required', 'string', 'max:15'],
-                'gender' => ['required', 'string'],
-                'date_of_birth' => ['required', 'date'],
-                'county' => ['required', 'string', 'max:70'],
-                'address' => ['required', 'string', 'min:3'],
-                'religion' => ['required', 'string', 'min:3'],
-                'is_pwd' => ['boolean'],
-                'disability_type' => ['nullable', 'string', 'max:255'],
-                'medical_condition' => ['nullable', 'string', 'max:255'],
-            ],
-            2 => [
-                'department_id' => ['required', 'exists:departments,id'],
-                'role_name' => ['required', 'exists:roles,name'],
-                'designation' => ['required', 'string', 'max:255'],
-                'national_id_number' => [
-                    'required', 'string', 'max:50',
-                    $ignoreStaffId
-                        ? Rule::unique('staffs', 'national_id_number')->ignore($ignoreStaffId)
-                        : Rule::unique('staffs', 'national_id_number'),
-                ],
-                'salary' => ['nullable', 'numeric'],
-                'employment_type' => ['required', 'string'],
-                'hired_date' => ['required', 'date'],
-                'staff_status' => ['nullable', 'in:active,suspended,onleave,exited'],
-                'highest_qualification' => ['required', 'string', 'max:255'],
-                'specialization' => ['nullable', 'string', 'max:255'],
-                'kra_pin' => ['nullable', 'string', 'max:50'],
-                'nhif_number' => ['nullable', 'string', 'max:50'],
-                'nssf_number' => ['nullable', 'string', 'max:50'],
-            ],
-            3 => [
-                'kin_first_name' => ['required', 'string', 'max:255'],
-                'kin_last_name' => ['required', 'string', 'max:255'],
-                'kin_relationship' => ['required', 'string', 'max:255'],
-                'kin_phone' => ['required', 'string', 'max:15'],
-                'kin_alt_phone' => ['nullable', 'string', 'max:15'],
-                'kin_email' => ['nullable', 'email', 'max:255'],
-            ],
-            default => [],
-        };
+        $rules = $staff
+            ? UpdateStaffRequest::stepRules($staff)
+            : StoreStaffRequest::stepRules();
 
-        $request->validate($rules);
+        $request->validate($rules[$step] ?? []);
 
         return response()->json(['ok' => true]);
     }
@@ -374,8 +326,6 @@ class StaffController extends Controller
                     'email' => $request->kin_email,
                 ]
             );
-                    $staff->user->syncRoles([$request->role_name]);
-RbacCache::forgetForUser($staff->user);
         });
 
         return redirect()->route('staffs.index')->with('success', 'Staff updated successfully.');

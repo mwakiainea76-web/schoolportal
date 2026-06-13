@@ -4,9 +4,9 @@ import { CreditCard, FilePlus2, Wallet } from "lucide-react";
 import Modal from "@/Components/Modal";
 import FormScaffold from "./FormScaffold";
 import ActionCard from "./ActionCard";
-import AdditionalInvoiceForm from "./AdditionalInvoiceForm";
-import ApplyAdjustmentForm from "./ApplyAdjustmentForm";
-import RecordPaymentForm from "./RecordPaymentForm";
+import AdditionalInvoice from "./AdditionalInvoice";
+import ApplyAdjustment from "./ApplyAdjustment";
+import RecordPayment from "./RecordPayment";
 
 const today = new Date().toISOString().split("T")[0];
 const plusDays = (days) =>
@@ -155,7 +155,12 @@ export default function Index({ selectedAdmissionNumber = "" }) {
                     </h2>
                     <p className="mt-1 text-sm text-zinc-500">This action increases the student account.</p>
                     <div className="mt-6">
-                        <AdditionalInvoiceForm form={{ ...invoiceForm, onSubmit: submitInvoiceForm }} onCancel={closeModal} />
+                        <AdditionalInvoice
+                            embedded
+                            form={invoiceForm}
+                            onSubmit={submitInvoiceForm}
+                            onCancel={closeModal}
+                        />
                     </div>
                 </div>
             </Modal>
@@ -172,7 +177,12 @@ export default function Index({ selectedAdmissionNumber = "" }) {
                     </h2>
                     <p className="mt-1 text-sm text-zinc-500">Post a payment.</p>
                     <div className="mt-6">
-                        <RecordPaymentForm form={{ ...paymentForm, onSubmit: submitPaymentForm }} onCancel={closeModal} />
+                        <RecordPayment
+                            embedded
+                            form={paymentForm}
+                            onSubmit={submitPaymentForm}
+                            onCancel={closeModal}
+                        />
                     </div>
                 </div>
             </Modal>
@@ -189,7 +199,12 @@ export default function Index({ selectedAdmissionNumber = "" }) {
                     </h2>
                     <p className="mt-1 text-sm text-zinc-500">Use approved credits or reversals to reduce or correct charges, not to record payments.</p>
                     <div className="mt-6">
-                        <ApplyAdjustmentForm form={{ ...adjustmentForm, onSubmit: submitAdjustmentForm }} onCancel={closeModal} />
+                        <ApplyAdjustment
+                            embedded
+                            form={adjustmentForm}
+                            onSubmit={submitAdjustmentForm}
+                            onCancel={closeModal}
+                        />
                     </div>
                 </div>
             </Modal>

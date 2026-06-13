@@ -21,6 +21,13 @@ const levelClass = (level) =>
     })[level] || "bg-zinc-100 text-zinc-700";
 
 export default function LogViewer({ files, filters, log }) {
+    const entries = Array.isArray(log?.entries)
+        ? log.entries
+        : Array.isArray(log?.entries?.data)
+          ? log.entries.data
+          : [];
+    const totalEntries = Number(log?.entries?.total ?? entries.length ?? 0);
+
     const form = useForm({
         file: filters.file || "laravel.log",
         level: filters.level || "",
@@ -176,17 +183,17 @@ export default function LogViewer({ files, filters, log }) {
                             Recent Entries
                         </h2>
                         <span className="text-sm text-zinc-500">
-                            {log.entries.length} entries
+                            {totalEntries} entries
                         </span>
                     </div>
 
-                    {log.entries.length ? (
+                    {entries.length ? (
                         <div className="divide-y divide-zinc-100">
-                            {log.entries.map((entry, index) => (
+                            {entries.map((entry, index) => (
                                 <details
                                     key={`${entry.timestamp}-${index}`}
                                     className="group px-6 py-4"
-                                    open={index === log.entries.length - 1}
+                                    open={index === entries.length - 1}
                                 >
                                     <summary className="flex cursor-pointer list-none items-start gap-4">
                                         <span

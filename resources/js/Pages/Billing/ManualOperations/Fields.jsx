@@ -31,7 +31,11 @@ export function TextField({ label, error, className = "", ...props }) {
     return (
         <div className="space-y-2">
             <InputLabel value={label} required={props.required} />
-            <TextInput error={Boolean(error)} className={className} {...props} />
+            <TextInput
+                error={Boolean(error)}
+                className={className}
+                {...props}
+            />
             <InputError message={error} />
         </div>
     );
