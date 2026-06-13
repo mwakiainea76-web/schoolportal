@@ -111,9 +111,9 @@ export default function Index({
                 (pageFilters.curriculum_mapping_id && pageFilters.module_number)),
     );
 
-    const addTimetableHref = is_hod
-        ? route("academic.timetables.hod.create")
-        : route("academic.timetables.create");
+    const addTimetableHref = can_manage_timetables
+        ? route("academic.timetables.create")
+        : route("academic.timetables.hod.create");
     const canAddTimetable = is_hod || Boolean(can_manage_timetables);
     const handleDownloadPdf = () => {
         window.print();

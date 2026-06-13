@@ -752,6 +752,7 @@ class AcademicTimetableController extends Controller
 
         return (bool) (
             ($user?->hasRole('trainer') && ! $user?->hasRole('hod'))
+            || $user?->hasRole('hod')
             || $user?->hasRole('admin')
         );
     }
