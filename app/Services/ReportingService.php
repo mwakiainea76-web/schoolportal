@@ -18,7 +18,7 @@ class ReportingService
             DB::raw('COUNT(*) as invoice_count')
         )
         ->whereIn('student_invoices.status', ['issued', 'partial', 'paid'])
-        ->where('student_invoices.approval_status', '!=', 'rejected')
+        ->notRejected()
         ->where('student_invoices.balance_due', '>', 0)
         ->groupBy('academic_session_id');
 
@@ -60,7 +60,7 @@ class ReportingService
         ->join('courses', 'curriculum_mappings.course_id', '=', 'courses.id')
         ->join('departments', 'courses.department_id', '=', 'departments.id')
         ->whereIn('student_invoices.status', ['issued', 'partial', 'paid'])
-        ->where('student_invoices.approval_status', '!=', 'rejected')
+        ->notRejected()
         ->where('student_invoices.balance_due', '>', 0)
         ->where('student_invoices.due_date', '<', now()->toDateString())
         ->groupBy('departments.id', 'departments.name');
@@ -84,7 +84,7 @@ class ReportingService
 
         $totalInvoiced = StudentInvoice::query()
             ->whereIn('status', ['issued', 'partial', 'paid'])
-            ->where('approval_status', '!=', 'rejected')
+            ->notRejected()
             ->whereBetween('issue_date', [$startDate, $endDate])
             ->sum('amount_due');
         $totalCollected = DB::table('payment_allocations')

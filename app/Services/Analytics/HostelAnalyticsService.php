@@ -42,7 +42,7 @@ class HostelAnalyticsService
         $hostelInvoiceBase = StudentInvoice::query()
             ->where('invoice_type', 'hostel')
             ->whereIn('status', $includedInvoiceStatuses)
-            ->where('approval_status', '!=', 'rejected')
+            ->notRejected()
             ->when($activeSession, fn ($query) => $query->where('academic_session_id', $activeSession->id));
 
         $activeBeds = (clone $activeBedsQuery)->count();
@@ -56,7 +56,7 @@ class HostelAnalyticsService
             ->where('payments.status', 'completed')
             ->where('student_invoices.invoice_type', 'hostel')
             ->whereIn('student_invoices.status', $includedInvoiceStatuses)
-            ->where('student_invoices.approval_status', '!=', 'rejected')
+            ->notRejected()
             ->when($activeSession, fn ($query) => $query->where('student_invoices.academic_session_id', $activeSession->id))
             ->sum('payment_allocations.amount');
 
@@ -219,7 +219,7 @@ class HostelAnalyticsService
             ->whereNull('students.deleted_at')
             ->where('student_invoices.invoice_type', 'hostel')
             ->whereIn('student_invoices.status', $includedInvoiceStatuses)
-            ->where('student_invoices.approval_status', '!=', 'rejected')
+            ->notRejected()
             ->whereNull('hostel_allocations.id')
             ->when($activeSession, fn ($query) => $query->where('student_invoices.academic_session_id', $activeSession->id));
 

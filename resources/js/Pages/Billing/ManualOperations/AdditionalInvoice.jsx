@@ -31,12 +31,10 @@ export default function AdditionalInvoice({
     return (
         <FormScaffold
             title="Post Student Charge"
-            description="This form increases the student account by posting a Standard Invoice, Penalty, or Invoice Adjustment."
+            description="Post a charge to a student account."
             backHref={route("billing.manual.index")}
         >
-            <div className="max-w-4xl rounded-[1.75rem] border border-zinc-100 bg-white p-6 shadow-sm">
-                <AdditionalInvoiceForm form={{ ...form, onSubmit }} />
-            </div>
+            <AdditionalInvoiceForm form={{ ...form, onSubmit }} />
         </FormScaffold>
     );
 }

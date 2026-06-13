@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -139,5 +140,19 @@ class StudentInvoice extends Model
     public function scopeByStatus($query, string $status)
     {
         return $query->where('status', $status);
+    }
+
+    public function scopeNotRejected(Builder $query): Builder
+    {
+        return $query->where(function (Builder $statusQuery) {
+            $statusQuery
+                ->whereNull('approval_status')
+                ->orWhere('approval_status', '!=', 'rejected');
+        });
+    }
+
+    public function scopeOutstanding(Builder $query): Builder
+    {
+        return $query->where('balance_due', '>', 0);
     }
 }

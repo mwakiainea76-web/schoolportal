@@ -8,7 +8,6 @@ use App\Models\StudentInvoice;
 use App\Services\BillingService;
 use App\Services\BillingStatementService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Symfony\Component\HttpKernel\Exception\HttpException;
@@ -634,14 +633,10 @@ class InvoiceController extends Controller
 
         $query = StudentInvoice::query()
             ->where('student_id', $student->id)
-            ->where(function ($statusQuery) {
-                $statusQuery
-                    ->whereNull('approval_status')
-                    ->orWhere('approval_status', '!=', 'rejected');
-            });
+            ->notRejected();
 
         if ($requireOutstanding) {
-            $query->where('balance_due', '>', 0);
+            $query->outstanding();
         }
 
         $invoice = $query
@@ -724,37 +719,18 @@ class InvoiceController extends Controller
 
         $billingService = app(\App\Services\BillingService::class);
 
-        $created = 0;
-        $errors = [];
-
-        DB::transaction(function () use ($request, $billingService, $creatorStaffId, &$created, &$errors) {
-            foreach ($request->enrollment_ids as $id) {
-                try {
-                    $enrollment = AcademicSessionEnrollment::query()
-                        ->with([
-                            'courseEnrollment.curriculumMapping.course',
-                            'courseEnrollment.curriculumMapping.curriculum',
-                            'academicSession',
-                        ])
-                        ->findOrFail($id);
-
-                    $billingService->createInvoiceForEnrollment(
-                        $enrollment,
-                        $creatorStaffId,
-                        $request->issue_date,
-                        $request->due_date
-                    );
-
-                    $created++;
-                } catch (\Throwable $e) {
-                    $errors[] = "Enrollment {$id}: ".$e->getMessage();
-                }
-            }
-        });
+        $result = $billingService->bulkGenerateInvoices(
+            $request->enrollment_ids,
+            $creatorStaffId,
+            $request->issue_date,
+            $request->due_date
+        );
 
         return back()->with([
-            'success' => "{$created} invoices generated",
-            'errors' => $errors,
+            'success' => "{$result['invoices_created']} invoices generated",
+            'errors' => collect($result['errors'])
+                ->map(fn ($error) => "Enrollment {$error['enrollment_id']}: {$error['error']}")
+                ->all(),
         ]);
     }
 
@@ -769,46 +745,22 @@ class InvoiceController extends Controller
             'student_ids' => 'required|array',
             'student_ids.*' => 'exists:students,id',
             'amount' => 'required|numeric|min:0.01',
-            'type' => 'required|in:discount,waiver,bursary,helb,penalty,refund,other',
+            'type' => 'required|in:discount,waiver,bursary,helb',
             'description' => 'nullable|string',
         ]);
 
         $billingService = app(\App\Services\BillingService::class);
-
-        $count = 0;
-        $errors = [];
-
-        DB::transaction(function () use ($request, $billingService, $creatorStaffId, &$count, &$errors) {
-            foreach ($request->student_ids as $studentId) {
-                try {
-                    $invoices = StudentInvoice::where('student_id', $studentId)
-                        ->where('balance_due', '>', 0)
-                        ->where(function ($statusQuery) {
-                            $statusQuery
-                                ->whereNull('approval_status')
-                                ->orWhere('approval_status', '!=', 'rejected');
-                        })
-                        ->get();
-
-                    foreach ($invoices as $invoice) {
-                        $billingService->applyAdjustment(
-                            $invoice,
-                            $request->type,
-                            $request->amount,
-                            $creatorStaffId,
-                            $request->description
-                        );
-                        $count++;
-                    }
-                } catch (\Throwable $e) {
-                    $errors[] = "Student {$studentId}: ".$e->getMessage();
-                }
-            }
-        });
+        $result = $billingService->bulkApplyDiscount([
+            'type' => $request->type,
+            'amount' => (float) $request->amount,
+            'description' => $request->description,
+        ], $request->student_ids, $creatorStaffId);
 
         return back()->with([
-            'success' => "{$count} adjustments applied",
-            'errors' => $errors,
+            'success' => "{$result['adjustments_created']} adjustments applied",
+            'errors' => collect($result['errors'])
+                ->map(fn ($error) => "Student {$error['student_id']}: {$error['error']}")
+                ->all(),
         ]);
     }
 }

@@ -25,6 +25,8 @@ class BillingService
     public const NOTE_MANUAL_PENALTY = 'Manual penalty invoice.';
     public const NOTE_HOSTEL = 'Hostel accommodation invoice.';
     protected const ALLOWED_INVOICE_TYPES = ['default_fees', 'fees', 'penalty', 'hostel'];
+    protected const CREDIT_ADJUSTMENT_TYPES = ['discount', 'waiver', 'bursary', 'helb', 'reversal'];
+    protected const ALLOWED_ADJUSTMENT_TYPES = ['discount', 'waiver', 'bursary', 'helb', 'penalty', 'refund', 'reversal', 'other'];
 
     protected FeeAssignmentService $feeAssignmentService;
 
@@ -74,6 +76,7 @@ class BillingService
             $existingInvoice = StudentInvoice::query()
                 ->where('enrollment_id', $enrollment->id)
                 ->where('invoice_type', 'default_fees')
+                ->notRejected()
                 ->latest()
                 ->first();
 
@@ -464,7 +467,7 @@ class BillingService
                 'notes' => $notes,
             ]);
 
-            $this->allocatePaymentAcrossInvoices($payment, $student, $createdBy);
+            $this->allocatePaymentAcrossInvoices($payment, $student, $createdBy, $studentInvoiceId);
 
             return $payment;
         });
@@ -474,6 +477,9 @@ class BillingService
     {
         $this->assertPositiveAmount($amount);
         $this->assertInvoiceAcceptsFinancialActivity($invoice);
+        $this->assertAllowedAdjustmentType($type);
+        $invoice->refresh();
+        $this->assertCreditAdjustmentWithinBalance($invoice, $type, $amount);
 
         if ($idempotencyKey) {
             $existingAdjustment = FeeAdjustment::query()
@@ -641,11 +647,7 @@ class BillingService
 
         $outstandingBalance = (float) StudentInvoice::query()
             ->where('student_id', $studentId)
-            ->where(function ($statusQuery) {
-                $statusQuery
-                    ->whereNull('approval_status')
-                    ->orWhere('approval_status', '!=', 'rejected');
-            })
+            ->notRejected()
             ->sum('balance_due');
 
         if ($outstandingBalance > 0) {
@@ -712,16 +714,18 @@ class BillingService
             foreach ($studentIds as $studentId) {
                 try {
                     $invoices = StudentInvoice::where('student_id', $studentId)
-                        ->where('balance_due', '>', 0)
-                        ->where(function ($statusQuery) {
-                            $statusQuery
-                                ->whereNull('approval_status')
-                                ->orWhere('approval_status', '!=', 'rejected');
-                        })
+                        ->outstanding()
+                        ->notRejected()
                         ->get();
 
                     foreach ($invoices as $invoice) {
-                        $adjustment = $this->applyAdjustment($invoice, 'discount', $discountData['amount'], $createdBy, $discountData['description']);
+                        $adjustment = $this->applyAdjustment(
+                            $invoice,
+                            $discountData['type'] ?? 'discount',
+                            $discountData['amount'],
+                            $createdBy,
+                            $discountData['description']
+                        );
                         $adjustments[] = $adjustment;
                     }
                 } catch (\Exception $e) {
@@ -739,21 +743,34 @@ class BillingService
         ];
     }
 
-    protected function allocatePaymentAcrossInvoices(Payment $payment, Student $student, int $createdBy): void
+    protected function allocatePaymentAcrossInvoices(Payment $payment, Student $student, int $createdBy, ?int $preferredInvoiceId = null): void
     {
         $remaining = (float) $payment->amount;
+        $preferredInvoice = null;
+
+        if ($preferredInvoiceId) {
+            $preferredInvoice = StudentInvoice::query()
+                ->where('student_id', $student->id)
+                ->whereKey($preferredInvoiceId)
+                ->outstanding()
+                ->notRejected()
+                ->lockForUpdate()
+                ->first();
+        }
+
         $outstandingInvoices = StudentInvoice::query()
             ->where('student_id', $student->id)
-            ->where('balance_due', '>', 0)
-            ->where(function ($statusQuery) {
-                $statusQuery
-                    ->whereNull('approval_status')
-                    ->orWhere('approval_status', '!=', 'rejected');
-            })
+            ->outstanding()
+            ->notRejected()
+            ->when($preferredInvoiceId, fn ($query) => $query->whereKeyNot($preferredInvoiceId))
             ->orderBy('issue_date')
             ->orderBy('id')
             ->lockForUpdate()
             ->get();
+
+        if ($preferredInvoice) {
+            $outstandingInvoices = collect([$preferredInvoice])->concat($outstandingInvoices);
+        }
 
         foreach ($outstandingInvoices as $invoice) {
             if ($remaining <= 0) {
@@ -905,5 +922,29 @@ class BillingService
         throw ValidationException::withMessages([
             'payment' => 'No academic session context is available for this student payment.',
         ]);
+    }
+
+    protected function assertAllowedAdjustmentType(string $type): void
+    {
+        if (! in_array($type, self::ALLOWED_ADJUSTMENT_TYPES, true)) {
+            throw ValidationException::withMessages([
+                'type' => 'The selected adjustment type is not allowed.',
+            ]);
+        }
+    }
+
+    protected function assertCreditAdjustmentWithinBalance(StudentInvoice $invoice, string $type, float $amount): void
+    {
+        if (! in_array($type, self::CREDIT_ADJUSTMENT_TYPES, true)) {
+            return;
+        }
+
+        $availableBalance = max(0, (float) $invoice->balance_due);
+
+        if ($amount > $availableBalance) {
+            throw ValidationException::withMessages([
+                'amount' => 'This adjustment exceeds the invoice balance currently available to reduce.',
+            ]);
+        }
     }
 }

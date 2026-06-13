@@ -68,7 +68,7 @@ export default function Index({ selectedAdmissionNumber = "" }) {
                 paymentForm.reset("amount", "reference", "notes");
                 paymentForm.setData("admission_number", selectedAdmissionNumber || "");
                 paymentForm.setData("method", "mpesa");
-                payment_form.setData("payment_date", today);
+                paymentForm.setData("payment_date", today);
             },
         });
     };
@@ -146,7 +146,7 @@ export default function Index({ selectedAdmissionNumber = "" }) {
             <Modal
                 show={activeModal === "invoice"}
                 onClose={closeModal}
-                maxWidth="xl"
+                maxWidth="5xl"
                 align="top"
             >
                 <div className="p-6">
@@ -163,7 +163,7 @@ export default function Index({ selectedAdmissionNumber = "" }) {
             <Modal
                 show={activeModal === "payment"}
                 onClose={closeModal}
-                maxWidth="xl"
+                maxWidth="5xl"
                 align="top"
             >
                 <div className="p-6">
@@ -180,7 +180,7 @@ export default function Index({ selectedAdmissionNumber = "" }) {
             <Modal
                 show={activeModal === "adjustment"}
                 onClose={closeModal}
-                maxWidth="xl"
+                maxWidth="5xl"
                 align="top"
             >
                 <div className="p-6">

@@ -25,7 +25,7 @@ class FinanceAnalyticsService
 
         $invoiceBaseQuery = StudentInvoice::query()
             ->whereIn('status', $includedInvoiceStatuses)
-            ->where('approval_status', '!=', 'rejected');
+            ->notRejected();
 
         $totalInvoiced = (clone $invoiceBaseQuery)
             ->whereBetween('issue_date', [$startDate->toDateString(), $endDate->toDateString()])
@@ -108,7 +108,7 @@ class FinanceAnalyticsService
         $invoiceStatuses = StudentInvoice::query()
             ->select('status')
             ->selectRaw('COUNT(*) as invoice_count')
-            ->where('approval_status', '!=', 'rejected')
+            ->notRejected()
             ->groupBy('status')
             ->orderBy('status')
             ->get()
@@ -144,7 +144,7 @@ class FinanceAnalyticsService
 
                 $invoiced = StudentInvoice::query()
                     ->whereIn('status', $includedInvoiceStatuses)
-                    ->where('approval_status', '!=', 'rejected')
+                    ->notRejected()
                     ->whereBetween('issue_date', [$monthStart, $monthEnd])
                     ->sum('amount_due');
 

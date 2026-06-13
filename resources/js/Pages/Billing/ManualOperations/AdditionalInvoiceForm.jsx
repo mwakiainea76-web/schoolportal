@@ -3,61 +3,28 @@ import { NativeSelectField, TextAreaField, TextField } from "./Fields";
 
 export default function AdditionalInvoiceForm({
     form,
-    submitLabel = "Issue Additional Invoice",
+    submitLabel = "Post Charge",
     onCancel,
 }) {
     return (
-        <form onSubmit={form.onSubmit} className="space-y-5">
-            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                This action charges the student account. Use it only when you intend to increase what the student owes for the selected session.
-            </div>
+        <form
+            onSubmit={form.onSubmit}
+            className="rounded-[1.75rem] border border-zinc-200 bg-white p-6 shadow-[0_18px_48px_rgba(15,23,42,0.08)] sm:p-8"
+        >
+            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+                <TextField
+                    label="Admission Number"
+                    required
+                    type="text"
+                    value={form.data.admission_number}
+                    onChange={(e) =>
+                        form.setData("admission_number", e.target.value)
+                    }
+                    error={form.errors.admission_number}
+                    placeholder="TVET/2026/001"
+                    className="h-11"
+                />
 
-            <TextField
-                label="Student Admission Number"
-                required
-                type="text"
-                value={form.data.admission_number}
-                onChange={(e) =>
-                    form.setData("admission_number", e.target.value)
-                }
-                error={form.errors.admission_number}
-                placeholder="e.g. TVET/2026/001"
-            />
-            <p className="-mt-2 text-sm text-zinc-500">
-                Uses the student&apos;s latest session enrollment.
-            </p>
-
-            <NativeSelectField
-                label="Charge Class"
-                required
-                value={form.data.invoice_kind}
-                onChange={(value) => form.setData("invoice_kind", value)}
-                error={form.errors.invoice_kind}
-                options={[
-                    { value: "standard_invoice", label: "Standard Invoice" },
-                    { value: "penalty", label: "Penalty" },
-                    { value: "hostel", label: "Hostel Invoice" },
-                    { value: "invoice_adjustment", label: "Invoice Adjustment" },
-                ]}
-            />
-
-            <TextAreaField
-                label="Charge Description"
-                required
-                rows={4}
-                value={form.data.description}
-                onChange={(e) => form.setData("description", e.target.value)}
-                error={form.errors.description}
-                placeholder={
-                    form.data.invoice_kind === "standard_invoice"
-                        ? "e.g. Graduation clearance fee"
-                        : form.data.invoice_kind === "hostel"
-                          ? "e.g. Sunrise Hostel boarding fee"
-                        : "e.g. Late registration"
-                }
-            />
-
-            <div className="grid gap-5 md:grid-cols-3">
                 <TextField
                     label="Amount"
                     required
@@ -67,7 +34,30 @@ export default function AdditionalInvoiceForm({
                     value={form.data.amount}
                     onChange={(e) => form.setData("amount", e.target.value)}
                     error={form.errors.amount}
+                    placeholder="0.00"
+                    className="h-11"
                 />
+
+                <NativeSelectField
+                    label="Invoice Type"
+                    required
+                    value={form.data.invoice_kind}
+                    onChange={(value) => form.setData("invoice_kind", value)}
+                    error={form.errors.invoice_kind}
+                    options={[
+                        {
+                            value: "standard_invoice",
+                            label: "Standard Invoice",
+                        },
+                        { value: "penalty", label: "Penalty" },
+                        { value: "hostel", label: "Hostel Invoice" },
+                        {
+                            value: "invoice_adjustment",
+                            label: "Invoice Adjustment",
+                        },
+                    ]}
+                />
+
                 <TextField
                     label="Issue Date"
                     required
@@ -75,7 +65,9 @@ export default function AdditionalInvoiceForm({
                     value={form.data.issue_date}
                     onChange={(e) => form.setData("issue_date", e.target.value)}
                     error={form.errors.issue_date}
+                    className="h-11"
                 />
+
                 <TextField
                     label="Due Date"
                     required
@@ -83,22 +75,43 @@ export default function AdditionalInvoiceForm({
                     value={form.data.due_date}
                     onChange={(e) => form.setData("due_date", e.target.value)}
                     error={form.errors.due_date}
+                    className="h-11"
                 />
             </div>
 
-            <div className="flex items-center justify-between pt-2">
+            <div className="mt-5">
+                <TextAreaField
+                    label="Description"
+                    required
+                    rows={5}
+                    value={form.data.description}
+                    onChange={(e) => form.setData("description", e.target.value)}
+                    error={form.errors.description}
+                    placeholder={
+                        form.data.invoice_kind === "standard_invoice"
+                            ? "Graduation clearance fee"
+                            : form.data.invoice_kind === "hostel"
+                              ? "Sunrise Hostel boarding fee"
+                              : form.data.invoice_kind === "penalty"
+                                ? "Late registration penalty"
+                                : "Manual charge correction"
+                    }
+                />
+            </div>
+
+            <div className="mt-6 flex flex-col gap-3 border-t border-zinc-100 pt-5 sm:flex-row sm:items-center sm:justify-end">
                 <button
                     type="button"
                     onClick={onCancel}
-                    className="rounded-xl bg-zinc-100 px-4 py-3 text-sm font-medium text-zinc-700 transition hover:bg-zinc-200"
+                    className="rounded-xl border border-zinc-200 bg-white px-5 py-3 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
                 >
                     Cancel
                 </button>
                 <PrimaryButton
                     disabled={form.processing}
-                    className="bg-slate-700 px-6 py-3 text-sm normal-case tracking-normal"
+                    className="justify-center rounded-xl bg-slate-900 px-6 py-3 text-sm normal-case tracking-normal"
                 >
-                    {submitLabel}
+                    {form.processing ? "Posting..." : submitLabel}
                 </PrimaryButton>
             </div>
         </form>

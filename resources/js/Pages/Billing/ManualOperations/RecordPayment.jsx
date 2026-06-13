@@ -24,12 +24,10 @@ export default function RecordPayment({ selectedAdmissionNumber }) {
     return (
         <FormScaffold
             title="Record Payment"
-            description="Post a receipt against an invoice and reduce the student balance."
+            description="Post a payment to a student account."
             backHref={route("billing.manual.index")}
         >
-            <div className="max-w-4xl rounded-[1.75rem] border border-zinc-100 bg-white p-6 shadow-sm">
-                <RecordPaymentForm form={{ ...form, onSubmit }} />
-            </div>
+            <RecordPaymentForm form={{ ...form, onSubmit }} />
         </FormScaffold>
     );
 }
