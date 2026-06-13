@@ -50,6 +50,8 @@ return new class extends Migration
 
             $table->index('user_id');
             $table->index('enrollment_status');
+            $table->index('first_name');
+            $table->index('last_name');
         });
 
     }

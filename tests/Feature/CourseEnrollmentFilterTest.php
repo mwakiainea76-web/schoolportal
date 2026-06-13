@@ -7,6 +7,7 @@ use App\Models\AcademicSessionEnrollment;
 use App\Models\AcademicYear;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
+use App\Models\CurriculumMapping;
 use App\Models\Department;
 use App\Models\Student;
 use App\Models\User;
@@ -46,12 +47,24 @@ class CourseEnrollmentFilterTest extends TestCase
     {
         $dept1 = Department::factory()->create();
         $dept2 = Department::factory()->create();
+        $course1 = Course::factory()->create(['department_id' => $dept1->id]);
+        $course2 = Course::factory()->create(['department_id' => $dept2->id]);
+        $mapping1 = CurriculumMapping::factory()->create(['course_id' => $course1->id]);
+        $mapping2 = CurriculumMapping::factory()->create(['course_id' => $course2->id]);
 
-        $student1 = Student::factory()->create(['department_id' => $dept1->id]);
-        $student2 = Student::factory()->create(['department_id' => $dept2->id]);
+        $student1 = Student::factory()->create();
+        $student2 = Student::factory()->create();
 
-        CourseEnrollment::factory()->create(['student_id' => $student1->id]);
-        CourseEnrollment::factory()->create(['student_id' => $student2->id]);
+        CourseEnrollment::factory()->create([
+            'student_id' => $student1->id,
+            'course_id' => $course1->id,
+            'curriculum_mapping_id' => $mapping1->id,
+        ]);
+        CourseEnrollment::factory()->create([
+            'student_id' => $student2->id,
+            'course_id' => $course2->id,
+            'curriculum_mapping_id' => $mapping2->id,
+        ]);
 
         $response = $this->actingAs($this->user)
             ->get(route('courses.enrollments.index', ['department_id' => $dept1->id]));

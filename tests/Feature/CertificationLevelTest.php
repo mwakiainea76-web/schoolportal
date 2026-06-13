@@ -26,6 +26,7 @@ it('can create a certification level', function () {
         'code' => 'DIP001',
         'exam_body_id' => $examBody->id,
         'entry_grade' => 'C',
+        'modules' => 3,
         'description' => 'Diploma level',
     ];
 
@@ -42,6 +43,7 @@ it('can create a certification level', function () {
         'code' => 'DIP001',
         'description' => 'Diploma level',
         'entry_grade' => 'C',
+        'modules' => 3,
         'exam_body_id' => $examBody->id,
     ]);
 });
@@ -99,6 +101,7 @@ it('can update a certification level', function () {
             'exam_body_id' => $examBody->id,
             'description' => 'Updated',
             'entry_grade' => 'B',
+            'modules' => 4,
         ]
     );
 
@@ -111,6 +114,7 @@ it('can update a certification level', function () {
         'code' => 'ADP001',
         'description' => 'Updated',
         'entry_grade' => 'B',
+        'modules' => 4,
     ]);
 });
 
@@ -152,6 +156,7 @@ it('required fields when creating', function () {
             'name',
             'code',
             'exam_body_id',
+            'modules',
         ]);
 });
 
@@ -170,6 +175,7 @@ it('required fields when updating', function () {
             'code',
             'exam_body_id',
             'entry_grade',
+            'modules',
         ]);
 });
 /*

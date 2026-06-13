@@ -1,8 +1,6 @@
 <?php
 
-use App\Models\Course;
-use App\Models\Curriculum;
-use App\Models\CurriculumUnit;
+use App\Models\CurriculumMapping;
 use App\Models\Unit;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -14,116 +12,78 @@ beforeEach(function () {
     $this->actingAs($user);
 });
 
-/*
-|--------------------------------------------------------------------------
-| CREATE
-|--------------------------------------------------------------------------
-*/
 it('can create a curriculum unit', function () {
-
-    $course = Course::factory()->create();
-    $curriculum = Curriculum::factory()->create([
-        'course_id' => $course->id,
+    $mapping = CurriculumMapping::factory()->create([
+        'created_by' => auth()->id(),
     ]);
 
-    $unit = Unit::factory()->create();
-
-    $data = [
-        'curriculum_id' => $curriculum->id,
-        'unit_id' => $unit->id,
+    $response = $this->post(route('units.store'), [
+        'curriculum_mapping_id' => $mapping->id,
+        'code' => 'COM101',
+        'name' => 'Communication Skills',
+        'credit_factor' => 3,
+        'training_hours' => 45,
+        'description' => 'Foundation communication unit',
+        'scope' => 'common',
         'module_taught' => 1,
-    ];
-
-    $response = $this->post(
-        route('units-curriculum.store'),
-        $data
-    );
+    ]);
 
     $response->assertStatus(302)
         ->assertSessionHas('success');
 
-    $this->assertDatabaseHas('curriculum_units', [
-        'curriculum_id' => $curriculum->id,
-        'unit_id' => $unit->id,
+    $this->assertDatabaseHas('units', [
+        'curriculum_mapping_id' => $mapping->id,
+        'code' => 'COM101',
+        'name' => 'Communication Skills',
+        'scope' => 'common',
         'module_taught' => 1,
     ]);
 });
 
-/*
-|--------------------------------------------------------------------------
-| INDEX
-|--------------------------------------------------------------------------
-*/
 it('can list curriculum units', function () {
+    Unit::factory()->count(3)->create();
 
-    $course = Course::factory()->create(['is_active' => true]);
-
-    $curriculum = Curriculum::factory()->create([
-        'course_id' => $course->id,
-    ]);
-
-    $unit = Unit::factory()->create();
-
-    CurriculumUnit::factory()->create([
-        'curriculum_id' => $curriculum->id,
-        'unit_id' => $unit->id,
-    ]);
-
-    $response = $this->get(route('units-curriculum.index'));
+    $response = $this->get(route('units.index'));
 
     $response->assertStatus(200);
 });
 
-/*
-|--------------------------------------------------------------------------
-| DUPLICATE PREVENTION
-|--------------------------------------------------------------------------
-*/
-it('prevents duplicate curriculum unit entry', function () {
-
-    $course = Course::factory()->create();
-
-    $curriculum = Curriculum::factory()->create([
-        'course_id' => $course->id,
+it('prevents duplicate curriculum unit entry within the same mapping', function () {
+    $mapping = CurriculumMapping::factory()->create([
+        'created_by' => auth()->id(),
     ]);
 
-    $unit = Unit::factory()->create();
-
-    CurriculumUnit::factory()->create([
-        'curriculum_id' => $curriculum->id,
-        'unit_id' => $unit->id,
+    Unit::factory()->create([
+        'curriculum_mapping_id' => $mapping->id,
+        'code' => 'COM101',
     ]);
 
-    $response = $this->post(route('units-curriculum.store'), [
-        'curriculum_id' => $curriculum->id,
-        'unit_id' => $unit->id,
+    $response = $this->post(route('units.store'), [
+        'curriculum_mapping_id' => $mapping->id,
+        'code' => 'COM101',
+        'name' => 'Communication Skills',
+        'credit_factor' => 3,
+        'training_hours' => 45,
+        'description' => 'Duplicate unit code',
+        'scope' => 'common',
         'module_taught' => 2,
     ]);
 
     $response->assertStatus(302)
-        ->assertSessionHas('error');
+        ->assertSessionHasErrors(['code']);
 });
 
-/*
-|--------------------------------------------------------------------------
-| VALIDATION
-|--------------------------------------------------------------------------
-*/
 it('requires fields when creating curriculum unit', function () {
-
-    $response = $this->post(route('units-curriculum.store'), []);
+    $response = $this->post(route('units.store'), []);
 
     $response->assertStatus(302)
         ->assertSessionHasErrors([
-            'curriculum_id',
-            'unit_id',
+            'curriculum_mapping_id',
+            'code',
+            'name',
+            'credit_factor',
+            'training_hours',
+            'scope',
             'module_taught',
         ]);
 });
-
-/*
-|--------------------------------------------------------------------------
-| RELATION INTEGRITY (cascade delete)
-|--------------------------------------------------------------------------
-*/
-

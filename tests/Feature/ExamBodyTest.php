@@ -30,7 +30,7 @@ it('can create an exam body', function () {
         'description' => 'Kenya National Examinations Council',
     ];
 
-    $response = $this->post(route('exam-bodies.store'), $data);
+    $response = $this->post(route('exam.bodies.store'), $data);
 
     $response->assertStatus(302)
         ->assertSessionHas('success', 'Exam body created successfully');
@@ -52,7 +52,7 @@ it('can view exam bodies list', function () {
 
     ExamBody::factory()->count(3)->create();
 
-    $response = $this->get(route('exam-bodies.index'));
+    $response = $this->get(route('exam.bodies.index'));
 
     $response->assertStatus(200);
 });
@@ -86,7 +86,7 @@ it('can update an exam body', function () {
         'description' => 'Updated description',
     ];
 
-    $response = $this->put(route('exam-bodies.update', $examBody), $data);
+    $response = $this->put(route('exam.bodies.update', $examBody), $data);
 
     $response->assertStatus(302)
         ->assertSessionHas('success', 'Exam body updated successfully');
@@ -108,7 +108,7 @@ it('can delete an exam body only if no certification levels are linked', functio
 
     $examBody = ExamBody::factory()->create();
 
-    $response = $this->delete(route('exam-bodies.destroy', $examBody));
+    $response = $this->delete(route('exam.bodies.destroy', $examBody));
 
     $response->assertStatus(302)
         ->assertSessionHas('success', 'Exam body deleted successfully');
@@ -123,15 +123,13 @@ it('prevents deleting an exam body when certification levels exist', function ()
 
     $examBody = ExamBody::factory()->create();
 
-    CertificationLevel::create([
+    CertificationLevel::factory()->create([
         'exam_body_id' => $examBody->id,
         'name' => 'Level 6',
         'code' => 'L6',
-        'description' => 'Certification Level 6',
-        'entry_grade' => 'B',
     ]);
 
-    $response = $this->delete(route('exam-bodies.destroy', $examBody));
+    $response = $this->delete(route('exam.bodies.destroy', $examBody));
 
     $response->assertStatus(302);
 
@@ -149,7 +147,7 @@ it('prevents deleting an exam body when certification levels exist', function ()
 */
 it('requires name and code when creating', function () {
 
-    $response = $this->post(route('exam-bodies.store'), [
+    $response = $this->post(route('exam.bodies.store'), [
         'name' => '',
         'code' => '',
         'description' => 'Testing validation',
@@ -163,7 +161,7 @@ it('requires name and code when updating', function () {
 
     $examBody = ExamBody::factory()->create();
 
-    $response = $this->put(route('exam-bodies.update', $examBody), [
+    $response = $this->put(route('exam.bodies.update', $examBody), [
         'name' => '',
         'code' => '',
     ]);
@@ -176,7 +174,7 @@ it('enforces unique code when creating', function () {
 
     ExamBody::factory()->create(['code' => 'DUP001']);
 
-    $response = $this->post(route('exam-bodies.store'), [
+    $response = $this->post(route('exam.bodies.store'), [
         'name' => 'Duplicate Code Body',
         'code' => 'DUP001',
         'description' => 'Testing duplicate code',
@@ -191,7 +189,7 @@ it('enforces unique code when updating', function () {
     $examBody1 = ExamBody::factory()->create(['code' => 'DUP001']);
     $examBody2 = ExamBody::factory()->create(['code' => 'DUP002']);
 
-    $response = $this->put(route('exam-bodies.update', $examBody2), [
+    $response = $this->put(route('exam.bodies.update', $examBody2), [
         'name' => 'Updated Name',
         'code' => 'DUP001',
         'description' => 'Testing duplicate code on update',
@@ -214,7 +212,7 @@ it('searches exam bodies by name and code', function () {
     ]);
 
     $response = $this->get(
-        route('exam-bodies.search', ['q' => 'Kenya'])
+        route('exam.bodies.search', ['q' => 'Kenya'])
     );
 
     $response->assertStatus(200)

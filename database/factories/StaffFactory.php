@@ -18,8 +18,8 @@ class StaffFactory extends Factory
     public function definition(): array
     {
         return [
-            'user_id' => User::factory(),
-            'department_id' => Department::factory(),
+            'user_id' => \App\Models\User::factory(),
+            'department_id' => \App\Models\Department::factory(),
             'first_name' => fake()->firstName(),
             'last_name' => fake()->lastName(),
             'other_name' => fake()->optional()->firstName(),
@@ -34,7 +34,7 @@ class StaffFactory extends Factory
             'designation' => fake()->jobTitle(),
             'staff_number' => 'STAFF/' . fake()->unique()->numerify('####/##'),
             'national_id_number' => fake()->unique()->numerify('########'),
-            'salary' => fake()->randomFloat(2, 30000, 150000),
+            'salary' => fake()->numberBetween(30000, 150000),
             'hired_date' => fake()->date(),
             'employment_type' => fake()->randomElement(['Permanent', 'Contract', 'Part-time']),
             'highest_qualification' => fake()->randomElement(['PhD', 'Masters', 'Bachelors', 'Diploma']),

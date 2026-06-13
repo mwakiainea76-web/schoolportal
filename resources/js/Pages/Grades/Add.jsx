@@ -38,12 +38,6 @@ export default function Add({
                     onSubmit={submit}
                     className="space-y-6 rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm"
                 >
-                    <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-800">
-                        Theory assessments can have multiple tests. Use the
-                        assessment number to separate Test 1, Test 2, and later
-                        entries for the same unit.
-                    </div>
-
                     <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
                         <div>
                             <InputLabel value="Unit" required />
@@ -108,7 +102,10 @@ export default function Add({
                         </div>
 
                         <div>
-                            <InputLabel value="Admission Number / Student ID" required />
+                            <InputLabel
+                                value="Admission Number / Student ID"
+                                required
+                            />
                             <input
                                 type="text"
                                 value={form.data.student_identifier}
@@ -180,7 +177,9 @@ export default function Add({
                         </Link>
                         <button
                             type="submit"
-                            disabled={form.processing || !form.data.curriculum_unit_id}
+                            disabled={
+                                form.processing || !form.data.curriculum_unit_id
+                            }
                             className="rounded-xl bg-emerald-600 px-5 py-3 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                             {form.processing ? "Saving..." : "Save Marks"}

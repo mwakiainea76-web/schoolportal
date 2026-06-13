@@ -51,6 +51,9 @@ return new class extends Migration
                 $table->index(['student_id', 'id']);
                 $table->index(['course_id', 'curriculum_id', 'exam_body_id']);
                 $table->index('curriculum_mapping_id');
+                $table->index('status');
+                $table->index('intake_year');
+                $table->index('intake_period');
             });
         }
     }

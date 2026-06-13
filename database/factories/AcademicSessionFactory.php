@@ -18,13 +18,13 @@ class AcademicSessionFactory extends Factory
     public function definition(): array
     {
         $sessionNo = $this->faker->unique()->randomNumber(2);
-        $isActive = $this->faker->boolean(20);
+        $isActive = false;
 
         return [
             'academic_year_id' => \App\Models\AcademicYear::factory(),
             'session_No' => $sessionNo,
             'session_number' => $sessionNo,
-            'label' => 'Session ' . $sessionNo,
+            'label' => 'Session '.$sessionNo,
             'start_date' => $this->faker->date(),
             'end_date' => $this->faker->date(),
             'status' => $isActive ? 'ongoing' : 'upcoming',

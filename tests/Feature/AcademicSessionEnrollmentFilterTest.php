@@ -5,7 +5,9 @@ namespace Tests\Feature;
 use App\Models\AcademicSession;
 use App\Models\AcademicSessionEnrollment;
 use App\Models\AcademicYear;
+use App\Models\Course;
 use App\Models\CourseEnrollment;
+use App\Models\CurriculumMapping;
 use App\Models\Department;
 use App\Models\Student;
 use App\Models\User;
@@ -47,12 +49,25 @@ class AcademicSessionEnrollmentFilterTest extends TestCase
     public function test_can_filter_academic_session_enrollments_by_department()
     {
         $dept1 = Department::factory()->create();
-        $student1 = Student::factory()->create(['department_id' => $dept1->id]);
-        $ce1 = CourseEnrollment::factory()->create(['student_id' => $student1->id]);
+        $course1 = Course::factory()->create(['department_id' => $dept1->id]);
+        $mapping1 = CurriculumMapping::factory()->create(['course_id' => $course1->id]);
+        $student1 = Student::factory()->create();
+        $ce1 = CourseEnrollment::factory()->create([
+            'student_id' => $student1->id,
+            'course_id' => $course1->id,
+            'curriculum_mapping_id' => $mapping1->id,
+        ]);
         AcademicSessionEnrollment::factory()->create(['course_enrollment_id' => $ce1->id]);
 
+        $dept2 = Department::factory()->create();
+        $course2 = Course::factory()->create(['department_id' => $dept2->id]);
+        $mapping2 = CurriculumMapping::factory()->create(['course_id' => $course2->id]);
         $student2 = Student::factory()->create();
-        $ce2 = CourseEnrollment::factory()->create(['student_id' => $student2->id]);
+        $ce2 = CourseEnrollment::factory()->create([
+            'student_id' => $student2->id,
+            'course_id' => $course2->id,
+            'curriculum_mapping_id' => $mapping2->id,
+        ]);
         AcademicSessionEnrollment::factory()->create(['course_enrollment_id' => $ce2->id]);
 
         $response = $this->actingAs($this->user)

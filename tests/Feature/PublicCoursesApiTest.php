@@ -22,6 +22,8 @@ it('returns courses offered for the active program version with certification le
         'name' => 'Diploma',
         'description' => 'Diploma level',
         'entry_grade' => 'C',
+        'modules' => 6,
+        'duration_in_months' => 24,
     ]);
 
     $certificate = CertificationLevel::query()->create([
@@ -30,6 +32,8 @@ it('returns courses offered for the active program version with certification le
         'name' => 'Certificate',
         'description' => 'Certificate level',
         'entry_grade' => 'D',
+        'modules' => 3,
+        'duration_in_months' => 12,
     ]);
 
     $activeVersion = Curriculum::query()->create([

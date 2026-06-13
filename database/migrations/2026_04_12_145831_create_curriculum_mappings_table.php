@@ -34,6 +34,10 @@ return new class extends Migration
                 ->cascadeOnUpdate();
             $table->timestamps();
             $table->softDeletes();
+
+            $table->index('course_id');
+            $table->index('curriculum_id');
+            $table->index('is_active');
         });
     }
 

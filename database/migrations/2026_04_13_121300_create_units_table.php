@@ -33,6 +33,8 @@ return new class extends Migration
             $table->index(['curriculum_mapping_id', 'module_taught'], 'units_mapping_module_taught_index');
             $table->index(['curriculum_mapping_id', 'module_taught', 'id'], 'units_mapping_module_taught_id_index');
             $table->index('scope');
+            $table->index('module_taught');
+            $table->index('code');
         });
     }
 

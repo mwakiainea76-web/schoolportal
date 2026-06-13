@@ -2,6 +2,7 @@
 
 use App\Models\Course;
 use App\Models\Curriculum;
+use App\Models\ExamBody;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -12,26 +13,16 @@ beforeEach(function () {
     $this->actingAs($user);
 });
 
-/*
-|--------------------------------------------------------------------------
-| CREATE
-|--------------------------------------------------------------------------
-*/
 it('can create a curriculum', function () {
-
+    $examBody = ExamBody::factory()->create();
     $course = Course::factory()->create();
 
-    $data = [
+    $response = $this->post(route('curriculums.store'), [
         'name' => 'CBET Curriculum',
         'course_id' => $course->id,
+        'exam_body_code' => $examBody->code,
         'description' => 'ICT Curriculum',
-        'is_active' => true,
-    ];
-
-    $response = $this->post(
-        route('course-curriculum.store'),
-        $data
-    );
+    ]);
 
     $response->assertStatus(302)
         ->assertSessionHas('success');
@@ -39,47 +30,33 @@ it('can create a curriculum', function () {
     $this->assertDatabaseHas('curricula', [
         'name' => 'CBET Curriculum',
         'course_id' => $course->id,
+        'exam_body_id' => $examBody->id,
     ]);
 });
 
-/*
-|--------------------------------------------------------------------------
-| INDEX
-|--------------------------------------------------------------------------
-*/
 it('can view curriculum list', function () {
-
     Curriculum::factory()->count(3)->create();
 
-    $response = $this->get(route('course-curriculum.index'));
+    $response = $this->get(route('curriculums.index'));
 
     $response->assertStatus(200);
 });
 
-/*
-|--------------------------------------------------------------------------
-| UPDATE
-|--------------------------------------------------------------------------
-*/
 it('can update a curriculum', function () {
-
+    $examBody = ExamBody::factory()->create();
     $course = Course::factory()->create();
-
     $curriculum = Curriculum::factory()->create([
         'course_id' => $course->id,
+        'exam_body_id' => $examBody->id,
+        'created_by' => auth()->id(),
     ]);
 
-    $response = $this->put(
-        route('course-curriculum.update', $curriculum),
-        [
-            'name' => 'Updated Curriculum',
-            'course_id' => $course->id,
-            'description' => 'Updated description',
-            'is_active' => false,
-            'start_date' => '2026-02-01',
-            'end_date' => '2026-10-01',
-        ]
-    );
+    $response = $this->put(route('curriculums.update', $curriculum), [
+        'name' => 'Updated Curriculum',
+        'course_id' => $course->id,
+        'exam_body_code' => $examBody->code,
+        'description' => 'Updated description',
+    ]);
 
     $response->assertStatus(302)
         ->assertSessionHas('success');
@@ -90,18 +67,10 @@ it('can update a curriculum', function () {
     ]);
 });
 
-/*
-|--------------------------------------------------------------------------
-| SOFT DELETE
-|--------------------------------------------------------------------------
-*/
 it('can soft delete a curriculum', function () {
-
     $curriculum = Curriculum::factory()->create();
 
-    $response = $this->delete(
-        route('course-curriculum.destroy', $curriculum)
-    );
+    $response = $this->delete(route('curriculums.destroy', $curriculum));
 
     $response->assertStatus(302)
         ->assertSessionHas('success');
@@ -111,85 +80,47 @@ it('can soft delete a curriculum', function () {
     ]);
 });
 
-/*
-|--------------------------------------------------------------------------
-| VALIDATION (CREATE)
-|--------------------------------------------------------------------------
-*/
 it('requires fields when creating a curriculum', function () {
-
-    $response = $this->post(
-        route('course-curriculum.store'),
-        []
-    );
+    $response = $this->post(route('curriculums.store'), []);
 
     $response->assertStatus(302)
         ->assertSessionHasErrors([
             'name',
-            'course_id',
-            'is_active',
+            'exam_body_code',
         ]);
 });
 
-/*
-|--------------------------------------------------------------------------
-| VALIDATION (UPDATE)
-|--------------------------------------------------------------------------
-*/
 it('requires fields when updating a curriculum', function () {
-
     $curriculum = Curriculum::factory()->create();
 
-    $response = $this->put(
-        route('course-curriculum.update', $curriculum),
-        []
-    );
+    $response = $this->put(route('curriculums.update', $curriculum), []);
 
     $response->assertStatus(302)
         ->assertSessionHasErrors([
             'name',
-            'course_id',
-            'is_active',
-            'start_date',
-            'end_date',
+            'exam_body_code',
         ]);
 });
 
-/*
-|--------------------------------------------------------------------------
-| DUPLICATE PREVENTION
-|--------------------------------------------------------------------------
-*/
-it('prevents duplicate curriculum for same course', function () {
-
-    $course = Course::factory()->create();
+it('prevents duplicate curriculum names', function () {
+    $examBody = ExamBody::factory()->create();
 
     Curriculum::factory()->create([
         'name' => 'ICT Curriculum',
-        'course_id' => $course->id,
-        'is_active' => true,
+        'exam_body_id' => $examBody->id,
+        'created_by' => auth()->id(),
     ]);
 
-    $response = $this->post(
-        route('course-curriculum.store'),
-        [
-            'name' => 'ICT Curriculum',
-            'course_id' => $course->id,
-            'is_active' => true,
-        ]
-    );
+    $response = $this->post(route('curriculums.store'), [
+        'name' => 'ICT Curriculum',
+        'exam_body_code' => $examBody->code,
+    ]);
 
     $response->assertStatus(302)
-        ->assertSessionHas('error');
+        ->assertSessionHasErrors(['name']);
 });
 
-/*
-|--------------------------------------------------------------------------
-| SEARCH
-|--------------------------------------------------------------------------
-*/
 it('can search curriculums by name', function () {
-
     Curriculum::factory()->create([
         'name' => 'ICT Curriculum',
     ]);
@@ -198,7 +129,7 @@ it('can search curriculums by name', function () {
         'name' => 'Electrical Curriculum',
     ]);
 
-    $response = $this->get(route('course-curriculum.search', [
+    $response = $this->get(route('curriculums.search', [
         'q' => 'ICT',
     ]));
 
@@ -211,33 +142,18 @@ it('can search curriculums by name', function () {
         ]);
 });
 
-it('prevents deleting a curriculum when it has linked units', function () {
-
-    $course = \App\Models\Course::factory()->create();
-
-    $curriculum = \App\Models\Curriculum::factory()->create([
-        'course_id' => $course->id,
+it('can disable and reactivate a curriculum', function () {
+    $curriculum = Curriculum::factory()->create([
+        'is_active' => true,
     ]);
 
-    $unit = \App\Models\Unit::factory()->create();
+    $disableResponse = $this->patch(route('curriculums.disable', $curriculum));
+    $disableResponse->assertStatus(302)->assertSessionHas('success');
 
-    // attach via pivot table (IMPORTANT: belongsToMany)
-    $curriculum->units()->attach($unit->id, [
-        'module_taught' => 1,
-    ]);
+    expect((bool) $curriculum->fresh()->is_active)->toBeFalse();
 
-    $response = $this->delete(
-        route('course-curriculum.destroy', $curriculum)
-    );
+    $reactivateResponse = $this->patch(route('curriculums.reactivate', $curriculum));
+    $reactivateResponse->assertStatus(302)->assertSessionHas('success');
 
-    $response->assertStatus(302)
-        ->assertSessionHas('error');
-
-    // MUST still exist (soft delete should NOT happen)
-    $this->assertDatabaseHas('curricula', [
-        'id' => $curriculum->id,
-        'deleted_at' => null,
-    ]);
-
-    expect($curriculum->fresh()->deleted_at)->toBeNull();
+    expect((bool) $curriculum->fresh()->is_active)->toBeTrue();
 });

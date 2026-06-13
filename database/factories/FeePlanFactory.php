@@ -18,7 +18,10 @@ class FeePlanFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'name' => $this->faker->sentence(3),
+            'version' => 'v1',
+            'is_active' => true,
+            'created_by' => \App\Models\User::factory(),
         ];
     }
 }

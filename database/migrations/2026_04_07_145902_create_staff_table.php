@@ -61,6 +61,9 @@ return new class extends Migration
             $table->index('user_id');
             $table->index('department_id');
             $table->index('staff_status');
+            $table->index('first_name');
+            $table->index('last_name');
+            $table->index('hired_date');
         });
 
         Schema::table('departments', function (Blueprint $table) {

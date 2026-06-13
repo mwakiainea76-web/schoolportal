@@ -34,6 +34,8 @@ return new class extends Migration
             $table->unique(['course_enrollment_id', 'academic_session_id'], 'academic_session_enrollments_unique_session');
             $table->index(['course_enrollment_id', 'id']);
             $table->index(['academic_session_id', 'status']);
+            $table->index('year_of_study');
+            $table->index('module');
         });
     }
 

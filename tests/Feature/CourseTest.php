@@ -2,7 +2,9 @@
 
 use App\Models\CertificationLevel;
 use App\Models\Course;
+use App\Models\Curriculum;
 use App\Models\Department;
+use App\Models\ExamBody;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -21,16 +23,21 @@ beforeEach(function () {
 it('can create a course', function () {
 
     $department = Department::factory()->create();
-
-    $level = CertificationLevel::factory()->create();
+    $examBody = ExamBody::factory()->create();
+    $level = CertificationLevel::factory()->create(['exam_body_id' => $examBody->id]);
+    $curriculum = Curriculum::factory()->create([
+        'course_id' => null,
+        'exam_body_id' => $examBody->id,
+        'created_by' => auth()->id(),
+    ]);
 
     $data = [
         'code' => 'CRS001',
         'name' => 'Software Engineering',
         'description' => 'Course description',
         'initials' => 'SE',
-        'is_active' => true,
-        'duration_in_months' => 12,
+        'exam_body_id' => $examBody->id,
+        'curriculum_id' => $curriculum->id,
         'certification_level_id' => $level->id,
         'department_id' => $department->id,
     ];
@@ -73,7 +80,13 @@ it('can update a course', function () {
     $course = Course::factory()->create();
 
     $department = Department::factory()->create();
-    $level = CertificationLevel::factory()->create();
+    $examBody = ExamBody::factory()->create();
+    $level = CertificationLevel::factory()->create(['exam_body_id' => $examBody->id]);
+    $curriculum = Curriculum::factory()->create([
+        'course_id' => null,
+        'exam_body_id' => $examBody->id,
+        'created_by' => auth()->id(),
+    ]);
 
     $response = $this->put(
         route('courses.update', $course),
@@ -82,8 +95,8 @@ it('can update a course', function () {
             'name' => 'Updated Course',
             'description' => 'Updated',
             'initials' => 'UC',
-            'is_active' => false,
-            'duration_in_months' => 24,
+            'exam_body_id' => $examBody->id,
+            'curriculum_id' => $curriculum->id,
             'certification_level_id' => $level->id,
             'department_id' => $department->id,
         ]
@@ -134,8 +147,8 @@ it('requires fields when creating a course', function () {
             'code',
             'name',
             'initials',
-            'is_active',
-            'duration_in_months',
+            'exam_body_id',
+            'curriculum_id',
             'certification_level_id',
             'department_id',
         ]);
@@ -178,8 +191,8 @@ it('requires fields when updating a course', function () {
             'code',
             'name',
             'initials',
-            'is_active',
-            'duration_in_months',
+            'exam_body_id',
+            'curriculum_id',
             'certification_level_id',
             'department_id',
         ]);

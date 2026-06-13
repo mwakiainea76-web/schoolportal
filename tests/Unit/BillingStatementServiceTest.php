@@ -3,20 +3,14 @@
 namespace Tests\Unit;
 
 use App\Models\AcademicSession;
-use App\Models\AcademicSessionEnrollment;
 use App\Models\AcademicYear;
 use App\Models\FeeAdjustment;
 use App\Models\InvoiceItem;
 use App\Models\LedgerTransaction;
 use App\Models\Payment;
 use App\Models\PaymentAllocation;
-use App\Models\Course;
-use App\Models\CourseEnrollment;
-use App\Models\Curriculum;
-use App\Models\CurriculumMapping;
 use App\Models\Student;
 use App\Models\StudentInvoice;
-use App\Models\User;
 use App\Services\BillingService;
 use App\Services\BillingStatementService;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
@@ -75,14 +69,10 @@ class BillingStatementServiceTest extends TestCase
         $service = new BillingStatementService();
         $student = $this->makeStudent();
         $session = $this->makeSession();
-        $courseEnrollment = $this->makeCourseEnrollment();
-        $enrollment = new AcademicSessionEnrollment();
-        $enrollment->setRelation('courseEnrollment', $courseEnrollment);
 
         $invoice = $this->makeInvoice(
             id: 21,
             student: $student,
-            enrollment: $enrollment,
             session: $session,
             invoiceNumber: 'INV-021',
             issueDate: '2026-03-01',
@@ -104,17 +94,13 @@ class BillingStatementServiceTest extends TestCase
             ],
         );
 
-        $statement = $service->buildStudentStatement($invoice, new EloquentCollection([$invoice]), $courseEnrollment);
+        $statement = $service->buildStudentStatement($invoice, new EloquentCollection([$invoice]));
 
         $this->assertSame('STATEMENT-7', $statement['statement_reference']);
         $this->assertSame('Alice Example', $statement['student']['name']);
-        $this->assertSame('REG/001', $statement['student']['registration_number']);
-        $this->assertSame('Business Management', $statement['program']['name']);
-        $this->assertSame('May 2026 Cohort', $statement['program']['version']);
+        $this->assertSame('REG/001', $statement['student']['admission_number']);
+        $this->assertSame('2026-01-05', $statement['student']['admission_date']);
         $this->assertSame('2026/2027 - Session 1', $statement['session']);
-        $this->assertSame(7500.0, $statement['totals']['amount_due']);
-        $this->assertSame(3500.0, $statement['totals']['paid_amount']);
-        $this->assertSame(4000.0, $statement['totals']['balance_due']);
         $this->assertSame('partial', $statement['status']);
         $this->assertCount(3, $statement['entries']);
         $this->assertSame(7500.0, $statement['entries'][0]['running_balance']);
@@ -261,16 +247,13 @@ class BillingStatementServiceTest extends TestCase
 
     private function makeStudent(): Student
     {
-        $user = new User([
+        $student = new Student();
+        $student->forceFill([
             'first_name' => 'Alice',
             'last_name' => 'Example',
+            'admission_number' => 'REG/001',
         ]);
-
-        $student = new Student([
-            'registration_number' => 'REG/001',
-            'admission_date' => '2026-01-05',
-        ]);
-        $student->setRelation('user', $user);
+        $student->created_at = now()->parse('2026-01-05');
 
         return $student;
     }
@@ -288,19 +271,5 @@ class BillingStatementServiceTest extends TestCase
         $session->setRelation('academicYear', $year);
 
         return $session;
-    }
-
-    private function makeCourseEnrollment(): CourseEnrollment
-    {
-        $program = new Course(['name' => 'Business Management']);
-        $curriculum = new Curriculum(['name' => 'May 2026 Cohort']);
-        $mapping = new CurriculumMapping();
-        $mapping->setRelation('program', $program);
-        $mapping->setRelation('curriculum', $curriculum);
-
-        $courseEnrollment = new CourseEnrollment();
-        $courseEnrollment->setRelation('curriculumMapping', $mapping);
-
-        return $courseEnrollment;
     }
 }

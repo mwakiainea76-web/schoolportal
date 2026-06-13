@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Department;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -24,11 +25,11 @@ class ProfileTest extends TestCase
     public function test_profile_information_can_be_updated(): void
     {
         $user = User::factory()->create();
-        // Since it's a new user, we need to give them a staff or student profile to update first/last name
+        $department = Department::factory()->create();
         $user->staff()->create([
             'first_name' => 'Old',
             'last_name' => 'Name',
-            'department_id' => 1, // Assume 1 exists or use a factory
+            'department_id' => $department->id,
             'staff_number' => 'STF001',
             'gender' => 'male',
             'phone_number' => '0712345678',
@@ -64,10 +65,11 @@ class ProfileTest extends TestCase
     public function test_email_verification_status_is_unchanged_when_the_email_address_is_unchanged(): void
     {
         $user = User::factory()->create();
+        $department = Department::factory()->create();
         $user->staff()->create([
             'first_name' => 'Test',
             'last_name' => 'User',
-            'department_id' => 1,
+            'department_id' => $department->id,
             'staff_number' => 'STF001',
             'gender' => 'male',
             'phone_number' => '0712345678',
@@ -103,7 +105,7 @@ class ProfileTest extends TestCase
         $response = $this
             ->actingAs($user)
             ->delete('/profile', [
-                'password' => 'password',
+                'password' => '@123Password',
             ]);
 
         $response
@@ -111,7 +113,9 @@ class ProfileTest extends TestCase
             ->assertRedirect('/');
 
         $this->assertGuest();
-        $this->assertNull($user->fresh());
+        $this->assertSoftDeleted('users', [
+            'id' => $user->id,
+        ]);
     }
 
     public function test_correct_password_must_be_provided_to_delete_account(): void

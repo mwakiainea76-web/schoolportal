@@ -1,343 +1,168 @@
 <?php
 
-use App\Models\AcademicSession;
-use App\Models\Curriculum;
 use App\Models\Department;
-use App\Models\FeeModel;
-use App\Models\FeeTemplate;
+use App\Models\FeePlan;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
+    $this->withoutMiddleware();
     $user = User::factory()->create();
+    $department = Department::factory()->create();
+
+    $user->staff()->create([
+        'department_id' => $department->id,
+        'first_name' => 'Finance',
+        'last_name' => 'Officer',
+        'staff_number' => 'STF/FEE/001',
+        'gender' => 'male',
+        'phone_number' => '0712345678',
+        'date_of_birth' => '1990-01-01',
+        'county' => 'Nairobi',
+        'address' => '123 Street',
+        'religion' => 'Christian',
+        'highest_qualification' => 'Degree',
+        'hired_date' => '2020-01-01',
+        'employment_type' => 'fulltime',
+        'designation' => 'Bursar',
+    ]);
+
     $this->actingAs($user);
 });
 
-/*
-|--------------------------------------------------------------------------
-| CREATE
-|--------------------------------------------------------------------------
-*/
-it('can create a fee model', function () {
-    $feeTemplate = FeeTemplate::factory()->create();
-    $department = Department::factory()->create();
-    $curriculum = Curriculum::factory()->create();
-    $academicSession = AcademicSession::factory()->create();
-
-    $data = [
-        'fee_template_id' => $feeTemplate->id,
-        'scope' => 'department',
-        'priority' => '70',
-        'department_id' => $department->id,
-        'curricula_id' => null,
-        'academic_session_id' => $academicSession->id,
-        'valid_from' => '2024-01-01',
-        'valid_until' => '2024-12-31',
+it('can create a fee plan', function () {
+    $response = $this->post(route('fees.plans.store'), [
+        'name' => '2026 Main Plan',
+        'version' => 'v1',
         'is_active' => true,
-    ];
-
-    $response = $this->post(
-        route('fees.models.store'),
-        $data
-    );
+    ]);
 
     $response->assertStatus(302)
         ->assertSessionHas('success');
 
-    $this->assertDatabaseHas('fee_models', [
-        'fee_template_id' => $feeTemplate->id,
-        'scope' => 'department',
-        'priority' => '70',
-        'department_id' => $department->id,
+    $this->assertDatabaseHas('fee_plans', [
+        'name' => '2026 Main Plan',
+        'version' => 'v1',
         'is_active' => true,
     ]);
 });
 
-it('can create a global fee model', function () {
-    $feeTemplate = FeeTemplate::factory()->create();
-    $academicSession = AcademicSession::factory()->create();
-
-    $data = [
-        'fee_template_id' => $feeTemplate->id,
-        'scope' => 'global',
-        'priority' => '60',
-        'department_id' => null,
-        'curricula_id' => null,
-        'academic_session_id' => $academicSession->id,
-        'valid_from' => '2024-01-01',
-        'valid_until' => null,
+it('can view fee plans list', function () {
+    FeePlan::query()->create([
+        'name' => 'Plan A',
+        'version' => 'v1',
         'is_active' => true,
-    ];
-
-    $response = $this->post(
-        route('fees.models.store'),
-        $data
-    );
-
-    $response->assertStatus(302)
-        ->assertSessionHas('success');
-
-    $this->assertDatabaseHas('fee_models', [
-        'fee_template_id' => $feeTemplate->id,
-        'scope' => 'global',
-        'priority' => '60',
-        'department_id' => null,
-        'curricula_id' => null,
-        'is_active' => true,
+        'created_by' => auth()->id(),
     ]);
-});
 
-/*
-|--------------------------------------------------------------------------
-| INDEX
-|--------------------------------------------------------------------------
-*/
-it('can view fee models list', function () {
-    FeeModel::factory()->count(3)->create();
-
-    $response = $this->get(route('fees.models.index'));
-
-    $response->assertStatus(200)
-        ->assertInertia(fn ($page) => $page
-            ->has('feeModels.data', 3)
-        );
-});
-
-/*
-|--------------------------------------------------------------------------
-| UPDATE
-|--------------------------------------------------------------------------
-*/
-it('can update a fee model', function () {
-    $feeModel = FeeModel::factory()->create();
-    $newTemplate = FeeTemplate::factory()->create();
-
-    $data = [
-        'fee_template_id' => $newTemplate->id,
-        'scope' => 'global',
-        'priority' => '80',
-        'department_id' => null,
-        'curricula_id' => null,
-        'academic_session_id' => $feeModel->academic_session_id,
-        'valid_from' => '2024-06-01',
-        'valid_until' => '2025-05-31',
+    FeePlan::query()->create([
+        'name' => 'Plan B',
+        'version' => 'v1',
         'is_active' => false,
-    ];
+        'created_by' => auth()->id(),
+    ]);
 
-    $response = $this->put(
-        route('fees.models.update', $feeModel),
-        $data
-    );
+    $response = $this->get(route('fees.plans.index'));
+
+    $response->assertStatus(200);
+});
+
+it('can update a fee plan', function () {
+    $feePlan = FeePlan::query()->create([
+        'name' => 'Plan A',
+        'version' => 'v1',
+        'is_active' => true,
+        'created_by' => auth()->id(),
+    ]);
+
+    $response = $this->put(route('fees.plans.update', $feePlan), [
+        'name' => 'Plan A Updated',
+        'version' => 'v2',
+        'is_active' => false,
+    ]);
 
     $response->assertStatus(302)
         ->assertSessionHas('success');
 
-    $feeModel->refresh();
-
-    expect($feeModel->fee_template_id)->toBe($newTemplate->id);
-    expect($feeModel->scope)->toBe('global');
-    expect($feeModel->priority)->toBe('80');
-    expect($feeModel->is_active)->toBe(false);
+    $this->assertDatabaseHas('fee_plans', [
+        'id' => $feePlan->id,
+        'name' => 'Plan A Updated',
+        'version' => 'v2',
+        'is_active' => false,
+    ]);
 });
 
-/*
-|--------------------------------------------------------------------------
-| DELETE
-|--------------------------------------------------------------------------
-*/
-it('can delete a fee model', function () {
-    $feeModel = FeeModel::factory()->create();
+it('can delete a fee plan', function () {
+    $feePlan = FeePlan::query()->create([
+        'name' => 'Plan A',
+        'version' => 'v1',
+        'is_active' => true,
+        'created_by' => auth()->id(),
+    ]);
 
-    $response = $this->delete(
-        route('fees.models.destroy', $feeModel)
-    );
+    $response = $this->delete(route('fees.plans.destroy', $feePlan));
 
     $response->assertStatus(302)
         ->assertSessionHas('success');
 
-    $this->assertSoftDeleted($feeModel);
+    $this->assertSoftDeleted('fee_plans', [
+        'id' => $feePlan->id,
+    ]);
 });
 
-/*
-|--------------------------------------------------------------------------
-| VALIDATION
-|--------------------------------------------------------------------------
-*/
-it('validates required fields', function () {
-    $data = [
-        // Missing required fields
-    ];
-
-    $response = $this->post(
-        route('fees.models.store'),
-        $data
-    );
+it('validates required fee plan fields', function () {
+    $response = $this->post(route('fees.plans.store'), []);
 
     $response->assertStatus(302)
         ->assertSessionHasErrors([
-            'fee_template_id',
-            'scope',
-            'priority',
-            'valid_from',
+            'name',
+            'version',
             'is_active',
         ]);
 });
 
-it('validates scope values', function () {
-    $feeTemplate = FeeTemplate::factory()->create();
-    $academicSession = AcademicSession::factory()->create();
-
-    $data = [
-        'fee_template_id' => $feeTemplate->id,
-        'scope' => 'invalid_scope',
-        'priority' => '70',
-        'academic_session_id' => $academicSession->id,
-        'valid_from' => '2024-01-01',
+it('prevents duplicate fee plan name and version combinations', function () {
+    FeePlan::query()->create([
+        'name' => 'Plan A',
+        'version' => 'v1',
         'is_active' => true,
-    ];
-
-    $response = $this->post(
-        route('fees.models.store'),
-        $data
-    );
-
-    $response->assertStatus(302)
-        ->assertSessionHasErrors('scope');
-});
-
-it('validates priority values', function () {
-    $feeTemplate = FeeTemplate::factory()->create();
-    $academicSession = AcademicSession::factory()->create();
-
-    $data = [
-        'fee_template_id' => $feeTemplate->id,
-        'scope' => 'global',
-        'priority' => '90', // Invalid priority
-        'academic_session_id' => $academicSession->id,
-        'valid_from' => '2024-01-01',
-        'is_active' => true,
-    ];
-
-    $response = $this->post(
-        route('fees.models.store'),
-        $data
-    );
-
-    $response->assertStatus(302)
-        ->assertSessionHasErrors('priority');
-});
-
-it('validates valid_until is after valid_from', function () {
-    $feeTemplate = FeeTemplate::factory()->create();
-    $academicSession = AcademicSession::factory()->create();
-
-    $data = [
-        'fee_template_id' => $feeTemplate->id,
-        'scope' => 'global',
-        'priority' => '70',
-        'academic_session_id' => $academicSession->id,
-        'valid_from' => '2024-12-31',
-        'valid_until' => '2024-01-01', // Before valid_from
-        'is_active' => true,
-    ];
-
-    $response = $this->post(
-        route('fees.models.store'),
-        $data
-    );
-
-    $response->assertStatus(302)
-        ->assertSessionHasErrors('valid_until');
-});
-
-/*
-|--------------------------------------------------------------------------
-| SCOPES
-|--------------------------------------------------------------------------
-*/
-it('can filter active fee models', function () {
-    FeeModel::factory()->count(2)->active()->create();
-    FeeModel::factory()->count(3)->inactive()->create();
-
-    $response = $this->get(route('fees.models.index', ['status' => 'active']));
-
-    $response->assertStatus(200)
-        ->assertInertia(fn ($page) => $page
-            ->has('feeModels.data', 2)
-        );
-});
-
-it('can filter by scope', function () {
-    FeeModel::factory()->count(2)->global()->create();
-    FeeModel::factory()->count(3)->forDepartment()->create();
-
-    $response = $this->get(route('fees.models.index', ['scope' => 'global']));
-
-    $response->assertStatus(200)
-        ->assertInertia(fn ($page) => $page
-            ->has('feeModels.data', 2)
-        );
-});
-
-it('can filter valid fee models', function () {
-    FeeModel::factory()->count(2)->valid()->create();
-    FeeModel::factory()->count(3)->expired()->create();
-
-    $response = $this->get(route('fees.models.index', ['valid' => 'valid']));
-
-    $response->assertStatus(200)
-        ->assertInertia(fn ($page) => $page
-            ->has('feeModels.data', 2)
-        );
-});
-
-/*
-|--------------------------------------------------------------------------
-| MODEL METHODS
-|--------------------------------------------------------------------------
-*/
-it('has correct display name for global scope', function () {
-    $feeTemplate = FeeTemplate::factory()->create(['name' => 'Tuition Fee']);
-    $feeModel = FeeModel::factory()->global()->create(['fee_template_id' => $feeTemplate->id]);
-
-    expect($feeModel->display_name)->toBe('Tuition Fee (Global)');
-});
-
-it('has correct display name for department scope', function () {
-    $feeTemplate = FeeTemplate::factory()->create(['name' => 'Lab Fee']);
-    $department = Department::factory()->create(['name' => 'Computer Science']);
-    $feeModel = FeeModel::factory()->forDepartment()->create([
-        'fee_template_id' => $feeTemplate->id,
-        'department_id' => $department->id,
+        'created_by' => auth()->id(),
     ]);
 
-    expect($feeModel->display_name)->toBe('Lab Fee (Computer Science)');
+    $response = $this->post(route('fees.plans.store'), [
+        'name' => 'Plan A',
+        'version' => 'v1',
+        'is_active' => true,
+    ]);
+
+    $response->assertStatus(302)
+        ->assertSessionHasErrors(['name']);
 });
 
-it('can determine if fee model is valid', function () {
-    $validModel = FeeModel::factory()->valid()->create();
-    $expiredModel = FeeModel::factory()->expired()->create();
+it('can search fee plans by name', function () {
+    FeePlan::query()->create([
+        'name' => 'Tuition Plan',
+        'version' => 'v1',
+        'is_active' => true,
+        'created_by' => auth()->id(),
+    ]);
 
-    expect($validModel->is_valid)->toBe(true);
-    expect($expiredModel->is_valid)->toBe(false);
-});
+    FeePlan::query()->create([
+        'name' => 'Hostel Plan',
+        'version' => 'v1',
+        'is_active' => true,
+        'created_by' => auth()->id(),
+    ]);
 
-it('can determine scope type', function () {
-    $globalModel = FeeModel::factory()->global()->create();
-    $departmentModel = FeeModel::factory()->forDepartment()->create();
-    $curriculumModel = FeeModel::factory()->forCurriculum()->create();
+    $response = $this->get(route('fees.plans.search', ['q' => 'Tuition']));
 
-    expect($globalModel->isGlobal())->toBe(true);
-    expect($globalModel->isForDepartment())->toBe(false);
-    expect($globalModel->isForCurriculum())->toBe(false);
-
-    expect($departmentModel->isGlobal())->toBe(false);
-    expect($departmentModel->isForDepartment())->toBe(true);
-    expect($departmentModel->isForCurriculum())->toBe(false);
-
-    expect($curriculumModel->isGlobal())->toBe(false);
-    expect($curriculumModel->isForDepartment())->toBe(false);
-    expect($curriculumModel->isForCurriculum())->toBe(true);
+    $response->assertStatus(200)
+        ->assertJsonFragment([
+            'name' => 'Tuition Plan',
+        ])
+        ->assertJsonMissing([
+            'name' => 'Hostel Plan',
+        ]);
 });

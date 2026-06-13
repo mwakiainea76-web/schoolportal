@@ -19,7 +19,7 @@ class AcademicYearFactory extends Factory
     {
         $year = $this->faker->unique()->year;
         $academicYear = $year . '/' . ($year + 1);
-        $isActive = $this->faker->boolean(20);
+        $isActive = false;
 
         return [
             'academic_year' => $academicYear,
