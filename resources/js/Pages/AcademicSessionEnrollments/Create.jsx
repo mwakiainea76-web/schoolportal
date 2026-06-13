@@ -51,9 +51,20 @@ export default function Create({ activeSession }) {
             <div className="mx-auto w-full max-w-5xl py-6">
                 <div className="rounded-[28px] border border-zinc-200 bg-white shadow-sm">
                     <div className="border-b border-zinc-100 px-8 py-6">
-                        <h1 className="text-2xl font-semibold text-zinc-900">
-                            Enrol Student To Session
-                        </h1>
+                        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                            <h1 className="text-2xl font-semibold text-zinc-900">
+                                Enrol Student To Session
+                            </h1>
+
+                            <Link
+                                href={route(
+                                    "students.session-enrollment-status.create",
+                                )}
+                                className="inline-flex items-center justify-center rounded-xl border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
+                            >
+                                Change Student Status
+                            </Link>
+                        </div>
                     </div>
 
                     <form onSubmit={submit} className="space-y-6 px-8 py-8">
@@ -62,6 +73,22 @@ export default function Create({ activeSession }) {
                                 {errors.session_registration}
                             </div>
                         ) : null}
+
+                        <input
+                            type="hidden"
+                            name="active_session_id"
+                            value={data.active_session_id}
+                        />
+                        <input
+                            type="hidden"
+                            name="year_of_study"
+                            value={studyProgress.yearOfStudy}
+                        />
+                        <input
+                            type="hidden"
+                            name="session_number"
+                            value={studyProgress.sessionNumber}
+                        />
 
                         <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
                             <div>
@@ -77,20 +104,6 @@ export default function Create({ activeSession }) {
                                     placeholder="TVET/2026/001"
                                 />
                                 <InputError message={errors.admission_number} />
-                            </div>
-
-                            <div>
-                                <InputLabel value="Current Year - Current Session" />
-                                <input
-                                    type="hidden"
-                                    name="active_session_id"
-                                    value={data.active_session_id}
-                                />
-                                <TextInput
-                                    value={activeSession?.name ?? "No active session"}
-                                    disabled
-                                    className="text-zinc-500"
-                                />
                             </div>
 
                             <div>
@@ -111,18 +124,9 @@ export default function Create({ activeSession }) {
                             </div>
 
                             <div>
-                                <InputLabel value="Year Of Study" />
+                                <InputLabel value="Current Year - Current Session" />
                                 <TextInput
-                                    value={studyProgress.yearOfStudy}
-                                    disabled
-                                    className="text-zinc-500"
-                                />
-                            </div>
-
-                            <div>
-                                <InputLabel value="Session Number" />
-                                <TextInput
-                                    value={studyProgress.sessionNumber}
+                                    value={activeSession?.name ?? "No active session"}
                                     disabled
                                     className="text-zinc-500"
                                 />

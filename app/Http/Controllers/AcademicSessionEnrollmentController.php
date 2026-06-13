@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreAcademicSessionEnrollmentRequest;
+use App\Http\Requests\UpdateAcademicSessionEnrollmentStatusRequest;
 use App\Models\AcademicSession;
 use App\Models\AcademicSessionEnrollment;
 use App\Models\CourseEnrollment;
@@ -10,6 +11,7 @@ use App\Models\Unit;
 use App\Models\Student;
 use App\Models\StudentUnitRegistration;
 use App\Services\BillingService;
+use App\Services\StudentEnrollmentStatusService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\DB;
@@ -158,6 +160,13 @@ class AcademicSessionEnrollmentController extends Controller
         ]);
     }
 
+    public function createStatusPage()
+    {
+        return Inertia::render('AcademicSessionEnrollments/ChangeStatus', [
+            'statuses' => ['active', 'deferred', 'expelled', 'graduated'],
+        ]);
+    }
+
     public function store(StoreAcademicSessionEnrollmentRequest $request)
     {
         $student = Student::where('admission_number', $request->admission_number)
@@ -280,6 +289,32 @@ class AcademicSessionEnrollmentController extends Controller
         $academicSessionEnrollment->update(['status' => $request->status]);
 
         return back()->with('success', 'Enrollment status updated successfully.');
+    }
+
+    public function updateStatusByAdmission(
+        UpdateAcademicSessionEnrollmentStatusRequest $request,
+        StudentEnrollmentStatusService $studentStatusService
+    )
+    {
+        $student = Student::where('admission_number', $request->admission_number)->first();
+
+        if (! $student) {
+            throw ValidationException::withMessages([
+                'admission_number' => 'No student was found with that admission number.',
+            ]);
+        }
+
+        $status = $request->status;
+        $requiresReason = in_array($status, ['deferred', 'expelled'], true);
+
+        $studentStatusService->updateEnrollmentStatus($student, $status, [
+            'effective_date' => $request->effective_date,
+            'reason' => $requiresReason ? $request->reason : null,
+            'resume_date' => $status === 'deferred' ? $request->resume_date : null,
+            'recorded_by' => $request->user()?->id,
+        ]);
+
+        return back()->with('success', 'Student status updated successfully.');
     }
 
     public function destroy(AcademicSessionEnrollment $academicSessionEnrollment)

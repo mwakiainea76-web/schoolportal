@@ -12,7 +12,6 @@ import {
     modules,
     relation_type,
     religion,
-    student_status,
 } from "@/constants/constants";
 
 export default function EditStudent({
@@ -84,7 +83,6 @@ export default function EditStudent({
         admission_date: student.admission_date || "",
         current_module: student.current_module || "",
         fee_discount_percentage: student.fee_discount_percentage || "",
-        student_status: student.enrollment_status || "active",
         kin_first_name: student.user?.nextofkin?.first_name || "",
         kin_last_name: student.user?.nextofkin?.last_name || "",
         kin_relationship: student.user?.nextofkin?.relationship || "",
@@ -640,23 +638,6 @@ export default function EditStudent({
                                             />
                                         </div>
 
-                                        <div>
-                                            <InputLabel value="Student Status" />
-                                            <SearchSelect
-                                                defaultOptions={student_status}
-                                                value={data.student_status}
-                                                onChange={(status) =>
-                                                    setData(
-                                                        "student_status",
-                                                        status.name,
-                                                    )
-                                                }
-                                                error={errors.student_status}
-                                            />
-                                            <InputError
-                                                message={errors.student_status}
-                                            />
-                                        </div>
                                     </div>
                                 </div>
                             </section>

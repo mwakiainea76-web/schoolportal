@@ -322,6 +322,12 @@ export const STAFF_NAV_ITEMS = [
                 roles: ["admin"],
             },
             {
+                routeName: "students.session-enrollment-status.create",
+                fallback: "/students/session-enrollment-status",
+                label: "Student Status",
+                roles: ["admin"],
+            },
+            {
                 routeName: "students.password-reset.create",
                 fallback: "/students/reset-password",
                 label: "Reset Password",

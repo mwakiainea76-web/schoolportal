@@ -202,4 +202,51 @@ class ManualAcademicSessionEnrollmentTest extends TestCase
         $this->assertSame(2, $enrollment->year_of_study);
         $this->assertSame(1, $enrollment->session_number);
     }
+
+    public function test_admin_can_open_change_student_status_page(): void
+    {
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+
+        $this->actingAs($admin)
+            ->get(route('students.session-enrollment-status.create'))
+            ->assertOk();
+    }
+
+    public function test_admin_can_update_student_status_by_admission_number_and_log_it(): void
+    {
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+
+        $student = Student::factory()->create([
+            'admission_number' => 'TVET/2026/011',
+            'enrollment_status' => 'active',
+        ]);
+
+        $this->actingAs($admin)
+            ->from(route('students.session-enrollment-status.create'))
+            ->post(route('students.session-enrollment-status.store'), [
+                'admission_number' => $student->admission_number,
+                'status' => 'deferred',
+                'effective_date' => '2026-06-13',
+                'reason' => 'Medical leave',
+                'resume_date' => '2026-07-01',
+            ])
+            ->assertSessionHasNoErrors()
+            ->assertRedirect(route('students.session-enrollment-status.create'));
+
+        $this->assertDatabaseHas('students', [
+            'id' => $student->id,
+            'enrollment_status' => 'deferred',
+        ]);
+
+        $this->assertDatabaseHas('student_status_logs', [
+            'student_id' => $student->id,
+            'status' => 'deferred',
+            'effective_date' => '2026-06-13 00:00:00',
+            'reason' => 'Medical leave',
+            'resume_date' => '2026-07-01 00:00:00',
+            'recorded_by' => $admin->id,
+        ]);
+    }
 }

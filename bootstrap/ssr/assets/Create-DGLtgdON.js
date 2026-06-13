@@ -44,6 +44,30 @@ function Create({ activeSession }) {
       /* @__PURE__ */ jsx("div", { className: "border-b border-zinc-100 px-8 py-6", children: /* @__PURE__ */ jsx("h1", { className: "text-2xl font-semibold text-zinc-900", children: "Enrol Student To Session" }) }),
       /* @__PURE__ */ jsxs("form", { onSubmit: submit, className: "space-y-6 px-8 py-8", children: [
         errors.session_registration ? /* @__PURE__ */ jsx("div", { className: "rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700", children: errors.session_registration }) : null,
+        /* @__PURE__ */ jsx(
+          "input",
+          {
+            type: "hidden",
+            name: "active_session_id",
+            value: data.active_session_id
+          }
+        ),
+        /* @__PURE__ */ jsx(
+          "input",
+          {
+            type: "hidden",
+            name: "year_of_study",
+            value: studyProgress.yearOfStudy
+          }
+        ),
+        /* @__PURE__ */ jsx(
+          "input",
+          {
+            type: "hidden",
+            name: "session_number",
+            value: studyProgress.sessionNumber
+          }
+        ),
         /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-1 gap-5 md:grid-cols-3", children: [
           /* @__PURE__ */ jsxs("div", { children: [
             /* @__PURE__ */ jsx(InputLabel, { value: "Admission Number", required: true }),
@@ -59,25 +83,6 @@ function Create({ activeSession }) {
               }
             ),
             /* @__PURE__ */ jsx(InputError, { message: errors.admission_number })
-          ] }),
-          /* @__PURE__ */ jsxs("div", { children: [
-            /* @__PURE__ */ jsx(InputLabel, { value: "Current Year - Current Session" }),
-            /* @__PURE__ */ jsx(
-              "input",
-              {
-                type: "hidden",
-                name: "active_session_id",
-                value: data.active_session_id
-              }
-            ),
-            /* @__PURE__ */ jsx(
-              TextInput,
-              {
-                value: activeSession?.name ?? "No active session",
-                disabled: true,
-                className: "text-zinc-500"
-              }
-            )
           ] }),
           /* @__PURE__ */ jsxs("div", { children: [
             /* @__PURE__ */ jsx(InputLabel, { value: "Module Number", required: true }),
@@ -97,22 +102,11 @@ function Create({ activeSession }) {
             /* @__PURE__ */ jsx(InputError, { message: errors.module_number })
           ] }),
           /* @__PURE__ */ jsxs("div", { children: [
-            /* @__PURE__ */ jsx(InputLabel, { value: "Year Of Study" }),
+            /* @__PURE__ */ jsx(InputLabel, { value: "Current Year - Current Session" }),
             /* @__PURE__ */ jsx(
               TextInput,
               {
-                value: studyProgress.yearOfStudy,
-                disabled: true,
-                className: "text-zinc-500"
-              }
-            )
-          ] }),
-          /* @__PURE__ */ jsxs("div", { children: [
-            /* @__PURE__ */ jsx(InputLabel, { value: "Session Number" }),
-            /* @__PURE__ */ jsx(
-              TextInput,
-              {
-                value: studyProgress.sessionNumber,
+                value: activeSession?.name ?? "No active session",
                 disabled: true,
                 className: "text-zinc-500"
               }

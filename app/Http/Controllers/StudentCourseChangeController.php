@@ -10,6 +10,7 @@ use App\Models\CurriculumTransfer;
 use App\Models\Student;
 use App\Models\User;
 use App\Services\AdmissionNumberService;
+use App\Services\StudentEnrollmentStatusService;
 use App\Support\RbacCache;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -48,7 +49,11 @@ class StudentCourseChangeController extends Controller
         ]);
     }
 
-    public function store(Request $request, AdmissionNumberService $admissionNumbers): RedirectResponse
+    public function store(
+        Request $request,
+        AdmissionNumberService $admissionNumbers,
+        StudentEnrollmentStatusService $studentStatusService
+    ): RedirectResponse
     {
         $validated = $request->validate([
             'admission_number' => ['required', 'string', 'max:100'],
@@ -56,7 +61,7 @@ class StudentCourseChangeController extends Controller
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        $result = DB::transaction(function () use ($request, $validated, $admissionNumbers) {
+        $result = DB::transaction(function () use ($request, $validated, $admissionNumbers, $studentStatusService) {
             $student = Student::query()
                 ->where('admission_number', trim($validated['admission_number']))
                 ->where('enrollment_status', 'active')
@@ -176,8 +181,13 @@ class StudentCourseChangeController extends Controller
                 'admission_number' => $newAdmissionNumber,
                 'email' => $generatedEmail,
                 'current_module' => '1',
-                'enrollment_status' => 'active',
                 'created_at' => now(), // Updating admission date/time
+            ]);
+
+            $studentStatusService->updateEnrollmentStatus($student, 'active', [
+                'effective_date' => now()->toDateString(),
+                'reason' => $validated['notes'] ?? null,
+                'recorded_by' => $request->user()?->id,
             ]);
 
             $oldUser->update([

@@ -13,6 +13,7 @@ use App\Models\ExamBody;
 use App\Models\Student;
 use App\Models\User;
 use App\Services\AdmissionNumberService;
+use App\Services\StudentEnrollmentStatusService;
 use App\Support\RbacCache;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
@@ -142,9 +143,13 @@ class StudentController extends Controller
     // STORE
     // ----------------------------------------------------------------
 
-    public function store(StoreStudentRequest $request, AdmissionNumberService $admissionNumbers)
+    public function store(
+        StoreStudentRequest $request,
+        AdmissionNumberService $admissionNumbers,
+        StudentEnrollmentStatusService $studentStatusService
+    )
     {
-        DB::transaction(function () use ($request, $admissionNumbers) {
+        DB::transaction(function () use ($request, $admissionNumbers, $studentStatusService) {
 
             $user = User::create([
                 'email' => $request->email,
@@ -177,6 +182,11 @@ class StudentController extends Controller
                 'fee_discount_percentage' => $request->fee_discount_percentage ?? 0,
                 'current_module' => $request->current_module ?? 1,
                 'enrollment_status' => 'active',
+            ]);
+
+            $studentStatusService->recordInitialStatus($student, [
+                'effective_date' => $student->created_at,
+                'recorded_by' => $request->user()?->id,
             ]);
 
             $user->update([
@@ -223,6 +233,7 @@ class StudentController extends Controller
             'courseEnrollment.examBody',
             'courseEnrollment.curriculumMapping.course',
             'courseEnrollment.curriculumMapping.curriculum',
+            'statusLogs.recordedBy',
         ]);
 
         return inertia('students/Edit', [
@@ -298,7 +309,6 @@ class StudentController extends Controller
                 'previous_school' => $request->previous_school,
                 'fee_discount_percentage' => $request->fee_discount_percentage ?? 0,
                 'current_module' => $request->current_module,
-                'enrollment_status' => $request->student_status,
             ]);
 
             $student->user->update([

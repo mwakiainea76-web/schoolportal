@@ -438,6 +438,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 Route::post('/reset-password', [AdminPasswordResetController::class, 'storeStudent'])->name('password-reset.store');
                 Route::get('/session-enrollment', [AcademicSessionEnrollmentController::class, 'create'])->name('session-enrollment.create');
                 Route::post('/session-enrollment', [AcademicSessionEnrollmentController::class, 'store'])->name('session-enrollment.store');
+                Route::get('/session-enrollment-status', [AcademicSessionEnrollmentController::class, 'createStatusPage'])->name('session-enrollment-status.create');
+                Route::post('/session-enrollment-status', [AcademicSessionEnrollmentController::class, 'updateStatusByAdmission'])->name('session-enrollment-status.store');
                 Route::get('/course-change', [StudentCourseChangeController::class, 'index'])->name('course-change.index');
                 Route::post('/course-change', [StudentCourseChangeController::class, 'store'])->name('course-change.store');
                 Route::get('/{student}/admission-letter', [StudentController::class, 'admissionLetter'])->name('admission-letter');

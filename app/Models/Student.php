@@ -56,6 +56,13 @@ class Student extends Model
         return $this->hasMany(CourseChangeLog::class);
     }
 
+    public function statusLogs()
+    {
+        return $this->hasMany(StudentStatusLog::class)
+            ->orderByDesc('effective_date')
+            ->orderByDesc('id');
+    }
+
     public function curriculumTransfers()
     {
         return $this->hasMany(CurriculumTransfer::class);
