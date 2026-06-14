@@ -287,7 +287,7 @@ export default function CreateStaff({ departments, roles }) {
 
             <div className="mx-auto w-full">
                 <div className="rounded-xl pt-2">
-                    <div className="overflow-hidden rounded-xl border bg-white shadow-sm">
+                    <div className="overflow-visible rounded-xl border bg-white shadow-sm">
                         <form onSubmit={submit} className="space-y-5 p-0">
                             <FormSection number="1" title="Personal Details">
                                 <PersonalSection

@@ -43,6 +43,8 @@ class StudentMarkController extends Controller
     public function viewIndex(Request $request): Response
     {
         [$mappingId, $unitId, $type, $number, $academicSessionId, $academicYearId] = $this->parseSelectionFilters($request, true);
+        $admissionNumber = trim((string) $request->query('admission_number', ''));
+        $admissionNumber = $admissionNumber !== '' ? $admissionNumber : null;
         $selectedUnit = $this->resolveSelectedUnit($mappingId, $unitId, $request);
         $submittedMarks = null;
 
@@ -53,12 +55,16 @@ class StudentMarkController extends Controller
                 $number,
                 $academicSessionId,
                 $academicYearId,
+                $admissionNumber,
                 $request->integer('page', 1)
             );
         }
 
         return Inertia::render('Grades/View', [
-            'filters' => $this->selectionFiltersArray($mappingId, $unitId, $type, $number, $academicSessionId, $academicYearId),
+            'filters' => [
+                ...$this->selectionFiltersArray($mappingId, $unitId, $type, $number, $academicSessionId, $academicYearId),
+                'admission_number' => $admissionNumber ?? '',
+            ],
             'selected_unit' => $this->unitPayload($selectedUnit),
             'submitted_marks' => $submittedMarks,
             'course_mappings' => $this->courseMappingOptions($request),
@@ -172,6 +178,8 @@ class StudentMarkController extends Controller
         $this->authorizeHod($request);
 
         [$mappingId, $unitId, $type, $number, $academicSessionId, $academicYearId] = $this->parseSelectionFilters($request, true);
+        $admissionNumber = trim((string) $request->query('admission_number', ''));
+        $admissionNumber = $admissionNumber !== '' ? $admissionNumber : null;
         $selectedUnit = $this->resolveSelectedUnit($mappingId, $unitId, $request);
         $submittedMarks = null;
 
@@ -182,12 +190,16 @@ class StudentMarkController extends Controller
                 $number,
                 $academicSessionId,
                 $academicYearId,
+                $admissionNumber,
                 $request->integer('page', 1)
             );
         }
 
         return Inertia::render('Grades/Publish', [
-            'filters' => $this->selectionFiltersArray($mappingId, $unitId, $type, $number, $academicSessionId, $academicYearId),
+            'filters' => [
+                ...$this->selectionFiltersArray($mappingId, $unitId, $type, $number, $academicSessionId, $academicYearId),
+                'admission_number' => $admissionNumber ?? '',
+            ],
             'selected_unit' => $this->unitPayload($selectedUnit),
             'submitted_marks' => $submittedMarks,
             'course_mappings' => $this->courseMappingOptions($request),
@@ -215,6 +227,7 @@ class StudentMarkController extends Controller
             'assessment_number' => ['nullable', 'integer', 'min:1'],
             'academic_year_id' => ['nullable', 'integer'],
             'academic_session_id' => ['nullable', 'integer'],
+            'admission_number' => ['nullable', 'string'],
             'action' => ['required', 'in:publish,unpublish'],
         ]);
 
@@ -229,13 +242,15 @@ class StudentMarkController extends Controller
 
         $academicYearId = isset($validated['academic_year_id']) ? (int) $validated['academic_year_id'] : null;
         $academicSessionId = isset($validated['academic_session_id']) ? (int) $validated['academic_session_id'] : null;
+        $admissionNumber = isset($validated['admission_number']) ? trim((string) $validated['admission_number']) : null;
+        $admissionNumber = $admissionNumber !== '' ? $admissionNumber : null;
         $assessmentType = $validated['assessment_type'] ?? null;
         $assessmentNumber = isset($validated['assessment_number']) ? (int) $validated['assessment_number'] : null;
-
         $query = StudentMark::query()->where('curriculum_unit_id', $unit->id);
 
         $this->applyAssessmentFilters($query, $assessmentType, $assessmentNumber);
         $this->applyYearSessionFilters($query, $academicYearId, $academicSessionId);
+        $this->applyAdmissionNumberFilter($query, $admissionNumber);
 
         $updated = $query->update([
             'is_published' => $validated['action'] === 'publish',
@@ -255,6 +270,7 @@ class StudentMarkController extends Controller
             'assessment_number' => $assessmentNumber,
             'academic_year_id' => $academicYearId,
             'academic_session_id' => $academicSessionId,
+            'admission_number' => $admissionNumber,
             'search_marks' => true,
         ])->with('success', $message);
     }
@@ -268,6 +284,7 @@ class StudentMarkController extends Controller
             'assessment_number' => ['nullable', 'integer', 'min:1'],
             'academic_year_id' => ['nullable', 'integer'],
             'academic_session_id' => ['nullable', 'integer'],
+            'admission_number' => ['nullable', 'string'],
             'format' => ['required', 'in:csv,excel,pdf'],
             'context' => ['nullable', 'in:view,publish'],
         ]);
@@ -286,6 +303,8 @@ class StudentMarkController extends Controller
         $assessmentNumber = isset($validated['assessment_number']) ? (int) $validated['assessment_number'] : null;
         $academicYearId = isset($validated['academic_year_id']) ? (int) $validated['academic_year_id'] : null;
         $academicSessionId = isset($validated['academic_session_id']) ? (int) $validated['academic_session_id'] : null;
+        $admissionNumber = isset($validated['admission_number']) ? trim((string) $validated['admission_number']) : null;
+        $admissionNumber = $admissionNumber !== '' ? $admissionNumber : null;
         $format = $validated['format'];
 
         $query = $this->marksQuery(
@@ -293,7 +312,8 @@ class StudentMarkController extends Controller
             $assessmentType,
             $assessmentNumber,
             $academicSessionId,
-            $academicYearId
+            $academicYearId,
+            $admissionNumber
         );
 
         set_time_limit(60);
@@ -387,18 +407,22 @@ class StudentMarkController extends Controller
             'curriculum_unit_id' => ['nullable', 'integer'],
             'academic_year_id' => ['nullable', 'integer'],
             'academic_session_id' => ['nullable', 'integer'],
+            'admission_number' => ['nullable', 'string'],
         ]);
 
         $mappingId = isset($validated['curriculum_mapping_id']) ? (int) $validated['curriculum_mapping_id'] : null;
         $unitId = isset($validated['curriculum_unit_id']) ? (int) $validated['curriculum_unit_id'] : null;
         $academicYearId = isset($validated['academic_year_id']) ? (int) $validated['academic_year_id'] : null;
         $academicSessionId = isset($validated['academic_session_id']) ? (int) $validated['academic_session_id'] : null;
+        $admissionNumber = isset($validated['admission_number']) ? trim((string) $validated['admission_number']) : null;
+        $admissionNumber = $admissionNumber !== '' ? $admissionNumber : null;
         $selectedUnit = $this->resolveSelectedUnit($mappingId, $unitId, $request);
         $sheet = $selectedUnit
             ? $this->buildMarksheet(
                 $selectedUnit,
                 $academicYearId,
                 $academicSessionId,
+                $admissionNumber,
                 $request->integer('page', 1)
             )
             : null;
@@ -409,6 +433,7 @@ class StudentMarkController extends Controller
                 'curriculum_unit_id' => $unitId ? (string) $unitId : '',
                 'academic_year_id' => $academicYearId ? (string) $academicYearId : '',
                 'academic_session_id' => $academicSessionId ? (string) $academicSessionId : '',
+                'admission_number' => $admissionNumber ?? '',
             ],
             'selected_unit' => $this->unitPayload($selectedUnit),
             'course_mappings' => $this->courseMappingOptions($request),
@@ -435,6 +460,7 @@ class StudentMarkController extends Controller
             'curriculum_unit_id' => ['required', 'integer'],
             'academic_year_id' => ['nullable', 'integer'],
             'academic_session_id' => ['nullable', 'integer'],
+            'admission_number' => ['nullable', 'string'],
             'format' => ['required', 'in:csv,excel,pdf'],
         ]);
 
@@ -442,12 +468,14 @@ class StudentMarkController extends Controller
         $unitId = (int) $validated['curriculum_unit_id'];
         $academicYearId = isset($validated['academic_year_id']) ? (int) $validated['academic_year_id'] : null;
         $academicSessionId = isset($validated['academic_session_id']) ? (int) $validated['academic_session_id'] : null;
+        $admissionNumber = isset($validated['admission_number']) ? trim((string) $validated['admission_number']) : null;
+        $admissionNumber = $admissionNumber !== '' ? $admissionNumber : null;
         $unit = $this->resolveSelectedUnit($mappingId, $unitId, $request);
 
         abort_unless($unit, 422, 'Select a valid unit before downloading the marksheet.');
 
         $format = $validated['format'];
-        $query = $this->marksheetRowsQuery($unitId, $academicYearId, $academicSessionId);
+        $query = $this->marksheetRowsQuery($unitId, $academicYearId, $academicSessionId, $admissionNumber);
 
         set_time_limit(60);
 
@@ -865,6 +893,7 @@ class StudentMarkController extends Controller
         ?int $number,
         ?int $academicSessionId,
         ?int $academicYearId,
+        ?string $admissionNumber,
         int $page = 1,
     ): array {
         $query = $this->marksQuery(
@@ -872,7 +901,8 @@ class StudentMarkController extends Controller
             $type,
             $number,
             $academicSessionId,
-            $academicYearId
+            $academicYearId,
+            $admissionNumber
         );
 
         $paginator = $query
@@ -911,6 +941,7 @@ class StudentMarkController extends Controller
         ?int $number,
         ?int $academicSessionId,
         ?int $academicYearId,
+        ?string $admissionNumber,
         int $page = 1,
     ): array {
         $query = $this->marksQuery(
@@ -918,7 +949,8 @@ class StudentMarkController extends Controller
             $type,
             $number,
             $academicSessionId,
-            $academicYearId
+            $academicYearId,
+            $admissionNumber
         );
 
         $paginator = $query
@@ -1045,13 +1077,15 @@ class StudentMarkController extends Controller
         Unit $unit,
         ?int $academicYearId,
         ?int $academicSessionId,
+        ?string $admissionNumber,
         int $page = 1,
     ): array
     {
         $paginator = $this->marksheetRowsQuery(
             $unit->id,
             $academicYearId,
-            $academicSessionId
+            $academicSessionId,
+            $admissionNumber
         )
             ->paginate(25, ['*'], 'page', $page)
             ->withQueryString();
@@ -1123,6 +1157,7 @@ class StudentMarkController extends Controller
         int $unitId,
         ?int $academicYearId,
         ?int $academicSessionId,
+        ?string $admissionNumber,
     ) {
         return StudentMark::query()
             ->join('students', 'students.id', '=', 'student_marks.student_id')
@@ -1130,6 +1165,7 @@ class StudentMarkController extends Controller
             ->where('student_marks.curriculum_unit_id', $unitId)
             ->when($academicYearId, fn ($query) => $query->where('academic_sessions.academic_year_id', $academicYearId))
             ->when($academicSessionId, fn ($query) => $query->where('student_marks.academic_session_id', $academicSessionId))
+            ->when($admissionNumber, fn ($query) => $query->where('students.admission_number', 'like', "%{$admissionNumber}%"))
             ->groupBy('students.id', 'students.admission_number', 'students.first_name', 'students.last_name')
             ->orderBy('students.id')
             ->selectRaw('
@@ -1154,6 +1190,7 @@ class StudentMarkController extends Controller
         ?int $number,
         ?int $academicSessionId,
         ?int $academicYearId,
+        ?string $admissionNumber,
     ) {
         $query = StudentMark::query()
             ->with([
@@ -1166,6 +1203,7 @@ class StudentMarkController extends Controller
 
         $this->applyAssessmentFilters($query, $type, $number);
         $this->applyYearSessionFilters($query, $academicYearId, $academicSessionId);
+        $this->applyAdmissionNumberFilter($query, $admissionNumber);
 
         return $query;
     }
@@ -1189,6 +1227,13 @@ class StudentMarkController extends Controller
 
         if ($academicSessionId !== null) {
             $query->where('academic_session_id', $academicSessionId);
+        }
+    }
+
+    private function applyAdmissionNumberFilter($query, ?string $admissionNumber): void
+    {
+        if ($admissionNumber !== null) {
+            $query->whereHas('student', fn ($studentQuery) => $studentQuery->where('admission_number', 'like', "%{$admissionNumber}%"));
         }
     }
 

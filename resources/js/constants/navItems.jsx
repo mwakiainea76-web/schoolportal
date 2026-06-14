@@ -105,14 +105,28 @@ export const STAFF_NAV_ITEMS = [
                 label: "Courses",
                 children: [
                     {
+                        routeName: "courses.hod.index",
+                        fallback: "/courses/department-courses",
+                        label: "My Department Courses",
+                        roles: ["hod"],
+                    },
+                    {
                         routeName: "courses.index",
                         fallback: "/courses",
                         label: "All Courses",
+                        exceptRoles: ["hod"],
+                    },
+                    {
+                        routeName: "courses.enrollments.hod.index",
+                        fallback: "/courses/department-enrolments",
+                        label: "Department Enrollments",
+                        roles: ["hod"],
                     },
                     {
                         routeName: "courses.enrollments.index",
                         fallback: "/courses/enrollments",
                         label: "Course Enrollments",
+                        exceptRoles: ["hod"],
                     },
                     {
                         routeName: "courses.create",
@@ -170,16 +184,10 @@ export const STAFF_NAV_ITEMS = [
                 label: "View Timetables",
             },
             {
-                routeName: "academic.timetables.hod.create",
-                fallback: "/academic/timetables/create/hod",
-                label: "Add Timetable",
-                roles: ["hod"],
-            },
-            {
                 routeName: "academic.timetables.create",
                 fallback: "/academic/timetables/create",
                 label: "Add Timetable",
-                exceptRoles: ["hod"],
+                roles: ["hod"],
             },
         ],
     },
@@ -460,9 +468,16 @@ export const STAFF_NAV_ITEMS = [
         roles: ["hod"],
         children: [
             {
+                routeName: "staffs.department.index",
+                fallback: "/staffs/department-staff",
+                label: "Department Staff",
+                roles: ["hod"],
+            },
+            {
                 routeName: "staffs.index",
                 fallback: "/staffs",
                 label: "Staff Directory",
+                exceptRoles: ["hod"],
             },
             {
                 routeName: "staffs.create",

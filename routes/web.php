@@ -167,10 +167,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::prefix('courses')->name('courses.')->group(function () {
             Route::get('/', [CourseController::class, 'index'])->name('index');
+            Route::middleware('role:hod')->get('/department-courses', [CourseController::class, 'hodIndex'])->name('hod.index');
             Route::get('/create', [CourseController::class, 'create'])->name('create');
             Route::post('/', [CourseController::class, 'store'])->name('store');
             Route::get('/enrollments', [CourseEnrollmentController::class, 'index'])->name('enrollments.index');
+            Route::middleware('role:hod')->get('/department-enrolments', [CourseEnrollmentController::class, 'hodIndex'])->name('enrollments.hod.index');
             Route::get('/search', [CourseController::class, 'search'])->name('search');
+            Route::middleware('role:hod')->get('/department-courses/search', [CourseController::class, 'hodSearch'])->name('hod.search');
             Route::get('/{course}/edit', [CourseController::class, 'edit'])->name('edit');
             Route::put('/{course}', [CourseController::class, 'update'])->name('update');
             Route::delete('/{course}', [CourseController::class, 'destroy'])->name('destroy');
@@ -253,15 +256,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::prefix('timetables')->name('timetables.')->group(function () {
                 Route::get('/', [AcademicTimetableController::class, 'index'])->name('index');
                 Route::get('/courses/search', [AcademicTimetableController::class, 'searchCourseMappings'])->name('courses.search');
-                Route::middleware('role:admin|hod|trainer')->group(function () {
-                    Route::get('/create', [AcademicTimetableController::class, 'create'])->name('create');
-                    Route::post('/', [AcademicTimetableController::class, 'store'])->name('store');
+                Route::middleware('role:hod')->group(function () {
+                    Route::get('/create', [AcademicTimetableController::class, 'createHod'])->name('create');
                     Route::get('/{timetable}/edit', [AcademicTimetableController::class, 'edit'])->name('edit');
                     Route::put('/{timetable}', [AcademicTimetableController::class, 'update'])->name('update');
                     Route::delete('/{timetable}', [AcademicTimetableController::class, 'destroy'])->name('destroy');
-                });
-                Route::middleware('role:hod')->group(function () {
-                    Route::get('/create/hod', [AcademicTimetableController::class, 'createHod'])->name('hod.create');
                     Route::get('/hod/courses/search', [AcademicTimetableController::class, 'searchHodCourses'])->name('hod.courses.search');
                     Route::post('/hod', [AcademicTimetableController::class, 'storeHod'])->name('hod.store');
                 });
@@ -406,6 +405,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         */
         Route::prefix('staffs')->name('staffs.')->group(function () {
             Route::get('/', [StaffController::class, 'index'])->name('index');
+            Route::middleware('role:hod')->get('/department-staff', [StaffController::class, 'departmentIndex'])->name('department.index');
             Route::get('/search', [StaffController::class, 'search'])->name('search');
             Route::get('/create', [StaffController::class, 'create'])->name('create');
             Route::post('/', [StaffController::class, 'store'])->name('store');

@@ -1,4 +1,4 @@
-import { Head, Link, router } from "@inertiajs/react";
+import { Head, router } from "@inertiajs/react";
 import { useState } from "react";
 import Table from "@/Components/Table/Table";
 import Thead from "@/Components/Table/Thead";
@@ -15,7 +15,7 @@ const FILTER_DEFINITIONS = [
     {
         key: "course_id",
         label: "Course Name",
-        routeName: "courses.search",
+        routeName: "courses.hod.search",
         placeholder: "Select active course...",
         selectedLabelKey: "course",
     },
@@ -26,27 +26,6 @@ const FILTER_DEFINITIONS = [
         placeholder: "Select curriculum...",
         selectedLabelKey: "curriculum",
     },
-    {
-        key: "department_id",
-        label: "Department",
-        routeName: "departments.search",
-        placeholder: "Type to search department...",
-        selectedLabelKey: "department",
-    },
-    {
-        key: "exam_body_id",
-        label: "Exam Body",
-        routeName: "exam.bodies.search",
-        placeholder: "Type to search exam body...",
-        selectedLabelKey: "exam_body",
-    },
-    {
-        key: "certification_level_id",
-        label: "Certification Level",
-        routeName: "certification-levels.search",
-        placeholder: "Type to search level...",
-        selectedLabelKey: "certification_level",
-    },
 ];
 
 const FILTER_KEYS = FILTER_DEFINITIONS.map((filter) => filter.key);
@@ -54,10 +33,11 @@ const FILTER_KEYS = FILTER_DEFINITIONS.map((filter) => filter.key);
 const emptyFilterState = () =>
     FILTER_KEYS.reduce((values, key) => ({ ...values, [key]: "" }), {});
 
-export default function Index({
+export default function HodIndex({
     courses,
     filters = {},
     selectedFilters = {},
+    department_context = null,
 }) {
     const pageFilters =
         filters && !Array.isArray(filters) && typeof filters === "object"
@@ -73,9 +53,6 @@ export default function Index({
     const [form, setForm] = useState({
         ...emptyFilterState(),
         course_id: pageFilters.course_id || "",
-        department_id: pageFilters.department_id || "",
-        exam_body_id: pageFilters.exam_body_id || "",
-        certification_level_id: pageFilters.certification_level_id || "",
         curriculum_id: pageFilters.curriculum_id || "",
     });
     const [currentFilterKey, setCurrentFilterKey] = useState(
@@ -100,7 +77,9 @@ export default function Index({
         (filter) => filter.key === currentFilterKey,
     );
 
-    const activeFilters = FILTER_DEFINITIONS.filter((filter) => form[filter.key]);
+    const activeFilters = FILTER_DEFINITIONS.filter(
+        (filter) => form[filter.key],
+    );
 
     const clearSingleFilter = (key) => {
         setFilter(key, "");
@@ -143,7 +122,7 @@ export default function Index({
         setSortDirection(direction);
 
         router.get(
-            route("courses.index"),
+            route("courses.hod.index"),
             { ...currentFilters(), sort: field, direction, page: 1 },
             { preserveState: true, replace: true },
         );
@@ -159,7 +138,7 @@ export default function Index({
         e.preventDefault();
 
         router.get(
-            route("courses.index"),
+            route("courses.hod.index"),
             {
                 ...currentFilters(),
                 sort: sortField,
@@ -175,21 +154,10 @@ export default function Index({
         setCurrentFilterKey("");
 
         router.get(
-            route("courses.index"),
+            route("courses.hod.index"),
             { sort: sortField, direction: sortDirection, page: 1 },
             { preserveState: true, replace: true },
         );
-    };
-
-    const handleDelete = (id) => {
-        if (!confirm("Are you sure you want to delete this course?")) {
-            return;
-        }
-
-        router.delete(route("courses.destroy", encodeURIComponent(id)), {
-            preserveState: true,
-            replace: true,
-        });
     };
 
     const handleExport = () => {
@@ -203,9 +171,18 @@ export default function Index({
 
     return (
         <>
-            <Head title="Courses" />
+            <Head title="Department Courses" />
 
             <div className="mx-auto w-full max-w-6xl animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <div className="mb-4 rounded-lg border border-zinc-100 bg-white p-4 shadow-sm">
+                    <h1 className="text-2xl font-semibold text-zinc-900">
+                        Department Courses -{" "}
+                        <span className=" rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 ring-1 ring-emerald-100">
+                            {department_context?.label}
+                        </span>
+                    </h1>
+                </div>
+
                 <form
                     className="mb-4 rounded-lg border border-zinc-100 bg-white p-4 shadow-sm"
                     onSubmit={submit}
@@ -353,12 +330,7 @@ export default function Index({
                             Certification Level{" "}
                             {renderArrow("certification_level_id")}
                         </THdata>
-                        <THdata
-                            onClick={() => handleSort("department_id")}
-                            className="cursor-pointer"
-                        >
-                            Department {renderArrow("department_id")}
-                        </THdata>
+                        <THdata>Department</THdata>
                         <THdata>Current Curriculum</THdata>
                         <THdata
                             onClick={() => handleSort("created_at")}
@@ -366,7 +338,6 @@ export default function Index({
                         >
                             Created {renderArrow("created_at")}
                         </THdata>
-                        <THdata>Actions</THdata>
                     </Thead>
 
                     <Tbody>
@@ -384,34 +355,11 @@ export default function Index({
                                     <Tdata>
                                         {formatDate(course.created_at)}
                                     </Tdata>
-                                    <Tdata>
-                                        <div className="flex items-center justify-center gap-x-10">
-                                            <Link
-                                                href={route(
-                                                    "courses.edit",
-                                                    encodeURIComponent(
-                                                        course.id,
-                                                    ),
-                                                )}
-                                                className="text-emerald-600 hover:underline"
-                                            >
-                                                Edit
-                                            </Link>
-                                            <button
-                                                onClick={() =>
-                                                    handleDelete(course.id)
-                                                }
-                                                className="text-red-600 hover:underline"
-                                            >
-                                                Delete
-                                            </button>
-                                        </div>
-                                    </Tdata>
                                 </Trow>
                             ))
                         ) : (
                             <Trow>
-                                <Tdata colSpan="8" className="py-4 text-center">
+                                <Tdata colSpan="7" className="py-4 text-center">
                                     No courses found.
                                 </Tdata>
                             </Trow>

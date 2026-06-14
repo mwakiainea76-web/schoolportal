@@ -89,6 +89,15 @@ export default function EditStudent({
             .filter(Boolean)
             .join(" - ") || "";
 
+    const nextOfKin =
+        student.user?.next_of_kin?.[0] ||
+        student.user?.nextofkin?.[0] ||
+        student.user?.nextOfKin?.[0] ||
+        student.user?.next_of_kin ||
+        student.user?.nextofkin ||
+        student.user?.nextOfKin ||
+        null;
+
     const { data, setData, put, processing, errors } = useForm({
         first_name: student.first_name || "",
         last_name: student.last_name || "",
@@ -115,12 +124,12 @@ export default function EditStudent({
         admission_date: student.admission_date || "",
         current_module: student.current_module || "",
         fee_discount_percentage: student.fee_discount_percentage || "",
-        kin_first_name: student.user?.nextofkin?.first_name || "",
-        kin_last_name: student.user?.nextofkin?.last_name || "",
-        kin_relationship: student.user?.nextofkin?.relationship || "",
-        kin_phone: student.user?.nextofkin?.phone_number || "",
-        kin_alt_phone: student.user?.nextofkin?.alternate_phone_number || "",
-        kin_email: student.user?.nextofkin?.email || "",
+        kin_first_name: nextOfKin?.first_name || "",
+        kin_last_name: nextOfKin?.last_name || "",
+        kin_relationship: nextOfKin?.relationship || "",
+        kin_phone: nextOfKin?.phone_number || "",
+        kin_alt_phone: nextOfKin?.alternate_phone_number || "",
+        kin_email: nextOfKin?.email || "",
     });
     const [curriculumOptions, setCurriculumOptions] = useState(curriculums);
     const [courseOptions, setCourseOptions] = useState(coursesForVersion);

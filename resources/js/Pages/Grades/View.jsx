@@ -5,7 +5,7 @@ import InputError from "@/Components/InputError";
 import SearchSelect from "@/Components/SearchSelect";
 
 const FILTER_DEFINITIONS = [
-    { key: "curriculum_mapping_id", label: "Course Mapping" },
+    { key: "curriculum_mapping_id", label: "Course " },
     { key: "curriculum_unit_id", label: "Unit" },
     {
         key: "assessment_type",
@@ -56,18 +56,6 @@ export default function View({
         (filter) => filterForm.data[filter.key],
     );
 
-    const loadUnits = (mappingId) => {
-        router.get(
-            route("academic.marks.view.index"),
-            {
-                curriculum_mapping_id: mappingId,
-                assessment_type: filterForm.data.assessment_type,
-                assessment_number: filterForm.data.assessment_number,
-            },
-            { preserveState: true, preserveScroll: true, replace: true },
-        );
-    };
-
     const searchMarks = (page = 1) => {
         router.get(
             route("academic.marks.view.index"),
@@ -90,12 +78,6 @@ export default function View({
             academic_session_id: "",
         });
         setCurrentFilterKey("");
-
-        router.get(
-            route("academic.marks.view.index"),
-            {},
-            { preserveState: true, preserveScroll: true, replace: true },
-        );
     };
 
     const clearSingleFilter = (key) => {
@@ -116,21 +98,6 @@ export default function View({
         if (currentFilterKey === key) {
             setCurrentFilterKey("");
         }
-    };
-
-    const syncAcademicYear = (academicYear) => {
-        router.get(
-            route("academic.marks.view.index"),
-            {
-                curriculum_mapping_id: filterForm.data.curriculum_mapping_id,
-                curriculum_unit_id: filterForm.data.curriculum_unit_id,
-                assessment_type: filterForm.data.assessment_type,
-                assessment_number: filterForm.data.assessment_number,
-                academic_year_id: academicYear?.id || "",
-                academic_session_id: "",
-            },
-            { preserveState: true, preserveScroll: true, replace: true },
-        );
     };
 
     const exportMarks = () => {
@@ -167,13 +134,21 @@ export default function View({
         }
 
         if (filter.key === "curriculum_unit_id") {
-            return selected_unit?.display_name || selected_unit?.name || value;
+            return (
+                unit_options.find((unit) => String(unit.id) === String(value))
+                    ?.display_name ||
+                unit_options.find((unit) => String(unit.id) === String(value))
+                    ?.name ||
+                selected_unit?.display_name ||
+                selected_unit?.name ||
+                value
+            );
         }
 
         if (filter.key === "assessment_type") {
             return (
-                filter.options.find((option) => option.value === value)?.label ||
-                value
+                filter.options.find((option) => option.value === value)
+                    ?.label || value
             );
         }
 
@@ -182,11 +157,23 @@ export default function View({
         }
 
         if (filter.key === "academic_year_id") {
-            return selected_filters?.academic_year?.name || value;
+            return (
+                filter_options?.academic_years?.find(
+                    (year) => String(year.value) === String(value),
+                )?.label ||
+                selected_filters?.academic_year?.name ||
+                value
+            );
         }
 
         if (filter.key === "academic_session_id") {
-            return selected_filters?.academic_session?.name || value;
+            return (
+                filter_options?.sessions?.find(
+                    (session) => String(session.value) === String(value),
+                )?.label ||
+                selected_filters?.academic_session?.name ||
+                value
+            );
         }
 
         return value;
@@ -206,11 +193,13 @@ export default function View({
                 <select
                     value={filterForm.data.curriculum_mapping_id}
                     onChange={(e) => {
-                        filterForm.setData("curriculum_mapping_id", e.target.value);
+                        filterForm.setData(
+                            "curriculum_mapping_id",
+                            e.target.value,
+                        );
                         filterForm.setData("curriculum_unit_id", "");
                         filterForm.setData("academic_year_id", "");
                         filterForm.setData("academic_session_id", "");
-                        loadUnits(e.target.value);
                     }}
                     className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
                 >
@@ -235,9 +224,7 @@ export default function View({
                     }}
                     defaultOptions={unit_options}
                     value={filterForm.data.curriculum_unit_id}
-                    selectedLabel={
-                        selected_unit ? selected_unit.display_name : null
-                    }
+                    selectedLabel={selectedLabel({ key: "curriculum_unit_id" })}
                     placeholder={
                         filterForm.data.curriculum_mapping_id
                             ? "Search unit..."
@@ -312,7 +299,7 @@ export default function View({
                 <SearchSelect
                     routeName="academic.years.search"
                     value={filterForm.data.academic_year_id}
-                    selectedLabel={selected_filters?.academic_year?.name}
+                    selectedLabel={selectedLabel({ key: "academic_year_id" })}
                     placeholder="Select academic year..."
                     defaultOptions={
                         filter_options?.academic_years?.map((year) => ({
@@ -322,9 +309,11 @@ export default function View({
                     }
                     preloadOptions
                     onChange={(academicYear) => {
-                        filterForm.setData("academic_year_id", academicYear?.id || "");
+                        filterForm.setData(
+                            "academic_year_id",
+                            academicYear?.id || "",
+                        );
                         filterForm.setData("academic_session_id", "");
-                        syncAcademicYear(academicYear);
                     }}
                 />
             );
@@ -337,7 +326,7 @@ export default function View({
                     academic_year_id: filterForm.data.academic_year_id,
                 }}
                 value={filterForm.data.academic_session_id}
-                selectedLabel={selected_filters?.academic_session?.name}
+                selectedLabel={selectedLabel({ key: "academic_session_id" })}
                 placeholder={
                     filterForm.data.academic_year_id
                         ? "Search session..."

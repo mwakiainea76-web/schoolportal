@@ -20,7 +20,7 @@ class CourseController extends Controller
     {
         // HODs cannot mutate courses — gate all write actions once here
         $this->middleware(function (Request $request, $next) {
-            if ($this->scopedDepartmentId($request) !== null) {
+            if ($this->hodDepartmentId($request) !== null) {
                 abort(403);
             }
 
@@ -34,7 +34,9 @@ class CourseController extends Controller
 
     public function index(Request $request, CourseFilter $filter)
     {
-        $scopedDepartmentId = $this->scopedDepartmentId($request);
+        if ($this->hodDepartmentId($request) !== null) {
+            return redirect()->route('courses.hod.index');
+        }
 
         $filters = $request->only([
             'search',
@@ -47,21 +49,12 @@ class CourseController extends Controller
             'curriculum_id',
         ]);
 
-        // These filters are meaningless (and exploitable) when locked to one department
-        if ($scopedDepartmentId !== null) {
-            unset($filters['department_id'], $filters['exam_body_id'], $filters['certification_level_id']);
-        }
-
         $courses = Course::query()
             ->with([
                 'certificationLevel:id,name',
                 'department:id,name',
                 'curriculum',
             ])
-            ->when($scopedDepartmentId, function (Builder $q, int $departmentId) {
-                $q->where('department_id', $departmentId)
-                  ->whereHas('curriculumMappings', fn ($mq) => $this->activeMappingScope($mq));
-            })
             ->tap(fn ($q) => $filter->apply($q, $filters))
             ->latest()
             ->paginate(10)
@@ -69,12 +62,44 @@ class CourseController extends Controller
             ->through(fn (Course $course) => $this->courseRow($course));
 
         return inertia('Courses/Index', [
+            'courses'         => $courses,
+            'filters'         => (object) $filters,
+            'selectedFilters' => $this->selectedIndexFilters($filters),
+        ]);
+    }
+
+    public function hodIndex(Request $request, CourseFilter $filter)
+    {
+        $departmentId = $this->hodDepartmentId($request);
+        abort_unless($departmentId !== null, 403);
+
+        $filters = $request->only([
+            'search',
+            'course_id',
+            'sort',
+            'direction',
+            'curriculum_id',
+        ]);
+
+        $courses = Course::query()
+            ->with([
+                'certificationLevel:id,name',
+                'department:id,name',
+                'curriculum',
+            ])
+            ->where('department_id', $departmentId)
+            ->whereHas('curriculumMappings', fn ($mq) => $this->activeMappingScope($mq))
+            ->tap(fn ($q) => $filter->apply($q, $filters))
+            ->latest()
+            ->paginate(10)
+            ->withQueryString()
+            ->through(fn (Course $course) => $this->courseRow($course));
+
+        return inertia('Courses/HodIndex', [
             'courses'            => $courses,
             'filters'            => (object) $filters,
             'selectedFilters'    => $this->selectedIndexFilters($filters),
-            'department_context' => $scopedDepartmentId
-                ? $this->departmentContext($scopedDepartmentId)
-                : null,
+            'department_context' => $this->departmentContext($departmentId),
         ]);
     }
 
@@ -142,20 +167,36 @@ class CourseController extends Controller
 
     public function search(Request $request)
     {
-        $scopedDepartmentId = $this->scopedDepartmentId($request);
-        $limit       = min(max($request->integer('limit', 10), 1), 25);
-        $q           = trim((string) $request->query('q', ''));
+        $limit = min(max($request->integer('limit', 10), 1), 25);
+        $q = trim((string) $request->query('q', ''));
         $versionedOnly = $request->boolean('versioned_only');
-
-        // Admins may filter by any department; HODs are locked to their own
-        $departmentId = $scopedDepartmentId
-            ?? ($request->integer('department_id') ?: null);
+        $departmentId = $request->integer('department_id') ?: null;
 
         $courses = Course::query()
             ->when($departmentId, fn (Builder $b) => $b->where('department_id', $departmentId))
-            ->when($scopedDepartmentId !== null, fn (Builder $b) => $b
-                ->whereHas('curriculumMappings', fn ($mq) => $this->activeMappingScope($mq))
-            )
+            ->when($versionedOnly, fn (Builder $b) => $this->versionedOnlyScope($b))
+            ->when($q !== '', fn (Builder $b) => $this->nameOrCodeScope($b, $q))
+            ->orderBy('name')
+            ->limit($limit)
+            ->get(['id', 'name', 'code'])
+            ->map(fn (Course $course) => ['id' => (string) $course->id, 'name' => $course->name])
+            ->values();
+
+        return response()->json($courses);
+    }
+
+    public function hodSearch(Request $request)
+    {
+        $departmentId = $this->hodDepartmentId($request);
+        abort_unless($departmentId !== null, 403);
+
+        $limit = min(max($request->integer('limit', 10), 1), 25);
+        $q = trim((string) $request->query('q', ''));
+        $versionedOnly = $request->boolean('versioned_only');
+
+        $courses = Course::query()
+            ->where('department_id', $departmentId)
+            ->whereHas('curriculumMappings', fn ($mq) => $this->activeMappingScope($mq))
             ->when($versionedOnly, fn (Builder $b) => $this->versionedOnlyScope($b))
             ->when($q !== '', fn (Builder $b) => $this->nameOrCodeScope($b, $q))
             ->orderBy('name')
@@ -255,7 +296,7 @@ class CourseController extends Controller
      * Returns the department ID that should constrain this request,
      * or null if the user is an unrestricted admin.
      */
-    private function scopedDepartmentId(Request $request): ?int
+    private function hodDepartmentId(Request $request): ?int
     {
         $user = $request->user();
 

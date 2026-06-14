@@ -29,7 +29,21 @@ function FormSection({ number, title, children }) {
     );
 }
 
-function PersonalSection({ data, setData, errors }) {
+function findOptionLabel(options, value) {
+    if (value === null || value === undefined || value === "") {
+        return "";
+    }
+
+    return (
+        options.find(
+            (option) =>
+                String(option.id) === String(value) ||
+                String(option.name) === String(value),
+        )?.name || String(value)
+    );
+}
+
+function PersonalSection({ data, setData, errors, selectedLabels = {} }) {
     const handleChange = (e) => setData(e.target.name, e.target.value);
 
     return (
@@ -61,7 +75,7 @@ function PersonalSection({ data, setData, errors }) {
             </div>
             <div>
                 <InputLabel value="Gender" required />
-                <SearchSelect defaultOptions={gender_types} value={data.gender} onChange={(g) => setData("gender", g.name)} error={errors.gender} />
+                <SearchSelect defaultOptions={gender_types} value={data.gender} selectedLabel={selectedLabels.gender} onChange={(g) => setData("gender", g.name)} error={errors.gender} />
                 <InputError message={errors.gender} />
             </div>
             <div>
@@ -81,7 +95,7 @@ function PersonalSection({ data, setData, errors }) {
             </div>
             <div>
                 <InputLabel value="Religion" required />
-                <SearchSelect defaultOptions={religion} value={data.religion} onChange={(r) => setData("religion", r.name)} error={errors.religion} />
+                <SearchSelect defaultOptions={religion} value={data.religion} selectedLabel={selectedLabels.religion} onChange={(r) => setData("religion", r.name)} error={errors.religion} />
                 <InputError message={errors.religion} />
             </div>
             <div>
@@ -95,7 +109,7 @@ function PersonalSection({ data, setData, errors }) {
             {data.is_pwd ? (
                 <div>
                     <InputLabel value="Disability Type" />
-                    <SearchSelect defaultOptions={disability_types} value={data.disability_type} onChange={(d) => setData("disability_type", d.name)} error={errors.disability_type} />
+                    <SearchSelect defaultOptions={disability_types} value={data.disability_type} selectedLabel={selectedLabels.disability_type} onChange={(d) => setData("disability_type", d.name)} error={errors.disability_type} />
                     <InputError message={errors.disability_type} />
                 </div>
             ) : null}
@@ -103,7 +117,14 @@ function PersonalSection({ data, setData, errors }) {
     );
 }
 
-function EmploymentSection({ data, setData, errors, departments, roles }) {
+function EmploymentSection({
+    data,
+    setData,
+    errors,
+    departments,
+    roles,
+    selectedLabels = {},
+}) {
     const handleChange = (e) => setData(e.target.name, e.target.value);
 
     return (
@@ -130,17 +151,17 @@ function EmploymentSection({ data, setData, errors, departments, roles }) {
             </div>
             <div>
                 <InputLabel value="Department" required />
-                <SearchSelect routeName="departments.search" defaultOptions={departments} value={data.department_id} onChange={(d) => setData("department_id", d.id)} error={errors.department_id} />
+                <SearchSelect routeName="departments.search" defaultOptions={departments} value={data.department_id} selectedLabel={selectedLabels.department} onChange={(d) => setData("department_id", d.id)} error={errors.department_id} />
                 <InputError message={errors.department_id} />
             </div>
             <div>
                 <InputLabel value="Role" required />
-                <SearchSelect routeName="roles.search" defaultOptions={roles} value={data.role_name} onChange={(r) => setData("role_name", r.name)} error={errors.role_name} />
+                <SearchSelect routeName="roles.search" defaultOptions={roles} value={data.role_name} selectedLabel={selectedLabels.role} onChange={(r) => setData("role_name", r.name)} error={errors.role_name} />
                 <InputError message={errors.role_name} />
             </div>
             <div>
                 <InputLabel value="Employment Type" required />
-                <SearchSelect defaultOptions={employment_types} value={data.employment_type} onChange={(e) => setData("employment_type", e.name)} error={errors.employment_type} />
+                <SearchSelect defaultOptions={employment_types} value={data.employment_type} selectedLabel={selectedLabels.employment_type} onChange={(e) => setData("employment_type", e.name)} error={errors.employment_type} />
                 <InputError message={errors.employment_type} />
             </div>
             <div>
@@ -177,7 +198,7 @@ function EmploymentSection({ data, setData, errors, departments, roles }) {
     );
 }
 
-function KinSection({ data, setData, errors }) {
+function KinSection({ data, setData, errors, selectedLabels = {} }) {
     const handleChange = (e) => setData(e.target.name, e.target.value);
 
     return (
@@ -194,7 +215,7 @@ function KinSection({ data, setData, errors }) {
             </div>
             <div>
                 <InputLabel value="Relationship" required />
-                <SearchSelect defaultOptions={relation_type} value={data.kin_relationship} onChange={(r) => setData("kin_relationship", r.name)} error={errors.kin_relationship} />
+                <SearchSelect defaultOptions={relation_type} value={data.kin_relationship} selectedLabel={selectedLabels.relationship} onChange={(r) => setData("kin_relationship", r.name)} error={errors.kin_relationship} />
                 <InputError message={errors.kin_relationship} />
             </div>
             <div>
@@ -217,6 +238,31 @@ function KinSection({ data, setData, errors }) {
 }
 
 export default function EditStaff({ staff, departments, roles }) {
+    const selectedLabels = {
+        gender: findOptionLabel(gender_types, staff.gender),
+        religion: findOptionLabel(religion, staff.religion),
+        disability_type: findOptionLabel(
+            disability_types,
+            staff.disability_type,
+        ),
+        department:
+            staff.department?.name ||
+            departments.find(
+                (department) =>
+                    String(department.id) === String(staff.department_id),
+            )?.name ||
+            "",
+        role: staff.role_name || "",
+        employment_type: findOptionLabel(
+            employment_types,
+            staff.employment_type,
+        ),
+        relationship: findOptionLabel(
+            relation_type,
+            staff.next_of_kin?.[0]?.relationship || "",
+        ),
+    };
+
     const { data, setData, put, processing, errors } = useForm({
         first_name: staff.first_name || "",
         last_name: staff.last_name || "",
@@ -264,13 +310,14 @@ export default function EditStaff({ staff, departments, roles }) {
 
             <div className="mx-auto w-full">
                 <div className="rounded-xl pt-2">
-                    <div className="overflow-hidden rounded-xl border bg-white shadow-sm">
+                    <div className="overflow-visible rounded-xl border bg-white shadow-sm">
                         <form onSubmit={submit} className="space-y-5 p-0">
                             <FormSection number="1" title="Personal Details">
                                 <PersonalSection
                                     data={data}
                                     setData={setData}
                                     errors={errors}
+                                    selectedLabels={selectedLabels}
                                 />
                             </FormSection>
 
@@ -281,6 +328,7 @@ export default function EditStaff({ staff, departments, roles }) {
                                     errors={errors}
                                     departments={departments}
                                     roles={roles}
+                                    selectedLabels={selectedLabels}
                                 />
                             </FormSection>
 
@@ -289,6 +337,7 @@ export default function EditStaff({ staff, departments, roles }) {
                                     data={data}
                                     setData={setData}
                                     errors={errors}
+                                    selectedLabels={selectedLabels}
                                 />
                             </FormSection>
 

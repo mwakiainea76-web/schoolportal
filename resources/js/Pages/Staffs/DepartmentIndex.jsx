@@ -1,4 +1,4 @@
-import { Head, Link, router } from "@inertiajs/react";
+import { Head, router } from "@inertiajs/react";
 import { useState } from "react";
 
 import Table from "@/Components/Table/Table";
@@ -9,36 +9,41 @@ import Trow from "@/Components/Table/Trow";
 import Tdata from "@/Components/Table/Tdata";
 import TextInput from "@/Components/TextInput";
 
-export default function StaffIndex({ staffs }) {
+export default function DepartmentStaffIndex({
+    staffs,
+    department_context = null,
+}) {
     const [searchTerm, setSearchTerm] = useState("");
 
     const submit = (e) => {
         e.preventDefault();
 
         router.get(
-            route("staffs.index"),
+            route("staffs.department.index"),
             { search: searchTerm },
             { preserveState: true, replace: true },
         );
         setSearchTerm("");
     };
 
-    const handleDelete = (staffId) => {
-        if (!confirm("Are you sure you want to delete this staff?")) return;
-
-        router.delete(route("staffs.destroy", staffId), {
-            preserveState: true,
-            replace: true,
-        });
-    };
-
     return (
         <>
-            <Head title="Staff Management" />
+            <Head title="Department Staff" />
 
             <div className="mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
-                {/* SEARCH */}
-                <form className="w-full flex gap-x-7 mb-4" onSubmit={submit}>
+                <div className="mb-4 rounded-lg border border-zinc-100 bg-white p-4 shadow-sm">
+                    <h1 className="text-2xl font-semibold text-zinc-900">
+                        Department Staff
+                    </h1>
+                    <p className="mt-1 text-sm text-zinc-500">
+                        View staff linked to your department only.
+                    </p>
+                    <div className="mt-3 inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 ring-1 ring-emerald-100">
+                        {department_context?.label}
+                    </div>
+                </div>
+
+                <form className="mb-4 flex w-full gap-x-7" onSubmit={submit}>
                     <TextInput
                         placeholder="Search by name, email or staff number..."
                         value={searchTerm}
@@ -48,14 +53,13 @@ export default function StaffIndex({ staffs }) {
                     />
 
                     <button
-                        className="px-4 py-1 bg-emerald-600 text-white rounded hover:bg-slate-700"
+                        className="rounded bg-emerald-600 px-4 py-1 text-white hover:bg-slate-700"
                         type="submit"
                     >
                         Search
                     </button>
                 </form>
 
-                {/* TABLE */}
                 <Table pagination={staffs}>
                     <Thead>
                         <THdata>Staff No</THdata>
@@ -64,9 +68,6 @@ export default function StaffIndex({ staffs }) {
                         <THdata>Role</THdata>
                         <THdata>Department</THdata>
                         <THdata>Status</THdata>
-                        <THdata>
-                            <p className="text-center">Actions</p>
-                        </THdata>
                     </Thead>
 
                     <Tbody>
@@ -74,48 +75,20 @@ export default function StaffIndex({ staffs }) {
                             staffs.data.map((staff) => (
                                 <Trow key={staff.id}>
                                     <Tdata>{staff.staff_number}</Tdata>
-
-                                    <Tdata className="">
+                                    <Tdata>
                                         {staff.last_name} {staff.first_name}
                                     </Tdata>
-
                                     <Tdata>{staff.email}</Tdata>
-
                                     <Tdata>{staff.roles?.[0] ?? "N/A"}</Tdata>
-
                                     <Tdata>
                                         {staff.department?.name ?? "N/A"}
                                     </Tdata>
-
                                     <Tdata>{staff?.staff_status}</Tdata>
-
-                                    <Tdata>
-                                        <div className="flex items-center justify-center gap-x-10">
-                                            <Link
-                                                href={route(
-                                                    "staffs.edit",
-                                                    staff.id,
-                                                )}
-                                                className="text-emerald-600 hover:underline"
-                                            >
-                                                Edit
-                                            </Link>
-
-                                            <button
-                                                onClick={() =>
-                                                    handleDelete(staff.id)
-                                                }
-                                                className="text-red-600 hover:underline"
-                                            >
-                                                Delete
-                                            </button>
-                                        </div>
-                                    </Tdata>
                                 </Trow>
                             ))
                         ) : (
                             <Trow>
-                                <Tdata colSpan="7" className="text-center py-4">
+                                <Tdata colSpan="6" className="py-4 text-center">
                                     No staff found.
                                 </Tdata>
                             </Trow>

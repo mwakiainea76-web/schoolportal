@@ -69,14 +69,11 @@ class StaffController extends Controller
 
     public function index(Request $request, StaffFilter $filter)
     {
-        $filters = $request->all();
-        $hodDepartmentId = $this->shouldScopeToHodDepartment($request)
-            ? $this->currentDepartmentId($request)
-            : null;
-
-        if ($hodDepartmentId) {
-            $filters['department_id'] = $hodDepartmentId;
+        if ($this->shouldScopeToHodDepartment($request)) {
+            return redirect()->route('staffs.department.index');
         }
+
+        $filters = $request->all();
 
         $staffs = $filter
             ->apply(Staff::query(), $filters)
@@ -117,7 +114,56 @@ class StaffController extends Controller
 
         return inertia('Staffs/Index', [
             'staffs' => $staffs,
-            'can_manage_staffs' => ! $this->shouldScopeToHodDepartment($request),
+        ]);
+    }
+
+    public function departmentIndex(Request $request, StaffFilter $filter)
+    {
+        $departmentId = $this->currentDepartmentId($request);
+        abort_unless($this->shouldScopeToHodDepartment($request) && $departmentId, 403);
+
+        $filters = $request->all();
+        $filters['department_id'] = $departmentId;
+
+        $staffs = $filter
+            ->apply(Staff::query(), $filters)
+            ->select([
+                'staffs.id',
+                'staffs.user_id',
+                'staffs.department_id',
+                'staffs.staff_number',
+                'staffs.first_name',
+                'staffs.last_name',
+                'staffs.email',
+                'staffs.designation',
+                'staffs.staff_status',
+                'staffs.created_at',
+            ])
+            ->latest('staffs.id')
+            ->paginate(10)
+            ->withQueryString();
+
+        $staffs->getCollection()->load([
+            'department:id,name',
+            'user:id',
+            'user.roles:id,name',
+        ]);
+
+        $staffs->through(fn ($staff) => [
+            'id' => $staff->id,
+            'staff_number' => $staff->staff_number,
+            'first_name' => $staff->first_name,
+            'last_name' => $staff->last_name,
+            'email' => $staff->email,
+            'designation' => $staff->designation,
+            'staff_status' => $staff->staff_status,
+            'department' => $staff->department ? ['id' => $staff->department->id, 'name' => $staff->department->name] : null,
+            'roles' => $staff->user?->roles->pluck('name'),
+        ]);
+
+        return inertia('Staffs/DepartmentIndex', [
+            'staffs' => $staffs,
+            'department_context' => $this->departmentContext($departmentId),
         ]);
     }  // ----------------------------------------------------------------
     // CREATE
@@ -443,5 +489,21 @@ class StaffController extends Controller
         return $request->user()?->staff?->department_id
             ? (int) $request->user()->staff->department_id
             : null;
+    }
+
+    protected function departmentContext(int $departmentId): ?array
+    {
+        $department = Department::select('id', 'code', 'name')->find($departmentId);
+
+        if (! $department) {
+            return null;
+        }
+
+        return [
+            'id' => (string) $department->id,
+            'code' => $department->code,
+            'name' => $department->name,
+            'label' => trim("{$department->code} - {$department->name}", ' -'),
+        ];
     }
 }

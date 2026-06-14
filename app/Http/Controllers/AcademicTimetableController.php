@@ -40,7 +40,7 @@ class AcademicTimetableController extends Controller
         $currentSession = $supportsAcademicSessions ? $this->currentAcademicSession() : null;
         $selectedAcademicSessionId = $supportsAcademicSessions && $request->filled('academic_session_id')
             ? $request->integer('academic_session_id')
-            : $currentSession?->id;
+            : null;
         $selectedDepartmentId = ($isHod || $isTrainerOnly)
             ? $currentDepartmentId
             : ($request->filled('department_id') ? $request->integer('department_id') : null);
@@ -165,7 +165,6 @@ class AcademicTimetableController extends Controller
             'current_department_id' => $currentDepartmentId ? (string) $currentDepartmentId : '',
             'is_hod' => $isHod,
             'is_trainer' => $isTrainerOnly,
-            'can_manage_timetables' => $this->canManageTimetable($request),
             'should_load_timetable' => $shouldLoadTimetable,
             'current_session_note' => ! $supportsAcademicSessions
                 ? 'Timetable session scoping is not available yet in this database. Run the latest migration to enable academic-session filtering.'
@@ -173,7 +172,7 @@ class AcademicTimetableController extends Controller
                 ? ($currentSession && (int) $selectedAcademicSessionId === (int) $currentSession->id
                     ? 'Showing timetable for the current running session: '.$currentSession->display_name.'.'
                     : 'Showing timetable for the selected academic session.')
-                : 'No academic session is available, so timetable results cannot load yet.'),
+                : 'Select filters and click Apply to load the timetable.'),
         ]);
     }
 
@@ -280,7 +279,7 @@ class AcademicTimetableController extends Controller
             'high_risk' => true,
         ]);
 
-        return to_route('academic.timetables.hod.create')
+        return to_route('academic.timetables.create')
             ->with('success', 'Timetable sessions created successfully.');
     }
 
@@ -846,10 +845,6 @@ class AcademicTimetableController extends Controller
     {
         $user = $request->user();
 
-        return (bool) (
-            ($user?->hasRole('trainer') && ! $user?->hasRole('hod'))
-            || $user?->hasRole('hod')
-            || $user?->hasRole('admin')
-        );
+        return (bool) $user?->hasRole('hod');
     }
 }

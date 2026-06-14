@@ -25,7 +25,6 @@ const EMPTY_FILTERS = {
     curriculum_id: "",
     academic_year_id: "",
     academic_session_id: "",
-    department_id: "",
     year_of_study: "",
     admission_number: "",
     status: "",
@@ -39,18 +38,10 @@ const FILTER_DEFINITIONS = [
         placeholder: "Search by Reg No...",
     },
     {
-        key: "department_id",
-        label: "Department",
-        type: "search",
-        routeName: "departments.search",
-        placeholder: "Search department...",
-        selectedLabelKey: "department",
-    },
-    {
         key: "course_id",
         label: "Course",
         type: "search",
-        routeName: "courses.search",
+        routeName: "courses.hod.search",
         placeholder: "Select course...",
         selectedLabelKey: "course",
         clears: ["curriculum_id"],
@@ -109,11 +100,12 @@ const FILTER_DEFINITIONS = [
 const labelStatus = (status) =>
     status ? status.charAt(0).toUpperCase() + status.slice(1) : "-";
 
-export default function Index({
+export default function HodIndex({
     courseEnrollments,
     filters = {},
     selectedFilters = {},
     statuses = [],
+    department_context = null,
 }) {
     const pageFilters =
         filters && !Array.isArray(filters) && typeof filters === "object"
@@ -128,20 +120,23 @@ export default function Index({
     });
 
     const [filterLabels, setFilterLabels] = useState({
-        department_id: selectedFilters.department || "",
         course_id: selectedFilters.course || "",
         curriculum_id: selectedFilters.curriculum || "",
         academic_year_id: selectedFilters.academic_year || "",
         academic_session_id: selectedFilters.academic_session || "",
     });
 
-    const firstActiveFilter = FILTER_DEFINITIONS.find((filter) => pageFilters[filter.key]);
+    const firstActiveFilter = FILTER_DEFINITIONS.find(
+        (filter) => pageFilters[filter.key],
+    );
 
     const [currentFilterKey, setCurrentFilterKey] = useState(
         firstActiveFilter?.key || "",
     );
 
-    const activeFilters = FILTER_DEFINITIONS.filter((filter) => form[filter.key]);
+    const activeFilters = FILTER_DEFINITIONS.filter(
+        (filter) => form[filter.key],
+    );
 
     const setFilterValue = (key, value, label = "") => {
         const filter = FILTER_DEFINITIONS.find((item) => item.key === key);
@@ -196,7 +191,7 @@ export default function Index({
         );
 
         router.get(
-            route("courses.enrollments.index"),
+            route("courses.enrollments.hod.index"),
             { ...cleanFilters, page: 1 },
             { preserveState: true, replace: true },
         );
@@ -208,7 +203,7 @@ export default function Index({
         setCurrentFilterKey("");
 
         router.get(
-            route("courses.enrollments.index"),
+            route("courses.enrollments.hod.index"),
             { page: 1 },
             { preserveState: true, replace: true },
         );
@@ -305,9 +300,7 @@ export default function Index({
 
     return (
         <>
-            <Head
-                title="Course Enrollments"
-            />
+            <Head title="Department Enrollments" />
 
             <div className="mx-auto w-full max-w-6xl">
                 <form
@@ -357,7 +350,9 @@ export default function Index({
                                 form[currentFilterKey] &&
                                 setCurrentFilterKey("")
                             }
-                            disabled={!currentFilterKey || !form[currentFilterKey]}
+                            disabled={
+                                !currentFilterKey || !form[currentFilterKey]
+                            }
                             className="inline-flex h-10 items-center justify-center rounded-lg border border-zinc-300 bg-white px-4 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             + Add filter

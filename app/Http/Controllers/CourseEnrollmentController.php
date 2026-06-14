@@ -25,7 +25,9 @@ class CourseEnrollmentController extends Controller
 
     public function index(Request $request)
     {
-        $scopedDepartmentId = $this->scopedDepartmentId($request);
+        if ($this->hodDepartmentId($request) !== null) {
+            return redirect()->route('courses.enrollments.hod.index');
+        }
 
         $filters = $request->only([
             'course_id',
@@ -38,11 +40,6 @@ class CourseEnrollmentController extends Controller
             'status',
         ]);
 
-        // Prevent HODs from filtering outside their department
-        if ($scopedDepartmentId !== null) {
-            unset($filters['department_id']);
-        }
-
         $courseEnrollments = CourseEnrollment::with([
             'student',
             'course:id,name,code,department_id',
@@ -52,7 +49,6 @@ class CourseEnrollmentController extends Controller
             'curriculumMapping.curriculum',
             'academicSessionEnrollments.academicSession.academicYear',
         ])
-            ->when($scopedDepartmentId, fn (Builder $q, int $id) => $this->applyDepartmentScope($q, $id))
             ->when($filters['course_id'] ?? null, function (Builder $q, $id) {
                 $q->where(fn (Builder $cq) => $cq
                     ->where('course_id', $id)
@@ -87,11 +83,72 @@ class CourseEnrollmentController extends Controller
         return inertia('CourseEnrollments/Index', [
             'courseEnrollments' => $courseEnrollments,
             'filters' => (object) $filters,
-            'selectedFilters' => $this->selectedFilters($filters, $scopedDepartmentId),
+            'selectedFilters' => $this->selectedFilters($filters),
             'statuses' => self::STATUSES,
-            'department_context' => $scopedDepartmentId
-                ? $this->departmentContext($scopedDepartmentId)
-                : null,
+        ]);
+    }
+
+    public function hodIndex(Request $request)
+    {
+        $departmentId = $this->hodDepartmentId($request);
+        abort_unless($departmentId !== null, 403);
+
+        $filters = $request->only([
+            'course_id',
+            'curriculum_id',
+            'academic_year_id',
+            'academic_session_id',
+            'year_of_study',
+            'admission_number',
+            'status',
+        ]);
+
+        $courseEnrollments = CourseEnrollment::with([
+            'student',
+            'course:id,name,code,department_id',
+            'course.department:id,name',
+            'curriculum:id,name',
+            'curriculumMapping.course.department:id,name',
+            'curriculumMapping.curriculum',
+            'academicSessionEnrollments.academicSession.academicYear',
+        ])
+            ->where(fn (Builder $q) => $this->applyDepartmentScope($q, $departmentId))
+            ->when($filters['course_id'] ?? null, function (Builder $q, $id) {
+                $q->where(fn (Builder $cq) => $cq
+                    ->where('course_id', $id)
+                    ->orWhereHas('curriculumMapping', fn (Builder $mq) => $mq->where('course_id', $id))
+                );
+            })
+            ->when($filters['curriculum_id'] ?? null, function (Builder $q, $id) {
+                $q->where(fn (Builder $cq) => $cq
+                    ->where('curriculum_id', $id)
+                    ->orWhereHas('curriculumMapping', fn (Builder $mq) => $mq->where('curriculum_id', $id))
+                );
+            })
+            ->when($filters['academic_year_id'] ?? null, fn (Builder $q, $id) => $q
+                ->whereHas('academicSessionEnrollments.academicSession', fn (Builder $sq) => $sq->where('academic_year_id', $id))
+            )
+            ->when($filters['academic_session_id'] ?? null, fn (Builder $q, $id) => $q
+                ->whereHas('academicSessionEnrollments', fn (Builder $sq) => $sq->where('academic_session_id', $id))
+            )
+            ->when($filters['year_of_study'] ?? null, fn (Builder $q, $year) => $q
+                ->whereHas('academicSessionEnrollments', fn (Builder $sq) => $sq->where('year_of_study', $year))
+            )
+            ->when($filters['admission_number'] ?? null, fn (Builder $q, $num) => $q
+                ->whereHas('student', fn (Builder $sq) => $sq->where('admission_number', 'like', "%{$num}%"))
+            )
+            ->when($filters['status'] ?? null, fn (Builder $q, $status) => $q->where('status', $status))
+            ->latest()
+            ->paginate(20)
+            ->withQueryString()
+            ->through(fn (CourseEnrollment $enrollment) => $this->transformEnrollment($enrollment));
+
+        return inertia('CourseEnrollments/HodIndex', [
+            'courseEnrollments' => $courseEnrollments,
+            'filters' => (object) $filters,
+            'selectedFilters' => $this->selectedFilters($filters, $departmentId),
+            'statuses' => self::STATUSES,
+            'department_context' => $this->departmentContext($departmentId),
         ]);
     }
 
@@ -103,7 +160,7 @@ class CourseEnrollmentController extends Controller
      * Returns the department ID that should constrain all results.
      * HODs are locked to their own department; admins get null (no constraint).
      */
-    private function scopedDepartmentId(Request $request): ?int
+    private function hodDepartmentId(Request $request): ?int
     {
         $user = $request->user();
 
@@ -150,12 +207,12 @@ class CourseEnrollmentController extends Controller
         ];
     }
 
-    private function selectedFilters(array $filters, ?int $scopedDepartmentId): array
+    private function selectedFilters(array $filters, ?int $departmentId = null): array
     {
         $course = isset($filters['course_id'])
             ? Course::select('id', 'name', 'code', 'certification_level_id')
                 ->with('certificationLevel:id,name')
-                ->when($scopedDepartmentId, fn (Builder $q) => $q->where('department_id', $scopedDepartmentId))
+                ->when($departmentId, fn (Builder $q) => $q->where('department_id', $departmentId))
                 ->find($filters['course_id'])
             : null;
 

@@ -6,6 +6,7 @@ import SearchSelect from "@/Components/SearchSelect";
 import formatDate from "@/utils/date";
 
 const FILTER_DEFINITIONS = [
+    { key: "admission_number", label: "Admission Number", type: "text" },
     { key: "curriculum_mapping_id", label: "Course Mapping" },
     { key: "curriculum_unit_id", label: "Unit" },
     { key: "academic_year_id", label: "Academic Year" },
@@ -24,6 +25,7 @@ export default function Marksheet({
     selected_filters,
 }) {
     const filterForm = useForm({
+        admission_number: filters.admission_number || "",
         curriculum_mapping_id: filters.curriculum_mapping_id || "",
         curriculum_unit_id: filters.curriculum_unit_id || "",
         academic_year_id: filters.academic_year_id || "",
@@ -42,37 +44,6 @@ export default function Marksheet({
         (filter) => filterForm.data[filter.key],
     );
 
-    const loadUnits = (mappingId) => {
-        router.get(
-            route("academic.marks.marksheet.index"),
-            {
-                curriculum_mapping_id: mappingId,
-            },
-            {
-                preserveState: true,
-                preserveScroll: true,
-                replace: true,
-            },
-        );
-    };
-
-    const syncAcademicYear = (academicYear) => {
-        router.get(
-            route("academic.marks.marksheet.index"),
-            {
-                curriculum_mapping_id: filterForm.data.curriculum_mapping_id,
-                curriculum_unit_id: filterForm.data.curriculum_unit_id,
-                academic_year_id: academicYear?.id || "",
-                academic_session_id: "",
-            },
-            {
-                preserveState: true,
-                preserveScroll: true,
-                replace: true,
-            },
-        );
-    };
-
     const loadMarksheet = (event) => {
         event?.preventDefault();
         router.get(route("academic.marks.marksheet.index"), filterForm.data, {
@@ -87,14 +58,10 @@ export default function Marksheet({
             curriculum_unit_id: "",
             academic_year_id: "",
             academic_session_id: "",
+            admission_number: "",
         });
         setCurrentFilterKey("");
 
-        router.get(
-            route("academic.marks.marksheet.index"),
-            {},
-            { preserveState: true, preserveScroll: true, replace: true },
-        );
     };
 
     const clearSingleFilter = (key) => {
@@ -150,15 +117,35 @@ export default function Marksheet({
         }
 
         if (filter.key === "curriculum_unit_id") {
-            return selected_unit?.display_name || selected_unit?.name || value;
+            return (
+                unit_options.find((unit) => String(unit.id) === String(value))
+                    ?.display_name ||
+                unit_options.find((unit) => String(unit.id) === String(value))
+                    ?.name ||
+                selected_unit?.display_name ||
+                selected_unit?.name ||
+                value
+            );
         }
 
         if (filter.key === "academic_year_id") {
-            return selected_filters?.academic_year?.name || value;
+            return (
+                filter_options?.academic_years?.find(
+                    (year) => String(year.value) === String(value),
+                )?.label ||
+                selected_filters?.academic_year?.name ||
+                value
+            );
         }
 
         if (filter.key === "academic_session_id") {
-            return selected_filters?.academic_session?.name || value;
+            return (
+                filter_options?.sessions?.find(
+                    (session) => String(session.value) === String(value),
+                )?.label ||
+                selected_filters?.academic_session?.name ||
+                value
+            );
         }
 
         return value;
@@ -170,6 +157,20 @@ export default function Marksheet({
                 <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 px-4 py-2 text-sm text-zinc-400">
                     Select a column to show its input
                 </div>
+            );
+        }
+
+        if (filter.key === "admission_number") {
+            return (
+                <input
+                    type="text"
+                    value={filterForm.data.admission_number}
+                    onChange={(e) =>
+                        filterForm.setData("admission_number", e.target.value)
+                    }
+                    placeholder="Search admission number..."
+                    className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+                />
             );
         }
 
@@ -185,7 +186,6 @@ export default function Marksheet({
                         filterForm.setData("curriculum_unit_id", "");
                         filterForm.setData("academic_year_id", "");
                         filterForm.setData("academic_session_id", "");
-                        loadUnits(event.target.value);
                     }}
                     className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
                 >
@@ -210,9 +210,7 @@ export default function Marksheet({
                     }}
                     defaultOptions={unit_options}
                     value={filterForm.data.curriculum_unit_id}
-                    selectedLabel={
-                        selected_unit ? selected_unit.display_name : null
-                    }
+                    selectedLabel={selectedLabel({ key: "curriculum_unit_id" })}
                     placeholder={
                         filterForm.data.curriculum_mapping_id
                             ? "Search unit..."
@@ -233,7 +231,7 @@ export default function Marksheet({
                 <SearchSelect
                     routeName="academic.years.search"
                     value={filterForm.data.academic_year_id}
-                    selectedLabel={selected_filters?.academic_year?.name}
+                    selectedLabel={selectedLabel({ key: "academic_year_id" })}
                     placeholder="Select academic year..."
                     defaultOptions={
                         filter_options?.academic_years?.map((year) => ({
@@ -245,7 +243,6 @@ export default function Marksheet({
                     onChange={(academicYear) => {
                         filterForm.setData("academic_year_id", academicYear?.id || "");
                         filterForm.setData("academic_session_id", "");
-                        syncAcademicYear(academicYear);
                     }}
                 />
             );
@@ -258,7 +255,7 @@ export default function Marksheet({
                     academic_year_id: filterForm.data.academic_year_id,
                 }}
                 value={filterForm.data.academic_session_id}
-                selectedLabel={selected_filters?.academic_session?.name}
+                selectedLabel={selectedLabel({ key: "academic_session_id" })}
                 placeholder={
                     filterForm.data.academic_year_id
                         ? "Search session..."

@@ -15,6 +15,7 @@ export default function Publish({
     selected_filters,
 }) {
     const filterForm = useForm({
+        admission_number: filters.admission_number || "",
         curriculum_mapping_id: filters.curriculum_mapping_id || "",
         curriculum_unit_id: filters.curriculum_unit_id || "",
         assessment_type: filters.assessment_type || "",
@@ -27,18 +28,6 @@ export default function Publish({
     const currentPage = submitted_marks?.current_page ?? 1;
     const lastPage = submitted_marks?.last_page ?? 1;
 
-    const loadUnits = (mappingId) => {
-        router.get(
-            route("academic.marks.publish.index"),
-            {
-                curriculum_mapping_id: mappingId,
-                assessment_type: filterForm.data.assessment_type,
-                assessment_number: filterForm.data.assessment_number,
-            },
-            { preserveState: true, preserveScroll: true, replace: true },
-        );
-    };
-
     const searchMarks = (page = 1) => {
         router.get(
             route("academic.marks.publish.index"),
@@ -48,21 +37,6 @@ export default function Publish({
                 page,
             },
             { preserveState: true, preserveScroll: true },
-        );
-    };
-
-    const syncAcademicYear = (academicYear) => {
-        router.get(
-            route("academic.marks.publish.index"),
-            {
-                curriculum_mapping_id: filterForm.data.curriculum_mapping_id,
-                curriculum_unit_id: filterForm.data.curriculum_unit_id,
-                assessment_type: filterForm.data.assessment_type,
-                assessment_number: filterForm.data.assessment_number,
-                academic_year_id: academicYear.id || "",
-                academic_session_id: "",
-            },
-            { preserveState: true, preserveScroll: true, replace: true },
         );
     };
 
@@ -113,6 +87,22 @@ export default function Publish({
                 <div className="rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
                     <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
                         <div>
+                            <InputLabel value="Admission Number" />
+                            <input
+                                type="text"
+                                value={filterForm.data.admission_number}
+                                onChange={(e) =>
+                                    filterForm.setData(
+                                        "admission_number",
+                                        e.target.value,
+                                    )
+                                }
+                                placeholder="Search admission number..."
+                                className="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none transition focus:border-emerald-400"
+                            />
+                        </div>
+
+                        <div>
                             <InputLabel value="Course Mapping" required />
                             <select
                                 value={
@@ -132,7 +122,6 @@ export default function Publish({
                                         "academic_session_id",
                                         "",
                                     );
-                                    loadUnits(e.target.value);
                                 }}
                                 className="mt-2 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm outline-none transition focus:border-emerald-400"
                             >
@@ -165,9 +154,16 @@ export default function Publish({
                                     defaultOptions={unit_options}
                                     value={filterForm.data.curriculum_unit_id}
                                     selectedLabel={
-                                        selected_unit
-                                            ? selected_unit.display_name
-                                            : null
+                                        unit_options.find(
+                                            (unit) =>
+                                                String(unit.id) ===
+                                                String(
+                                                    filterForm.data
+                                                        .curriculum_unit_id,
+                                                ),
+                                        )?.display_name ||
+                                        selected_unit?.display_name ||
+                                        null
                                     }
                                     placeholder={
                                         filterForm.data.curriculum_mapping_id
@@ -252,6 +248,14 @@ export default function Publish({
                                     routeName="academic.years.search"
                                     value={filterForm.data.academic_year_id}
                                     selectedLabel={
+                                        filter_options?.academic_years?.find(
+                                            (year) =>
+                                                String(year.value) ===
+                                                String(
+                                                    filterForm.data
+                                                        .academic_year_id,
+                                                ),
+                                        )?.label ||
                                         selected_filters?.academic_year?.name
                                     }
                                     placeholder="Select academic year..."
@@ -273,7 +277,6 @@ export default function Publish({
                                             "academic_session_id",
                                             "",
                                         );
-                                        syncAcademicYear(academicYear);
                                     }}
                                 />
                             </div>
@@ -290,6 +293,14 @@ export default function Publish({
                                     }}
                                     value={filterForm.data.academic_session_id}
                                     selectedLabel={
+                                        filter_options?.sessions?.find(
+                                            (session) =>
+                                                String(session.value) ===
+                                                String(
+                                                    filterForm.data
+                                                        .academic_session_id,
+                                                ),
+                                        )?.label ||
                                         selected_filters?.academic_session?.name
                                     }
                                     placeholder={

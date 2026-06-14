@@ -14,7 +14,6 @@ export default function Index({
     days,
     is_hod,
     is_trainer,
-    can_manage_timetables,
     should_load_timetable,
     current_session_note,
 }) {
@@ -46,28 +45,16 @@ export default function Index({
             [field]: value,
         };
 
-
         if (field === "curriculum_mapping_id") {
             nextFilters.module_number = "";
         }
 
         if (is_trainer) {
-            nextFilters.academic_session_id = pageFilters.academic_session_id;
-            nextFilters.trainer_staff_id = pageFilters.trainer_staff_id;
+            nextFilters.academic_session_id = draftFilters.academic_session_id;
+            nextFilters.trainer_staff_id = draftFilters.trainer_staff_id;
         }
 
         return nextFilters;
-    };
-
-    const onFilterChange = (field, value) => {
-        const nextFilters = buildNextFilters(field, value);
-
-        setDraftFilters((current) => ({
-            ...current,
-            ...nextFilters,
-        }));
-
-        applyFilters(nextFilters);
     };
 
     const setDraftFilter = (field, value) => {
@@ -76,7 +63,6 @@ export default function Index({
                 ...current,
                 [field]: value,
             };
-
 
             if (field === "curriculum_mapping_id") {
                 nextFilters.module_number = "";
@@ -88,8 +74,7 @@ export default function Index({
 
     const resetFilters = () => {
         const nextFilters = {
-            academic_session_id:
-                session_options.find((session) => session.is_active)?.id || "",
+            academic_session_id: "",
             trainer_staff_id: is_trainer ? pageFilters.trainer_staff_id : "",
             curriculum_mapping_id: "",
             module_number: "",
@@ -98,23 +83,19 @@ export default function Index({
 
         setCurrentFilterKey("");
         setDraftFilters(nextFilters);
-        applyFilters(nextFilters);
     };
 
-    const trainerFiltersReady = is_hod || is_trainer
-        ? Boolean(pageFilters.academic_session_id)
-        : Boolean(pageFilters.academic_session_id);
+    const trainerFiltersReady =
+        is_hod || is_trainer
+            ? Boolean(draftFilters.academic_session_id)
+            : Boolean(draftFilters.academic_session_id);
 
     const adminLoadPathReady = Boolean(
-        pageFilters.academic_session_id &&
-            (pageFilters.trainer_staff_id ||
-                (pageFilters.curriculum_mapping_id && pageFilters.module_number)),
+        draftFilters.academic_session_id &&
+        (draftFilters.trainer_staff_id ||
+            (draftFilters.curriculum_mapping_id && draftFilters.module_number)),
     );
 
-    const addTimetableHref = can_manage_timetables
-        ? route("academic.timetables.create")
-        : route("academic.timetables.hod.create");
-    const canAddTimetable = is_hod || Boolean(can_manage_timetables);
     const handleDownloadPdf = () => {
         window.print();
     };
@@ -130,7 +111,7 @@ export default function Index({
             : []),
         {
             key: "curriculum_mapping_id",
-            label: "Versioned Course",
+            label: "Course",
         },
         {
             key: "module_number",
@@ -158,7 +139,7 @@ export default function Index({
         currentFilterKey && Boolean(draftFilters[currentFilterKey]);
 
     const activeFilters = FILTER_DEFINITIONS.filter(
-        (filter) => pageFilters[filter.key],
+        (filter) => draftFilters[filter.key],
     );
 
     const findOptionLabel = (options, value, labelKey = "name") => {
@@ -170,14 +151,13 @@ export default function Index({
     };
 
     const getSelectedOptionLabel = (filter) => {
-        const value = pageFilters[filter.key];
+        const value = draftFilters[filter.key];
 
         if (!value) return "";
 
         if (filter.key === "academic_session_id") {
             return findOptionLabel(session_options, value);
         }
-
 
         if (filter.key === "curriculum_mapping_id") {
             return findOptionLabel(course_options, value);
@@ -199,7 +179,12 @@ export default function Index({
     };
 
     const clearSingleFilter = (key) => {
-        onFilterChange(key, "");
+        const nextFilters = buildNextFilters(key, "");
+
+        setDraftFilters((current) => ({
+            ...current,
+            ...nextFilters,
+        }));
     };
 
     const selectFilterColumn = (key) => {
@@ -209,26 +194,26 @@ export default function Index({
 
         setDraftFilters((current) => ({
             ...current,
-            [key]: pageFilters[key] || current[key] || "",
+            [key]: current[key] || "",
         }));
     };
 
     const addCurrentFilter = () => {
         if (!hasCurrentFilterValue) return;
 
-        onFilterChange(currentFilterKey, draftFilters[currentFilterKey]);
         setCurrentFilterKey("");
     };
 
     const submitFilters = (event) => {
         event.preventDefault();
 
-        if (hasCurrentFilterValue) {
-            addCurrentFilter();
-            return;
-        }
+        const cleanFilters = Object.fromEntries(
+            Object.entries(draftFilters).filter(
+                ([, value]) => value !== "" && value !== null,
+            ),
+        );
 
-        applyFilters(pageFilters);
+        applyFilters(cleanFilters);
     };
 
     const renderFilterInput = (filter) => {
@@ -258,12 +243,13 @@ export default function Index({
                             </option>
                         ))
                     ) : (
-                        <option value="">Run migration to enable sessions</option>
+                        <option value="">
+                            Run migration to enable sessions
+                        </option>
                     )}
                 </select>
             );
         }
-
 
         if (filter.key === "curriculum_mapping_id") {
             if (is_hod || is_trainer) {
@@ -311,7 +297,7 @@ export default function Index({
                     onChange={(e) =>
                         setDraftFilter("module_number", e.target.value)
                     }
-                    disabled={!pageFilters.curriculum_mapping_id}
+                    disabled={!draftFilters.curriculum_mapping_id}
                     className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-zinc-100"
                 >
                     <option value="">Select module</option>
@@ -408,8 +394,6 @@ export default function Index({
             `}</style>
 
             <div className="space-y-8">
-
-
                 <section className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
                     <form onSubmit={submitFilters}>
                         <div className="grid grid-cols-1 items-end gap-3 lg:grid-cols-[minmax(220px,300px)_minmax(280px,1fr)_auto_auto_auto]">
@@ -469,8 +453,6 @@ export default function Index({
                         </div>
 
                         <div className="mt-4 border-t border-zinc-100 pt-3">
-                          
-
                             {activeFilters.length ? (
                                 <div className="flex flex-wrap gap-2">
                                     {activeFilters.map((filter) => (
@@ -494,7 +476,8 @@ export default function Index({
                                 </div>
                             ) : (
                                 <p className="text-sm text-zinc-500">
-                                    No filters selected. Choose a column above to filter this timetable.
+                                    No filters selected. Choose a column above
+                                    to filter this timetable.
                                 </p>
                             )}
                         </div>
@@ -513,9 +496,9 @@ export default function Index({
                                 </h2>
                                 <div className="flex flex-col gap-3 lg:items-end">
                                     <p className="text-sm text-zinc-500">
-                                        Lesson columns show the time from and to.
-                                        Each slot includes the room and assigned
-                                        trainer helper.
+                                        Lesson columns show the time from and
+                                        to. Each slot includes the room and
+                                        assigned trainer helper.
                                     </p>
                                     <button
                                         type="button"
@@ -535,27 +518,38 @@ export default function Index({
                                                 Day
                                             </th>
                                             {lesson_columns.length ? (
-                                                lesson_columns.map((lesson, index) => (
-                                                    <th
-                                                        key={lesson.key}
-                                                        className={`min-w-64 border border-zinc-200 bg-zinc-50 px-4 py-3 text-left ${
-                                                            index === lesson_columns.length - 1
-                                                                ? "rounded-tr-2xl"
-                                                                : ""
-                                                        }`}
-                                                    >
-                                                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
-                                                            Lesson {index + 1}
-                                                        </p>
-                                                        <p className="mt-1 text-sm font-semibold text-zinc-900">
-                                                            {lesson.label}
-                                                        </p>
-                                                        <p className="mt-1 text-xs text-zinc-500">
-                                                            Time from {lesson.start_time} to{" "}
-                                                            {lesson.end_time}
-                                                        </p>
-                                                    </th>
-                                                ))
+                                                lesson_columns.map(
+                                                    (lesson, index) => (
+                                                        <th
+                                                            key={lesson.key}
+                                                            className={`min-w-64 border border-zinc-200 bg-zinc-50 px-4 py-3 text-left ${
+                                                                index ===
+                                                                lesson_columns.length -
+                                                                    1
+                                                                    ? "rounded-tr-2xl"
+                                                                    : ""
+                                                            }`}
+                                                        >
+                                                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                                                                Lesson{" "}
+                                                                {index + 1}
+                                                            </p>
+                                                            <p className="mt-1 text-sm font-semibold text-zinc-900">
+                                                                {lesson.label}
+                                                            </p>
+                                                            <p className="mt-1 text-xs text-zinc-500">
+                                                                Time from{" "}
+                                                                {
+                                                                    lesson.start_time
+                                                                }{" "}
+                                                                to{" "}
+                                                                {
+                                                                    lesson.end_time
+                                                                }
+                                                            </p>
+                                                        </th>
+                                                    ),
+                                                )
                                             ) : (
                                                 <th className="rounded-tr-2xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-left text-sm text-zinc-500">
                                                     No lesson columns yet
@@ -572,43 +566,73 @@ export default function Index({
                                                     </p>
                                                 </td>
                                                 {lesson_columns.length ? (
-                                                    dayRow.lessons.map((lessonCell) => (
-                                                        <td
-                                                            key={lessonCell.key}
-                                                            className="min-w-64 border border-zinc-200 bg-white p-3 align-top"
-                                                        >
-                                                            {lessonCell.sessions.length ? (
-                                                                <div className="space-y-3">
-                                                                    {lessonCell.sessions.map((session) => (
-                                                                        <div
-                                                                            key={session.id}
-                                                                            className="rounded-2xl border border-zinc-100 bg-zinc-50 p-3"
-                                                                        >
-                                                                            <p className="text-sm font-semibold text-zinc-900">
-                                                                                {session.merged_units
-                                                                                    .map((unit) => unit.code)
-                                                                                    .filter(Boolean)
-                                                                                    .join(", ") || session.unit_code}
-                                                                            </p>
-                                                                            <p className="mt-1 text-xs text-zinc-500">
-                                                                                Trainer:{" "}
-                                                                                {session.trainer_name}
-                                                                            </p>
-                                                                            <p className="mt-1 text-xs text-zinc-500">
-                                                                                Venue:{" "}
-                                                                                {session.lecture_room_code}{" "}
-                                                                                {session.lecture_room_name}
-                                                                            </p>
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-                                                            ) : (
-                                                                <div className="rounded-2xl border border-dashed border-zinc-200 px-3 py-6 text-center text-sm text-zinc-400">
-                                                                    No lesson assigned.
-                                                                </div>
-                                                            )}
-                                                        </td>
-                                                    ))
+                                                    dayRow.lessons.map(
+                                                        (lessonCell) => (
+                                                            <td
+                                                                key={
+                                                                    lessonCell.key
+                                                                }
+                                                                className="min-w-64 border border-zinc-200 bg-white p-3 align-top"
+                                                            >
+                                                                {lessonCell
+                                                                    .sessions
+                                                                    .length ? (
+                                                                    <div className="space-y-3">
+                                                                        {lessonCell.sessions.map(
+                                                                            (
+                                                                                session,
+                                                                            ) => (
+                                                                                <div
+                                                                                    key={
+                                                                                        session.id
+                                                                                    }
+                                                                                    className="rounded-2xl border border-zinc-100 bg-zinc-50 p-3"
+                                                                                >
+                                                                                    <p className="text-sm font-semibold text-zinc-900">
+                                                                                        {session.merged_units
+                                                                                            .map(
+                                                                                                (
+                                                                                                    unit,
+                                                                                                ) =>
+                                                                                                    unit.code,
+                                                                                            )
+                                                                                            .filter(
+                                                                                                Boolean,
+                                                                                            )
+                                                                                            .join(
+                                                                                                ", ",
+                                                                                            ) ||
+                                                                                            session.unit_code}
+                                                                                    </p>
+                                                                                    <p className="mt-1 text-xs text-zinc-500">
+                                                                                        Trainer:{" "}
+                                                                                        {
+                                                                                            session.trainer_name
+                                                                                        }
+                                                                                    </p>
+                                                                                    <p className="mt-1 text-xs text-zinc-500">
+                                                                                        Venue:{" "}
+                                                                                        {
+                                                                                            session.lecture_room_code
+                                                                                        }{" "}
+                                                                                        {
+                                                                                            session.lecture_room_name
+                                                                                        }
+                                                                                    </p>
+                                                                                </div>
+                                                                            ),
+                                                                        )}
+                                                                    </div>
+                                                                ) : (
+                                                                    <div className="rounded-2xl border border-dashed border-zinc-200 px-3 py-6 text-center text-sm text-zinc-400">
+                                                                        No
+                                                                        lesson
+                                                                        assigned.
+                                                                    </div>
+                                                                )}
+                                                            </td>
+                                                        ),
+                                                    )
                                                 ) : (
                                                     <td className="border border-zinc-200 px-4 py-6 text-sm text-zinc-400">
                                                         No sessions planned.
@@ -626,8 +650,8 @@ export default function Index({
                                 Timetable Grid Awaits Filters
                             </p>
                             <p className="mt-2 text-sm text-zinc-500">
-                                Select a versioned course and module, or select a
-                                trainer, to load the timetable grid.
+                                Select a versioned course and module, or select
+                                a trainer, to load the timetable grid.
                             </p>
                         </div>
                     )}
