@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Auth;
 
 use App\Models\User;
+use App\Services\AuditService;
 use App\Services\SecurityMonitoringService;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -82,6 +83,18 @@ class LoginRequest extends FormRequest
                 $user?->email,
             );
 
+            AuditService::log([
+                'module' => 'authentication',
+                'action' => 'user_lockout',
+                'entity' => $user,
+                'metadata' => [
+                    'reason' => $block->reason,
+                    'block_id' => $block->id,
+                    'login' => $login,
+                ],
+                'high_risk' => true,
+            ]);
+
             throw ValidationException::withMessages([
                 'login' => 'Access from this account or device has been temporarily blocked.',
             ]);
@@ -97,6 +110,16 @@ class LoginRequest extends FormRequest
                 $login,
                 $user->email,
             );
+
+            AuditService::log([
+                'module' => 'authentication',
+                'action' => 'login_inactive_account',
+                'entity' => $user,
+                'metadata' => [
+                    'login' => $login,
+                ],
+                'high_risk' => true,
+            ]);
 
             throw ValidationException::withMessages([
                 'login' => 'Your account is locked. Contact administrator.',
@@ -115,6 +138,17 @@ class LoginRequest extends FormRequest
                 $login,
                 $user?->email,
             );
+
+            AuditService::log([
+                'module' => 'authentication',
+                'action' => 'login_failure',
+                'entity' => $user,
+                'entity_type' => 'user',
+                'entity_label' => $user?->email ?: $login,
+                'metadata' => [
+                    'login' => $login,
+                ],
+            ]);
 
             $failedAttempts = $securityMonitoring->recentEventCount('login.failed', [
                 'login_identifier' => $login,
@@ -186,6 +220,17 @@ class LoginRequest extends FormRequest
             ],
             trim($this->string('login')->toString()),
         );
+
+        AuditService::log([
+            'module' => 'authentication',
+            'action' => 'user_lockout',
+            'entity_type' => 'user',
+            'entity_label' => trim($this->string('login')->toString()),
+            'metadata' => [
+                'throttle_key' => $this->throttleKey(),
+            ],
+            'high_risk' => true,
+        ]);
 
         event(new Lockout($this));
 

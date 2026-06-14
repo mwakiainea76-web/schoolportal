@@ -5,6 +5,7 @@ use App\Http\Controllers\AcademicSessionEnrollmentController;
 use App\Http\Controllers\AcademicTimetableController;
 use App\Http\Controllers\AcademicYearController;
 use App\Http\Controllers\AdminPasswordResetController;
+use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\Api\ExportController;
 use App\Http\Controllers\CertificationLevelController;
 use App\Http\Controllers\CourseController;
@@ -110,6 +111,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 Route::get('/', [PerformanceDashboardController::class, 'index'])->name('index');
                 Route::patch('/errors/{appRequestMetric}/status', [PerformanceDashboardController::class, 'updateErrorStatus'])->name('errors.update-status');
                 Route::patch('/endpoints/status', [PerformanceDashboardController::class, 'updateEndpointStatus'])->name('endpoints.update-status');
+            });
+
+            Route::prefix('audit-logs')->name('audit-logs.')->group(function () {
+                Route::get('/', [AuditLogController::class, 'index'])->name('index');
+                Route::get('/{auditLog}', [AuditLogController::class, 'show'])->name('show');
             });
 
             Route::get('/logs', [LogViewerController::class, 'index'])->name('logs.index');
@@ -411,6 +417,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::middleware('role:admin')->group(function () {
                 Route::get('/reset-password', [AdminPasswordResetController::class, 'createStaff'])->name('password-reset.create');
                 Route::post('/reset-password', [AdminPasswordResetController::class, 'storeStaff'])->name('password-reset.store');
+                Route::get('/status', [StaffController::class, 'createStatusPage'])->name('status.create');
+                Route::post('/status', [StaffController::class, 'updateStatusByStaffNumber'])->name('status.store');
             });
         });
 

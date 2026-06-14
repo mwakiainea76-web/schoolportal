@@ -2,13 +2,21 @@
 
 namespace App\Models;
 
+use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Staff extends Model
 {
-    use HasFactory,SoftDeletes;
+    use Auditable, HasFactory,SoftDeletes;
+
+    protected string $auditModule = 'staff';
+
+    protected array $auditExclude = [
+        'user_id',
+        'profile_photo',
+    ];
 
     /** @use HasFactory<\Database\Factories\StaffFactory> */
     protected $table = 'staffs';
@@ -57,6 +65,13 @@ class Staff extends Model
     public function department()
     {
         return $this->belongsTo(Department::class);
+    }
+
+    public function statusLogs()
+    {
+        return $this->hasMany(StaffStatusLog::class)
+            ->orderByDesc('effective_date')
+            ->orderByDesc('id');
     }
 
     public function hodDepartments()

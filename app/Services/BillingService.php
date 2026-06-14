@@ -12,6 +12,7 @@ use App\Models\PaymentAllocation;
 use App\Models\Student;
 use App\Models\StudentInvoice;
 use App\Services\FeeAssignmentService;
+use App\Services\AuditService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -117,6 +118,23 @@ class BillingService
             $this->applyAvailableCredits($invoice, $invoiceCreatorId, $invoice->issue_date?->toDateString());
             $invoice->refresh();
 
+            AuditService::log([
+                'module' => 'finance',
+                'action' => 'invoice_created',
+                'entity' => $invoice,
+                'new_values' => [
+                    'status' => $invoice->status,
+                    'amount_due' => $invoice->amount_due,
+                    'balance_due' => $invoice->balance_due,
+                    'invoice_type' => $invoice->invoice_type,
+                ],
+                'metadata' => [
+                    'source' => 'session_enrollment',
+                    'student_id' => $invoice->student_id,
+                    'academic_session_id' => $invoice->academic_session_id,
+                ],
+            ]);
+
             return $invoice;
         });
     }
@@ -195,6 +213,24 @@ class BillingService
             ]);
             $this->applyAvailableCredits($invoice, $createdBy, $invoice->issue_date?->toDateString());
             $invoice->refresh();
+
+            AuditService::log([
+                'module' => 'finance',
+                'action' => 'invoice_created',
+                'entity' => $invoice,
+                'new_values' => [
+                    'status' => $invoice->status,
+                    'amount_due' => $invoice->amount_due,
+                    'balance_due' => $invoice->balance_due,
+                    'invoice_type' => $invoice->invoice_type,
+                ],
+                'metadata' => [
+                    'source' => 'manual_invoice',
+                    'student_id' => $invoice->student_id,
+                    'academic_session_id' => $invoice->academic_session_id,
+                    'description' => $description,
+                ],
+            ]);
 
             return $invoice;
         });
@@ -469,6 +505,25 @@ class BillingService
 
             $this->allocatePaymentAcrossInvoices($payment, $student, $createdBy, $studentInvoiceId);
 
+            AuditService::log([
+                'module' => 'finance',
+                'action' => 'payment_recorded',
+                'entity' => $payment,
+                'new_values' => [
+                    'amount' => $payment->amount,
+                    'method' => $payment->method,
+                    'status' => $payment->status,
+                    'payment_date' => optional($payment->payment_date)->toDateString(),
+                    'reference' => $payment->reference,
+                ],
+                'metadata' => [
+                    'student_id' => $payment->student_id,
+                    'student_invoice_id' => $payment->student_invoice_id,
+                    'allocated_total' => $payment->allocated_total,
+                ],
+                'high_risk' => true,
+            ]);
+
             return $payment;
         });
     }
@@ -522,6 +577,24 @@ class BillingService
                 'description' => $description ?: ucfirst($type).' adjustment applied.',
                 'transaction_date' => $adjustment->applied_at?->toDateString() ?? ($appliedAt ?? now()->toDateString()),
                 'created_by' => $createdBy,
+            ]);
+
+            AuditService::log([
+                'module' => 'finance',
+                'action' => $type === 'waiver' ? 'waiver_granted' : 'invoice_updated',
+                'entity' => $adjustment,
+                'new_values' => [
+                    'type' => $adjustment->type,
+                    'amount' => $adjustment->amount,
+                    'applied_at' => optional($adjustment->applied_at)->toDateString(),
+                ],
+                'metadata' => [
+                    'student_invoice_id' => $invoice->id,
+                    'student_id' => $invoice->student_id,
+                    'invoice_balance_due' => $invoice->balance_due,
+                    'description' => $description,
+                ],
+                'high_risk' => in_array($type, ['waiver', 'refund', 'reversal'], true),
             ]);
 
             return $adjustment;

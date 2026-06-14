@@ -12,6 +12,7 @@ use App\Models\LectureRoom;
 use App\Models\CurriculumMapping;
 use App\Models\Unit;
 use App\Models\Staff;
+use App\Services\AuditService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -208,7 +209,23 @@ class AcademicTimetableController extends Controller
 
         abort_unless($currentSession, 422, 'No active academic session is available for timetable allocation.');
 
-        $this->persistTimetableSessions($validated, $actorStaffId, $currentSession->id);
+        $summary = $this->persistTimetableSessions($validated, $actorStaffId, $currentSession->id);
+
+        AuditService::log([
+            'module' => 'academics',
+            'action' => 'timetable_changed',
+            'entity_type' => 'academic_timetable',
+            'entity_id' => $summary['primary_timetable_id'] ?? null,
+            'entity_label' => 'Timetable session allocation',
+            'new_values' => [
+                'department_id' => $validated['department_id'],
+                'trainer_staff_id' => $validated['trainer_staff_id'],
+                'lecture_room_id' => $validated['lecture_room_id'],
+                'curriculum_unit_ids' => $validated['curriculum_unit_ids'],
+            ],
+            'metadata' => $summary,
+            'high_risk' => true,
+        ]);
 
         return to_route('academic.timetables.index', [
             'department_id' => $validated['department_id'],
@@ -245,7 +262,23 @@ class AcademicTimetableController extends Controller
 
         abort_unless($currentSession, 422, 'No active academic session is available for timetable allocation.');
 
-        $this->persistTimetableSessions($validated, $actorStaffId, $currentSession->id);
+        $summary = $this->persistTimetableSessions($validated, $actorStaffId, $currentSession->id);
+
+        AuditService::log([
+            'module' => 'academics',
+            'action' => 'timetable_changed',
+            'entity_type' => 'academic_timetable',
+            'entity_id' => $summary['primary_timetable_id'] ?? null,
+            'entity_label' => 'HOD timetable session allocation',
+            'new_values' => [
+                'department_id' => $validated['department_id'],
+                'trainer_staff_id' => $validated['trainer_staff_id'],
+                'lecture_room_id' => $validated['lecture_room_id'],
+                'curriculum_unit_ids' => $validated['curriculum_unit_ids'],
+            ],
+            'metadata' => $summary,
+            'high_risk' => true,
+        ]);
 
         return to_route('academic.timetables.hod.create')
             ->with('success', 'Timetable sessions created successfully.');
@@ -364,6 +397,16 @@ class AcademicTimetableController extends Controller
         abort_unless($this->canManageTimetable($request), 403);
 
         $validated = $request->validated();
+        $before = [
+            'department_id' => $timetable->department_id,
+            'curriculum_unit_id' => $timetable->curriculum_unit_id,
+            'trainer_staff_id' => $timetable->trainer_staff_id,
+            'lecture_room_id' => $timetable->lecture_room_id,
+            'day_of_week' => $timetable->day_of_week,
+            'start_time' => (string) $timetable->start_time,
+            'end_time' => (string) $timetable->end_time,
+            'curriculum_unit_ids' => $timetable->curriculumUnits()->pluck('units.id')->all(),
+        ];
 
         $timetable->update([
             'department_id' => $validated['department_id'],
@@ -377,6 +420,24 @@ class AcademicTimetableController extends Controller
         ]);
         $timetable->curriculumUnits()->sync($validated['curriculum_unit_ids']);
 
+        AuditService::log([
+            'module' => 'academics',
+            'action' => 'timetable_changed',
+            'entity' => $timetable,
+            'old_values' => $before,
+            'new_values' => [
+                'department_id' => $validated['department_id'],
+                'curriculum_unit_id' => $validated['curriculum_unit_ids'][0],
+                'trainer_staff_id' => $validated['trainer_staff_id'],
+                'lecture_room_id' => $validated['lecture_room_id'],
+                'day_of_week' => $validated['day_of_week'],
+                'start_time' => $validated['start_time'],
+                'end_time' => $validated['end_time'],
+                'curriculum_unit_ids' => $validated['curriculum_unit_ids'],
+            ],
+            'high_risk' => true,
+        ]);
+
         return to_route('academic.timetables.index', [
             'department_id' => $validated['department_id'],
         ])->with('success', 'Timetable session updated successfully.');
@@ -387,6 +448,28 @@ class AcademicTimetableController extends Controller
         abort_unless($this->canManageTimetable($request), 403);
 
         $departmentId = $timetable->department_id;
+        $before = [
+            'department_id' => $timetable->department_id,
+            'curriculum_unit_id' => $timetable->curriculum_unit_id,
+            'trainer_staff_id' => $timetable->trainer_staff_id,
+            'lecture_room_id' => $timetable->lecture_room_id,
+            'day_of_week' => $timetable->day_of_week,
+            'start_time' => (string) $timetable->start_time,
+            'end_time' => (string) $timetable->end_time,
+            'curriculum_unit_ids' => $timetable->curriculumUnits()->pluck('units.id')->all(),
+        ];
+
+        AuditService::log([
+            'module' => 'academics',
+            'action' => 'timetable_changed',
+            'entity' => $timetable,
+            'old_values' => $before,
+            'metadata' => [
+                'deleted' => true,
+            ],
+            'high_risk' => true,
+        ]);
+
         $timetable->delete();
 
         return to_route('academic.timetables.index', [
@@ -690,13 +773,14 @@ class AcademicTimetableController extends Controller
             ->all();
     }
 
-    protected function persistTimetableSessions(array $validated, ?int $actorStaffId, int $academicSessionId): void
+    protected function persistTimetableSessions(array $validated, ?int $actorStaffId, int $academicSessionId): array
     {
-        DB::transaction(function () use ($validated, $actorStaffId, $academicSessionId) {
+        return DB::transaction(function () use ($validated, $actorStaffId, $academicSessionId) {
             $curriculumUnitIds = collect($validated['curriculum_unit_ids'])
                 ->map(fn ($id) => (int) $id)
                 ->values();
             $primaryCurriculumUnitId = $curriculumUnitIds->first();
+            $createdIds = [];
 
             foreach ($validated['sessions'] as $session) {
                 $timetable = AcademicTimetable::create([
@@ -713,7 +797,19 @@ class AcademicTimetableController extends Controller
                 ]);
 
                 $timetable->curriculumUnits()->sync($curriculumUnitIds->all());
+                $createdIds[] = $timetable->id;
             }
+
+            return [
+                'academic_session_id' => $academicSessionId,
+                'department_id' => $validated['department_id'],
+                'trainer_staff_id' => $validated['trainer_staff_id'],
+                'lecture_room_id' => $validated['lecture_room_id'],
+                'curriculum_unit_ids' => $curriculumUnitIds->all(),
+                'session_count' => count($validated['sessions']),
+                'created_timetable_ids' => $createdIds,
+                'primary_timetable_id' => $createdIds[0] ?? null,
+            ];
         });
     }
 

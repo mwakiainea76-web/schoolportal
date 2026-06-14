@@ -6,6 +6,7 @@ use App\Http\Requests\ResetStaffPasswordRequest;
 use App\Http\Requests\ResetStudentPasswordRequest;
 use App\Models\Staff;
 use App\Models\Student;
+use App\Services\AuditService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Validation\ValidationException;
 
@@ -35,6 +36,17 @@ class AdminPasswordResetController extends Controller
             'password' => $request->validated('password'),
         ]);
 
+        AuditService::log([
+            'module' => 'users_permissions',
+            'action' => 'password_reset',
+            'entity' => $staff,
+            'metadata' => [
+                'account_type' => 'staff',
+                'reset_by_admin' => true,
+            ],
+            'high_risk' => true,
+        ]);
+
         return back()->with('success', "Password updated for {$staff->staff_number}.");
     }
 
@@ -60,6 +72,17 @@ class AdminPasswordResetController extends Controller
 
         $student->user->update([
             'password' => $request->validated('password'),
+        ]);
+
+        AuditService::log([
+            'module' => 'users_permissions',
+            'action' => 'password_reset',
+            'entity' => $student,
+            'metadata' => [
+                'account_type' => 'student',
+                'reset_by_admin' => true,
+            ],
+            'high_risk' => true,
         ]);
 
         return back()->with('success', "Password updated for {$student->admission_number}.");

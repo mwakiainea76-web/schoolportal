@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\EnforceSecurityBlock;
+use App\Http\Middleware\EnsureActiveUser;
 use App\Support\ApiResponse;
 use App\Exceptions\ApiException;
 use Illuminate\Foundation\Application;
@@ -32,10 +33,12 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleInertiaRequests::class,
             RecordRequestPerformance::class,
             EnforceSecurityBlock::class,
+            EnsureActiveUser::class,
         ]);
 
         $middleware->api(prepend: [
             RecordRequestPerformance::class,
+            EnsureActiveUser::class,
         ]);
 
         // Middleware aliases (Spatie)

@@ -11,7 +11,6 @@ import {
     gender_types,
     relation_type,
     religion,
-    staff_status,
 } from "@/constants/constants";
 
 const STORAGE_KEY = "staff_form_draft";
@@ -149,11 +148,6 @@ function EmploymentSection({ data, setData, errors, departments, roles }) {
                 <InputError message={errors.hired_date} />
             </div>
             <div>
-                <InputLabel value="Staff Status" required />
-                <SearchSelect defaultOptions={staff_status} value={data.staff_status} onChange={(s) => setData("staff_status", s.name.trim())} error={errors.staff_status} />
-                <InputError message={errors.staff_status} />
-            </div>
-            <div>
                 <InputLabel value="Highest Qualification" required />
                 <TextInput required name="highest_qualification" value={data.highest_qualification} onChange={handleChange} error={errors.highest_qualification} placeholder="e.g. Masters in Education" />
                 <InputError message={errors.highest_qualification} />
@@ -241,7 +235,6 @@ export default function CreateStaff({ departments, roles }) {
         salary: "",
         employment_type: "",
         hired_date: new Date().toISOString().split("T")[0],
-        staff_status: "active",
         highest_qualification: "",
         specialization: "",
         kra_pin: "",

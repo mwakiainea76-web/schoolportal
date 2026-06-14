@@ -4,12 +4,21 @@ use App\Http\Controllers\Api\FeeManagement\FeeAssignmentController;
 use App\Http\Controllers\Api\FeeManagement\FeeComponentController;
 use App\Http\Controllers\Api\FeeManagement\FeePlanController;
 use App\Http\Controllers\Api\PublicCourseController;
+use App\Http\Controllers\Api\AuditLogController;
 use App\Http\Controllers\ReportingController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/public/courses', [PublicCourseController::class, 'index']);
 
 Route::middleware('auth')->group(function () {
+    Route::prefix('audit-logs')->name('api.audit-logs.')->group(function () {
+        Route::get('/', [AuditLogController::class, 'index'])->name('index');
+        Route::get('/export', [AuditLogController::class, 'export'])->name('export');
+        Route::get('/student/{id}', [AuditLogController::class, 'student'])->name('student');
+        Route::get('/staff/{id}', [AuditLogController::class, 'staff'])->name('staff');
+        Route::get('/{auditLog}', [AuditLogController::class, 'show'])->name('show');
+    });
+
     Route::prefix('fee-plans')->group(function () {
         Route::post('/', [FeePlanController::class, 'store']);
         Route::get('/', [FeePlanController::class, 'index']);

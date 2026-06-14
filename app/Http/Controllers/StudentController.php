@@ -289,7 +289,6 @@ class StudentController extends Controller
 
             $student->user->update([
                 'email' => $request->email,
-                'is_active' => $request->boolean('is_active'),
             ]);
 
             $student->update([

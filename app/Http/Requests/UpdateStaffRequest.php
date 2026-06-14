@@ -44,7 +44,6 @@ class UpdateStaffRequest extends FormRequest
                     Rule::unique('staffs', 'national_id_number')->ignore($staffId),
                 ],
                 'salary' => ['nullable', 'numeric'],
-                'staff_status' => ['nullable', 'in:active,suspended,onleave,exited'],
                 'employment_type' => ['required', 'string'],
                 'hired_date' => ['required', 'date'],
                 'highest_qualification' => ['required', 'string', 'max:255'],

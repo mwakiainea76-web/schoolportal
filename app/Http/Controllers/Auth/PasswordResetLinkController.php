@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Services\AuditService;
 use App\Services\SecurityMonitoringService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -123,6 +124,18 @@ class PasswordResetLinkController extends Controller
             $user?->login_id,
             $email,
         );
+
+        AuditService::log([
+            'module' => 'authentication',
+            'action' => $status == Password::RESET_LINK_SENT ? 'password_reset_requested' : 'password_reset_request_failed',
+            'entity' => $user,
+            'entity_type' => 'user',
+            'entity_label' => $user?->email ?: $email,
+            'metadata' => [
+                'status' => $status,
+            ],
+            'high_risk' => $status != Password::RESET_LINK_SENT,
+        ]);
 
         $resetAttempts = $this->securityMonitoring->recentEventCount('password_reset.requested', [
             'email' => $email,

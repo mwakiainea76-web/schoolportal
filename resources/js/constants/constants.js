@@ -92,9 +92,9 @@ export const religion = [
 ];
 export const student_status = [
     { id: 1, name: "active" },
-    { id: 2, name: "suspended" },
-    { id: 3, name: "graduated" },
-    { id: 4, name: "dropped" },
+    { id: 2, name: "deferred" },
+    { id: 3, name: "expelled" },
+    { id: 4, name: "graduated" },
 ];
 
 export const modules = [

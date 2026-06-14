@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\AuditService;
 use App\Support\RbacCache;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Permission;
@@ -66,7 +67,18 @@ class PermissionController extends Controller
             'name' => 'required|unique:permissions,name',
         ]);
 
-        Permission::create(['name' => $request->name]);
+        $permission = Permission::create(['name' => $request->name]);
+
+        AuditService::log([
+            'module' => 'users_permissions',
+            'action' => 'permission_created',
+            'entity_type' => 'permission',
+            'entity_id' => $permission->id,
+            'entity_label' => $permission->name,
+            'new_values' => [
+                'name' => $permission->name,
+            ],
+        ]);
         RbacCache::forgetAllUsers();
 
         return back()->with('success', 'Permission created');
@@ -85,8 +97,25 @@ class PermissionController extends Controller
             'name' => 'required|unique:permissions,name,'.$permission->id,
         ]);
 
+        $before = [
+            'name' => $permission->name,
+        ];
+
         $permission->update([
             'name' => $request->name,
+        ]);
+
+        AuditService::log([
+            'module' => 'users_permissions',
+            'action' => 'permission_modified',
+            'entity_type' => 'permission',
+            'entity_id' => $permission->id,
+            'entity_label' => $permission->name,
+            'old_values' => $before,
+            'new_values' => [
+                'name' => $permission->name,
+            ],
+            'high_risk' => true,
         ]);
         RbacCache::forgetAllUsers();
 
@@ -95,6 +124,18 @@ class PermissionController extends Controller
 
     public function destroy(Permission $permission)
     {
+        AuditService::log([
+            'module' => 'users_permissions',
+            'action' => 'permission_deleted',
+            'entity_type' => 'permission',
+            'entity_id' => $permission->id,
+            'entity_label' => $permission->name,
+            'old_values' => [
+                'name' => $permission->name,
+            ],
+            'high_risk' => true,
+        ]);
+
         $permission->delete();
         RbacCache::forgetAllUsers();
 
@@ -132,7 +173,24 @@ class PermissionController extends Controller
     {
         $role = Role::findOrFail($request->role_id);
 
+        $beforePermissions = $role->permissions()->pluck('name')->values()->all();
         $role->syncPermissions($request->permissions ?? []);
+        $role->load('permissions');
+
+        AuditService::log([
+            'module' => 'users_permissions',
+            'action' => 'permission_modified',
+            'entity_type' => 'role',
+            'entity_id' => $role->id,
+            'entity_label' => $role->name,
+            'old_values' => [
+                'permissions' => $beforePermissions,
+            ],
+            'new_values' => [
+                'permissions' => $role->permissions->pluck('name')->values()->all(),
+            ],
+            'high_risk' => true,
+        ]);
         RbacCache::forgetForRole($role);
 
         return back()->with('success', 'Role permissions updated');

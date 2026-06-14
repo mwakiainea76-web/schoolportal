@@ -2,57 +2,57 @@
 
 namespace App\Services;
 
-use App\Models\Student;
-use App\Models\StudentStatusLog;
+use App\Models\Staff;
+use App\Models\StaffStatusLog;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 
-class StudentEnrollmentStatusService
+class StaffStatusService
 {
-    public function ensureCurrentStatusLogged(Student $student, array $extra = []): ?StudentStatusLog
+    public function ensureCurrentStatusLogged(Staff $staff, array $extra = []): ?StaffStatusLog
     {
-        $this->syncUserActiveState($student, $student->enrollment_status);
+        $this->syncUserActiveState($staff, $staff->staff_status);
 
-        if ($student->statusLogs()->exists()) {
-            return $student->statusLogs()
+        if ($staff->statusLogs()->exists()) {
+            return $staff->statusLogs()
                 ->latest('effective_date')
                 ->latest('id')
                 ->first();
         }
 
-        return $student->statusLogs()->create([
-            'status' => $student->enrollment_status,
-            'effective_date' => $this->normalizeDate($extra['effective_date'] ?? $student->created_at ?? now()),
+        return $staff->statusLogs()->create([
+            'status' => $staff->staff_status,
+            'effective_date' => $this->normalizeDate($extra['effective_date'] ?? $staff->created_at ?? now()),
             'reason' => $extra['reason'] ?? null,
             'resume_date' => $this->normalizeDate($extra['resume_date'] ?? null),
             'recorded_by' => $extra['recorded_by'] ?? auth()->id(),
         ]);
     }
 
-    public function recordInitialStatus(Student $student, array $extra = []): ?StudentStatusLog
+    public function recordInitialStatus(Staff $staff, array $extra = []): ?StaffStatusLog
     {
-        return $this->ensureCurrentStatusLogged($student, $extra);
+        return $this->ensureCurrentStatusLogged($staff, $extra);
     }
 
-    public function updateEnrollmentStatus(Student $student, string $status, array $extra = []): ?StudentStatusLog
+    public function updateStatus(Staff $staff, string $status, array $extra = []): ?StaffStatusLog
     {
         $normalizedStatus = strtolower(trim($status));
 
-        return DB::transaction(function () use ($student, $normalizedStatus, $extra) {
-            $currentStatus = $student->enrollment_status;
-            $this->syncUserActiveState($student, $normalizedStatus);
+        return DB::transaction(function () use ($staff, $normalizedStatus, $extra) {
+            $currentStatus = $staff->staff_status;
+            $this->syncUserActiveState($staff, $normalizedStatus);
 
             if ($currentStatus === $normalizedStatus) {
-                return $this->ensureCurrentStatusLogged($student, $extra);
+                return $this->ensureCurrentStatusLogged($staff, $extra);
             }
 
-            $student->update([
-                'enrollment_status' => $normalizedStatus,
+            $staff->update([
+                'staff_status' => $normalizedStatus,
             ]);
 
-            $log = $student->statusLogs()->create([
+            $log = $staff->statusLogs()->create([
                 'status' => $normalizedStatus,
                 'effective_date' => $this->normalizeDate($extra['effective_date'] ?? now()),
                 'reason' => $extra['reason'] ?? null,
@@ -61,14 +61,14 @@ class StudentEnrollmentStatusService
             ]);
 
             AuditService::log([
-                'module' => 'students',
-                'action' => 'student_status_changed',
-                'entity' => $student,
+                'module' => 'staff',
+                'action' => 'staff_status_changed',
+                'entity' => $staff,
                 'old_values' => [
-                    'enrollment_status' => $currentStatus,
+                    'staff_status' => $currentStatus,
                 ],
                 'new_values' => [
-                    'enrollment_status' => $normalizedStatus,
+                    'staff_status' => $normalizedStatus,
                 ],
                 'metadata' => Arr::only([
                     'effective_date' => $this->normalizeDate($extra['effective_date'] ?? now()),
@@ -76,7 +76,7 @@ class StudentEnrollmentStatusService
                     'resume_date' => $this->normalizeDate($extra['resume_date'] ?? null),
                     'status_log_id' => $log->id,
                 ], ['effective_date', 'reason', 'resume_date', 'status_log_id']),
-                'high_risk' => in_array($normalizedStatus, ['deferred', 'expelled', 'graduated'], true),
+                'high_risk' => in_array($normalizedStatus, ['suspended', 'exited'], true),
             ]);
 
             return $log;
@@ -96,19 +96,19 @@ class StudentEnrollmentStatusService
         return Carbon::parse($value)->toDateString();
     }
 
-    private function syncUserActiveState(Student $student, string $status): void
+    private function syncUserActiveState(Staff $staff, string $status): void
     {
-        if (! $student->user) {
+        if (! $staff->user) {
             return;
         }
 
         $shouldBeActive = $status === 'active';
 
-        if ((bool) $student->user->is_active === $shouldBeActive) {
+        if ((bool) $staff->user->is_active === $shouldBeActive) {
             return;
         }
 
-        $student->user->update([
+        $staff->user->update([
             'is_active' => $shouldBeActive,
         ]);
     }

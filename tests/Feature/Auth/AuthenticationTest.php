@@ -42,6 +42,41 @@ class AuthenticationTest extends TestCase
         $this->assertGuest();
     }
 
+    public function test_inactive_users_can_not_authenticate(): void
+    {
+        $user = User::factory()->create([
+            'is_active' => false,
+        ]);
+
+        $response = $this->from('/login')->post('/login', [
+            'login' => $user->email,
+            'password' => '@123Password',
+        ]);
+
+        $response
+            ->assertRedirect('/login')
+            ->assertSessionHasErrors([
+                'login' => 'Your account is locked. Contact administrator.',
+            ]);
+
+        $this->assertGuest();
+    }
+
+    public function test_inactive_authenticated_users_are_logged_out_on_next_request(): void
+    {
+        $user = User::factory()->create([
+            'is_active' => false,
+        ]);
+
+        $response = $this->actingAs($user)->get(route('profile.edit'));
+
+        $response
+            ->assertRedirect(route('login'))
+            ->assertSessionHas('status', 'Your account is locked. Contact administrator.');
+
+        $this->assertGuest();
+    }
+
     public function test_users_can_logout(): void
     {
         $user = User::factory()->create();

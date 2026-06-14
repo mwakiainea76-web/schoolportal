@@ -29,6 +29,19 @@ export default function SearchSelect({
         }
     }, [defaultOptions, routeName]);
 
+    const visibleOptions = !routeName
+        ? options.filter((item) => {
+              const name = String(item?.name ?? "").toLowerCase();
+              const search = query.trim().toLowerCase();
+
+              if (!search) {
+                  return true;
+              }
+
+              return name.includes(search);
+          })
+        : options;
+
     const fetchOptions = useCallback(
         async (text = "") => {
             if (!routeName || disabled) return;
@@ -171,12 +184,12 @@ export default function SearchSelect({
 
             {open && (
                 <div className="absolute z-[70] mt-1 w-full bg-white border rounded-xl shadow-lg max-h-60 overflow-y-auto">
-                    {!options.length ? (
+                    {!visibleOptions.length ? (
                         <div className="p-3 text-sm text-zinc-400">
                             No results found
                         </div>
                     ) : (
-                        options.map((item) => (
+                        visibleOptions.map((item) => (
                             <div
                                 key={item.id ?? item.name}
                                 onClick={() => handleSelect(item)}

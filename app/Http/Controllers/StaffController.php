@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Filters\StaffFilter;
 use App\Http\Requests\StoreStaffRequest;
+use App\Http\Requests\UpdateStaffStatusRequest;
 use App\Http\Requests\UpdateStaffRequest;
 use App\Models\Department;
 use App\Models\Staff;
 use App\Models\User;
+use App\Services\StaffStatusService;
 use App\Support\RbacCache;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -135,11 +137,11 @@ class StaffController extends Controller
     // STORE
     // ----------------------------------------------------------------
 
-    public function store(StoreStaffRequest $request)
+    public function store(StoreStaffRequest $request, StaffStatusService $staffStatusService)
     {
         abort_if($this->shouldScopeToHodDepartment($request), 403);
 
-        DB::transaction(function () use ($request) {
+        DB::transaction(function () use ($request, $staffStatusService) {
 
             $user = User::create([
                 'email' => $request->email,
@@ -184,12 +186,17 @@ class StaffController extends Controller
                 'salary' => $request->salary ?? 0,
                 'employment_type' => $request->employment_type,
                 'hired_date' => $request->hired_date,
-                'staff_status' => $request->staff_status ?: 'active',
+                'staff_status' => 'active',
                 'highest_qualification' => $request->highest_qualification,
                 'specialization' => $request->specialization,
                 'kra_pin' => $request->kra_pin,
                 'nhif_number' => $request->nhif_number,
                 'nssf_number' => $request->nssf_number,
+            ]);
+
+            $staffStatusService->recordInitialStatus($staff, [
+                'effective_date' => $staff->created_at,
+                'recorded_by' => $request->user()?->id,
             ]);
 
             $user->update([
@@ -277,7 +284,6 @@ class StaffController extends Controller
 
             $staff->user->update([
                 'email' => $request->email,
-                'is_active' => $request->boolean('is_active'),
             ]);
 
             $staff->user->syncRoles([$request->role_name]);
@@ -303,7 +309,6 @@ class StaffController extends Controller
                 'salary' => $request->salary ?? 0,
                 'employment_type' => $request->employment_type,
                 'hired_date' => $request->hired_date,
-                'staff_status' => $request->staff_status ?: 'active',
                 'highest_qualification' => $request->highest_qualification,
                 'specialization' => $request->specialization,
                 'kra_pin' => $request->kra_pin,
@@ -329,6 +334,41 @@ class StaffController extends Controller
         });
 
         return redirect()->route('staffs.index')->with('success', 'Staff updated successfully.');
+    }
+
+    public function createStatusPage()
+    {
+        return inertia('Staffs/ChangeStatus', [
+            'statuses' => ['active', 'suspended', 'onleave', 'exited'],
+        ]);
+    }
+
+    public function updateStatusByStaffNumber(
+        UpdateStaffStatusRequest $request,
+        StaffStatusService $staffStatusService
+    )
+    {
+        $staff = Staff::query()
+            ->where('staff_number', $request->staff_number)
+            ->first();
+
+        if (! $staff) {
+            return back()->withInput()->withErrors([
+                'staff_number' => 'No staff member was found with that staff number.',
+            ]);
+        }
+
+        $status = $request->status;
+        $requiresReason = in_array($status, ['suspended', 'onleave', 'exited'], true);
+
+        $staffStatusService->updateStatus($staff, $status, [
+            'effective_date' => $request->effective_date,
+            'reason' => $requiresReason ? $request->reason : null,
+            'resume_date' => $status === 'onleave' ? $request->resume_date : null,
+            'recorded_by' => $request->user()?->id,
+        ]);
+
+        return back()->with('success', 'Staff status updated successfully.');
     }
 
     // ----------------------------------------------------------------

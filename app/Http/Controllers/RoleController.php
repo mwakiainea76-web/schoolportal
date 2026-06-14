@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\AuditService;
 use App\Support\RbacCache;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Permission;
@@ -81,6 +82,18 @@ class RoleController extends Controller
 
         // assign permissions (Spatie expects array of names or ids)
         $role->syncPermissions($request->permissions ?? []);
+
+        AuditService::log([
+            'module' => 'users_permissions',
+            'action' => 'role_created',
+            'entity_type' => 'role',
+            'entity_id' => $role->id,
+            'entity_label' => $role->name,
+            'new_values' => [
+                'name' => $role->name,
+                'permissions' => $role->permissions->pluck('name')->values()->all(),
+            ],
+        ]);
         RbacCache::forgetForRole($role);
 
         return redirect()
@@ -111,6 +124,11 @@ class RoleController extends Controller
             'permissions' => 'array',
         ]);
 
+        $before = [
+            'name' => $role->name,
+            'permissions' => $role->permissions()->pluck('name')->values()->all(),
+        ];
+
         $role->update([
             'name' => $request->name,
         ]);
@@ -118,6 +136,22 @@ class RoleController extends Controller
         if ($request->has('permissions')) {
             $role->syncPermissions($request->permissions ?? []);
         }
+
+        $role->load('permissions');
+
+        AuditService::log([
+            'module' => 'users_permissions',
+            'action' => 'role_changed',
+            'entity_type' => 'role',
+            'entity_id' => $role->id,
+            'entity_label' => $role->name,
+            'old_values' => $before,
+            'new_values' => [
+                'name' => $role->name,
+                'permissions' => $role->permissions->pluck('name')->values()->all(),
+            ],
+            'high_risk' => true,
+        ]);
         RbacCache::forgetForRole($role);
 
         return redirect()
@@ -130,6 +164,19 @@ class RoleController extends Controller
      */
     public function destroy(Role $role)
     {
+        AuditService::log([
+            'module' => 'users_permissions',
+            'action' => 'role_deleted',
+            'entity_type' => 'role',
+            'entity_id' => $role->id,
+            'entity_label' => $role->name,
+            'old_values' => [
+                'name' => $role->name,
+                'permissions' => $role->permissions()->pluck('name')->values()->all(),
+            ],
+            'high_risk' => true,
+        ]);
+
         RbacCache::forgetForRole($role);
         $role->delete();
 
@@ -176,7 +223,24 @@ class RoleController extends Controller
 
         $role = Role::findOrFail($request->role_id);
 
+        $beforePermissions = $role->permissions()->pluck('name')->values()->all();
         $role->syncPermissions($request->permissions ?? []);
+        $role->load('permissions');
+
+        AuditService::log([
+            'module' => 'users_permissions',
+            'action' => 'permission_modified',
+            'entity_type' => 'role',
+            'entity_id' => $role->id,
+            'entity_label' => $role->name,
+            'old_values' => [
+                'permissions' => $beforePermissions,
+            ],
+            'new_values' => [
+                'permissions' => $role->permissions->pluck('name')->values()->all(),
+            ],
+            'high_risk' => true,
+        ]);
         RbacCache::forgetForRole($role);
 
         return back()->with('success', 'Permissions assigned successfully');

@@ -33,7 +33,6 @@ class StoreStaffRequest extends FormRequest
                 'salary' => ['nullable', 'numeric'],
                 'employment_type' => ['required', 'string', 'min:3'],
                 'hired_date' => ['required', 'date'],
-                'staff_status' => ['nullable', 'in:active,suspended,onleave,exited'],
                 'highest_qualification' => ['required', 'string', 'max:255'],
                 'specialization' => ['nullable', 'string', 'max:255'],
                 'kra_pin' => ['nullable', 'string', 'max:50'],

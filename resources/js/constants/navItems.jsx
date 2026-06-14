@@ -476,6 +476,12 @@ export const STAFF_NAV_ITEMS = [
                 label: "Reset Password",
                 roles: ["admin"],
             },
+            {
+                routeName: "staffs.status.create",
+                fallback: "/staffs/status",
+                label: "Staff Status",
+                roles: ["admin"],
+            },
         ],
     },
     // --- Access Control (standalone) ---
@@ -537,6 +543,11 @@ export const STAFF_NAV_ITEMS = [
                 routeName: "settings.logs.index",
                 fallback: "/settings/logs",
                 label: "System Logs",
+            },
+            {
+                routeName: "settings.audit-logs.index",
+                fallback: "/settings/audit-logs",
+                label: "Audit Logs",
             },
             {
                 routeName: "settings.security.index",
