@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { route } from "ziggy-js";
 
 export default function SearchSelect({
@@ -21,7 +21,12 @@ export default function SearchSelect({
 
     const debounceRef = useRef(null);
     const wrapperRef = useRef(null);
+    const isOpenRef = useRef(open);
+    const queryRef = useRef(query);
     const routeParamsKey = JSON.stringify(routeParams ?? {});
+
+    isOpenRef.current = open;
+    queryRef.current = query;
 
     useEffect(() => {
         if (!routeName) {
@@ -29,33 +34,39 @@ export default function SearchSelect({
         }
     }, [defaultOptions, routeName]);
 
-    const visibleOptions = !routeName
-        ? options.filter((item) => {
-              const name = String(item?.name ?? "").toLowerCase();
-              const search = query.trim().toLowerCase();
+    const visibleOptions = useMemo(() => {
+        if (routeName) return options;
 
-              if (!search) {
-                  return true;
-              }
+        const search = query.trim().toLowerCase();
+        if (!search) return options;
 
-              return name.includes(search);
-          })
-        : options;
+        return options.filter((item) =>
+            String(item?.name ?? "")
+                .toLowerCase()
+                .includes(search),
+        );
+    }, [routeName, options, query]);
 
     const fetchOptions = useCallback(
         async (text = "") => {
             if (!routeName || disabled) return;
 
-            const res = await fetch(
-                route(routeName, { ...routeParams, q: text }),
-            );
-            if (!res.ok) {
-                setOptions([]);
-                return;
-            }
+            try {
+                const res = await fetch(
+                    route(routeName, { ...routeParams, q: text }),
+                );
 
-            const data = await res.json();
-            setOptions(Array.isArray(data) ? data : []);
+                if (!res.ok) {
+                    setOptions([]);
+                    return;
+                }
+
+                const data = await res.json();
+                setOptions(Array.isArray(data) ? data : []);
+            } catch (err) {
+                console.error("SearchSelect fetch error:", err);
+                setOptions([]);
+            }
         },
         // eslint-disable-next-line react-hooks/exhaustive-deps
         [routeName, disabled, routeParamsKey],
@@ -68,7 +79,7 @@ export default function SearchSelect({
         if (value === null || value === undefined) return;
 
         if (value === "") {
-            if (open && query.trim() !== "") return;
+            if (isOpenRef.current && queryRef.current.trim() !== "") return;
             setQuery("");
             return;
         }
@@ -86,7 +97,8 @@ export default function SearchSelect({
             return;
         }
         if (typeof value === "string") setQuery(value);
-    }, [value, selectedLabel, defaultOptions, options, open, query]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [value, selectedLabel, defaultOptions, options]);
 
     // -----------------------------
     // SEARCH (DEBOUNCED)
@@ -98,28 +110,26 @@ export default function SearchSelect({
 
         clearTimeout(debounceRef.current);
         debounceRef.current = setTimeout(async () => {
-            try {
-                if (!routeName) return;
+            if (!routeName) return;
 
-                const trimmed = text.trim();
+            const trimmed = text.trim();
 
-                if (!trimmed) {
-                    preloadOptions
-                        ? await fetchOptions("")
-                        : setOptions(defaultOptions);
-                    onChange?.({ id: "", name: "" });
-                    return;
-                }
-
-                if (trimmed.length < minSearchLength) {
+            if (!trimmed) {
+                if (preloadOptions) {
+                    await fetchOptions("");
+                } else {
                     setOptions(defaultOptions);
-                    return;
                 }
-
-                await fetchOptions(trimmed);
-            } catch (err) {
-                console.error("SearchSelect error:", err);
+                onChange?.({ id: "", name: "" });
+                return;
             }
+
+            if (trimmed.length < minSearchLength) {
+                setOptions(defaultOptions);
+                return;
+            }
+
+            await fetchOptions(trimmed);
         }, 500);
     };
 
@@ -155,6 +165,13 @@ export default function SearchSelect({
         if (!routeName || !preloadOptions || disabled) return;
         fetchOptions("");
     }, [fetchOptions, routeName, preloadOptions, disabled]);
+
+    // -----------------------------
+    // CLEANUP DEBOUNCE ON UNMOUNT
+    // -----------------------------
+    useEffect(() => {
+        return () => clearTimeout(debounceRef.current);
+    }, []);
 
     return (
         <div

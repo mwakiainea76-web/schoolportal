@@ -31,15 +31,245 @@ class DashboardController extends Controller
     {
         $user = $request->user();
         $user?->loadMissing('roles:id,name');
-        $roles = $user->roles->pluck('name')->map(fn($role) => strtolower($role));
+        $roles = $user->roles->pluck('name')->map(fn ($role) => strtolower($role));
 
-        // Logic for Student Dashboard
         if ($roles->contains('student')) {
             return $this->studentDashboard($request);
         }
 
-        // Logic for Staff/Admin/Trainer Dashboard
-        return $this->staffDashboard($request);
+        if ($roles->contains('admin')) {
+            return $this->adminDashboard($request, $roles->all());
+        }
+
+        if ($roles->contains('bursar')) {
+            return $this->bursarDashboard($request, $roles->all());
+        }
+
+        if ($roles->contains('hod')) {
+            return $this->hodDashboard($request, $roles->all());
+        }
+
+        return $this->trainerDashboard($request, $roles->all());
+    }
+
+    protected function adminDashboard(Request $request, array $roleNames): Response
+    {
+        $user = $request->user();
+        $staff = $user ? $this->staffSummaryForUser($user->id) : null;
+
+        return Inertia::render('Dashboard', [
+            'dashboard' => [
+                'type' => 'admin',
+                'staff_profile' => $this->staffProfilePayload($user, $staff, $roleNames),
+                'trainer_workspace' => $this->trainerWorkspacePayload($staff, false),
+                'stats' => $this->institutionStats(),
+            ],
+        ]);
+    }
+
+    protected function bursarDashboard(Request $request, array $roleNames): Response
+    {
+        $user = $request->user();
+        $staff = $user ? $this->staffSummaryForUser($user->id) : null;
+
+        return Inertia::render('Dashboard', [
+            'dashboard' => [
+                'type' => 'bursar',
+                'staff_profile' => $this->staffProfilePayload($user, $staff, $roleNames),
+                'stats' => $this->institutionStats(),
+            ],
+        ]);
+    }
+
+    protected function hodDashboard(Request $request, array $roleNames): Response
+    {
+        $user = $request->user();
+        $staff = $user ? $this->staffSummaryForUser($user->id) : null;
+
+        return Inertia::render('Dashboard', [
+            'dashboard' => [
+                'type' => 'hod',
+                'staff_profile' => $this->staffProfilePayload($user, $staff, $roleNames),
+                'trainer_workspace' => $this->trainerWorkspacePayload($staff, true),
+                'department_context' => $this->departmentContextPayload($staff),
+                'stats' => $staff?->department_id
+                    ? $this->departmentStats($staff->department_id)
+                    : $this->institutionStats(),
+            ],
+        ]);
+    }
+
+    protected function trainerDashboard(Request $request, array $roleNames): Response
+    {
+        $user = $request->user();
+        $staff = $user ? $this->staffSummaryForUser($user->id) : null;
+
+        return Inertia::render('Dashboard', [
+            'dashboard' => [
+                'type' => 'trainer',
+                'staff_profile' => $this->staffProfilePayload($user, $staff, $roleNames),
+                'trainer_workspace' => $this->trainerWorkspacePayload($staff, true),
+            ],
+        ]);
+    }
+
+    protected function staffProfilePayload(?User $user, ?object $staff, array $roleNames): array
+    {
+        return [
+            'name' => $user?->staff?->full_name,
+            'staff_number' => $staff?->staff_number,
+            'designation' => $staff?->designation,
+            'department_id' => $staff?->department_id ? (string) $staff->department_id : null,
+            'department_name' => $staff?->department_name,
+            'roles' => $roleNames,
+        ];
+    }
+
+    /**
+     * Department-scoped context for HOD: identifies which department
+     * this HOD oversees so the frontend can label/filter accordingly.
+     * Course/curriculum lists for HOD must be filtered server-side by
+     * this department_id in their respective controllers — do not rely
+     * on the frontend to enforce this scoping.
+     */
+    protected function departmentContextPayload(?object $staff): ?array
+    {
+        if (! $staff?->department_id) {
+            return null;
+        }
+
+        return [
+            'department_id' => (string) $staff->department_id,
+            'department_name' => $staff->department_name,
+        ];
+    }
+
+    /**
+     * @param  bool  $hasWorkspaceAccess  Whether this role gets timetable/marks
+     *                                    workspace stats (true for trainer and HOD, false for admin/bursar).
+     */
+    protected function trainerWorkspacePayload(?object $staff, bool $hasWorkspaceAccess): array
+    {
+        $activeSession = $this->activeSessionSummary();
+
+        $currentTimetableCount = $hasWorkspaceAccess && $staff
+            ? AcademicTimetable::query()
+                ->when($activeSession, fn ($query) => $query->where('academic_session_id', $activeSession['id']))
+                ->where('trainer_staff_id', $staff->id)
+                ->count()
+            : 0;
+
+        $recordedMarksCount = $hasWorkspaceAccess && $staff && $activeSession
+            ? StudentMark::query()
+                ->where('recorded_by_staff_id', $staff->id)
+                ->where('academic_session_id', $activeSession['id'])
+                ->count()
+            : 0;
+
+        return [
+            'active_session' => $activeSession,
+            'department_id' => $staff?->department_id ? (string) $staff->department_id : '',
+            'trainer_staff_id' => $staff?->id ? (string) $staff->id : '',
+            'timetable_sessions_count' => $currentTimetableCount,
+            'marks_recorded_count' => $recordedMarksCount,
+            'can_view_timetable' => $hasWorkspaceAccess && (bool) ($staff?->id && $staff?->department_id),
+            'can_grade_students' => $hasWorkspaceAccess && (bool) $staff?->id,
+        ];
+    }
+
+    protected function activeSessionSummary(): ?array
+    {
+        $session = AcademicSession::query()
+            ->leftJoin('academic_years', function ($join) {
+                $join->on('academic_years.id', '=', 'academic_sessions.academic_year_id')
+                    ->whereNull('academic_years.deleted_at');
+            })
+            ->where('academic_sessions.is_active', true)
+            ->whereNull('academic_sessions.deleted_at')
+            ->orderByDesc('academic_sessions.id')
+            ->first([
+                'academic_sessions.id',
+                'academic_sessions.session_number',
+                'academic_sessions.session_No',
+                'academic_years.label as academic_year_label',
+                'academic_years.academic_year as academic_year_name',
+            ]);
+
+        if (! $session) {
+            return null;
+        }
+
+        $sessionNumber = $session->session_number ?? $session->session_No;
+        $yearLabel = $session->academic_year_label ?: $session->academic_year_name;
+        $name = $yearLabel ? "{$yearLabel} - Session {$sessionNumber}" : "Session {$sessionNumber}";
+
+        return [
+            'id' => (string) $session->id,
+            'name' => $name,
+        ];
+    }
+
+    protected function staffSummaryForUser(int $userId): ?object
+    {
+        return Staff::query()
+            ->leftJoin('departments', function ($join) {
+                $join->on('departments.id', '=', 'staffs.department_id')
+                    ->whereNull('departments.deleted_at');
+            })
+            ->where('staffs.user_id', $userId)
+            ->whereNull('staffs.deleted_at')
+            ->first([
+                'staffs.id',
+                'staffs.department_id',
+                'staffs.staff_number',
+                'staffs.designation',
+                'departments.name as department_name',
+            ]);
+    }
+
+    protected function institutionStats(): array
+    {
+        $stats = DB::selectOne(<<<'SQL'
+            select
+                (select count(*) from courses where deleted_at is null) as courses_count,
+                (select count(*) from curricula where deleted_at is null) as curricula_count,
+                (select count(*) from departments where deleted_at is null) as departments_count,
+                (select count(*) from academic_years where deleted_at is null) as academic_years_count
+        SQL);
+
+        return [
+            ['label' => 'Courses', 'value' => (int) ($stats->courses_count ?? 0)],
+            ['label' => 'Curriculums', 'value' => (int) ($stats->curricula_count ?? 0)],
+            ['label' => 'Departments', 'value' => (int) ($stats->departments_count ?? 0)],
+            ['label' => 'Academic Years', 'value' => (int) ($stats->academic_years_count ?? 0)],
+        ];
+    }
+
+    /**
+     * Department-scoped stats for HOD dashboards. Mirrors institutionStats()
+     * shape (label/value pairs) but filtered to a single department, so
+     * HodDashboard.jsx can reuse the same stat-card components as admin.
+     */
+    protected function departmentStats(int $departmentId): array
+    {
+        $stats = DB::selectOne(<<<'SQL'
+            select
+                (select count(*) from courses where department_id = ? and deleted_at is null) as courses_count,
+                (select count(*) from curricula
+                    where course_id in (select id from courses where department_id = ? and deleted_at is null)
+                    and deleted_at is null) as curricula_count,
+                (select count(*) from student_unit_registrations sur
+                    inner join units u on u.id = sur.curriculum_unit_id
+                    inner join curricula c on c.id = u.curriculum_mapping_id
+                    inner join courses co on co.id = c.course_id
+                    where co.department_id = ?) as enrolled_units_count
+        SQL, [$departmentId, $departmentId, $departmentId]);
+
+        return [
+            ['label' => 'Courses', 'value' => (int) ($stats->courses_count ?? 0)],
+            ['label' => 'Curriculums', 'value' => (int) ($stats->curricula_count ?? 0)],
+            ['label' => 'Unit Enrollments', 'value' => (int) ($stats->enrolled_units_count ?? 0)],
+        ];
     }
 
     protected function studentDashboard(Request $request): Response
@@ -174,182 +404,5 @@ class DashboardController extends Controller
                 ],
             ],
         ]);
-    }
-
-    protected function staffDashboard(Request $request): Response
-    {
-        $user = $request->user();
-        $user?->loadMissing(['roles:id,name']);
-
-        $staff = $user ? $this->staffSummaryForUser($user->id) : null;
-        $roleNames = $user?->roles->pluck('name')->map(fn($role) => strtolower($role))->all() ?? [];
-        $isTrainer = in_array('trainer', $roleNames, true);
-        $primaryRole = $this->resolveDashboardRole($roleNames);
-        $roleContext = $this->dashboardRoleContext($primaryRole, $roleNames);
-        
-        $activeSession = $this->activeSessionSummary();
-
-        $currentTimetableCount = $isTrainer && $staff
-            ? AcademicTimetable::query()
-                ->when($activeSession, fn ($query) => $query->where('academic_session_id', $activeSession['id']))
-                ->where('trainer_staff_id', $staff->id)
-                ->count()
-            : 0;
-
-        $recordedMarksCount = $isTrainer && $staff && $activeSession
-            ? StudentMark::query()
-                ->where('recorded_by_staff_id', $staff->id)
-                ->where('academic_session_id', $activeSession['id'])
-                ->count()
-            : 0;
-
-        return Inertia::render('Dashboard', [
-            'dashboard' => [
-                'type' => $primaryRole,
-                'staff_profile' => [
-                    'name' => $user?->staff?->full_name,
-                    'staff_number' => $staff?->staff_number,
-                    'designation' => $staff?->designation,
-                    'department_name' => $staff?->department_name,
-                    'roles' => $roleNames,
-                ],
-                'role_context' => $roleContext,
-                'trainer_workspace' => [
-                    'active_session' => $activeSession,
-                    'department_id' => $staff?->department_id ? (string) $staff->department_id : '',
-                    'trainer_staff_id' => $staff?->id ? (string) $staff->id : '',
-                    'timetable_sessions_count' => $currentTimetableCount,
-                    'marks_recorded_count' => $recordedMarksCount,
-                    'can_view_timetable' => $isTrainer && (bool) ($staff?->id && $staff?->department_id),
-                    'can_grade_students' => $isTrainer && (bool) $staff?->id,
-                ],
-                'stats' => $this->institutionStats(),
-                'analytics' => null,
-            ],
-        ]);
-    }
-
-    protected function activeSessionSummary(): ?array
-    {
-        $session = AcademicSession::query()
-            ->leftJoin('academic_years', function ($join) {
-                $join->on('academic_years.id', '=', 'academic_sessions.academic_year_id')
-                    ->whereNull('academic_years.deleted_at');
-            })
-            ->where('academic_sessions.is_active', true)
-            ->whereNull('academic_sessions.deleted_at')
-            ->orderByDesc('academic_sessions.id')
-            ->first([
-                'academic_sessions.id',
-                'academic_sessions.session_number',
-                'academic_sessions.session_No',
-                'academic_years.label as academic_year_label',
-                'academic_years.academic_year as academic_year_name',
-            ]);
-
-        if (! $session) {
-            return null;
-        }
-
-        $sessionNumber = $session->session_number ?? $session->session_No;
-        $yearLabel = $session->academic_year_label ?: $session->academic_year_name;
-        $name = $yearLabel ? "{$yearLabel} - Session {$sessionNumber}" : "Session {$sessionNumber}";
-
-        return [
-            'id' => (string) $session->id,
-            'name' => $name,
-        ];
-    }
-
-    protected function staffSummaryForUser(int $userId): ?object
-    {
-        return Staff::query()
-            ->leftJoin('departments', function ($join) {
-                $join->on('departments.id', '=', 'staffs.department_id')
-                    ->whereNull('departments.deleted_at');
-            })
-            ->where('staffs.user_id', $userId)
-            ->whereNull('staffs.deleted_at')
-            ->first([
-                'staffs.id',
-                'staffs.department_id',
-                'staffs.staff_number',
-                'staffs.designation',
-                'departments.name as department_name',
-            ]);
-    }
-
-    protected function institutionStats(): array
-    {
-        $stats = DB::selectOne(<<<'SQL'
-            select
-                (select count(*) from courses where deleted_at is null) as courses_count,
-                (select count(*) from curricula where deleted_at is null) as curricula_count,
-                (select count(*) from departments where deleted_at is null) as departments_count,
-                (select count(*) from academic_years where deleted_at is null) as academic_years_count
-        SQL);
-
-        return [
-            ['label' => 'Courses', 'value' => (int) ($stats->courses_count ?? 0)],
-            ['label' => 'Curriculums', 'value' => (int) ($stats->curricula_count ?? 0)],
-            ['label' => 'Departments', 'value' => (int) ($stats->departments_count ?? 0)],
-            ['label' => 'Academic Years', 'value' => (int) ($stats->academic_years_count ?? 0)],
-        ];
-    }
-
-    protected function resolveDashboardRole(array $roleNames): string
-    {
-        return match (true) {
-            in_array('admin', $roleNames, true) => 'admin',
-            in_array('bursar', $roleNames, true) => 'bursar',
-            in_array('hod', $roleNames, true) => 'hod',
-            in_array('trainer', $roleNames, true) => 'trainer',
-            default => 'staff',
-        };
-    }
-
-    protected function dashboardRoleContext(string $primaryRole, array $roleNames): array
-    {
-        return [
-            'primary_role' => $primaryRole,
-            'dashboard_title' => match ($primaryRole) {
-                'bursar' => 'Finance Overview',
-                'hod' => 'Department Overview',
-                'trainer' => 'Teaching Overview',
-                'staff' => 'Staff Overview',
-                default => 'Institution Overview',
-            },
-            'dashboard_description' => match ($primaryRole) {
-                'bursar' => 'Track collections, balances, and the finance analytics that matter to bursary operations.',
-                'hod' => 'Monitor teaching delivery, academic progress, and department-level academic signals.',
-                'trainer' => 'Focus on your timetable, marks workflow, and teaching activity in the current session.',
-                'staff' => 'Access your workspace and the analytics available to your account.',
-                default => 'Monitor institution-wide operations across academic, finance, admissions, hostel, and data quality workflows.',
-            },
-            'analytics_sections' => $this->analyticsSectionsForRoles($roleNames),
-        ];
-    }
-
-    protected function analyticsSectionsForRoles(array $roleNames): array
-    {
-        if (in_array('admin', $roleNames, true)) {
-            return ['executive', 'finance', 'academic', 'admissions', 'hostel', 'data_quality', 'snapshot_trends'];
-        }
-
-        $sections = [];
-
-        if (in_array('bursar', $roleNames, true)) {
-            $sections = array_merge($sections, ['executive', 'finance', 'snapshot_trends']);
-        }
-
-        if (in_array('hod', $roleNames, true)) {
-            $sections = array_merge($sections, ['executive', 'academic', 'admissions', 'snapshot_trends']);
-        }
-
-        if (in_array('trainer', $roleNames, true)) {
-            $sections = array_merge($sections, ['academic']);
-        }
-
-        return array_values(array_unique($sections));
     }
 }
