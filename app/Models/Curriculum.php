@@ -13,7 +13,6 @@ class Curriculum extends Model
     protected $table = 'curricula';
 
     protected $fillable = [
-        'course_id',
         'exam_body_id',
         'name',
         'description',
@@ -87,4 +86,3 @@ class Curriculum extends Model
         return $this->hasMany(FeePlanAssignment::class);
     }
 }
-

@@ -14,11 +14,7 @@ return new class extends Migration
     {
         Schema::create('curricula', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('course_id')
-                ->nullable()
-                ->constrained('courses')
-                ->nullOnDelete()
-                ->cascadeOnUpdate();
+
             $table->foreignId('exam_body_id')
                 ->nullable()
                 ->constrained('exam_bodies')
@@ -41,6 +37,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->index(['course_id', 'exam_body_id', 'is_active']);
+
         });
 
         if (! Schema::hasTable('exam_bodies') || ! Schema::hasTable('users')) {

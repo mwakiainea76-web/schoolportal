@@ -8,7 +8,7 @@ import TextArea from "@/Components/TextArea";
 
 const Create = () => {
     const { data, setData, post, processing, errors } = useForm({
-        exam_body_code: "",
+        exam_body_id: "",
         name: "",
         description: "",
     });
@@ -39,19 +39,16 @@ const Create = () => {
                             <InputLabel value="Exam Body" required />
                             <SearchSelect
                                 routeName="exam.bodies.search"
-                                value={data.exam_body_code}
+                                value={data.exam_body_id}
                                 placeholder="Select exam body..."
                                 minSearchLength={0}
                                 preloadOptions
                                 onChange={(examBody) =>
-                                    setData(
-                                        "exam_body_code",
-                                        examBody.code ?? "",
-                                    )
+                                    setData("exam_body_id", examBody.id ?? "")
                                 }
-                                error={errors.exam_body_code}
+                                error={errors.exam_body_id}
                             />
-                            <InputError message={errors.exam_body_code} />
+                            <InputError message={errors.exam_body_id} />
                         </div>
 
                         <div>

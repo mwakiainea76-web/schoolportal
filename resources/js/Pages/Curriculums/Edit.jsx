@@ -2,6 +2,7 @@ import React from "react";
 import { Head, Link, useForm } from "@inertiajs/react";
 import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
+import SearchSelect from "@/Components/SearchSelect";
 import TextArea from "@/Components/TextArea";
 import TextInput from "@/Components/TextInput";
 
@@ -9,7 +10,7 @@ const Edit = ({ curriculum }) => {
     const c = curriculum;
 
     const { data, setData, put, processing, errors } = useForm({
-        exam_body_code: c?.exam_body?.code || "",
+        exam_body_id: c?.exam_body?.id || "",
         name: c?.name || "",
         description: c?.description || "",
     });
@@ -37,16 +38,20 @@ const Edit = ({ curriculum }) => {
                 >
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <InputLabel value="Exam Body Code" required />
-                            <TextInput
-                                value={data.exam_body_code}
-                                onChange={(e) =>
-                                    setData("exam_body_code", e.target.value)
+                            <InputLabel value="Exam Body " required />
+                            <SearchSelect
+                                routeName="exam.bodies.search"
+                                value={data.exam_body_id}
+                                selectedLabel={c?.exam_body?.name || ""}
+                                placeholder="Select exam body..."
+                                minSearchLength={0}
+                                preloadOptions
+                                onChange={(examBody) =>
+                                    setData("exam_body_id", examBody.id ?? "")
                                 }
-                                error={errors.exam_body_code}
-                                placeholder="Enter exact exam body code"
+                                error={errors.exam_body_id}
                             />
-                            <InputError message={errors.exam_body_code} />
+                            <InputError message={errors.exam_body_id} />
                         </div>
 
                         <div>

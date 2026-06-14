@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Models\ExamBody;
 use App\Models\Curriculum;
 use Illuminate\Support\Facades\DB;
 
@@ -10,7 +9,7 @@ class CurriculumService
 {
     public function store(array $data): array
     {
-        $exists = Curriculum::where('name', $data['name'])->exists();
+        $exists = Curriculum::where(['exam_body_id' => $data['exam_body_id'], 'name' => $data['name']])->exists();
 
         if ($exists) {
             return [
@@ -21,8 +20,7 @@ class CurriculumService
 
         DB::transaction(function () use ($data) {
             Curriculum::create([
-                'course_id' => $data['course_id'] ?? null,
-                'exam_body_id' => $this->resolveExamBodyId($data['exam_body_code']),
+                'exam_body_id' => $data['exam_body_id'],
                 'name' => $data['name'],
                 'is_active' => true,
                 'description' => $data['description'] ?? null,
@@ -41,7 +39,7 @@ class CurriculumService
 
     public function update(Curriculum $curriculum, array $data): array
     {
-        $exists = Curriculum::where('name', $data['name'])
+        $exists = Curriculum::where(['exam_body_id' => $data['exam_body_id'], 'name' => $data['name']])
             ->whereKeyNot($curriculum->getKey())
             ->exists();
 
@@ -54,8 +52,7 @@ class CurriculumService
 
         DB::transaction(function () use ($curriculum, $data) {
             $curriculum->update([
-                'course_id' => $data['course_id'] ?? $curriculum->course_id,
-                'exam_body_id' => $this->resolveExamBodyId($data['exam_body_code']),
+                'exam_body_id' => $data['exam_body_id'],
                 'name' => $data['name'],
                 'is_active' => $curriculum->is_active,
                 'description' => $data['description'] ?? null,
@@ -102,12 +99,5 @@ class CurriculumService
             'status' => true,
             'message' => 'Curriculum reactivated successfully.',
         ];
-    }
-
-    protected function resolveExamBodyId(string $examBodyCode): ?int
-    {
-        return ExamBody::query()
-            ->where('code', $examBodyCode)
-            ->value('id');
     }
 }

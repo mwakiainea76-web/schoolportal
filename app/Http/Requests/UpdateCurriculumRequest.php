@@ -15,8 +15,7 @@ class UpdateCurriculumRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'course_id' => ['nullable', 'exists:courses,id'],
-            'exam_body_code' => ['required', 'string', 'exists:exam_bodies,code'],
+            'exam_body_id' => ['required', 'integer', 'exists:exam_bodies,id'],
             'name' => [
                 'required',
                 'string',
@@ -25,14 +24,5 @@ class UpdateCurriculumRequest extends FormRequest
             ],
             'description' => ['nullable', 'string'],
         ];
-    }
-
-    protected function prepareForValidation(): void
-    {
-        $examBodyCode = trim((string) $this->input('exam_body_code', ''));
-
-        $this->merge([
-            'exam_body_code' => $examBodyCode,
-        ]);
     }
 }

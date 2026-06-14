@@ -15,24 +15,14 @@ class StoreCurriculumRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'course_id' => ['nullable', 'exists:courses,id'],
-            'exam_body_code' => ['required', 'string', 'exists:exam_bodies,code'],
+            'exam_body_id' => ['required', 'integer', 'exists:exam_bodies,id'],
             'name' => [
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('curricula', 'name'),
+                Rule::unique('curricula', 'name')->where('exam_body_id', $this->exam_body_id),
             ],
             'description' => ['nullable', 'string'],
         ];
-    }
-
-    protected function prepareForValidation(): void
-    {
-        $examBodyCode = trim((string) $this->input('exam_body_code', ''));
-
-        $this->merge([
-            'exam_body_code' => $examBodyCode,
-        ]);
     }
 }
