@@ -54,16 +54,27 @@ const FILTER_KEYS = FILTER_DEFINITIONS.map((filter) => filter.key);
 const emptyFilterState = () =>
     FILTER_KEYS.reduce((values, key) => ({ ...values, [key]: "" }), {});
 
-export default function coursesIndex({
+export default function Index({
     courses,
     filters = {},
     selectedFilters = {},
-    can_manage_courses = true,
+    department_context = null,
 }) {
     const pageFilters =
         filters && !Array.isArray(filters) && typeof filters === "object"
             ? filters
             : {};
+
+    const visibleFilters = department_context
+        ? FILTER_DEFINITIONS.filter(
+              (filter) =>
+                  ![
+                      "department_id",
+                      "exam_body_id",
+                      "certification_level_id",
+                  ].includes(filter.key),
+          )
+        : FILTER_DEFINITIONS;
 
     const [sortField, setSortField] = useState(
         pageFilters.sort || "created_at",
@@ -80,7 +91,7 @@ export default function coursesIndex({
         curriculum_id: pageFilters.curriculum_id || "",
     });
     const [currentFilterKey, setCurrentFilterKey] = useState(
-        FILTER_KEYS.find((key) => pageFilters[key]) || "",
+        visibleFilters.find((filter) => pageFilters[filter.key])?.key || "",
     );
     const [exportFormat, setExportFormat] = useState("pdf");
 
@@ -92,23 +103,16 @@ export default function coursesIndex({
     };
 
     const currentFilters = () =>
-        FILTER_KEYS.reduce((values, key) => ({ ...values, [key]: form[key] }), {});
+        FILTER_KEYS.reduce(
+            (values, key) => ({ ...values, [key]: form[key] }),
+            {},
+        );
 
-    const selectedFilterDefinition = FILTER_DEFINITIONS.find(
+    const selectedFilterDefinition = visibleFilters.find(
         (filter) => filter.key === currentFilterKey,
     );
 
-    const activeFilters = FILTER_DEFINITIONS.filter((filter) => form[filter.key]);
-
-    const selectFilterColumn = (key) => {
-        setCurrentFilterKey(key);
-    };
-
-    const addCurrentFilter = () => {
-        if (!currentFilterKey || !form[currentFilterKey]) return;
-
-        setCurrentFilterKey("");
-    };
+    const activeFilters = visibleFilters.filter((filter) => form[filter.key]);
 
     const clearSingleFilter = (key) => {
         setFilter(key, "");
@@ -211,9 +215,26 @@ export default function coursesIndex({
 
     return (
         <>
-            <Head title="Courses" />
+            <Head
+                title={department_context ? "Department Courses" : "Courses"}
+            />
 
-            <div className="max-w-6xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <div className="mx-auto w-full max-w-6xl animate-in fade-in slide-in-from-bottom-4 duration-700">
+                {department_context ? (
+                    <div className="mb-4 rounded-lg border border-zinc-100 bg-white p-4 shadow-sm">
+                        <h1 className="text-2xl font-semibold text-zinc-900">
+                            Department Courses
+                        </h1>
+                        <p className="mt-1 text-sm text-zinc-500">
+                            View the courses and active curricula in your
+                            department only.
+                        </p>
+                        <div className="mt-3 inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 ring-1 ring-emerald-100">
+                            {department_context.label}
+                        </div>
+                    </div>
+                ) : null}
+
                 <form
                     className="mb-4 rounded-lg border border-zinc-100 bg-white p-4 shadow-sm"
                     onSubmit={submit}
@@ -223,11 +244,13 @@ export default function coursesIndex({
                             <InputLabel value="Filter Column" />
                             <select
                                 value={currentFilterKey}
-                                onChange={(e) => selectFilterColumn(e.target.value)}
+                                onChange={(e) =>
+                                    setCurrentFilterKey(e.target.value)
+                                }
                                 className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
                             >
                                 <option value="">Choose column...</option>
-                                {FILTER_DEFINITIONS.map((filter) => (
+                                {visibleFilters.map((filter) => (
                                     <option key={filter.key} value={filter.key}>
                                         {filter.label}
                                     </option>
@@ -237,15 +260,24 @@ export default function coursesIndex({
 
                         <div>
                             <InputLabel
-                                value={selectedFilterDefinition?.label || "Filter Value"}
+                                value={
+                                    selectedFilterDefinition?.label ||
+                                    "Filter Value"
+                                }
                             />
                             {renderFilterInput(selectedFilterDefinition)}
                         </div>
 
                         <button
                             type="button"
-                            onClick={addCurrentFilter}
-                            disabled={!currentFilterKey || !form[currentFilterKey]}
+                            onClick={() =>
+                                currentFilterKey &&
+                                form[currentFilterKey] &&
+                                setCurrentFilterKey("")
+                            }
+                            disabled={
+                                !currentFilterKey || !form[currentFilterKey]
+                            }
                             className="inline-flex h-10 items-center justify-center rounded-lg border border-zinc-300 bg-white px-4 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             + Add filter
@@ -268,26 +300,31 @@ export default function coursesIndex({
                     </div>
 
                     <div className="mt-4 border-t border-zinc-100 pt-3">
-
                         {activeFilters.length ? (
                             <div className="flex flex-wrap gap-2">
                                 {activeFilters.map((filter) => (
                                     <button
                                         key={filter.key}
                                         type="button"
-                                        onClick={() => clearSingleFilter(filter.key)}
+                                        onClick={() =>
+                                            clearSingleFilter(filter.key)
+                                        }
                                         className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 ring-1 ring-emerald-100 hover:bg-emerald-100"
                                     >
                                         <span>
-                                            {filter.label}: {getSelectedOptionLabel(filter)}
+                                            {filter.label}:{" "}
+                                            {getSelectedOptionLabel(filter)}
                                         </span>
-                                        <span className="text-emerald-900">×</span>
+                                        <span className="text-emerald-900">
+                                            x
+                                        </span>
                                     </button>
                                 ))}
                             </div>
                         ) : (
                             <p className="text-sm text-zinc-500">
-                                No filters selected. Choose a column above to filter this table.
+                                No filters selected. Choose a column above to
+                                filter this table.
                             </p>
                         )}
                     </div>
@@ -307,7 +344,7 @@ export default function coursesIndex({
                         <button
                             type="button"
                             onClick={handleExport}
-                            className="h-[34px] px-4 bg-gray-400 text-white text-sm font-medium rounded-r hover:bg-gray-600 transition-colors whitespace-nowrap"
+                            className="h-[34px] whitespace-nowrap rounded-r bg-gray-400 px-4 text-sm font-medium text-white transition-colors hover:bg-gray-600"
                         >
                             Export {exportFormat.toUpperCase()}
                         </button>
@@ -358,7 +395,7 @@ export default function coursesIndex({
                         >
                             Created {renderArrow("created_at")}
                         </THdata>
-                        {can_manage_courses ? <THdata>Actions</THdata> : null}
+                        {!department_context ? <THdata>Actions</THdata> : null}
                     </Thead>
 
                     <Tbody>
@@ -376,20 +413,24 @@ export default function coursesIndex({
                                     <Tdata>
                                         {formatDate(course.created_at)}
                                     </Tdata>
-                                    {can_manage_courses ? (
+                                    {!department_context ? (
                                         <Tdata>
                                             <div className="flex items-center justify-center gap-x-10">
                                                 <Link
                                                     href={route(
                                                         "courses.edit",
-                                                        encodeURIComponent(course.id),
+                                                        encodeURIComponent(
+                                                            course.id,
+                                                        ),
                                                     )}
                                                     className="text-emerald-600 hover:underline"
                                                 >
                                                     Edit
                                                 </Link>
                                                 <button
-                                                    onClick={() => handleDelete(course.id)}
+                                                    onClick={() =>
+                                                        handleDelete(course.id)
+                                                    }
                                                     className="text-red-600 hover:underline"
                                                 >
                                                     Delete
@@ -402,7 +443,7 @@ export default function coursesIndex({
                         ) : (
                             <Trow>
                                 <Tdata
-                                    colSpan={can_manage_courses ? "8" : "7"}
+                                    colSpan={department_context ? "7" : "8"}
                                     className="py-4 text-center"
                                 >
                                     No courses found.

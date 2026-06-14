@@ -107,9 +107,10 @@ class DepartmentController extends Controller
     protected function staffLabel($staff): string
     {
         return collect([
-             $staff->staff_number,
-            $staff->full_name,
             $staff->designation,
+            $staff->staff_number,
+            $staff->full_name,
+
         ])->filter()->implode(' - ');
     }
 }

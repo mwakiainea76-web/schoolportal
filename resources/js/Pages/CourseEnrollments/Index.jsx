@@ -113,13 +113,17 @@ export default function Index({
     courseEnrollments,
     filters = {},
     selectedFilters = {},
-    is_hod = false,
     statuses = [],
+    department_context = null,
 }) {
     const pageFilters =
         filters && !Array.isArray(filters) && typeof filters === "object"
             ? filters
             : {};
+
+    const visibleFilters = department_context
+        ? FILTER_DEFINITIONS.filter((filter) => filter.key !== "department_id")
+        : FILTER_DEFINITIONS;
 
     const [form, setForm] = useState({
         ...EMPTY_FILTERS,
@@ -136,33 +140,22 @@ export default function Index({
         academic_session_id: selectedFilters.academic_session || "",
     });
 
-    const visibleFilterDefinitions = is_hod
-        ? FILTER_DEFINITIONS.filter((filter) => filter.key !== "department_id")
-        : FILTER_DEFINITIONS;
-
-    const firstActiveFilter = visibleFilterDefinitions.find(
-        (filter) => pageFilters[filter.key],
-    );
+    const firstActiveFilter = visibleFilters.find((filter) => pageFilters[filter.key]);
 
     const [currentFilterKey, setCurrentFilterKey] = useState(
         firstActiveFilter?.key || "",
     );
 
-    const activeFilters = visibleFilterDefinitions.filter((filter) => form[filter.key]);
+    const activeFilters = visibleFilters.filter((filter) => form[filter.key]);
 
     const setFilterValue = (key, value, label = "") => {
-        const filter = visibleFilterDefinitions.find((item) => item.key === key);
+        const filter = FILTER_DEFINITIONS.find((item) => item.key === key);
 
         setForm((current) => {
-            const next = {
-                ...current,
-                [key]: value,
-            };
-
+            const next = { ...current, [key]: value };
             filter?.clears?.forEach((childKey) => {
                 next[childKey] = "";
             });
-
             return next;
         });
 
@@ -178,34 +171,13 @@ export default function Index({
         }
     };
 
-    const selectFilterColumn = (nextKey) => {
-        setCurrentFilterKey(nextKey);
-    };
-
-    const addCurrentFilter = () => {
-        if (!currentFilterKey || !form[currentFilterKey]) {
-            return;
-        }
-
-        setCurrentFilterKey("");
-    };
-
     const clearSingleFilter = (key) => {
         const nextEmpty = { [key]: "" };
 
-        if (key === "course_id") {
-            nextEmpty.curriculum_id = "";
-        }
+        if (key === "course_id") nextEmpty.curriculum_id = "";
+        if (key === "academic_year_id") nextEmpty.academic_session_id = "";
 
-        if (key === "academic_year_id") {
-            nextEmpty.academic_session_id = "";
-        }
-
-        setForm((current) => ({
-            ...current,
-            ...nextEmpty,
-        }));
-
+        setForm((current) => ({ ...current, ...nextEmpty }));
         setFilterLabels((current) => ({
             ...current,
             ...Object.keys(nextEmpty).reduce(
@@ -223,7 +195,9 @@ export default function Index({
         e.preventDefault();
 
         const cleanFilters = Object.fromEntries(
-            Object.entries(form).filter(([, value]) => value !== "" && value !== null),
+            Object.entries(form).filter(
+                ([, value]) => value !== "" && value !== null,
+            ),
         );
 
         router.get(
@@ -247,24 +221,21 @@ export default function Index({
 
     const getSelectedOptionLabel = (filter) => {
         if (filter.type === "search") {
-            return filterLabels[filter.key] || selectedFilters[filter.selectedLabelKey] || form[filter.key];
+            return (
+                filterLabels[filter.key] ||
+                selectedFilters[filter.selectedLabelKey] ||
+                form[filter.key]
+            );
         }
 
-        if (filter.key === "status") {
-            return labelStatus(form.status);
-        }
-
-        if (filter.key === "year_of_study") {
-            return `Year ${form.year_of_study}`;
-        }
+        if (filter.key === "status") return labelStatus(form.status);
+        if (filter.key === "year_of_study") return `Year ${form.year_of_study}`;
 
         return form[filter.key];
     };
 
     const renderFilterInput = (filter) => {
-        if (!filter) {
-            return null;
-        }
+        if (!filter) return null;
 
         const isDisabled = filter.dependsOn && !form[filter.dependsOn];
 
@@ -308,119 +279,160 @@ export default function Index({
         return (
             <SearchSelect
                 routeName={filter.routeName}
-                routeParams={filter.routeParams ? filter.routeParams(form) : undefined}
+                routeParams={
+                    filter.routeParams ? filter.routeParams(form) : undefined
+                }
                 disabled={Boolean(isDisabled)}
                 defaultOptions={[]}
                 value={form[filter.key]}
-                selectedLabel={filterLabels[filter.key] || selectedFilters[filter.selectedLabelKey]}
-                placeholder={isDisabled ? filter.disabledPlaceholder : filter.placeholder}
+                selectedLabel={
+                    filterLabels[filter.key] ||
+                    selectedFilters[filter.selectedLabelKey]
+                }
+                placeholder={
+                    isDisabled ? filter.disabledPlaceholder : filter.placeholder
+                }
                 preloadOptions
                 onChange={(option) =>
-                    setFilterValue(filter.key, option?.id || "", option?.name || option?.label || "")
+                    setFilterValue(
+                        filter.key,
+                        option?.id || "",
+                        option?.name || option?.label || "",
+                    )
                 }
             />
         );
     };
 
+    const selectedFilterDefinition = visibleFilters.find(
+        (filter) => filter.key === currentFilterKey,
+    );
+
     return (
         <>
-            <Head title="Course Enrollments" />
-
-            <div className="max-w-6xl mx-auto w-full">
-                <form
-    className="mb-4 rounded-lg border border-zinc-100 bg-white p-4 shadow-sm"
-    onSubmit={submit}
->
-    <div className="grid grid-cols-1 items-end gap-3 lg:grid-cols-[minmax(220px,300px)_minmax(300px,1fr)_auto_auto_auto]">
-        <div>
-            <InputLabel value="Filter Column" />
-            <select
-                value={currentFilterKey}
-                onChange={(e) => selectFilterColumn(e.target.value)}
-                className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
-            >
-                <option value="">Choose column...</option>
-                {visibleFilterDefinitions.map((filter) => (
-                    <option key={filter.key} value={filter.key}>
-                        {filter.label}
-                    </option>
-                ))}
-            </select>
-        </div>
-
-        <div>
-            <InputLabel
-                value={
-                    currentFilterKey
-                        ? visibleFilterDefinitions.find(
-                              (filter) => filter.key === currentFilterKey,
-                          )?.label
-                        : "Filter Value"
+            <Head
+                title={
+                    department_context
+                        ? "Department Enrollments"
+                        : "Course Enrollments"
                 }
             />
 
-            {currentFilterKey ? (
-                renderFilterInput(
-                    visibleFilterDefinitions.find(
-                        (filter) => filter.key === currentFilterKey,
-                    ),
-                )
-            ) : (
-                <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 px-4 py-2 text-sm text-zinc-400">
-                    Select a column to show its input
-                </div>
-            )}
-        </div>
+            <div className="mx-auto w-full max-w-6xl">
+                {department_context ? (
+                    <div className="mb-4 rounded-lg border border-zinc-100 bg-white p-4 shadow-sm">
+                        <h1 className="text-2xl font-semibold text-zinc-900">
+                            Department Enrollments
+                        </h1>
+                        <p className="mt-1 text-sm text-zinc-500">
+                            View student course enrollments within your department
+                            only.
+                        </p>
+                        <div className="mt-3 inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 ring-1 ring-emerald-100">
+                            {department_context.label}
+                        </div>
+                    </div>
+                ) : null}
 
-        <button
-            type="button"
-            onClick={addCurrentFilter}
-            disabled={!currentFilterKey || !form[currentFilterKey]}
-            className="inline-flex h-10 items-center justify-center rounded-lg border border-zinc-300 bg-white px-4 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-            + Add filter
-        </button>
+                <form
+                    className="mb-4 rounded-lg border border-zinc-100 bg-white p-4 shadow-sm"
+                    onSubmit={submit}
+                >
+                    <div className="grid grid-cols-1 items-end gap-3 lg:grid-cols-[minmax(220px,300px)_minmax(300px,1fr)_auto_auto_auto]">
+                        <div>
+                            <InputLabel value="Filter Column" />
+                            <select
+                                value={currentFilterKey}
+                                onChange={(e) =>
+                                    setCurrentFilterKey(e.target.value)
+                                }
+                                className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+                            >
+                                <option value="">Choose column...</option>
+                                {visibleFilters.map((filter) => (
+                                    <option key={filter.key} value={filter.key}>
+                                        {filter.label}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
 
-        <button
-            type="button"
-            onClick={clearFilters}
-            className="inline-flex h-10 items-center justify-center rounded-lg border border-zinc-300 bg-white px-4 text-sm text-zinc-700 hover:bg-zinc-50"
-        >
-            Clear all
-        </button>
+                        <div>
+                            <InputLabel
+                                value={
+                                    selectedFilterDefinition?.label ||
+                                    "Filter Value"
+                                }
+                            />
 
-        <button
-            className="inline-flex h-10 items-center justify-center rounded-lg bg-emerald-600 px-4 text-sm text-white hover:bg-emerald-700"
-            type="submit"
-        >
-            Apply
-        </button>
-    </div>
+                            {selectedFilterDefinition ? (
+                                renderFilterInput(selectedFilterDefinition)
+                            ) : (
+                                <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 px-4 py-2 text-sm text-zinc-400">
+                                    Select a column to show its input
+                                </div>
+                            )}
+                        </div>
 
-    <div className="mt-4 border-t border-zinc-100 pt-3">
-        {activeFilters.length ? (
-            <div className="flex flex-wrap gap-2">
-                {activeFilters.map((filter) => (
-                    <button
-                        key={filter.key}
-                        type="button"
-                        onClick={() => clearSingleFilter(filter.key)}
-                        className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 ring-1 ring-emerald-100 hover:bg-emerald-100"
-                    >
-                        <span>
-                            {filter.label}: {getSelectedOptionLabel(filter)}
-                        </span>
-                        <span className="text-emerald-900">×</span>
-                    </button>
-                ))}
-            </div>
-        ) : (
-            <p className="text-sm text-zinc-500">
-                No filters selected. Choose a column above to filter this table.
-            </p>
-        )}
-    </div>
-</form>
+                        <button
+                            type="button"
+                            onClick={() =>
+                                currentFilterKey &&
+                                form[currentFilterKey] &&
+                                setCurrentFilterKey("")
+                            }
+                            disabled={!currentFilterKey || !form[currentFilterKey]}
+                            className="inline-flex h-10 items-center justify-center rounded-lg border border-zinc-300 bg-white px-4 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            + Add filter
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={clearFilters}
+                            className="inline-flex h-10 items-center justify-center rounded-lg border border-zinc-300 bg-white px-4 text-sm text-zinc-700 hover:bg-zinc-50"
+                        >
+                            Clear all
+                        </button>
+
+                        <button
+                            className="inline-flex h-10 items-center justify-center rounded-lg bg-emerald-600 px-4 text-sm text-white hover:bg-emerald-700"
+                            type="submit"
+                        >
+                            Apply
+                        </button>
+                    </div>
+
+                    <div className="mt-4 border-t border-zinc-100 pt-3">
+                        {activeFilters.length ? (
+                            <div className="flex flex-wrap gap-2">
+                                {activeFilters.map((filter) => (
+                                    <button
+                                        key={filter.key}
+                                        type="button"
+                                        onClick={() =>
+                                            clearSingleFilter(filter.key)
+                                        }
+                                        className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 ring-1 ring-emerald-100 hover:bg-emerald-100"
+                                    >
+                                        <span>
+                                            {filter.label}:{" "}
+                                            {getSelectedOptionLabel(filter)}
+                                        </span>
+                                        <span className="text-emerald-900">
+                                            x
+                                        </span>
+                                    </button>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-sm text-zinc-500">
+                                No filters selected. Choose a column above to
+                                filter this table.
+                            </p>
+                        )}
+                    </div>
+                </form>
 
                 <Table pagination={courseEnrollments}>
                     <Thead>
@@ -438,11 +450,15 @@ export default function Index({
                             courseEnrollments.data.map((item) => (
                                 <Trow key={item.id}>
                                     <Tdata>{item.student_name || "-"}</Tdata>
-                                    <Tdata>{item.admission_number || "-"}</Tdata>
+                                    <Tdata>
+                                        {item.admission_number || "-"}
+                                    </Tdata>
                                     <Tdata>{item.department ?? "-"}</Tdata>
                                     <Tdata>{item.course ?? "-"}</Tdata>
                                     <Tdata>{item.year_of_study ?? "-"}</Tdata>
-                                    <Tdata>{item.academic_session ?? "-"}</Tdata>
+                                    <Tdata>
+                                        {item.academic_session ?? "-"}
+                                    </Tdata>
                                     <Tdata>
                                         <span
                                             className={`rounded px-2 py-0.5 text-xs ${STATUS_STYLES[item.status] ?? "bg-gray-100 text-gray-600"}`}
@@ -455,7 +471,7 @@ export default function Index({
                             ))
                         ) : (
                             <Trow>
-                                <Tdata colSpan="8" className="text-center py-6">
+                                <Tdata colSpan="8" className="py-6 text-center">
                                     No course enrollments found.
                                 </Tdata>
                             </Trow>

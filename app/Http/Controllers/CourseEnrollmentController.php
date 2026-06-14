@@ -4,18 +4,29 @@ namespace App\Http\Controllers;
 
 use App\Models\AcademicSession;
 use App\Models\AcademicYear;
-use App\Models\CourseEnrollment;
 use App\Models\Course;
+use App\Models\CourseEnrollment;
 use App\Models\Curriculum;
+use App\Models\Department;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 
 class CourseEnrollmentController extends Controller
 {
+    private const STATUSES = [
+        'active',
+        'deferred',
+        'transferred',
+        'suspended',
+        'completed',
+        'dropped',
+        'deactivated',
+    ];
+
     public function index(Request $request)
     {
-        $hodDepartmentId = $this->shouldScopeToHodDepartment($request)
-            ? $this->currentDepartmentId($request)
-            : null;
+        $scopedDepartmentId = $this->scopedDepartmentId($request);
+
         $filters = $request->only([
             'course_id',
             'curriculum_id',
@@ -27,7 +38,8 @@ class CourseEnrollmentController extends Controller
             'status',
         ]);
 
-        if ($hodDepartmentId) {
+        // Prevent HODs from filtering outside their department
+        if ($scopedDepartmentId !== null) {
             unset($filters['department_id']);
         }
 
@@ -40,120 +52,129 @@ class CourseEnrollmentController extends Controller
             'curriculumMapping.curriculum',
             'academicSessionEnrollments.academicSession.academicYear',
         ])
-            ->when($hodDepartmentId, function ($query) use ($hodDepartmentId) {
-                $query->where(function ($departmentQuery) use ($hodDepartmentId) {
-                    $departmentQuery
-                        ->whereHas('course', fn ($courseQuery) => $courseQuery->where('department_id', $hodDepartmentId))
-                        ->orWhereHas('curriculumMapping.course', fn ($courseQuery) => $courseQuery->where('department_id', $hodDepartmentId));
-                });
+            ->when($scopedDepartmentId, fn (Builder $q, int $id) => $this->applyDepartmentScope($q, $id))
+            ->when($filters['course_id'] ?? null, function (Builder $q, $id) {
+                $q->where(fn (Builder $cq) => $cq
+                    ->where('course_id', $id)
+                    ->orWhereHas('curriculumMapping', fn (Builder $mq) => $mq->where('course_id', $id))
+                );
             })
-            ->when($filters['course_id'] ?? null, function ($query, $courseId) {
-                $query->where(function ($courseQuery) use ($courseId) {
-                    $courseQuery
-                        ->where('course_id', $courseId)
-                        ->orWhereHas('curriculumMapping', fn ($mappingQuery) => $mappingQuery->where('course_id', $courseId));
-                });
+            ->when($filters['curriculum_id'] ?? null, function (Builder $q, $id) {
+                $q->where(fn (Builder $cq) => $cq
+                    ->where('curriculum_id', $id)
+                    ->orWhereHas('curriculumMapping', fn (Builder $mq) => $mq->where('curriculum_id', $id))
+                );
             })
-            ->when($filters['curriculum_id'] ?? null, function ($query, $curriculumId) {
-                $query->where(function ($curriculumQuery) use ($curriculumId) {
-                    $curriculumQuery
-                        ->where('curriculum_id', $curriculumId)
-                        ->orWhereHas('curriculumMapping', fn ($mappingQuery) => $mappingQuery->where('curriculum_id', $curriculumId));
-                });
-            })
-            ->when($filters['academic_year_id'] ?? null, function ($query, $academicYearId) {
-                $query->whereHas('academicSessionEnrollments.academicSession', fn ($sessionQuery) => $sessionQuery->where('academic_year_id', $academicYearId));
-            })
-            ->when($filters['academic_session_id'] ?? null, function ($query, $academicSessionId) {
-                $query->whereHas('academicSessionEnrollments', fn ($sessionEnrollmentQuery) => $sessionEnrollmentQuery->where('academic_session_id', $academicSessionId));
-            })
-            ->when($filters['department_id'] ?? null, function ($query, $departmentId) {
-                $query->where(function ($departmentQuery) use ($departmentId) {
-                    $departmentQuery
-                        ->whereHas('course', fn ($courseQuery) => $courseQuery->where('department_id', $departmentId))
-                        ->orWhereHas('curriculumMapping.course', fn ($courseQuery) => $courseQuery->where('department_id', $departmentId));
-                });
-            })
-            ->when($filters['year_of_study'] ?? null, function ($query, $year) {
-                $query->whereHas('academicSessionEnrollments', fn ($sessionQuery) => $sessionQuery->where('year_of_study', $year));
-            })
-            ->when($filters['admission_number'] ?? null, function ($query, $admissionNumber) {
-                $query->whereHas('student', fn ($studentQuery) => $studentQuery->where('admission_number', 'like', "%{$admissionNumber}%"));
-            })
-            ->when($filters['status'] ?? null, fn ($query, $status) => $query->where('status', $status))
+            ->when($filters['academic_year_id'] ?? null, fn (Builder $q, $id) => $q
+                ->whereHas('academicSessionEnrollments.academicSession', fn (Builder $sq) => $sq->where('academic_year_id', $id))
+            )
+            ->when($filters['academic_session_id'] ?? null, fn (Builder $q, $id) => $q
+                ->whereHas('academicSessionEnrollments', fn (Builder $sq) => $sq->where('academic_session_id', $id))
+            )
+            ->when($filters['department_id'] ?? null, fn (Builder $q, $id) => $this->applyDepartmentScope($q, (int) $id))
+            ->when($filters['year_of_study'] ?? null, fn (Builder $q, $year) => $q
+                ->whereHas('academicSessionEnrollments', fn (Builder $sq) => $sq->where('year_of_study', $year))
+            )
+            ->when($filters['admission_number'] ?? null, fn (Builder $q, $num) => $q
+                ->whereHas('student', fn (Builder $sq) => $sq->where('admission_number', 'like', "%{$num}%"))
+            )
+            ->when($filters['status'] ?? null, fn (Builder $q, $status) => $q->where('status', $status))
             ->latest()
             ->paginate(20)
             ->withQueryString()
-            ->through(function (CourseEnrollment $enrollment) {
-                $sessionEnrollment = $enrollment->academicSessionEnrollments
-                    ->sortByDesc('academic_session_id')
-                    ->first();
-                $academicSession = $sessionEnrollment?->academicSession;
-
-                return [
-                    'id' => $enrollment->id,
-                    'student_name' => $enrollment->student?->full_name,
-                    'admission_number' => $enrollment->student?->admission_number,
-                    'department' => $enrollment->course?->department?->name
-                        ?? $enrollment->curriculumMapping?->course?->department?->name,
-                    'course' => $enrollment->course?->name
-                        ?? $enrollment->curriculumMapping?->course?->name,
-                    'curriculum' => $enrollment->curriculum?->name
-                        ?? $enrollment->curriculumMapping?->curriculum?->name,
-                    'academic_year' => $academicSession?->academicYear?->name,
-                    'academic_session' => $academicSession?->display_name,
-                    'year_of_study' => $sessionEnrollment?->year_of_study,
-                    'status' => $enrollment->status,
-                    'created_at' => $enrollment->created_at,
-                ];
-            });
+            ->through(fn (CourseEnrollment $enrollment) => $this->transformEnrollment($enrollment));
 
         return inertia('CourseEnrollments/Index', [
             'courseEnrollments' => $courseEnrollments,
             'filters' => (object) $filters,
-            'selectedFilters' => $this->selectedFilters($filters, $request),
-            'is_hod' => (bool) $hodDepartmentId,
-            'statuses' => [
-                'active',
-                'deferred',
-                'transferred',
-                'suspended',
-                'completed',
-                'dropped',
-                'deactivated',
-            ],
+            'selectedFilters' => $this->selectedFilters($filters, $scopedDepartmentId),
+            'statuses' => self::STATUSES,
+            'department_context' => $scopedDepartmentId
+                ? $this->departmentContext($scopedDepartmentId)
+                : null,
         ]);
     }
 
-    protected function selectedFilters(array $filters, Request $request): array
-    {
-        $hodDepartmentId = $this->shouldScopeToHodDepartment($request)
-            ? $this->currentDepartmentId($request)
-            : null;
+    // -------------------------------------------------------------------------
+    // Helpers
+    // -------------------------------------------------------------------------
 
-        $course = ! empty($filters['course_id'])
+    /**
+     * Returns the department ID that should constrain all results.
+     * HODs are locked to their own department; admins get null (no constraint).
+     */
+    private function scopedDepartmentId(Request $request): ?int
+    {
+        $user = $request->user();
+
+        if ($user?->hasRole('hod') && ! $user->hasRole('admin')) {
+            $id = $user->staff?->department_id;
+
+            return $id ? (int) $id : null;
+        }
+
+        return null;
+    }
+
+    private function applyDepartmentScope(Builder $query, int $departmentId): Builder
+    {
+        return $query->where(function (Builder $q) use ($departmentId) {
+            $q->whereHas('course', fn (Builder $cq) => $cq->where('department_id', $departmentId))
+                ->orWhereHas('curriculumMapping.course', fn (Builder $cq) => $cq->where('department_id', $departmentId));
+        });
+    }
+
+    private function transformEnrollment(CourseEnrollment $enrollment): array
+    {
+        $sessionEnrollment = $enrollment->academicSessionEnrollments
+            ->sortByDesc('academic_session_id')
+            ->first();
+
+        $academicSession = $sessionEnrollment?->academicSession;
+
+        return [
+            'id' => $enrollment->id,
+            'student_name' => $enrollment->student?->full_name,
+            'admission_number' => $enrollment->student?->admission_number,
+            'department' => $enrollment->course?->department?->name
+                                    ?? $enrollment->curriculumMapping?->course?->department?->name,
+            'course' => $enrollment->course?->name
+                                    ?? $enrollment->curriculumMapping?->course?->name,
+            'curriculum' => $enrollment->curriculum?->name
+                                    ?? $enrollment->curriculumMapping?->curriculum?->name,
+            'academic_year' => $academicSession?->academicYear?->name,
+            'academic_session' => $academicSession?->display_name,
+            'year_of_study' => $sessionEnrollment?->year_of_study,
+            'status' => $enrollment->status,
+            'created_at' => $enrollment->created_at,
+        ];
+    }
+
+    private function selectedFilters(array $filters, ?int $scopedDepartmentId): array
+    {
+        $course = isset($filters['course_id'])
             ? Course::select('id', 'name', 'code', 'certification_level_id')
                 ->with('certificationLevel:id,name')
-                ->when($hodDepartmentId, fn ($query) => $query->where('department_id', $hodDepartmentId))
+                ->when($scopedDepartmentId, fn (Builder $q) => $q->where('department_id', $scopedDepartmentId))
                 ->find($filters['course_id'])
             : null;
 
-        $curriculum = ! empty($filters['curriculum_id'])
+        $curriculum = isset($filters['curriculum_id'])
             ? Curriculum::select('id', 'name')->find($filters['curriculum_id'])
             : null;
 
-        $academicYear = ! empty($filters['academic_year_id'])
+        $academicYear = isset($filters['academic_year_id'])
             ? AcademicYear::select('id', 'academic_year', 'label')->find($filters['academic_year_id'])
             : null;
 
-        $academicSession = ! empty($filters['academic_session_id'])
-            ? AcademicSession::with('academicYear:id,academic_year,label')
-                ->select('id', 'academic_year_id', 'session_number', 'session_No', 'label')
+        $academicSession = isset($filters['academic_session_id'])
+            ? AcademicSession::select('id', 'academic_year_id', 'session_number', 'session_No', 'label')
+                ->with('academicYear:id,academic_year,label')
                 ->find($filters['academic_session_id'])
             : null;
 
-        $department = ! empty($filters['department_id'])
-            ? \App\Models\Department::select('id', 'name', 'code')->find($filters['department_id'])
+        $department = isset($filters['department_id'])
+            ? Department::select('id', 'name', 'code')->find($filters['department_id'])
             : null;
 
         return [
@@ -161,25 +182,23 @@ class CourseEnrollmentController extends Controller
             'curriculum' => $curriculum?->name,
             'academic_year' => $academicYear?->name,
             'academic_session' => $academicSession?->display_name,
-            'department' => $department ? trim($department->code . ' - ' . $department->name, ' -') : null,
+            'department' => $department
+                ? trim("{$department->code} - {$department->name}", ' -')
+                : null,
             'year_of_study' => $filters['year_of_study'] ?? null,
             'admission_number' => $filters['admission_number'] ?? null,
         ];
     }
 
-    protected function shouldScopeToHodDepartment(Request $request): bool
+    private function departmentContext(int $departmentId): ?array
     {
-        return (bool) (
-            $request->user()?->hasRole('hod')
-            && ! $request->user()?->hasRole('admin')
-            && $this->currentDepartmentId($request)
-        );
-    }
+        $department = Department::select('id', 'code', 'name')->find($departmentId);
 
-    protected function currentDepartmentId(Request $request): ?int
-    {
-        return $request->user()?->staff?->department_id
-            ? (int) $request->user()->staff->department_id
-            : null;
+        return $department ? [
+            'id' => (string) $department->id,
+            'code' => $department->code,
+            'name' => $department->name,
+            'label' => trim("{$department->code} - {$department->name}", ' -'),
+        ] : null;
     }
 }

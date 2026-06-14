@@ -13,15 +13,18 @@ import {
     religion,
 } from "@/constants/constants";
 
-function FormSection({ title, children }) {
+function FormSection({ number, title, children }) {
     return (
-        <section className="overflow-visible rounded-lg">
-            <div className="bg-zinc-200 px-5 py-3 text-center">
-                <h2 className="text-sm font-semibold text-zinc-800">
+        <section className="overflow-visible rounded-xl border border-zinc-200 p-5">
+            <div className="flex items-center gap-3">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-400 text-sm font-semibold text-white">
+                    {number}
+                </div>
+                <h2 className="text-base font-semibold text-zinc-900">
                     {title}
                 </h2>
             </div>
-            <div className="p-4">{children}</div>
+            <div className="mt-4 border-t border-zinc-200 pt-5">{children}</div>
         </section>
     );
 }
@@ -263,7 +266,7 @@ export default function EditStaff({ staff, departments, roles }) {
                 <div className="rounded-xl pt-2">
                     <div className="overflow-hidden rounded-xl border bg-white shadow-sm">
                         <form onSubmit={submit} className="space-y-5 p-0">
-                            <FormSection title="Personal Details">
+                            <FormSection number="1" title="Personal Details">
                                 <PersonalSection
                                     data={data}
                                     setData={setData}
@@ -271,7 +274,7 @@ export default function EditStaff({ staff, departments, roles }) {
                                 />
                             </FormSection>
 
-                            <FormSection title="Employment Details">
+                            <FormSection number="2" title="Employment Details">
                                 <EmploymentSection
                                     data={data}
                                     setData={setData}
@@ -281,7 +284,7 @@ export default function EditStaff({ staff, departments, roles }) {
                                 />
                             </FormSection>
 
-                            <FormSection title="Next of Kin">
+                            <FormSection number="3" title="Next of Kin">
                                 <KinSection
                                     data={data}
                                     setData={setData}

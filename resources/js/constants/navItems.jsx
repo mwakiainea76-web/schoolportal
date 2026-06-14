@@ -81,7 +81,7 @@ export const STAFF_NAV_ITEMS = [
         icon: "courses",
         basePath: "/courses",
         permissions: ["courses.view"],
-        roles: ["hod"],
+        roles: ["admin", "hod"],
         children: [
             {
                 key: "curriculums-group",
