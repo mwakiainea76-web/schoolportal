@@ -93,7 +93,7 @@ export default function Login({ status, canResetPassword }) {
                                             value={data.login}
                                             onChange={handleChange}
                                             error={errors.login}
-                                            placeholder="Student No / Employee No"
+                                            placeholder="Admission No"
                                             autoFocus
                                             className="mt-2 bg-white"
                                         />
@@ -180,7 +180,8 @@ export default function Login({ status, canResetPassword }) {
                                     </Link>
                                 </p>
                                 <p className="mt-6 text-slate-500">
-                                    Copyright (c) 2026 - Mago Technical College
+                                    Copyright (c) {new Date().getFullYear()} -
+                                    Apex
                                 </p>
                             </div>
                         </div>

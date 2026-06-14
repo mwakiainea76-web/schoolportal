@@ -113,5 +113,6 @@ return [
     */
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
+    'dummy_hash' => env('AUTH_DUMMY_HASH', '$2y$12$usqgaWAJfXmoMfwPGAVjkOh9wF1bdR7HF6mU7s7C6T1.9vYx1m0iC'),
 
 ];
