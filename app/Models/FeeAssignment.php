@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Services\FeeAssignmentService;
+use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -10,7 +11,13 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class FeeAssignment extends Model
 {
     /** @use HasFactory<\Database\Factories\FeeAssignmentFactory> */
-    use HasFactory, SoftDeletes;
+    use Auditable, HasFactory, SoftDeletes;
+
+    protected string $auditModule = 'fee_assignments';
+
+    protected array $auditExclude = [
+        'created_by',
+    ];
 
     protected $fillable = [
         'fee_plan_id',

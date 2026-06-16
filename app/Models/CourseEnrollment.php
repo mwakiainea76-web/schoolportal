@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -9,7 +10,13 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class CourseEnrollment extends Model
 {
     /** @use HasFactory<\Database\Factories\EnrollmentFactory> */
-    use HasFactory, SoftDeletes;
+    use Auditable, HasFactory, SoftDeletes;
+
+    protected string $auditModule = 'course_enrollments';
+
+    protected array $auditExclude = [
+        'transferred_by',
+    ];
 
     protected $table = 'course_enrollments';
 

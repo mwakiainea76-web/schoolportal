@@ -6,6 +6,7 @@ use App\Filters\CurriculumFilter;
 use App\Http\Requests\StoreCurriculumRequest;
 use App\Http\Requests\UpdateCurriculumRequest;
 use App\Models\Curriculum;
+use App\Models\CurriculumMapping;
 use App\Services\CurriculumService;
 use Illuminate\Http\Request;
 
@@ -15,7 +16,16 @@ class CurriculumController extends Controller
         protected CurriculumService $service
     ) {}
 
-    public function index(CurriculumFilter $filter)
+    public function index()
+    {
+        return inertia('Curriculums/Index', [
+            'summary' => $this->summary(),
+            'examBodyBreakdown' => $this->examBodyBreakdown(),
+            'recentCurricula' => $this->recentCurricula(),
+        ]);
+    }
+
+    public function editIndex(CurriculumFilter $filter)
     {
         $filters = request()->only(['search', 'sort', 'direction']);
 
@@ -29,7 +39,7 @@ class CurriculumController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return inertia('Curriculums/Index', [
+        return inertia('Curriculums/EditIndex', [
             'curricula' => $curricula,
             'filters' => (object) $filters,
             'curriculumOptions' => $this->curriculumOptions(),
@@ -81,27 +91,21 @@ class CurriculumController extends Controller
     {
         $this->service->delete($curriculum);
 
-        return redirect()
-            ->route('curriculums.index')
-            ->with('success', 'Curriculum deleted successfully.');
+        return back()->with('success', 'Curriculum deleted successfully.');
     }
 
     public function disable(Curriculum $curriculum)
     {
         $result = $this->service->disable($curriculum);
 
-        return redirect()
-            ->route('curriculums.index')
-            ->with($result['status'] ? 'success' : 'error', $result['message']);
+        return back()->with($result['status'] ? 'success' : 'error', $result['message']);
     }
 
     public function reactivate(Curriculum $curriculum)
     {
         $result = $this->service->reactivate($curriculum);
 
-        return redirect()
-            ->route('curriculums.index')
-            ->with($result['status'] ? 'success' : 'error', $result['message']);
+        return back()->with($result['status'] ? 'success' : 'error', $result['message']);
     }
 
     public function search(Request $request)
@@ -140,6 +144,52 @@ class CurriculumController extends Controller
             ->map(fn (Curriculum $curriculum) => [
                 'id' => $curriculum->id,
                 'name' => $curriculum->name,
+            ])
+            ->values();
+    }
+
+    protected function summary(): array
+    {
+        return [
+            'total' => Curriculum::query()->count(),
+            'active' => Curriculum::query()->where('is_active', true)->count(),
+            'disabled' => Curriculum::query()->where('is_active', false)->count(),
+            'exam_bodies' => Curriculum::query()->whereNotNull('exam_body_id')->distinct('exam_body_id')->count('exam_body_id'),
+            'mapped_courses' => CurriculumMapping::query()->count(),
+            'unmapped' => Curriculum::query()->whereDoesntHave('curriculumMappings')->count(),
+        ];
+    }
+
+    protected function recentCurricula()
+    {
+        return Curriculum::query()
+            ->with('examBody:id,code,name')
+            ->latest('updated_at')
+            ->limit(5)
+            ->get(['id', 'exam_body_id', 'name', 'is_active', 'created_at', 'updated_at'])
+            ->map(fn (Curriculum $curriculum) => [
+                'id' => $curriculum->id,
+                'name' => $curriculum->name,
+                'exam_body' => $curriculum->examBody?->code ?? $curriculum->examBody?->name,
+                'is_active' => $curriculum->is_active,
+                'updated_at' => $curriculum->updated_at?->toDateString(),
+            ])
+            ->values();
+    }
+
+    protected function examBodyBreakdown()
+    {
+        return Curriculum::query()
+            ->with('examBody:id,code,name')
+            ->selectRaw('exam_body_id, COUNT(*) as curricula_count')
+            ->groupBy('exam_body_id')
+            ->orderByDesc('curricula_count')
+            ->limit(6)
+            ->get()
+            ->map(fn (Curriculum $curriculum) => [
+                'id' => $curriculum->exam_body_id,
+                'name' => $curriculum->examBody?->code ?? $curriculum->examBody?->name ?? 'Unassigned',
+                'count' => (int) $curriculum->curricula_count,
             ])
             ->values();
     }

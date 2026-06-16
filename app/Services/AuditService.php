@@ -51,13 +51,15 @@ class AuditService
         }
 
         try {
-            if (app()->runningUnitTests() && config('audit.queue.sync_in_tests', true)) {
+            $queueConnection = config('audit.queue.connection', 'sync');
+
+            if ($queueConnection === 'sync' || (app()->runningUnitTests() && config('audit.queue.sync_in_tests', true))) {
                 dispatch_sync(new WriteAuditLogJob($normalized));
 
                 return;
             }
 
-            WriteAuditLogJob::dispatch($normalized);
+            WriteAuditLogJob::dispatch($normalized)->onConnection($queueConnection);
         } catch (Throwable $exception) {
             Log::warning('audit_log_dispatch_failed', [
                 'message' => $exception->getMessage(),
@@ -107,7 +109,10 @@ class AuditService
         $entity = $payload['entity'] ?? null;
         $actor = $payload['actor'] ?? $request?->user();
         $actorId = $payload['user_id'] ?? ($actor instanceof User ? $actor->id : null);
-        $metadata = $this->cleanArray($payload['metadata'] ?? []);
+        $metadata = Arr::except(
+            $this->cleanArray($payload['metadata'] ?? []),
+            config('audit.ignored_metadata_fields', [])
+        );
 
         [$oldValues, $newValues, $hasProvidedDiff] = $this->prepareDiff(
             $payload['old_values'] ?? null,
@@ -124,9 +129,8 @@ class AuditService
             }
         }
 
-        $requestContext = $this->requestContext($request);
-        if ($requestContext !== []) {
-            $metadata['request'] = $requestContext;
+        if ($request && ! array_key_exists('platform', $metadata)) {
+            $metadata['platform'] = 'web';
         }
 
         $module = trim((string) ($payload['module'] ?? ''));
@@ -263,19 +267,6 @@ class AuditService
         return $cleaned;
     }
 
-    protected function requestContext(?Request $request): array
-    {
-        if (! $request) {
-            return [];
-        }
-
-        return array_filter([
-            'method' => $request->method(),
-            'path' => '/'.ltrim($request->path(), '/'),
-            'route' => $request->route()?->getName(),
-        ], fn ($value) => $value !== null && $value !== '');
-    }
-
     protected function userAgentHash(?Request $request): ?string
     {
         $userAgent = trim((string) $request?->userAgent());
@@ -298,7 +289,9 @@ class AuditService
             return null;
         }
 
-        return (int) $entity->getKey();
+        $key = $entity->getKey();
+
+        return is_numeric($key) ? (int) $key : null;
     }
 
     protected function resolveEntityLabel(mixed $entity): ?string

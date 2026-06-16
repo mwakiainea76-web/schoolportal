@@ -2,12 +2,19 @@
 
 namespace App\Models;
 
+use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class FeeAdjustment extends Model
 {
-    use HasFactory;
+    use Auditable, HasFactory;
+
+    protected string $auditModule = 'fee_adjustments';
+
+    protected array $auditExclude = [
+        'created_by',
+    ];
 
     protected $table = 'fee_adjustments';
 

@@ -2,13 +2,16 @@
 
 namespace App\Models;
 
+use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Course extends Model
 {
-    use HasFactory, SoftDeletes;
+    use Auditable, HasFactory, SoftDeletes;
+
+    protected string $auditModule = 'courses';
 
     protected $table = 'courses';
 
@@ -72,5 +75,4 @@ class Course extends Model
         return trim($this->name.' - '.($certificationLevel?->name ?? ''), ' -');
     }
 }
-
 

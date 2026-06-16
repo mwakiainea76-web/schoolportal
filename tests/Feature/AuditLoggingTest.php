@@ -2,9 +2,15 @@
 
 use App\Jobs\WriteAuditLogJob;
 use App\Models\AuditLog;
+use App\Models\Curriculum;
+use App\Models\ExamBody;
 use App\Models\Student;
 use App\Models\User;
 use App\Services\AuditService;
+use App\Traits\Auditable;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Config;
 use Spatie\Permission\Models\Role;
 
@@ -26,6 +32,51 @@ function createAuditAdmin(): User
 
     return $user;
 }
+
+it('keeps every writable application model auditable except audit logs themselves', function () {
+    $exceptions = [
+        'App\\Models\\AuditLog',
+    ];
+
+    $modelClasses = collect(File::files(app_path('Models')))
+        ->map(fn ($file) => 'App\\Models\\'.$file->getFilenameWithoutExtension())
+        ->filter(fn ($class) => class_exists($class))
+        ->filter(fn ($class) => is_subclass_of($class, Model::class) || is_subclass_of($class, Authenticatable::class))
+        ->reject(fn ($class) => in_array($class, $exceptions, true))
+        ->values();
+
+    expect($modelClasses)->not->toBeEmpty();
+
+    foreach ($modelClasses as $class) {
+        expect(array_key_exists(Auditable::class, class_uses_recursive($class)))
+            ->toBeTrue("{$class} must use the Auditable trait.");
+    }
+});
+
+it('boots every audited model without requiring soft delete events', function () {
+    $exceptions = [
+        'App\\Models\\AuditLog',
+    ];
+
+    $modelClasses = collect(File::files(app_path('Models')))
+        ->map(fn ($file) => 'App\\Models\\'.$file->getFilenameWithoutExtension())
+        ->filter(fn ($class) => class_exists($class))
+        ->filter(fn ($class) => is_subclass_of($class, Model::class) || is_subclass_of($class, Authenticatable::class))
+        ->reject(fn ($class) => in_array($class, $exceptions, true))
+        ->values();
+
+    foreach ($modelClasses as $class) {
+        expect(fn () => new $class)->not->toThrow(Throwable::class);
+    }
+});
+
+it('resolves audit labels without reading missing attributes in strict mode', function () {
+    $curriculum = new Curriculum([
+        'name' => 'Business Curriculum',
+    ]);
+
+    expect($curriculum->auditLabel())->toBe('Business Curriculum');
+});
 
 it('redacts sensitive fields and stores only meaningful diffs', function () {
     $admin = createAuditAdmin();
@@ -62,6 +113,8 @@ it('redacts sensitive fields and stores only meaningful diffs', function () {
         'first_name' => 'Annie',
     ]);
     expect(data_get($log->metadata, 'high_risk'))->toBeTrue();
+    expect(data_get($log->metadata, 'platform'))->toBe('web');
+    expect(data_get($log->metadata, 'request'))->toBeNull();
 });
 
 it('writes audit logs through the queue job', function () {
@@ -100,6 +153,8 @@ it('automatically audits student create and update events with the auditable tra
         ->first();
 
     expect($createdLog)->not->toBeNull();
+    expect($createdLog->old_values)->toBeNull();
+    expect($createdLog->new_values)->toBeNull();
 
     $student->update([
         'first_name' => 'Janet',
@@ -117,6 +172,92 @@ it('automatically audits student create and update events with the auditable tra
     ]);
     expect($updatedLog->new_values)->toMatchArray([
         'first_name' => 'Janet',
+    ]);
+    expect(data_get($updatedLog->metadata, 'automatic'))->toBeNull();
+
+    $response = $this->actingAs($admin)->getJson('/api/audit-logs/'.$updatedLog->id);
+
+    $response
+        ->assertOk()
+        ->assertJsonPath('data.action_label', 'Updated')
+        ->assertJsonPath('data.platform', 'Web')
+        ->assertJsonPath('data.entity_record_label', 'Student')
+        ->assertJsonPath('data.event_description', "System updated a Student record (ID: {$student->id}).")
+        ->assertJsonPath('data.change_summary.0', "Changed First Name from 'Jane' to 'Janet'");
+});
+
+it('does not store noisy automatic payloads for create delete and restore events', function () {
+    $admin = createAuditAdmin();
+    $this->actingAs($admin);
+
+    $examBody = ExamBody::query()->create([
+        'code' => 'TVETA',
+        'name' => 'TVETA',
+        'description' => 'Created setup data',
+    ]);
+
+    $createdLog = AuditLog::query()
+        ->where('action', 'exam_body_created')
+        ->where('entity_id', $examBody->id)
+        ->latest('id')
+        ->first();
+
+    expect($createdLog)->not->toBeNull();
+    expect($createdLog->old_values)->toBeNull();
+    expect($createdLog->new_values)->toBeNull();
+
+    $examBody->delete();
+
+    $deletedLog = AuditLog::query()
+        ->where('action', 'exam_body_deleted')
+        ->where('entity_id', $examBody->id)
+        ->latest('id')
+        ->first();
+
+    expect($deletedLog)->not->toBeNull();
+    expect($deletedLog->old_values)->toBeNull();
+    expect($deletedLog->new_values)->toBeNull();
+
+    $examBody->restore();
+
+    $restoredLog = AuditLog::query()
+        ->where('action', 'exam_body_restored')
+        ->where('entity_id', $examBody->id)
+        ->latest('id')
+        ->first();
+
+    expect($restoredLog)->not->toBeNull();
+    expect($restoredLog->old_values)->toBeNull();
+    expect($restoredLog->new_values)->toBeNull();
+});
+
+it('automatically audits core admin setup records', function () {
+    $admin = createAuditAdmin();
+    $this->actingAs($admin);
+
+    $examBody = ExamBody::query()->create([
+        'code' => 'KNEC-T',
+        'name' => 'KNEC Test',
+        'description' => 'Initial setup',
+    ]);
+
+    $examBody->update([
+        'description' => 'Updated setup',
+    ]);
+
+    $updatedLog = AuditLog::query()
+        ->where('action', 'exam_body_updated')
+        ->where('entity_id', $examBody->id)
+        ->latest('id')
+        ->first();
+
+    expect($updatedLog)->not->toBeNull();
+    expect($updatedLog->module)->toBe('exam_bodies');
+    expect($updatedLog->old_values)->toMatchArray([
+        'description' => 'Initial setup',
+    ]);
+    expect($updatedLog->new_values)->toMatchArray([
+        'description' => 'Updated setup',
     ]);
 });
 

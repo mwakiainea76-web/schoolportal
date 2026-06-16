@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -9,7 +10,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class FeeComponent extends Model
 {
-    use HasFactory, HasUuids, SoftDeletes;
+    use Auditable, HasFactory, HasUuids, SoftDeletes;
+
+    protected string $auditModule = 'fee_components';
 
     protected $fillable = [
         'fee_plan_id',

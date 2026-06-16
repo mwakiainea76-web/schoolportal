@@ -32,7 +32,20 @@ class CourseController extends Controller
     // Read
     // -------------------------------------------------------------------------
 
-    public function index(Request $request, CourseFilter $filter)
+    public function index(Request $request)
+    {
+        if ($this->hodDepartmentId($request) !== null) {
+            return redirect()->route('courses.hod.index');
+        }
+
+        return inertia('Courses/Index', [
+            'summary' => $this->summary(),
+            'departmentBreakdown' => $this->departmentBreakdown(),
+            'recentCourses' => $this->recentCourses(),
+        ]);
+    }
+
+    public function editIndex(Request $request, CourseFilter $filter)
     {
         if ($this->hodDepartmentId($request) !== null) {
             return redirect()->route('courses.hod.index');
@@ -61,7 +74,7 @@ class CourseController extends Controller
             ->withQueryString()
             ->through(fn (Course $course) => $this->courseRow($course));
 
-        return inertia('Courses/Index', [
+        return inertia('Courses/EditIndex', [
             'courses'         => $courses,
             'filters'         => (object) $filters,
             'selectedFilters' => $this->selectedIndexFilters($filters),
@@ -156,9 +169,7 @@ class CourseController extends Controller
     {
         $result = $this->service->delete($course);
 
-        return redirect()
-            ->route('courses.index')
-            ->with($result['status'] ? 'success' : 'error', $result['message']);
+        return back()->with($result['status'] ? 'success' : 'error', $result['message']);
     }
 
     // -------------------------------------------------------------------------
@@ -286,6 +297,65 @@ class CourseController extends Controller
             'certification_level' => $certificationLevel?->name,
             'curriculum'          => $curriculum?->name,
         ];
+    }
+
+    private function summary(): array
+    {
+        return [
+            'total' => Course::query()->count(),
+            'mapped' => Course::query()->whereHas('curriculumMappings')->count(),
+            'unmapped' => Course::query()->whereDoesntHave('curriculumMappings')->count(),
+            'departments' => Course::query()->whereNotNull('department_id')->distinct('department_id')->count('department_id'),
+            'certification_levels' => Course::query()->whereNotNull('certification_level_id')->distinct('certification_level_id')->count('certification_level_id'),
+            'active_curriculum_mappings' => Course::query()
+                ->whereHas('curriculumMappings', fn ($query) => $this->activeMappingScope($query))
+                ->count(),
+        ];
+    }
+
+    private function recentCourses()
+    {
+        return Course::query()
+            ->select(['id', 'name', 'code', 'department_id', 'certification_level_id', 'updated_at'])
+            ->with([
+                'department:id,name',
+                'certificationLevel:id,name',
+            ])
+            ->withExists([
+                'curriculumMappings as has_active_mapping' => fn ($query) => $this->activeMappingScope($query),
+            ])
+            ->latest('updated_at')
+            ->limit(5)
+            ->get()
+            ->map(fn (Course $course) => [
+                'id' => $course->id,
+                'name' => $course->display_name,
+                'code' => $course->code,
+                'department' => $course->department?->name,
+                'certification_level' => $course->certificationLevel?->name,
+                'has_active_mapping' => (bool) $course->has_active_mapping,
+                'updated_at' => $course->updated_at?->toDateString(),
+            ])
+            ->values();
+    }
+
+    private function departmentBreakdown()
+    {
+        return Course::query()
+            ->with('department:id,code,name')
+            ->selectRaw('department_id, COUNT(*) as courses_count')
+            ->groupBy('department_id')
+            ->orderByDesc('courses_count')
+            ->limit(6)
+            ->get()
+            ->map(fn (Course $course) => [
+                'id' => $course->department_id,
+                'name' => $course->department
+                    ? trim("{$course->department->code} - {$course->department->name}", ' -')
+                    : 'Unassigned',
+                'count' => (int) $course->courses_count,
+            ])
+            ->values();
     }
 
     // -------------------------------------------------------------------------

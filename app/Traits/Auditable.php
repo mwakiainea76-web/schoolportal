@@ -4,6 +4,8 @@ namespace App\Traits;
 
 use App\Services\AuditService;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\MissingAttributeException;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Arr;
 
 trait Auditable
@@ -11,7 +13,7 @@ trait Auditable
     public static function bootAuditable(): void
     {
         static::created(function (Model $model): void {
-            $model->writeAuditLog('created', null, $model->auditAttributesForAudit());
+            $model->writeAuditLog('created', null, null);
         });
 
         static::updated(function (Model $model): void {
@@ -28,12 +30,14 @@ trait Auditable
         });
 
         static::deleted(function (Model $model): void {
-            $model->writeAuditLog('deleted', $model->auditAttributesForAudit(), null);
+            $model->writeAuditLog('deleted', null, null);
         });
 
-        static::restored(function (Model $model): void {
-            $model->writeAuditLog('restored', null, $model->auditAttributesForAudit());
-        });
+        if (in_array(SoftDeletes::class, class_uses_recursive(static::class), true)) {
+            static::restored(function (Model $model): void {
+                $model->writeAuditLog('restored', null, null);
+            });
+        }
     }
 
     public function writeAuditLog(string $event, ?array $oldValues, ?array $newValues, array $metadata = []): void
@@ -70,7 +74,11 @@ trait Auditable
     public function auditLabel(): string
     {
         foreach (['full_name', 'name', 'title', 'label', 'code', 'admission_number', 'staff_number', 'invoice_number', 'email'] as $field) {
-            $value = $this->getAttribute($field);
+            try {
+                $value = $this->getAttribute($field);
+            } catch (MissingAttributeException) {
+                continue;
+            }
 
             if (filled($value)) {
                 return (string) $value;

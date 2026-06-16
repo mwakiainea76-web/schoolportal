@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class StudentUnitRegistration extends Model
 {
-    use HasFactory;
+    use Auditable, HasFactory;
+
+    protected string $auditModule = 'student_unit_registrations';
 
     protected $fillable = [
         'academic_session_enrollment_id',

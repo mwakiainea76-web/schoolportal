@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -9,7 +10,14 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class FeePlanAssignment extends Model
 {
-    use HasFactory, HasUuids, SoftDeletes;
+    use Auditable, HasFactory, HasUuids, SoftDeletes;
+
+    protected string $auditModule = 'fee_plan_assignments';
+
+    protected array $auditExclude = [
+        'assigned_by',
+        'cancelled_by',
+    ];
 
     protected $fillable = [
         'fee_plan_id',
@@ -73,4 +81,3 @@ class FeePlanAssignment extends Model
         return $query->where('status', 'active');
     }
 }
-

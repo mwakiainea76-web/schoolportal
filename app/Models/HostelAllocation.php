@@ -2,12 +2,20 @@
 
 namespace App\Models;
 
+use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class HostelAllocation extends Model
 {
-    use HasFactory;
+    use Auditable, HasFactory;
+
+    protected string $auditModule = 'hostel_allocations';
+
+    protected array $auditExclude = [
+        'created_by',
+        'updated_by',
+    ];
 
     protected $fillable = [
         'academic_session_enrollment_id',

@@ -4,18 +4,21 @@ namespace App\Services;
 
 use App\Models\AuditLog;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\Request;
 
 class AuditLogQueryService
 {
+    public const USER_RELATIONS = [
+        'user:id,email,login_id',
+        'user.roles:id,name',
+        'user.staff:id,user_id,first_name,last_name,other_name',
+        'user.student:id,user_id,first_name,last_name,other_name',
+    ];
+
     public function query(array $filters = []): Builder
     {
         return AuditLog::query()
-            ->with([
-                'user:id,email,login_id',
-                'user.roles:id,name',
-                'user.staff:id,user_id,first_name,last_name,other_name',
-                'user.student:id,user_id,first_name,last_name,other_name',
-            ])
+            ->with(self::USER_RELATIONS)
             ->when($filters['user_id'] ?? null, fn (Builder $query, $userId) => $query->where('user_id', $userId))
             ->when($filters['module'] ?? null, fn (Builder $query, $module) => $query->where('module', $module))
             ->when($filters['action'] ?? null, fn (Builder $query, $action) => $query->where('action', $action))
@@ -44,5 +47,25 @@ class AuditLogQueryService
             })
             ->orderByDesc('created_at')
             ->orderByDesc('id');
+    }
+
+    public function filtersFromRequest(Request $request, bool $includePerPage = false): array
+    {
+        $filters = [
+            'date_from' => trim((string) $request->query('date_from', '')),
+            'date_to' => trim((string) $request->query('date_to', '')),
+            'user_id' => trim((string) $request->query('user_id', '')),
+            'module' => trim((string) $request->query('module', '')),
+            'action' => trim((string) $request->query('action', '')),
+            'entity_type' => trim((string) $request->query('entity_type', '')),
+            'high_risk' => trim((string) $request->query('high_risk', '')),
+            'search' => trim((string) $request->query('search', '')),
+        ];
+
+        if ($includePerPage) {
+            $filters['per_page'] = trim((string) $request->query('per_page', '10'));
+        }
+
+        return $filters;
     }
 }

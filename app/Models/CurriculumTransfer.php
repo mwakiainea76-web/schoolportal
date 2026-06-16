@@ -2,10 +2,19 @@
 
 namespace App\Models;
 
+use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Model;
 
 class CurriculumTransfer extends Model
 {
+    use Auditable;
+
+    protected string $auditModule = 'curriculum_transfers';
+
+    protected array $auditExclude = [
+        'approved_by',
+    ];
+
     protected $fillable = [
         'student_id',
         'from_curriculum_mapping_id',

@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class PaymentAllocation extends Model
 {
-    use HasFactory;
+    use Auditable, HasFactory;
+
+    protected string $auditModule = 'payment_allocations';
 
     protected $table = 'payment_allocations';
 

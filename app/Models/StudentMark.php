@@ -2,12 +2,19 @@
 
 namespace App\Models;
 
+use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class StudentMark extends Model
 {
-    use HasFactory;
+    use Auditable, HasFactory;
+
+    protected string $auditModule = 'student_marks';
+
+    protected array $auditExclude = [
+        'recorded_by_staff_id',
+    ];
 
     protected $fillable = [
         'academic_session_id',

@@ -2,13 +2,21 @@
 
 namespace App\Models;
 
+use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class Approval extends Model
 {
-    use HasFactory;
+    use Auditable, HasFactory;
+
+    protected string $auditModule = 'approvals';
+
+    protected array $auditExclude = [
+        'requested_by',
+        'approved_by',
+    ];
 
     protected $fillable = [
         'approvable_type',

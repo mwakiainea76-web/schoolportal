@@ -1,210 +1,165 @@
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
-import InputLabel from "@/Components/InputLabel";
-import PrimaryButton from "@/Components/PrimaryButton";
-import SearchSelect from "@/Components/SearchSelect";
 import TextInput from "@/Components/TextInput";
 import { Head, Link, router, useForm } from "@inertiajs/react";
 
-export default function AuditLogIndex({ logs, filters, users }) {
+export default function AuditLogIndex({ logs, filters }) {
     const rows = logs?.data ?? [];
     const form = useForm({
-        date_from: filters.date_from || "",
-        date_to: filters.date_to || "",
-        user_id: filters.user_id || "",
-        module: filters.module || "",
-        action: filters.action || "",
-        entity_type: filters.entity_type || "",
-        high_risk: filters.high_risk || "",
         search: filters.search || "",
+        per_page: String(filters.per_page || 10),
     });
 
-    const submit = (e) => {
-        e.preventDefault();
-        router.get(route("settings.audit-logs.index"), form.data, {
+    const applyFilters = (data = form.data) => {
+        router.get(route("settings.audit-logs.index"), data, {
             preserveState: true,
             preserveScroll: true,
             replace: true,
         });
     };
 
-    const exportUrl = route("api.audit-logs.export", form.data);
+    const handleSearch = (e) => {
+        e.preventDefault();
+        applyFilters({ ...form.data, page: 1 });
+    };
+
+    const handlePerPageChange = (e) => {
+        const nextData = {
+            ...form.data,
+            per_page: e.target.value,
+            page: 1,
+        };
+
+        form.setData("per_page", e.target.value);
+        applyFilters(nextData);
+    };
 
     return (
         <AuthenticatedLayout
             header={
-                <div>
-                    <h1 className="text-3xl font-semibold text-zinc-900">
-                        Audit Logs
-                    </h1>
-                    <p className="mt-2 max-w-3xl text-sm text-zinc-600">
-                        Review who changed what, when it happened, and the
-                        before-and-after values for critical business actions.
-                    </p>
-                </div>
+                <h1 className="text-2xl font-semibold text-zinc-900">
+                    System Activity Logs
+                </h1>
             }
         >
-            <Head title="Audit Logs" />
+            <Head title="System Activity Logs" />
 
-            <div className="mx-auto max-w-7xl space-y-6">
-                <form
-                    onSubmit={submit}
-                    className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm"
-                >
-                    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                        <div>
-                            <InputLabel value="Date From" />
-                            <TextInput
-                                type="date"
-                                value={form.data.date_from}
-                                onChange={(e) => form.setData("date_from", e.target.value)}
-                                className="mt-2 w-full"
-                            />
-                        </div>
-                        <div>
-                            <InputLabel value="Date To" />
-                            <TextInput
-                                type="date"
-                                value={form.data.date_to}
-                                onChange={(e) => form.setData("date_to", e.target.value)}
-                                className="mt-2 w-full"
-                            />
-                        </div>
-                        <div>
-                            <InputLabel value="User" />
-                            <div className="mt-2">
-                                <SearchSelect
-                                    value={form.data.user_id}
-                                    defaultOptions={users}
-                                    placeholder="Search or select user..."
-                                    onChange={(user) =>
-                                        form.setData("user_id", user?.id ?? "")
-                                    }
-                                />
-                            </div>
-                        </div>
-                        <div>
-                            <InputLabel value="Module" />
-                            <TextInput
-                                value={form.data.module}
-                                onChange={(e) => form.setData("module", e.target.value)}
-                                className="mt-2 w-full"
-                                placeholder="finance, students, auth..."
-                            />
-                        </div>
-                        <div>
-                            <InputLabel value="Action" />
-                            <TextInput
-                                value={form.data.action}
-                                onChange={(e) => form.setData("action", e.target.value)}
-                                className="mt-2 w-full"
-                                placeholder="payment_recorded"
-                            />
-                        </div>
-                        <div>
-                            <InputLabel value="Entity Type" />
-                            <TextInput
-                                value={form.data.entity_type}
-                                onChange={(e) => form.setData("entity_type", e.target.value)}
-                                className="mt-2 w-full"
-                                placeholder="student, role, payment..."
-                            />
-                        </div>
-                        <div>
-                            <InputLabel value="High Risk Only" />
-                            <select
-                                value={form.data.high_risk}
-                                onChange={(e) => form.setData("high_risk", e.target.value)}
-                                className="mt-2 w-full rounded-xl border-zinc-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
-                            >
-                                <option value="">All actions</option>
-                                <option value="true">High risk only</option>
-                                <option value="false">Standard only</option>
-                            </select>
-                        </div>
-                        <div>
-                            <InputLabel value="Search" />
-                            <TextInput
-                                value={form.data.search}
-                                onChange={(e) => form.setData("search", e.target.value)}
-                                className="mt-2 w-full"
-                                placeholder="entity, request ID, module..."
-                            />
-                        </div>
-                    </div>
-
-                    <div className="mt-5 flex flex-wrap justify-end gap-3">
-                        <a
-                            href={exportUrl}
-                            className="inline-flex items-center rounded-xl border border-zinc-200 px-5 py-3 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
-                        >
-                            Export CSV
-                        </a>
-                        <PrimaryButton className="px-5 py-3">
-                            Apply Filters
-                        </PrimaryButton>
-                    </div>
-                </form>
-
-                <section className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
-                    <div className="flex items-center justify-between">
-                        <h2 className="text-lg font-semibold text-zinc-900">
-                            Audit Trail
+            <div className="mx-auto max-w-7xl">
+                <section className="overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm">
+                    <div className="border-b border-zinc-200 px-4 py-4">
+                        <h2 className="text-base font-semibold text-zinc-900">
+                            System Activity Logs
                         </h2>
-                        <p className="text-sm text-zinc-500">
-                            Showing {logs.from ?? 0}-{logs.to ?? 0} of{" "}
-                            {logs.total ?? 0} entries
-                        </p>
                     </div>
 
-                    <div className="mt-5 overflow-x-auto">
-                        <table className="w-full min-w-[72rem] border-collapse">
-                            <thead className="bg-zinc-50">
-                                <tr className="text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                                    <th className="px-4 py-3">Date</th>
-                                    <th className="px-4 py-3">User</th>
-                                    <th className="px-4 py-3">Module</th>
-                                    <th className="px-4 py-3">Action</th>
-                                    <th className="px-4 py-3">Entity</th>
-                                    <th className="px-4 py-3">Status</th>
-                                    <th className="px-4 py-3 text-right">View</th>
+                    <div className="flex flex-col gap-4 px-4 py-5 sm:flex-row sm:items-center sm:justify-between">
+                        <label className="flex items-center gap-2 text-sm text-zinc-900">
+                            <span>Show</span>
+                            <select
+                                value={form.data.per_page}
+                                onChange={handlePerPageChange}
+                                className="rounded-md border-zinc-300 py-2 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
+                            >
+                                {[10, 25, 50, 100].map((size) => (
+                                    <option key={size} value={size}>
+                                        {size}
+                                    </option>
+                                ))}
+                            </select>
+                            <span>entries</span>
+                        </label>
+
+                        <form
+                            onSubmit={handleSearch}
+                            className="flex items-center gap-2 sm:justify-end"
+                        >
+                            <label
+                                htmlFor="audit-search"
+                                className="text-sm text-zinc-900"
+                            >
+                                Search:
+                            </label>
+                            <TextInput
+                                id="audit-search"
+                                value={form.data.search}
+                                onChange={(e) =>
+                                    form.setData("search", e.target.value)
+                                }
+                                className="h-10 w-full sm:w-44"
+                            />
+                        </form>
+                    </div>
+
+                    <div className="overflow-x-auto px-4">
+                        <table className="w-full min-w-[72rem] border-collapse border border-zinc-200">
+                            <thead>
+                                <tr className="border-b border-zinc-200 bg-white text-left text-sm font-semibold text-zinc-900">
+                                    <th className="w-[14%] border-r border-zinc-200 px-3 py-3">
+                                        User
+                                    </th>
+                                    <th className="w-[12%] border-r border-zinc-200 px-3 py-3">
+                                        Activity
+                                    </th>
+                                    <th className="w-[10%] border-r border-zinc-200 px-3 py-3">
+                                        Platform
+                                    </th>
+                                    <th className="border-r border-zinc-200 px-3 py-3">
+                                        Event Details
+                                    </th>
+                                    <th className="w-[20%] px-3 py-3">
+                                        Date & Time
+                                    </th>
+                                    <th className="w-[10%] px-3 py-3">
+                                        Details
+                                    </th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-zinc-100 bg-white">
+                            <tbody>
                                 {rows.length ? (
                                     rows.map((log) => (
-                                        <tr key={log.id} className="text-sm">
-                                            <td className="px-4 py-3 text-zinc-600">
-                                                {log.created_at}
-                                            </td>
-                                            <td className="px-4 py-3 text-zinc-700">
+                                        <tr
+                                            key={log.id}
+                                            className="border-b border-zinc-200 odd:bg-zinc-50 even:bg-white"
+                                        >
+                                            <td className="border-r border-zinc-200 px-3 py-4 align-top text-sm text-zinc-900">
                                                 {log.user?.name || "System"}
                                             </td>
-                                            <td className="px-4 py-3 font-medium capitalize text-zinc-900">
-                                                {log.module}
+                                            <td className="border-r border-zinc-200 px-3 py-4 align-top">
+                                                <ActivityBadge
+                                                    label={
+                                                        log.action_label ||
+                                                        log.action
+                                                    }
+                                                />
                                             </td>
-                                            <td className="px-4 py-3 text-zinc-700">
-                                                {log.action}
+                                            <td className="border-r border-zinc-200 px-3 py-4 align-top text-sm text-zinc-900">
+                                                {log.platform || "Web"}
                                             </td>
-                                            <td className="px-4 py-3 text-zinc-700">
-                                                {log.entity_label || `${log.entity_type || "record"} #${log.entity_id || "-"}`}
+                                            <td className="border-r border-zinc-200 px-3 py-4 align-top text-sm text-zinc-900">
+                                                <EventDescription log={log} />
+                                                {log.change_summary?.length ? (
+                                                    <div className="mt-2 rounded-md bg-white px-3 py-2 text-xs leading-6 text-zinc-700">
+                                                        {log.change_summary.map(
+                                                            (line) => (
+                                                                <p key={line}>
+                                                                    - {line}
+                                                                </p>
+                                                            )
+                                                        )}
+                                                    </div>
+                                                ) : null}
                                             </td>
-                                            <td className="px-4 py-3">
-                                                <span
-                                                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                                                        log.is_high_risk
-                                                            ? "bg-red-100 text-red-700"
-                                                            : "bg-emerald-100 text-emerald-700"
-                                                    }`}
-                                                >
-                                                    {log.is_high_risk ? "High Risk" : "Standard"}
-                                                </span>
+                                            <td className="border-r border-zinc-200 px-3 py-4 align-top text-sm text-zinc-900">
+                                                {log.created_at}
                                             </td>
-                                            <td className="px-4 py-3 text-right">
+                                            <td className="px-3 py-4 align-top text-sm">
                                                 <Link
-                                                    href={route("settings.audit-logs.show", log.id)}
-                                                    className="font-medium text-emerald-700 transition hover:text-emerald-800"
+                                                    href={route(
+                                                        "settings.audit-logs.show",
+                                                        log.id
+                                                    )}
+                                                    className="font-medium text-blue-700 hover:text-blue-900"
                                                 >
-                                                    Details
+                                                    View Details
                                                 </Link>
                                             </td>
                                         </tr>
@@ -212,10 +167,10 @@ export default function AuditLogIndex({ logs, filters, users }) {
                                 ) : (
                                     <tr>
                                         <td
-                                            colSpan="7"
+                                            colSpan="6"
                                             className="px-4 py-12 text-center text-sm text-zinc-500"
                                         >
-                                            No audit logs matched the selected filters.
+                                            No audit logs matched the search.
                                         </td>
                                     </tr>
                                 )}
@@ -230,16 +185,62 @@ export default function AuditLogIndex({ logs, filters, users }) {
     );
 }
 
+function ActivityBadge({ label }) {
+    const normalized = String(label || "Activity").toLowerCase();
+    const styles = normalized.includes("delete")
+        ? "bg-red-600 text-white"
+        : normalized.includes("create")
+          ? "bg-emerald-600 text-white"
+          : "bg-blue-600 text-white";
+
+    return (
+        <span className={`inline-flex rounded px-2 py-1 text-xs font-medium ${styles}`}>
+            {label || "Activity"}
+        </span>
+    );
+}
+
+function EventDescription({ log }) {
+    if (!log.event_description) {
+        return (
+            <p>
+                {log.entity_record_label || log.entity_type || "Record"}{" "}
+                {log.entity_id ? `(ID: ${log.entity_id})` : ""}
+            </p>
+        );
+    }
+
+    if (!log.entity_record_label) {
+        return <p>{log.event_description}</p>;
+    }
+
+    const [before, ...afterParts] = log.event_description.split(
+        log.entity_record_label
+    );
+
+    if (!afterParts.length) {
+        return <p>{log.event_description}</p>;
+    }
+
+    return (
+        <p>
+            {before}
+            <strong>{log.entity_record_label}</strong>
+            {afterParts.join(log.entity_record_label)}
+        </p>
+    );
+}
+
 function Pagination({ pagination }) {
-    if (!pagination || Number(pagination.last_page ?? 1) <= 1) {
+    if (!pagination) {
         return null;
     }
 
     const current = Number(pagination.current_page ?? 1);
     const last = Number(pagination.last_page ?? 1);
-    const start = Math.max(1, current - 2);
-    const end = Math.min(last, current + 2);
-    const pages = Array.from({ length: end - start + 1 }, (_, index) => start + index);
+    const total = Number(pagination.total ?? 0);
+    const from = pagination.from ?? 0;
+    const to = pagination.to ?? 0;
 
     const goToPage = (page) => {
         const params = new URLSearchParams(window.location.search);
@@ -253,42 +254,34 @@ function Pagination({ pagination }) {
     };
 
     return (
-        <div className="mt-5 flex flex-col gap-3 border-t border-zinc-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-zinc-500">
-                Page {current} of {last}
+        <div className="flex flex-col gap-4 px-4 py-5 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-zinc-900">
+                Showing {from} to {to} of {total} entries
             </p>
-            <div className="flex flex-wrap items-center gap-2">
-                <button
-                    type="button"
-                    disabled={current <= 1}
-                    onClick={() => goToPage(current - 1)}
-                    className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                    Previous
-                </button>
-                {pages.map((page) => (
+
+            {last > 1 ? (
+                <div className="flex items-center justify-end">
                     <button
                         type="button"
-                        key={page}
-                        onClick={() => goToPage(page)}
-                        className={`rounded-lg px-3 py-2 text-sm transition ${
-                            page === current
-                                ? "bg-zinc-900 text-white"
-                                : "border border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-100"
-                        }`}
+                        disabled={current <= 1}
+                        onClick={() => goToPage(current - 1)}
+                        className="border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-600 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                        {page}
+                        Previous
                     </button>
-                ))}
-                <button
-                    type="button"
-                    disabled={current >= last}
-                    onClick={() => goToPage(current + 1)}
-                    className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                    Next
-                </button>
-            </div>
+                    <span className="border-y border-orange-600 bg-orange-600 px-4 py-2 text-sm text-white">
+                        {current}
+                    </span>
+                    <button
+                        type="button"
+                        disabled={current >= last}
+                        onClick={() => goToPage(current + 1)}
+                        className="border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-600 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                        Next
+                    </button>
+                </div>
+            ) : null}
         </div>
     );
 }

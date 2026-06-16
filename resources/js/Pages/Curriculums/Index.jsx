@@ -1,289 +1,212 @@
-import { Head, Link, router } from "@inertiajs/react";
-import { useState } from "react";
-import Table from "@/Components/Table/Table";
-import Thead from "@/Components/Table/Thead";
-import THdata from "@/Components/Table/THdata";
-import Tbody from "@/Components/Table/Tbody";
-import Trow from "@/Components/Table/Trow";
-import Tdata from "@/Components/Table/Tdata";
-import SearchSelect from "@/Components/SearchSelect";
+import { Head, Link } from "@inertiajs/react";
+import {
+    Activity,
+    Ban,
+    BookOpenCheck,
+    CheckCircle2,
+    Layers3,
+    PieChart,
+    Settings2,
+} from "lucide-react";
 import useRbac from "@/Hooks/UseRBAC";
-import { downloadExport } from "@/utils/exportDownload";
 
 export default function CurriculumIndex({
-    curricula,
-    filters = {},
-    curriculumOptions = [],
+    summary = {},
+    examBodyBreakdown = [],
+    recentCurricula = [],
 }) {
-    const pageFilters =
-        filters && typeof filters === "object" && !Array.isArray(filters)
-            ? filters
-            : {};
-    const [sortField, setSortField] = useState(
-        pageFilters.sort || curricula.sort || "created_at",
-    );
-    const [sortDirection, setSortDirection] = useState(
-        pageFilters.direction || curricula.direction || "desc",
-    );
-    const [searchTerm, setSearchTerm] = useState(pageFilters.search || "");
-    const [exportFormat, setExportFormat] = useState("pdf");
     const { can } = useRbac();
-
-    const handleSort = (field) => {
-        const direction =
-            sortField === field && sortDirection === "asc" ? "desc" : "asc";
-
-        setSortField(field);
-        setSortDirection(direction);
-
-        router.get(
-            route("curriculums.index"),
-            {
-                search: searchTerm || pageFilters.search || "",
-                sort: field,
-                direction,
-                page: 1,
-            },
-            { preserveState: true, replace: true },
-        );
-    };
-
-    const renderArrow = (field) => {
-        if (sortField !== field) return null;
-
-        return sortDirection === "asc" ? "^" : "v";
-    };
-
-    const submit = (e) => {
-        e.preventDefault();
-
-        router.get(
-            route("curriculums.index"),
-            { search: searchTerm, sort: sortField, direction: sortDirection },
-            { preserveState: true, replace: true },
-        );
-    };
-
-    const handleExport = () => {
-        downloadExport("curriculums", exportFormat, {
-            search: searchTerm || pageFilters.search || "",
-            sort: sortField,
-            direction: sortDirection,
-        });
-    };
-
-    const handleDelete = (id) => {
-        if (!confirm("Are you sure you want to delete this curriculum?")) {
-            return;
-        }
-
-        router.delete(route("curriculums.destroy", { curriculum: id }), {
-            preserveState: true,
-            replace: true,
-        });
-    };
-
-    const handleDisable = (id) => {
-        if (!confirm("Disable this curriculum?")) {
-            return;
-        }
-
-        router.patch(route("curriculums.disable", { curriculum: id }), {}, {
-            preserveScroll: true,
-            preserveState: true,
-            replace: true,
-        });
-    };
-
-    const handleReactivate = (id) => {
-        if (!confirm("Reactivate this curriculum?")) {
-            return;
-        }
-
-        router.patch(route("curriculums.reactivate", { curriculum: id }), {}, {
-            preserveScroll: true,
-            preserveState: true,
-            replace: true,
-        });
-    };
+    const formatNumber = (value) => Number(value || 0).toLocaleString();
+    const activeCount = Number(summary.active || 0);
+    const totalCount = Number(summary.total || 0);
+    const activeRate = totalCount
+        ? Math.round((activeCount / totalCount) * 100)
+        : 0;
 
     return (
         <>
             <Head title="Curriculums" />
 
-            <div className="mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
-                {can("curriculums.view") ? (
-                    <form
-                        className="mb-2 flex w-full flex-wrap items-center gap-3"
-                        onSubmit={submit}
-                    >
-                        <div className="min-w-[200px] flex-1">
-                            <SearchSelect
-                                routeName="curriculums.search"
-                                defaultOptions={curriculumOptions}
-                                placeholder="Select curriculum ..."
-                                onChange={(body) =>
-                                    setSearchTerm(body?.name || "")
-                                }
-                            />
-                        </div>
-                        <button
-                            className="whitespace-nowrap rounded bg-emerald-600 px-4 py-1.5 text-sm font-medium text-white transition-colors hover:bg-slate-700"
-                            type="submit"
-                        >
-                            Search
-                        </button>
-                    </form>
-                ) : null}
-
-                {can("curriculums.view") ? (
-                    <div className="flex justify-end">
-                        <div className="flex items-center">
-                            <select
-                                value={exportFormat}
-                                onChange={(e) =>
-                                    setExportFormat(e.target.value)
-                                }
-                                className="h-[34px] rounded-l border border-slate-300 border-r-0 bg-white px-3 text-sm text-slate-700 focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-gray-500"
-                            >
-                                <option value="pdf">PDF</option>
-                                <option value="csv">CSV</option>
-                                <option value="excel">Excel</option>
-                            </select>
-                            <button
-                                type="button"
-                                onClick={handleExport}
-                                className="h-[34px] whitespace-nowrap rounded-r bg-gray-400 px-4 text-sm font-medium text-white transition-colors hover:bg-gray-600"
-                            >
-                                Export {exportFormat.toUpperCase()}
-                            </button>
-                        </div>
+            <div className="mx-auto w-full space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <p className="text-xs font-semibold uppercase text-emerald-600">
+                            Edit
+                        </p>
+                        <h1 className="text-xl font-semibold text-slate-950">
+                            Curriculum Edit Workspace
+                        </h1>
                     </div>
-                ) : null}
-
-                <Table
-                    pagination={curricula}
-                    sortField={sortField}
-                    sortDirection={sortDirection}
-                >
-                    <Thead>
-                        <THdata
-                            onClick={() => handleSort("name")}
-                            className="cursor-pointer"
+                    {can("curriculums.view") ? (
+                        <Link
+                            href={route("curriculums.edit.index")}
+                            className="inline-flex items-center justify-center gap-2 rounded border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
                         >
-                            Name {renderArrow("name")}
-                        </THdata>
+                            <Settings2 className="h-4 w-4" aria-hidden="true" />
+                            Edit
+                        </Link>
+                    ) : null}
+                </div>
 
-                        <THdata>Exam Body</THdata>
-                        <THdata>Status</THdata>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+                    <SummaryCard
+                        icon={BookOpenCheck}
+                        label="Total Curriculums"
+                        value={formatNumber(summary.total)}
+                        helper={`${formatNumber(summary.exam_bodies)} exam bodies represented`}
+                        tone="sky"
+                    />
+                    <SummaryCard
+                        icon={CheckCircle2}
+                        label="Active Curriculums"
+                        value={formatNumber(summary.active)}
+                        helper={`${activeRate}% active`}
+                        tone="emerald"
+                        featured
+                    />
+                    <SummaryCard
+                        icon={Ban}
+                        label="Disabled Curriculums"
+                        value={formatNumber(summary.disabled)}
+                        helper="Ready for reactivation when needed"
+                        tone="amber"
+                    />
+                    <SummaryCard
+                        icon={Layers3}
+                        label="Course Mappings"
+                        value={formatNumber(summary.mapped_courses)}
+                        helper={`${formatNumber(summary.unmapped)} not mapped`}
+                        tone="violet"
+                    />
+                </div>
 
-                        {can("curriculums.edit") ||
-                        can("curriculums.delete") ? (
-                            <THdata>
-                                <p className="text-center">Actions</p>
-                            </THdata>
-                        ) : null}
-                    </Thead>
+                <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.72fr)]">
+                    <InsightPanel icon={PieChart} title="Curriculums by Exam Body">
+                        {examBodyBreakdown.length ? (
+                            <div className="space-y-3">
+                                {examBodyBreakdown.map((item) => {
+                                    const percent = totalCount
+                                        ? Math.round((item.count / totalCount) * 100)
+                                        : 0;
 
-                    <Tbody>
-                        {curricula?.data?.length ? (
-                            curricula.data.map((curriculum) => (
-                                <Trow key={curriculum.id}>
-                                    <Tdata>{curriculum.name}</Tdata>
-
-                                    <Tdata>
-                                        {curriculum.exam_body
-                                            ? [curriculum.exam_body.name]
-                                                  .filter(Boolean)
-                                                  .join(" - ")
-                                            : "-"}
-                                    </Tdata>
-                                    <Tdata>
-                                        <span
-                                            className={`rounded px-2 py-1 text-xs font-semibold ${
-                                                curriculum.is_active
-                                                    ? "bg-emerald-100 text-emerald-700"
-                                                    : "bg-zinc-200 text-zinc-700"
-                                            }`}
-                                        >
-                                            {curriculum.is_active
-                                                ? "Active"
-                                                : "Disabled"}
-                                        </span>
-                                    </Tdata>
-
-                                    {can("curriculums.edit") ||
-                                    can("curriculums.delete") ? (
-                                        <Tdata>
-                                            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
-                                                {can("curriculums.edit") ? (
-                                                    <Link
-                                                        href={route(
-                                                            "curriculums.edit",
-                                                            {
-                                                                curriculum:
-                                                                    curriculum.id,
-                                                            },
-                                                        )}
-                                                        className="whitespace-nowrap text-emerald-600 hover:underline"
-                                                    >
-                                                        Edit
-                                                    </Link>
-                                                ) : null}
-
-                                                {can("curriculums.edit") ? (
-                                                    curriculum.is_active ? (
-                                                        <button
-                                                            onClick={() =>
-                                                                handleDisable(
-                                                                    curriculum.id,
-                                                                )
-                                                            }
-                                                            className="whitespace-nowrap text-amber-600 hover:underline"
-                                                        >
-                                                            Disable
-                                                        </button>
-                                                    ) : (
-                                                        <button
-                                                            onClick={() =>
-                                                                handleReactivate(
-                                                                    curriculum.id,
-                                                                )
-                                                            }
-                                                            className="whitespace-nowrap text-emerald-600 hover:underline"
-                                                        >
-                                                            Activate
-                                                        </button>
-                                                    )
-                                                ) : null}
-
-                                                {can("curriculums.delete") ? (
-                                                    <button
-                                                        onClick={() =>
-                                                            handleDelete(
-                                                                curriculum.id,
-                                                            )
-                                                        }
-                                                        className="whitespace-nowrap text-red-600 hover:underline"
-                                                    >
-                                                        Delete
-                                                    </button>
-                                                ) : null}
+                                    return (
+                                        <div key={item.id ?? "unassigned"}>
+                                            <div className="flex items-center justify-between gap-4 text-sm">
+                                                <span className="font-medium text-slate-700">
+                                                    {item.name}
+                                                </span>
+                                                <span className="text-slate-500">
+                                                    {formatNumber(item.count)}
+                                                </span>
                                             </div>
-                                        </Tdata>
-                                    ) : null}
-                                </Trow>
-                            ))
+                                            <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
+                                                <div
+                                                    className="h-full rounded-full bg-emerald-500"
+                                                    style={{ width: `${percent}%` }}
+                                                />
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
                         ) : (
-                            <Trow>
-                                <Tdata colSpan="5" className="text-center py-4">
-                                    No curriculums found.
-                                </Tdata>
-                            </Trow>
+                            <EmptyPanelMessage message="No curriculums assigned to exam bodies yet." />
                         )}
-                    </Tbody>
-                </Table>
+                    </InsightPanel>
+
+                    <InsightPanel icon={Activity} title="Recent Activity">
+                        {recentCurricula.length ? (
+                            <div className="divide-y divide-slate-100">
+                                {recentCurricula.map((curriculum) => (
+                                    <div
+                                        key={curriculum.id}
+                                        className="flex items-start justify-between gap-4 py-3 first:pt-0 last:pb-0"
+                                    >
+                                        <div className="min-w-0">
+                                            <p className="truncate text-sm font-semibold text-slate-800">
+                                                {curriculum.name}
+                                            </p>
+                                            <p className="mt-1 text-xs text-slate-500">
+                                                {curriculum.exam_body || "No exam body"} -{" "}
+                                                {curriculum.updated_at || "No date"}
+                                            </p>
+                                        </div>
+                                        <StatusPill active={curriculum.is_active} />
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <EmptyPanelMessage message="No recent curriculum activity." />
+                        )}
+                    </InsightPanel>
+                </div>
             </div>
         </>
+    );
+}
+
+function SummaryCard({ icon: Icon, label, value, helper, tone, featured = false }) {
+    const tones = {
+        sky: "bg-sky-100 text-sky-700",
+        emerald: "bg-emerald-100 text-emerald-700",
+        amber: "bg-amber-100 text-amber-700",
+        violet: "bg-violet-100 text-violet-700",
+    };
+
+    return (
+        <div
+            className={`rounded-lg border border-slate-200 bg-white p-5 shadow-sm ${
+                featured ? "border-r-4 border-r-emerald-500" : ""
+            }`}
+        >
+            <div className="flex items-center gap-4">
+                <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded ${tones[tone]}`}>
+                    <Icon className="h-6 w-6" aria-hidden="true" />
+                </span>
+                <div className="min-w-0">
+                    <h3 className="text-xs font-bold uppercase text-slate-500">
+                        {label}
+                    </h3>
+                    <p className="mt-1 text-3xl font-semibold leading-none text-slate-950">
+                        {value}
+                    </p>
+                    <p className="mt-2 text-xs text-slate-500">{helper}</p>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function InsightPanel({ icon: Icon, title, children }) {
+    return (
+        <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
+            <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-4">
+                <Icon className="h-5 w-5 text-slate-900" aria-hidden="true" />
+                <h2 className="text-lg font-semibold text-slate-950">{title}</h2>
+            </div>
+            <div className="min-h-[126px] p-5">{children}</div>
+        </section>
+    );
+}
+
+function EmptyPanelMessage({ message }) {
+    return (
+        <div className="flex min-h-[96px] items-center justify-center text-center text-sm text-slate-400">
+            {message}
+        </div>
+    );
+}
+
+function StatusPill({ active }) {
+    return (
+        <span
+            className={`rounded px-2 py-1 text-xs font-semibold ${
+                active
+                    ? "bg-emerald-100 text-emerald-700"
+                    : "bg-zinc-200 text-zinc-700"
+            }`}
+        >
+            {active ? "Active" : "Disabled"}
+        </span>
     );
 }
