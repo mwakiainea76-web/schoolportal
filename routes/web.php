@@ -31,7 +31,11 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportingController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SecurityMonitoringController;
+use App\Http\Controllers\SchoolIdCardController;
 use App\Http\Controllers\StaffController;
+use App\Http\Controllers\StaffLeaveRequestController;
+use App\Http\Controllers\StaffPayslipController;
+use App\Http\Controllers\StaffSalaryController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\StudentCourseChangeController;
 use App\Http\Controllers\StudentMarkController;
@@ -397,6 +401,33 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 Route::post('/invoices', [InvoiceController::class, 'bulkGenerate'])->name('invoices');
                 Route::post('/discounts', [InvoiceController::class, 'bulkApplyDiscount'])->name('discounts');
                 Route::post('/generate-from-plans', [InvoiceController::class, 'store'])->name('generate.from.plans');
+            });
+        });
+
+        /*
+        |--------------------------------------------------------------------------
+        | Human Resource
+        |--------------------------------------------------------------------------
+        */
+        Route::prefix('hr')->name('hr.')->group(function () {
+            Route::prefix('leave-requests')->name('leave-requests.')->group(function () {
+                Route::get('/', [StaffLeaveRequestController::class, 'index'])->name('index');
+                Route::get('/create', [StaffLeaveRequestController::class, 'create'])->name('create');
+                Route::post('/', [StaffLeaveRequestController::class, 'store'])->name('store');
+            });
+
+            Route::middleware('role:admin')->prefix('salaries')->name('salaries.')->group(function () {
+                Route::get('/', [StaffSalaryController::class, 'index'])->name('index');
+                Route::patch('/', [StaffSalaryController::class, 'update'])->name('update');
+                Route::post('/loan-reductions', [StaffSalaryController::class, 'storeLoanReduction'])->name('loan-reductions.store');
+            });
+
+            Route::middleware('role:admin')->prefix('payslips')->name('payslips.')->group(function () {
+                Route::get('/', [StaffPayslipController::class, 'index'])->name('index');
+            });
+
+            Route::middleware('role:admin')->prefix('id-cards')->name('id-cards.')->group(function () {
+                Route::get('/', [SchoolIdCardController::class, 'index'])->name('index');
             });
         });
 

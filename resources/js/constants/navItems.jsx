@@ -22,6 +22,7 @@ import {
     Send,
     Clock,
     DoorOpen,
+    BriefcaseBusiness,
 } from "lucide-react";
 
 /**
@@ -53,6 +54,7 @@ export const ICONS = {
     publish: <Send className="w-5 h-5 shrink-0" />,
     timetable: <Clock className="w-5 h-5 shrink-0" />,
     lectureRoom: <DoorOpen className="w-5 h-5 shrink-0" />,
+    hr: <BriefcaseBusiness className="w-5 h-5 shrink-0" />,
 };
 
 /**
@@ -454,6 +456,50 @@ export const STAFF_NAV_ITEMS = [
                 routeName: "exam.bodies.index",
                 fallback: "/exam-bodies",
                 label: "Exam Boards",
+            },
+        ],
+    },
+
+    // --- Human Resource ---
+    {
+        key: "hr",
+        label: "HR",
+        icon: "hr",
+        basePath: "/hr",
+        children: [
+            {
+                key: "leave-requests",
+                label: "Leave Requests",
+                children: [
+                    {
+                        routeName: "hr.leave-requests.create",
+                        fallback: "/hr/leave-requests/create",
+                        label: "Add Leave Request",
+                    },
+                    {
+                        routeName: "hr.leave-requests.index",
+                        fallback: "/hr/leave-requests",
+                        label: "View Leave Requests",
+                    },
+                ],
+            },
+            {
+                routeName: "hr.salaries.index",
+                fallback: "/hr/salaries",
+                label: "Salary Management",
+                roles: ["admin"],
+            },
+            {
+                routeName: "hr.payslips.index",
+                fallback: "/hr/payslips",
+                label: "Monthly Payslips",
+                roles: ["admin"],
+            },
+            {
+                routeName: "hr.id-cards.index",
+                fallback: "/hr/id-cards",
+                label: "School ID Cards",
+                roles: ["admin"],
             },
         ],
     },

@@ -98,4 +98,19 @@ class Staff extends Model
     {
         return $this->hasMany(CurriculumTransfer::class, 'approved_by');
     }
+
+    public function leaveRequests()
+    {
+        return $this->hasMany(StaffLeaveRequest::class);
+    }
+
+    public function reviewedLeaveRequests()
+    {
+        return $this->hasMany(StaffLeaveRequest::class, 'reviewed_by');
+    }
+
+    public function loanReductions()
+    {
+        return $this->hasMany(StaffLoanReduction::class);
+    }
 }
