@@ -63,7 +63,7 @@ function Index({
       )
     );
     router.get(
-      route("curriculum-mappings.index"),
+      route("courses.curriculum-mappings.index"),
       { ...cleanFilters, sort: field, direction, page: 1 },
       { preserveState: true, replace: true }
     );
@@ -93,7 +93,7 @@ function Index({
         {
           definitions: FILTER_DEFINITIONS,
           filters,
-          routeName: "curriculum-mappings.index",
+          routeName: "courses.curriculum-mappings.index",
           extraParams: { sort: sortField, direction: sortDirection, page: 1 },
           quickKeys: ["curriculum_id", "course_id"]
         }
@@ -102,7 +102,7 @@ function Index({
         /* @__PURE__ */ jsx(
           Link,
           {
-            href: route("curriculum-mappings.create"),
+            href: route("courses.curriculum-mappings.create"),
             className: "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-emerald-700",
             children: "Add New"
           }
@@ -192,7 +192,7 @@ function Index({
               Link,
               {
                 href: route(
-                  "curriculum-mappings.edit",
+                  "courses.curriculum-mappings.edit",
                   mapping.id
                 ),
                 children: "Edit"

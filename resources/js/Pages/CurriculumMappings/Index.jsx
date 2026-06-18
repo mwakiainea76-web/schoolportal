@@ -74,7 +74,7 @@ export default function Index({
             ),
         );
         router.get(
-            route("curriculum-mappings.index"),
+            route("courses.curriculum-mappings.index"),
             { ...cleanFilters, sort: field, direction, page: 1 },
             { preserveState: true, replace: true },
         );
@@ -112,7 +112,7 @@ export default function Index({
                 <FilterPanel
                     definitions={FILTER_DEFINITIONS}
                     filters={filters}
-                    routeName="curriculum-mappings.index"
+                    routeName="courses.curriculum-mappings.index"
                     extraParams={{ sort: sortField, direction: sortDirection, page: 1 }}
                     quickKeys={["curriculum_id", "course_id"]}
                 />
@@ -121,7 +121,7 @@ export default function Index({
                     <div className="flow-root">
                         <div className="-mx-3 -my-1.5 flex items-center justify-end">
                             <Link
-                                href={route("curriculum-mappings.create")}
+                                href={route("courses.curriculum-mappings.create")}
                                 className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-emerald-700"
                             >
                                 Add New
@@ -205,7 +205,7 @@ export default function Index({
                                     <Tdata>
                                         <Link
                                             href={route(
-                                                "curriculum-mappings.edit",
+                                                "courses.curriculum-mappings.edit",
                                                 mapping.id,
                                             )}
                                         >
