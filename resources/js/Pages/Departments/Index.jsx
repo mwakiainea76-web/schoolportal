@@ -1,34 +1,59 @@
 import { Head, Link, router } from "@inertiajs/react";
 import { useState } from "react";
-import Table from "@/Components/Table/Table";
-import Thead from "@/Components/Table/Thead";
-import THdata from "@/Components/Table/THdata";
-import Tbody from "@/Components/Table/Tbody";
-import Trow from "@/Components/Table/Trow";
-import Tdata from "@/Components/Table/Tdata";
-import formatDate from "@/utils/date";
+import { MoreHorizontalIcon } from "lucide-react";
 import SearchSelect from "@/Components/SearchSelect";
+import formatDate from "@/utils/date";
 import { downloadExport } from "@/utils/exportDownload";
+import { Button } from "@/components/ui/button";
+
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableFooter,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function DepartmentsIndex({ departments }) {
     const [sortField, setSortField] = useState(
         departments.sort || "created_at",
     );
+
     const [sortDirection, setSortDirection] = useState(
         departments.direction || "desc",
     );
+
     const [searchTerm, setSearchTerm] = useState("");
     const [exportFormat, setExportFormat] = useState("pdf");
 
     const handleSort = (field) => {
         const direction =
             sortField === field && sortDirection === "asc" ? "desc" : "asc";
+
         setSortField(field);
         setSortDirection(direction);
+
         router.get(
             route("departments.index"),
-            { sort: field, direction, page: 1 },
-            { preserveState: true, replace: true },
+            {
+                sort: field,
+                direction,
+                page: 1,
+            },
+            {
+                preserveState: true,
+                replace: true,
+            },
         );
     };
 
@@ -39,18 +64,26 @@ export default function DepartmentsIndex({ departments }) {
 
     const submit = (e) => {
         e.preventDefault();
+
         router.get(
             route("departments.index"),
-            { search: searchTerm, sort: sortField, direction: sortDirection },
-            { preserveState: true, replace: true },
+            {
+                search: searchTerm,
+                sort: sortField,
+                direction: sortDirection,
+            },
+            {
+                preserveState: true,
+                replace: true,
+            },
         );
-        setSearchTerm("");
     };
 
     const handleDelete = (id) => {
         if (!confirm("Are you sure you want to delete this department?")) {
             return;
         }
+
         router.delete(route("departments.destroy", encodeURIComponent(id)), {
             preserveState: true,
             replace: true,
@@ -69,132 +102,204 @@ export default function DepartmentsIndex({ departments }) {
         <>
             <Head title="Departments" />
 
-            <div className="mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <div className="space-y-6">
+                {/* Search & Export */}
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                    <form onSubmit={submit} className="flex flex-1 gap-2">
+                        <div className="flex-1">
+                            <SearchSelect
+                                routeName="departments.search"
+                                defaultOptions={departments.data}
+                                placeholder="Search department..."
+                                onChange={(body) =>
+                                    setSearchTerm(body?.name ?? "")
+                                }
+                            />
+                        </div>
 
-                {/* Row 1: Search form */}
-                <form
-                    className="w-full flex flex-wrap items-center gap-3 mb-2"
-                    onSubmit={submit}
-                >
-                    <div className="flex-1 min-w-[200px]">
-                        <SearchSelect
-                            routeName="departments.search"
-                            defaultOptions={departments.data}
-                            placeholder="Type in department name ..."
-                            onChange={(body) => setSearchTerm(body.code)}
-                        />
-                    </div>
-                    <button
-                        type="submit"
-                        className="px-4 py-1.5 bg-emerald-600 text-white text-sm font-medium rounded hover:bg-slate-700 transition-colors whitespace-nowrap"
-                    >
-                        Search
-                    </button>
-                </form>
+                        <Button type="submit">Search</Button>
+                    </form>
 
-                {/* Row 2: Export group — sits right, just above the table */}
-                <div className="flex justify-end ">
-                    <div className="flex items-center">
+                    <div className="flex items-center gap-2">
                         <select
                             value={exportFormat}
                             onChange={(e) => setExportFormat(e.target.value)}
-                            className="h-[34px] rounded-l border border-slate-300 border-r-0 bg-white px-3 text-sm text-slate-700 focus:border-gray-500 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-gray-500"
+                            className="h-9 rounded-md border bg-background px-3 text-sm"
                         >
                             <option value="pdf">PDF</option>
                             <option value="csv">CSV</option>
                             <option value="excel">Excel</option>
                         </select>
-                        <button
-                            type="button"
-                            onClick={handleExport}
-                            className="h-[34px] px-4 bg-gray-400 text-white text-sm font-medium rounded-r hover:bg-gray-600 transition-colors whitespace-nowrap"
-                        >
-                            Export {exportFormat.toUpperCase()}
-                        </button>
+
+                        <Button variant="outline" onClick={handleExport}>
+                            Export
+                        </Button>
                     </div>
                 </div>
 
                 {/* Table */}
-                <Table
-                    pagination={departments}
-                    sortField={sortField}
-                    sortDirection={sortDirection}
-                >
-                    <Thead>
-                        <THdata
-                            onClick={() => handleSort("code")}
-                            className="cursor-pointer"
-                        >
-                            Code {renderArrow("code")}
-                        </THdata>
-                        <THdata
-                            onClick={() => handleSort("name")}
-                            className="cursor-pointer"
-                        >
-                            Name {renderArrow("name")}
-                        </THdata>
-                        <THdata
-                            onClick={() => handleSort("created_at")}
-                            className="cursor-pointer"
-                        >
-                            Created {renderArrow("created_at")}
-                        </THdata>
-                        <THdata>HOD</THdata>
-                        <THdata>Actions</THdata>
-                    </Thead>
-                    <Tbody>
-                        {departments?.data?.length ? (
-                            departments.data.map((department) => (
-                                <Trow key={department.id}>
-                                    <Tdata>{department.code}</Tdata>
-                                    <Tdata>{department.name}</Tdata>
-                                    <Tdata>
-                                        {formatDate(department.created_at)}
-                                    </Tdata>
-                                    <Tdata>
-                                        {department.hod
-                                            ? [
-                                                  department.hod.staff_number,
-                                                  department.hod.name,
-                                              ]
-                                                  .filter(Boolean)
-                                                  .join(" - ")
-                                            : "-"}
-                                    </Tdata>
-                                    <Tdata>
-                                        <div className="flex items-center justify-center gap-x-10">
-                                            <Link
-                                                href={route(
-                                                    "departments.edit",
-                                                    encodeURIComponent(
-                                                        department.id,
-                                                    ),
-                                                )}
-                                                className="text-emerald-600 hover:underline"
-                                            >
-                                                Edit
-                                            </Link>
-                                            <button
-                                                onClick={() =>
-                                                    handleDelete(department.id)
-                                                }
-                                                className="text-red-600 hover:underline"
-                                            >
-                                                Delete
-                                            </button>
-                                        </div>
-                                    </Tdata>
-                                </Trow>
-                            ))
-                        ) : (
-                            <Trow>
-                                <Tdata colSpan="6" className="text-center py-4">
-                                    No departments found.
-                                </Tdata>
-                            </Trow>
-                        )}
-                    </Tbody>
-                </Table>
+                <div>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead
+                                    onClick={() => handleSort("code")}
+                                    className="cursor-pointer"
+                                >
+                                    Code {renderArrow("code")}
+                                </TableHead>
+
+                                <TableHead
+                                    onClick={() => handleSort("name")}
+                                    className="cursor-pointer"
+                                >
+                                    Name {renderArrow("name")}
+                                </TableHead>
+
+                                <TableHead>HOD</TableHead>
+
+                                <TableHead
+                                    onClick={() => handleSort("created_at")}
+                                    className="cursor-pointer"
+                                >
+                                    Created {renderArrow("created_at")}
+                                </TableHead>
+
+                                <TableHead className="text-right">
+                                    Actions
+                                </TableHead>
+                            </TableRow>
+                        </TableHeader>
+
+                        <TableBody>
+                            {departments?.data?.length ? (
+                                departments.data.map((department) => (
+                                    <TableRow key={department.id}>
+                                    <TableCell className="font-medium text-slate-700">
+                                            {department.code}
+                                        </TableCell>
+
+                                        <TableCell>{department.name}</TableCell>
+
+                                        <TableCell>
+                                            {department.hod
+                                                ? [
+                                                      department.hod
+                                                          .staff_number,
+                                                      department.hod.name,
+                                                  ]
+                                                      .filter(Boolean)
+                                                      .join(" - ")
+                                                : "-"}
+                                        </TableCell>
+
+                                        <TableCell>
+                                            {formatDate(department.created_at)}
+                                        </TableCell>
+
+                                        <TableCell className="text-right">
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="size-8"
+                                                    >
+                                                        <MoreHorizontalIcon />
+                                                        <span className="sr-only">
+                                                            Open menu
+                                                        </span>
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+
+                                                <DropdownMenuContent
+                                                    side="left"
+                                                    align="start"
+                                                    sideOffset={8}
+                                                    className="w-40"
+                                                >
+                                                    <DropdownMenuItem asChild>
+                                                        <Link
+                                                            href={route(
+                                                                "departments.edit",
+                                                                encodeURIComponent(
+                                                                    department.id,
+                                                                ),
+                                                            )}
+                                                        >
+                                                            Edit
+                                                        </Link>
+                                                    </DropdownMenuItem>
+
+                                                    <DropdownMenuSeparator />
+
+                                                    <DropdownMenuItem
+                                                        variant="destructive"
+                                                        onClick={() =>
+                                                            handleDelete(
+                                                                department.id,
+                                                            )
+                                                        }
+                                                    >
+                                                        Delete
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            ) : (
+                                <TableRow>
+                                    <TableCell
+                                        colSpan={5}
+                                        className="h-24 text-center"
+                                    >
+                                        No departments found.
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+
+                        <TableFooter>
+                            <TableRow>
+                                <TableCell
+                                    colSpan={5}
+                                    className="px-8 py-3 text-xs font-semibold tracking-widest text-slate-400"
+                                >
+                                    Showing {departments.from} to{" "}
+                                    {departments.to} of {departments.total}{" "}
+                                    departments
+                                </TableCell>
+                            </TableRow>
+                        </TableFooter>
+                    </Table>
+                </div>
+
+                {/* Pagination */}
+                {departments.links && departments.links.length > 3 && (
+                    <div className="flex flex-wrap gap-2">
+                        {departments.links.map((link, index) => (
+                            <Link
+                                key={index}
+                                href={link.url || "#"}
+                                preserveState
+                                preserveScroll
+                                className={`rounded-md border px-3 py-2 text-sm ${
+                                    link.active
+                                        ? "bg-primary text-primary-foreground"
+                                        : "hover:bg-muted"
+                                } ${
+                                    !link.url
+                                        ? "pointer-events-none opacity-50"
+                                        : ""
+                                }`}
+                                dangerouslySetInnerHTML={{
+                                    __html: link.label,
+                                }}
+                            />
+                        ))}
+                    </div>
+                )}
             </div>
         </>
     );

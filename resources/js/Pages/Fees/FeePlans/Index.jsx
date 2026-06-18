@@ -1,12 +1,24 @@
 import { Head, Link, router } from "@inertiajs/react";
+import { MoreHorizontalIcon } from "lucide-react";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
-import Table from "@/Components/Table/Table";
-import Thead from "@/Components/Table/Thead";
-import THdata from "@/Components/Table/THdata";
-import Tbody from "@/Components/Table/Tbody";
-import Trow from "@/Components/Table/Trow";
-import Tdata from "@/Components/Table/Tdata";
+import {
+    Table as ShadTable,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+import TablePagination from "@/Components/TablePagination";
 
 import formatDate from "@/utils/date";
 
@@ -272,65 +284,84 @@ export default function FeePlans({ feePlans }) {
                                             {formatDate(plan.created_at)}
                                         </Tdata>
 
-                                        <Tdata>
-                                            <div className="flex gap-4 justify-center">
-                                                <Link
-                                                    href={route(
-                                                        "fees.plans.edit",
-                                                        plan.id,
-                                                    )}
-                                                    className="text-emerald-600 hover:underline"
+                                        <Tdata className="text-right">
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="size-8"
+                                                    >
+                                                        <MoreHorizontalIcon />
+                                                        <span className="sr-only">
+                                                            Open menu
+                                                        </span>
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent
+                                                    side="left"
+                                                    align="start"
+                                                    sideOffset={8}
+                                                    className="w-44"
                                                 >
-                                                    Edit
-                                                </Link>
-
-                                                {plan.approval_status ===
-                                                    "pending_approval" && (
-                                                    <div className="flex gap-2">
-                                                        <button
-                                                            onClick={() =>
-                                                                handleApproval(
-                                                                    plan.id,
-                                                                    "approve",
-                                                                )
-                                                            }
-                                                            className="text-green-600 hover:underline text-sm"
+                                                    <DropdownMenuItem asChild>
+                                                        <Link
+                                                            href={route(
+                                                                "fees.plans.edit",
+                                                                plan.id,
+                                                            )}
                                                         >
-                                                            Approve
-                                                        </button>
-                                                        <button
-                                                            onClick={() =>
-                                                                handleApproval(
-                                                                    plan.id,
-                                                                    "reject",
-                                                                )
-                                                            }
-                                                            className="text-red-600 hover:underline text-sm"
+                                                            Edit
+                                                        </Link>
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem asChild>
+                                                        <Link
+                                                            href={route(
+                                                                "fees.plans.items",
+                                                                plan.id,
+                                                            )}
                                                         >
-                                                            Reject
-                                                        </button>
-                                                    </div>
-                                                )}
-
-                                                <Link
-                                                    href={route(
-                                                        "fees.plans.items",
-                                                        plan.id,
-                                                    )}
-                                                    className="text-emerald-600 hover:underline"
-                                                >
-                                                    Fee Items
-                                                </Link>
-
-                                                <button
-                                                    onClick={() =>
-                                                        handleDelete(plan.id)
-                                                    }
-                                                    className="text-red-600 hover:underline"
-                                                >
-                                                    Delete
-                                                </button>
-                                            </div>
+                                                            Fee Items
+                                                        </Link>
+                                                    </DropdownMenuItem>
+                                                    {plan.approval_status ===
+                                                    "pending_approval" ? (
+                                                        <>
+                                                            <DropdownMenuItem
+                                                                onClick={() =>
+                                                                    handleApproval(
+                                                                        plan.id,
+                                                                        "approve",
+                                                                    )
+                                                                }
+                                                            >
+                                                                Approve
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem
+                                                                onClick={() =>
+                                                                    handleApproval(
+                                                                        plan.id,
+                                                                        "reject",
+                                                                    )
+                                                                }
+                                                            >
+                                                                Reject
+                                                            </DropdownMenuItem>
+                                                        </>
+                                                    ) : null}
+                                                    <DropdownMenuSeparator />
+                                                    <DropdownMenuItem
+                                                        variant="destructive"
+                                                        onClick={() =>
+                                                            handleDelete(
+                                                                plan.id,
+                                                            )
+                                                        }
+                                                    >
+                                                        Delete
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
                                         </Tdata>
                                     </Trow>
                                 ))
@@ -351,3 +382,20 @@ export default function FeePlans({ feePlans }) {
         </>
     );
 }
+const Table = ({ children, pagination, ...props }) => (
+    <>
+        <ShadTable {...props}>{children}</ShadTable>
+        <TablePagination pagination={pagination} />
+    </>
+);
+
+const Thead = ({ children, ...props }) => (
+    <TableHeader {...props}>
+        <TableRow>{children}</TableRow>
+    </TableHeader>
+);
+
+const THdata = (props) => <TableHead {...props} />;
+const Tbody = (props) => <TableBody {...props} />;
+const Trow = (props) => <TableRow {...props} />;
+const Tdata = (props) => <TableCell {...props} />;

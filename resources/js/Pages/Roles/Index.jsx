@@ -1,16 +1,27 @@
 import { Head, router, useForm } from "@inertiajs/react";
+import { MoreHorizontalIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-
+import { Button } from "@/components/ui/button";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import Modal from "@/Components/Modal";
 import SearchSelect from "@/Components/SearchSelect";
-import Table from "@/Components/Table/Table";
-import Tbody from "@/Components/Table/Tbody";
-import Tdata from "@/Components/Table/Tdata";
-import THdata from "@/Components/Table/THdata";
-import Thead from "@/Components/Table/Thead";
-import Trow from "@/Components/Table/Trow";
+import {
+    Table as ShadTable,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+import TablePagination from "@/Components/TablePagination";
 import TextInput from "@/Components/TextInput";
 import formatDate from "@/utils/date";
 
@@ -477,31 +488,50 @@ export default function RolesIndex({
                                                                     permission.created_at,
                                                                 )}
                                                             </Tdata>
-                                                            <Tdata>
-                                                                <div className="flex items-center justify-center gap-6">
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() =>
-                                                                            openEditPermission(
-                                                                                permission,
-                                                                            )
-                                                                        }
-                                                                        className="text-emerald-700 hover:underline"
+                                                            <Tdata className="text-right">
+                                                                <DropdownMenu>
+                                                                    <DropdownMenuTrigger asChild>
+                                                                        <Button
+                                                                            variant="ghost"
+                                                                            size="icon"
+                                                                            className="size-8"
+                                                                        >
+                                                                            <MoreHorizontalIcon />
+                                                                            <span className="sr-only">
+                                                                                Open menu
+                                                                            </span>
+                                                                        </Button>
+                                                                    </DropdownMenuTrigger>
+                                                                    <DropdownMenuContent
+                                                                        side="left"
+                                                                        align="start"
+                                                                        sideOffset={8}
+                                                                        className="w-40"
                                                                     >
-                                                                        Edit
-                                                                    </button>
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() =>
-                                                                            deletePermission(
-                                                                                permission,
-                                                                            )
-                                                                        }
-                                                                        className="text-red-600 hover:underline"
-                                                                    >
-                                                                        Delete
-                                                                    </button>
-                                                                </div>
+                                                                        <DropdownMenuItem
+                                                                            type="button"
+                                                                            onClick={() =>
+                                                                                openEditPermission(
+                                                                                    permission,
+                                                                                )
+                                                                            }
+                                                                        >
+                                                                            Edit
+                                                                        </DropdownMenuItem>
+                                                                        <DropdownMenuSeparator />
+                                                                        <DropdownMenuItem
+                                                                            variant="destructive"
+                                                                            type="button"
+                                                                            onClick={() =>
+                                                                                deletePermission(
+                                                                                    permission,
+                                                                                )
+                                                                            }
+                                                                        >
+                                                                            Delete
+                                                                        </DropdownMenuItem>
+                                                                    </DropdownMenuContent>
+                                                                </DropdownMenu>
                                                             </Tdata>
                                                         </Trow>
                                                     ),
@@ -629,3 +659,18 @@ export default function RolesIndex({
         </>
     );
 }
+const Table = ({ children, pagination, ...props }) => (
+    <>
+        <ShadTable {...props}>{children}</ShadTable>
+        <TablePagination pagination={pagination} />
+    </>
+);
+const Thead = ({ children, ...props }) => (
+    <TableHeader {...props}>
+        <TableRow>{children}</TableRow>
+    </TableHeader>
+);
+const THdata = (props) => <TableHead {...props} />;
+const Tbody = (props) => <TableBody {...props} />;
+const Trow = (props) => <TableRow {...props} />;
+const Tdata = (props) => <TableCell {...props} />;

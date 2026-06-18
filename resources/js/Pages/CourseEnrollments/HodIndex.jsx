@@ -1,10 +1,13 @@
 import { Head } from "@inertiajs/react";
-import Table from "@/Components/Table/Table";
-import Thead from "@/Components/Table/Thead";
-import THdata from "@/Components/Table/THdata";
-import Tbody from "@/Components/Table/Tbody";
-import Trow from "@/Components/Table/Trow";
-import Tdata from "@/Components/Table/Tdata";
+import {
+    Table as ShadTable,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+import TablePagination from "@/Components/TablePagination";
 import FilterPanel from "@/Components/FilterPanel";
 import formatDate from "@/utils/date";
 
@@ -162,3 +165,18 @@ export default function HodIndex({
         </>
     );
 }
+const Table = ({ children, pagination, ...props }) => (
+    <>
+        <ShadTable {...props}>{children}</ShadTable>
+        <TablePagination pagination={pagination} />
+    </>
+);
+const Thead = ({ children, ...props }) => (
+    <TableHeader {...props}>
+        <TableRow>{children}</TableRow>
+    </TableHeader>
+);
+const THdata = (props) => <TableHead {...props} />;
+const Tbody = (props) => <TableBody {...props} />;
+const Trow = (props) => <TableRow {...props} />;
+const Tdata = (props) => <TableCell {...props} />;

@@ -1,13 +1,25 @@
 import { Head, Link, router } from "@inertiajs/react";
 import { useState } from "react";
+import { MoreHorizontalIcon } from "lucide-react";
 
-import Table from "@/Components/Table/Table";
-import Thead from "@/Components/Table/Thead";
-import THdata from "@/Components/Table/THdata";
-import Tbody from "@/Components/Table/Tbody";
-import Trow from "@/Components/Table/Trow";
-import Tdata from "@/Components/Table/Tdata";
 import TextInput from "@/Components/TextInput";
+import { Button } from "@/components/ui/button";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableFooter,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
 
 export default function StaffIndex({ staffs }) {
     const [searchTerm, setSearchTerm] = useState("");
@@ -56,72 +68,143 @@ export default function StaffIndex({ staffs }) {
                 </form>
 
                 {/* TABLE */}
-                <Table pagination={staffs}>
-                    <Thead>
-                        <THdata>Staff No</THdata>
-                        <THdata>Name</THdata>
-                        <THdata>Email</THdata>
-                        <THdata>Role</THdata>
-                        <THdata>Department</THdata>
-                        <THdata>Status</THdata>
-                        <THdata>
-                            <p className="text-center">Actions</p>
-                        </THdata>
-                    </Thead>
+                <div>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Staff No</TableHead>
+                                <TableHead>Name</TableHead>
+                                <TableHead>Email</TableHead>
+                                <TableHead>Role</TableHead>
+                                <TableHead>Department</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead className="text-right">
+                                    Actions
+                                </TableHead>
+                            </TableRow>
+                        </TableHeader>
 
-                    <Tbody>
+                        <TableBody>
                         {staffs?.data?.length > 0 ? (
                             staffs.data.map((staff) => (
-                                <Trow key={staff.id}>
-                                    <Tdata>{staff.staff_number}</Tdata>
+                                <TableRow key={staff.id}>
+                                    <TableCell className="font-medium text-slate-700">
+                                        {staff.staff_number}
+                                    </TableCell>
 
-                                    <Tdata className="">
+                                    <TableCell>
                                         {staff.last_name} {staff.first_name}
-                                    </Tdata>
+                                    </TableCell>
 
-                                    <Tdata>{staff.email}</Tdata>
+                                    <TableCell>{staff.email}</TableCell>
 
-                                    <Tdata>{staff.roles?.[0] ?? "N/A"}</Tdata>
+                                    <TableCell>
+                                        {staff.roles?.[0] ?? "N/A"}
+                                    </TableCell>
 
-                                    <Tdata>
+                                    <TableCell>
                                         {staff.department?.name ?? "N/A"}
-                                    </Tdata>
+                                    </TableCell>
 
-                                    <Tdata>{staff?.staff_status}</Tdata>
+                                    <TableCell>{staff?.staff_status}</TableCell>
 
-                                    <Tdata>
-                                        <div className="flex items-center justify-center gap-x-10">
-                                            <Link
-                                                href={route(
-                                                    "staffs.edit",
-                                                    staff.id,
-                                                )}
-                                                className="text-emerald-600 hover:underline"
+                                    <TableCell className="text-right">
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="size-8"
+                                                >
+                                                    <MoreHorizontalIcon />
+                                                    <span className="sr-only">
+                                                        Open menu
+                                                    </span>
+                                                </Button>
+                                            </DropdownMenuTrigger>
+
+                                            <DropdownMenuContent
+                                                side="left"
+                                                align="start"
+                                                sideOffset={8}
+                                                className="w-40"
                                             >
-                                                Edit
-                                            </Link>
+                                                <DropdownMenuItem asChild>
+                                                    <Link
+                                                        href={route(
+                                                            "staffs.edit",
+                                                            staff.id,
+                                                        )}
+                                                    >
+                                                        Edit
+                                                    </Link>
+                                                </DropdownMenuItem>
 
-                                            <button
-                                                onClick={() =>
-                                                    handleDelete(staff.id)
-                                                }
-                                                className="text-red-600 hover:underline"
-                                            >
-                                                Delete
-                                            </button>
-                                        </div>
-                                    </Tdata>
-                                </Trow>
+                                                <DropdownMenuSeparator />
+
+                                                <DropdownMenuItem
+                                                    variant="destructive"
+                                                    onClick={() =>
+                                                        handleDelete(staff.id)
+                                                    }
+                                                >
+                                                    Delete
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </TableCell>
+                                </TableRow>
                             ))
                         ) : (
-                            <Trow>
-                                <Tdata colSpan="7" className="text-center py-4">
+                            <TableRow>
+                                <TableCell
+                                    colSpan="7"
+                                    className="h-24 text-center"
+                                >
                                     No staff found.
-                                </Tdata>
-                            </Trow>
+                                </TableCell>
+                            </TableRow>
                         )}
-                    </Tbody>
-                </Table>
+                        </TableBody>
+
+                        <TableFooter>
+                            <TableRow>
+                                <TableCell
+                                    colSpan={7}
+                                    className="px-8 py-3 text-xs font-semibold tracking-widest text-slate-400"
+                                >
+                                    Showing {staffs.from} to {staffs.to} of{" "}
+                                    {staffs.total} staff
+                                </TableCell>
+                            </TableRow>
+                        </TableFooter>
+                    </Table>
+                </div>
+
+                {staffs.links && staffs.links.length > 3 && (
+                    <div className="flex flex-wrap gap-2">
+                        {staffs.links.map((link, index) => (
+                            <Link
+                                key={index}
+                                href={link.url || "#"}
+                                preserveState
+                                preserveScroll
+                                className={`rounded-md border px-3 py-2 text-sm ${
+                                    link.active
+                                        ? "bg-primary text-primary-foreground"
+                                        : "hover:bg-muted"
+                                } ${
+                                    !link.url
+                                        ? "pointer-events-none opacity-50"
+                                        : ""
+                                }`}
+                                dangerouslySetInnerHTML={{
+                                    __html: link.label,
+                                }}
+                            />
+                        ))}
+                    </div>
+                )}
             </div>
         </>
     );

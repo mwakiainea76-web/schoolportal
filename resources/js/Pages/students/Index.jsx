@@ -1,13 +1,25 @@
 import { Head, Link, router } from "@inertiajs/react";
 import { useState } from "react";
-import Table from "@/Components/Table/Table";
-import Thead from "@/Components/Table/Thead";
-import THdata from "@/Components/Table/THdata";
-import Tbody from "@/Components/Table/Tbody";
-import Trow from "@/Components/Table/Trow";
-import Tdata from "@/Components/Table/Tdata";
+import { MoreHorizontalIcon } from "lucide-react";
+import {
+    Table as ShadTable,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+import TablePagination from "@/Components/TablePagination";
 import TextInput from "@/Components/TextInput";
 import formatDate from "@/utils/date";
+import { Button } from "@/components/ui/button";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const STATUS_STYLES = {
     active: "bg-emerald-50 text-emerald-700",
@@ -104,37 +116,41 @@ export default function StudentIndex({ students }) {
                                         </span>
                                     </Tdata>
 
-                                    <Tdata>
-                                        <div className="flex items-center justify-center gap-4">
-                                            <a
-                                                href={route(
-                                                    "students.admission-letter",
-                                                    student.id,
-                                                )}
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                className="text-sky-600 hover:underline text-sm"
-                                            >
-                                                Letter
-                                            </a>
-                                            <Link
-                                                href={route(
-                                                    "students.edit",
-                                                    student.id,
-                                                )}
-                                                className="text-emerald-600 hover:underline text-sm"
-                                            >
-                                                Edit
-                                            </Link>
-                                            <button
-                                                onClick={() =>
-                                                    handleDelete(student.id)
-                                                }
-                                                className="text-red-500 hover:underline text-sm"
-                                            >
-                                                Delete
-                                            </button>
-                                        </div>
+                                    <Tdata className="text-right">
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="size-8">
+                                                    <MoreHorizontalIcon />
+                                                    <span className="sr-only">Open menu</span>
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent side="left" align="start" sideOffset={8} className="w-40">
+                                                <DropdownMenuItem asChild>
+                                                    <a
+                                                        href={route(
+                                                            "students.admission-letter",
+                                                            student.id,
+                                                        )}
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                    >
+                                                        Letter
+                                                    </a>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem asChild>
+                                                    <Link href={route("students.edit", student.id)}>
+                                                        Edit
+                                                    </Link>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem
+                                                    variant="destructive"
+                                                    onClick={() => handleDelete(student.id)}
+                                                >
+                                                    Delete
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
                                     </Tdata>
                                 </Trow>
                             ))
@@ -154,3 +170,18 @@ export default function StudentIndex({ students }) {
         </>
     );
 }
+const Table = ({ children, pagination, ...props }) => (
+    <>
+        <ShadTable {...props}>{children}</ShadTable>
+        <TablePagination pagination={pagination} />
+    </>
+);
+const Thead = ({ children, ...props }) => (
+    <TableHeader {...props}>
+        <TableRow>{children}</TableRow>
+    </TableHeader>
+);
+const THdata = (props) => <TableHead {...props} />;
+const Tbody = (props) => <TableBody {...props} />;
+const Trow = (props) => <TableRow {...props} />;
+const Tdata = (props) => <TableCell {...props} />;

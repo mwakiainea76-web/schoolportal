@@ -1,12 +1,24 @@
 import { Head, Link, router } from "@inertiajs/react";
+import { MoreHorizontalIcon } from "lucide-react";
 import { useState } from "react";
 import { Download, ListChecks, Search } from "lucide-react";
-import Table from "@/Components/Table/Table";
-import Thead from "@/Components/Table/Thead";
-import THdata from "@/Components/Table/THdata";
-import Tbody from "@/Components/Table/Tbody";
-import Trow from "@/Components/Table/Trow";
-import Tdata from "@/Components/Table/Tdata";
+import { Button } from "@/components/ui/button";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+    Table as ShadTable,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+import TablePagination from "@/Components/TablePagination";
 import SearchSelect from "@/Components/SearchSelect";
 import useRbac from "@/Hooks/UseRBAC";
 import { downloadExport } from "@/utils/exportDownload";
@@ -225,62 +237,83 @@ export default function CurriculumEditIndex({
                                     </Tdata>
 
                                     {canManage ? (
-                                        <Tdata>
-                                            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
-                                                {can("curriculums.edit") ? (
-                                                    <Link
-                                                        href={route(
-                                                            "curriculums.edit",
-                                                            {
-                                                                curriculum:
-                                                                    curriculum.id,
-                                                            },
-                                                        )}
-                                                        className="whitespace-nowrap text-emerald-600 hover:underline"
+                                        <Tdata className="text-right">
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="size-8"
                                                     >
-                                                        Edit
-                                                    </Link>
-                                                ) : null}
+                                                        <MoreHorizontalIcon />
+                                                        <span className="sr-only">
+                                                            Open menu
+                                                        </span>
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent
+                                                    side="left"
+                                                    align="start"
+                                                    sideOffset={8}
+                                                    className="w-44"
+                                                >
+                                                    {can("curriculums.edit") ? (
+                                                        <DropdownMenuItem asChild>
+                                                            <Link
+                                                                href={route(
+                                                                    "curriculums.edit",
+                                                                    {
+                                                                        curriculum:
+                                                                            curriculum.id,
+                                                                    },
+                                                                )}
+                                                            >
+                                                                Edit
+                                                            </Link>
+                                                        </DropdownMenuItem>
+                                                    ) : null}
 
-                                                {can("curriculums.edit") ? (
-                                                    curriculum.is_active ? (
-                                                        <button
-                                                            onClick={() =>
-                                                                handleDisable(
-                                                                    curriculum.id,
-                                                                )
-                                                            }
-                                                            className="whitespace-nowrap text-amber-600 hover:underline"
-                                                        >
-                                                            Disable
-                                                        </button>
-                                                    ) : (
-                                                        <button
-                                                            onClick={() =>
-                                                                handleReactivate(
-                                                                    curriculum.id,
-                                                                )
-                                                            }
-                                                            className="whitespace-nowrap text-emerald-600 hover:underline"
-                                                        >
-                                                            Activate
-                                                        </button>
-                                                    )
-                                                ) : null}
+                                                    {can("curriculums.edit") ? (
+                                                        curriculum.is_active ? (
+                                                            <DropdownMenuItem
+                                                                onClick={() =>
+                                                                    handleDisable(
+                                                                        curriculum.id,
+                                                                    )
+                                                                }
+                                                            >
+                                                                Disable
+                                                            </DropdownMenuItem>
+                                                        ) : (
+                                                            <DropdownMenuItem
+                                                                onClick={() =>
+                                                                    handleReactivate(
+                                                                        curriculum.id,
+                                                                    )
+                                                                }
+                                                            >
+                                                                Activate
+                                                            </DropdownMenuItem>
+                                                        )
+                                                    ) : null}
 
-                                                {can("curriculums.delete") ? (
-                                                    <button
-                                                        onClick={() =>
-                                                            handleDelete(
-                                                                curriculum.id,
-                                                            )
-                                                        }
-                                                        className="whitespace-nowrap text-red-600 hover:underline"
-                                                    >
-                                                        Delete
-                                                    </button>
-                                                ) : null}
-                                            </div>
+                                                    {can("curriculums.delete") ? (
+                                                        <>
+                                                            <DropdownMenuSeparator />
+                                                            <DropdownMenuItem
+                                                                variant="destructive"
+                                                                onClick={() =>
+                                                                    handleDelete(
+                                                                        curriculum.id,
+                                                                    )
+                                                                }
+                                                            >
+                                                                Delete
+                                                            </DropdownMenuItem>
+                                                        </>
+                                                    ) : null}
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
                                         </Tdata>
                                     ) : null}
                                 </Trow>
@@ -312,3 +345,18 @@ function StatusPill({ active }) {
         </span>
     );
 }
+const Table = ({ children, pagination, ...props }) => (
+    <>
+        <ShadTable {...props}>{children}</ShadTable>
+        <TablePagination pagination={pagination} />
+    </>
+);
+const Thead = ({ children, ...props }) => (
+    <TableHeader {...props}>
+        <TableRow>{children}</TableRow>
+    </TableHeader>
+);
+const THdata = (props) => <TableHead {...props} />;
+const Tbody = (props) => <TableBody {...props} />;
+const Trow = (props) => <TableRow {...props} />;
+const Tdata = (props) => <TableCell {...props} />;

@@ -1,11 +1,23 @@
 import { Head, router } from "@inertiajs/react";
+import { MoreHorizontalIcon } from "lucide-react";
 import { useState } from "react";
-import Table from "@/Components/Table/Table";
-import Thead from "@/Components/Table/Thead";
-import THdata from "@/Components/Table/THdata";
-import Tbody from "@/Components/Table/Tbody";
-import Trow from "@/Components/Table/Trow";
-import Tdata from "@/Components/Table/Tdata";
+import { Button } from "@/components/ui/button";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+    Table as ShadTable,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+import TablePagination from "@/Components/TablePagination";
 import formatDate from "@/utils/date";
 import AcademicYearCreate from "@/Pages/AcademicYears/Create";
 import AcademicYearEdit from "@/Pages/AcademicYears/Edit";
@@ -231,71 +243,80 @@ export default function Index({
                                                 <Tdata>
                                                     {formatDate(year.created_at)}
                                                 </Tdata>
-                                                <Tdata>
-                                                    <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                                setEditingYear(
-                                                                    year,
-                                                                )
-                                                            }
-                                                            className="text-emerald-600 hover:underline"
+                                                <Tdata className="text-right">
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="size-8"
+                                                            >
+                                                                <MoreHorizontalIcon />
+                                                                <span className="sr-only">
+                                                                    Open menu
+                                                                </span>
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent
+                                                            side="left"
+                                                            align="start"
+                                                            sideOffset={8}
+                                                            className="w-44"
                                                         >
-                                                            Edit
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                                handleDelete(
-                                                                    year.id,
-                                                                )
-                                                            }
-                                                            className="text-red-600 hover:underline"
-                                                        >
-                                                            Delete
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            title={
-                                                                status.disabled
-                                                                    ? status.helper
-                                                                    : ""
-                                                            }
-                                                            onClick={() =>
-                                                                !status.disabled &&
-                                                                updateStatus(
-                                                                    year,
-                                                                    status.action,
-                                                                )
-                                                            }
-                                                            disabled={
-                                                                status.disabled
-                                                            }
-                                                            className={`${
-                                                                status.disabled
-                                                                    ? "cursor-not-allowed text-slate-400"
-                                                                    : "text-slate-700 hover:text-emerald-700 hover:underline"
-                                                            }`}
-                                                        >
-                                                            {status.actionLabel}
-                                                        </button>
-                                                        {year.status !==
-                                                        "on_hold" ? (
-                                                            <button
-                                                                type="button"
+                                                            <DropdownMenuItem
                                                                 onClick={() =>
-                                                                    updateStatus(
+                                                                    setEditingYear(
                                                                         year,
-                                                                        "hold",
                                                                     )
                                                                 }
-                                                                className="text-slate-700 hover:text-emerald-700 hover:underline"
                                                             >
-                                                                Put On Hold
-                                                            </button>
-                                                        ) : null}
-                                                    </div>
+                                                                Edit
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem
+                                                                title={
+                                                                    status.disabled
+                                                                        ? status.helper
+                                                                        : ""
+                                                                }
+                                                                disabled={
+                                                                    status.disabled
+                                                                }
+                                                                onClick={() =>
+                                                                    !status.disabled &&
+                                                                    updateStatus(
+                                                                        year,
+                                                                        status.action,
+                                                                    )
+                                                                }
+                                                            >
+                                                                {status.actionLabel}
+                                                            </DropdownMenuItem>
+                                                            {year.status !==
+                                                            "on_hold" ? (
+                                                                <DropdownMenuItem
+                                                                    onClick={() =>
+                                                                        updateStatus(
+                                                                            year,
+                                                                            "hold",
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    Put On Hold
+                                                                </DropdownMenuItem>
+                                                            ) : null}
+                                                            <DropdownMenuSeparator />
+                                                            <DropdownMenuItem
+                                                                variant="destructive"
+                                                                onClick={() =>
+                                                                    handleDelete(
+                                                                        year.id,
+                                                                    )
+                                                                }
+                                                            >
+                                                                Delete
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
                                                 </Tdata>
                                             </Trow>
                                         );
@@ -333,3 +354,18 @@ export default function Index({
         </>
     );
 }
+const Table = ({ children, pagination, ...props }) => (
+    <>
+        <ShadTable {...props}>{children}</ShadTable>
+        <TablePagination pagination={pagination} />
+    </>
+);
+const Thead = ({ children, ...props }) => (
+    <TableHeader {...props}>
+        <TableRow>{children}</TableRow>
+    </TableHeader>
+);
+const THdata = (props) => <TableHead {...props} />;
+const Tbody = (props) => <TableBody {...props} />;
+const Trow = (props) => <TableRow {...props} />;
+const Tdata = (props) => <TableCell {...props} />;

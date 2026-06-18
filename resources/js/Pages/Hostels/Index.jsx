@@ -1,11 +1,23 @@
 import { Head, Link, router } from "@inertiajs/react";
 import { useState } from "react";
-import Table from "@/Components/Table/Table";
-import Tbody from "@/Components/Table/Tbody";
-import Tdata from "@/Components/Table/Tdata";
-import THdata from "@/Components/Table/THdata";
-import Thead from "@/Components/Table/Thead";
-import Trow from "@/Components/Table/Trow";
+import { MoreHorizontalIcon } from "lucide-react";
+import {
+    Table as ShadTable,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+import TablePagination from "@/Components/TablePagination";
+import { Button } from "@/components/ui/button";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const currency = (amount) =>
     `Ksh ${new Intl.NumberFormat("en-KE", {
@@ -88,15 +100,47 @@ export default function Index({ hostels, filters }) {
                                             {hostel.is_active ? "Active" : "Inactive"}
                                         </span>
                                     </Tdata>
-                                    <Tdata>
-                                        <div className="flex items-center justify-center gap-6">
-                                            <Link href={route("hostels.edit", hostel.id)} className="text-emerald-600 hover:underline">
-                                                Edit
-                                            </Link>
-                                            <button onClick={() => handleDelete(hostel.id)} className="text-red-600 hover:underline">
-                                                Delete
-                                            </button>
-                                        </div>
+                                    <Tdata className="text-right">
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="size-8"
+                                                >
+                                                    <MoreHorizontalIcon />
+                                                    <span className="sr-only">
+                                                        Open menu
+                                                    </span>
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent
+                                                side="left"
+                                                align="start"
+                                                sideOffset={8}
+                                                className="w-40"
+                                            >
+                                                <DropdownMenuItem asChild>
+                                                    <Link
+                                                        href={route(
+                                                            "hostels.edit",
+                                                            hostel.id,
+                                                        )}
+                                                    >
+                                                        Edit
+                                                    </Link>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem
+                                                    variant="destructive"
+                                                    onClick={() =>
+                                                        handleDelete(hostel.id)
+                                                    }
+                                                >
+                                                    Delete
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
                                     </Tdata>
                                 </Trow>
                             ))
@@ -113,3 +157,18 @@ export default function Index({ hostels, filters }) {
         </>
     );
 }
+const Table = ({ children, pagination, ...props }) => (
+    <>
+        <ShadTable {...props}>{children}</ShadTable>
+        <TablePagination pagination={pagination} />
+    </>
+);
+const Thead = ({ children, ...props }) => (
+    <TableHeader {...props}>
+        <TableRow>{children}</TableRow>
+    </TableHeader>
+);
+const THdata = (props) => <TableHead {...props} />;
+const Tbody = (props) => <TableBody {...props} />;
+const Trow = (props) => <TableRow {...props} />;
+const Tdata = (props) => <TableCell {...props} />;

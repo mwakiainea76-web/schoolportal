@@ -1,11 +1,22 @@
 import { Head, Link, router } from "@inertiajs/react";
+import { MoreHorizontalIcon } from "lucide-react";
 import { useState } from "react";
-import Table from "@/Components/Table/Table";
-import Tbody from "@/Components/Table/Tbody";
-import Tdata from "@/Components/Table/Tdata";
-import THdata from "@/Components/Table/THdata";
-import Thead from "@/Components/Table/Thead";
-import Trow from "@/Components/Table/Trow";
+import { Button } from "@/components/ui/button";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+    Table as ShadTable,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+import TablePagination from "@/Components/TablePagination";
 import formatDate from "@/utils/date";
 
 const currency = (amount) =>
@@ -163,10 +174,38 @@ export default function Index({ allocations, filters, hostels, sessions }) {
                                         </span>
                                     </Tdata>
                                     <Tdata>{formatDate(allocation.allocated_on)}</Tdata>
-                                    <Tdata>
-                                        <Link href={route("hostel-allocations.edit", allocation.id)} className="text-emerald-600 hover:underline">
-                                            Edit
-                                        </Link>
+                                    <Tdata className="text-right">
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="size-8"
+                                                >
+                                                    <MoreHorizontalIcon />
+                                                    <span className="sr-only">
+                                                        Open menu
+                                                    </span>
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent
+                                                side="left"
+                                                align="start"
+                                                sideOffset={8}
+                                                className="w-40"
+                                            >
+                                                <DropdownMenuItem asChild>
+                                                    <Link
+                                                        href={route(
+                                                            "hostel-allocations.edit",
+                                                            allocation.id,
+                                                        )}
+                                                    >
+                                                        Edit
+                                                    </Link>
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
                                     </Tdata>
                                 </Trow>
                             ))
@@ -183,3 +222,18 @@ export default function Index({ allocations, filters, hostels, sessions }) {
         </>
     );
 }
+const Table = ({ children, pagination, ...props }) => (
+    <>
+        <ShadTable {...props}>{children}</ShadTable>
+        <TablePagination pagination={pagination} />
+    </>
+);
+const Thead = ({ children, ...props }) => (
+    <TableHeader {...props}>
+        <TableRow>{children}</TableRow>
+    </TableHeader>
+);
+const THdata = (props) => <TableHead {...props} />;
+const Tbody = (props) => <TableBody {...props} />;
+const Trow = (props) => <TableRow {...props} />;
+const Tdata = (props) => <TableCell {...props} />;

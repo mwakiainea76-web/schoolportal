@@ -1,10 +1,13 @@
 import { Head, Link, router } from "@inertiajs/react";
-import Table from "@/Components/Table/Table";
-import Tbody from "@/Components/Table/Tbody";
-import Tdata from "@/Components/Table/Tdata";
-import THdata from "@/Components/Table/THdata";
-import Thead from "@/Components/Table/Thead";
-import Trow from "@/Components/Table/Trow";
+import {
+    Table as ShadTable,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+import TablePagination from "@/Components/TablePagination";
 
 const STATUS_STYLES = {
     pending: "bg-amber-100 text-amber-700 border-amber-200",
@@ -131,3 +134,20 @@ export default function AdminIndex({ complaints, filterStatus }) {
         </>
     );
 }
+const Table = ({ children, pagination, ...props }) => (
+    <>
+        <ShadTable {...props}>{children}</ShadTable>
+        <TablePagination pagination={pagination} />
+    </>
+);
+
+const Thead = ({ children, ...props }) => (
+    <TableHeader {...props}>
+        <TableRow>{children}</TableRow>
+    </TableHeader>
+);
+
+const THdata = (props) => <TableHead {...props} />;
+const Tbody = (props) => <TableBody {...props} />;
+const Trow = (props) => <TableRow {...props} />;
+const Tdata = (props) => <TableCell {...props} />;

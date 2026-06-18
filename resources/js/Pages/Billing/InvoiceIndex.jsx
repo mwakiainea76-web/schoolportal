@@ -1,12 +1,23 @@
 import { Head, Link, router } from "@inertiajs/react";
+import { MoreHorizontalIcon } from "lucide-react";
 import { useState } from "react";
-
-import Table from "@/Components/Table/Table";
-import Thead from "@/Components/Table/Thead";
-import THdata from "@/Components/Table/THdata";
-import Tbody from "@/Components/Table/Tbody";
-import Trow from "@/Components/Table/Trow";
-import Tdata from "@/Components/Table/Tdata";
+import { Button } from "@/components/ui/button";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+    Table as ShadTable,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+import TablePagination from "@/Components/TablePagination";
 
 import formatDate from "@/utils/date";
 
@@ -320,61 +331,80 @@ export default function InvoiceIndex({
                                             <Tdata>
                                                 {formatDate(invoice.due_date)}
                                             </Tdata>
-                                            <Tdata>
-                                                <div className="flex justify-center gap-2">
-                                                    <Link
-                                                        href={route(
-                                                            "billing.invoices.show",
-                                                            invoice.id,
-                                                        )}
-                                                        className="text-sm text-emerald-600 hover:underline"
+                                            <Tdata className="text-right">
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="size-8"
+                                                        >
+                                                            <MoreHorizontalIcon />
+                                                            <span className="sr-only">
+                                                                Open menu
+                                                            </span>
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent
+                                                        side="left"
+                                                        align="start"
+                                                        sideOffset={8}
+                                                        className="w-44"
                                                     >
-                                                        View
-                                                    </Link>
-
-                                                    {invoice.approval_status ===
-                                                        "pending_approval" && (
-                                                        <div className="flex gap-2">
-                                                            <button
-                                                                onClick={() =>
-                                                                    handleApproval(
-                                                                        invoice.id,
-                                                                        "approve",
-                                                                    )
-                                                                }
-                                                                className="text-sm text-green-600 hover:underline"
+                                                        <DropdownMenuItem asChild>
+                                                            <Link
+                                                                href={route(
+                                                                    "billing.invoices.show",
+                                                                    invoice.id,
+                                                                )}
                                                             >
-                                                                Approve
-                                                            </button>
-                                                            <button
-                                                                onClick={() =>
-                                                                    handleApproval(
-                                                                        invoice.id,
-                                                                        "reject",
-                                                                    )
-                                                                }
-                                                                className="text-sm text-red-600 hover:underline"
+                                                                View
+                                                            </Link>
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem asChild>
+                                                            <Link
+                                                                href={route(
+                                                                    "billing.manual.index",
+                                                                    {
+                                                                        admission_number:
+                                                                            invoice
+                                                                                .student
+                                                                                ?.admission_number,
+                                                                    },
+                                                                )}
                                                             >
-                                                                Reject
-                                                            </button>
-                                                        </div>
-                                                    )}
-
-                                                    <Link
-                                                        href={route(
-                                                            "billing.manual.index",
-                                                            {
-                                                                admission_number:
-                                                                    invoice
-                                                                        .student
-                                                                        ?.admission_number,
-                                                            },
-                                                        )}
-                                                        className="text-sm text-blue-600 hover:underline"
-                                                    >
-                                                        Manual actions
-                                                    </Link>
-                                                </div>
+                                                                Manual actions
+                                                            </Link>
+                                                        </DropdownMenuItem>
+                                                        {invoice.approval_status ===
+                                                        "pending_approval" ? (
+                                                            <>
+                                                                <DropdownMenuSeparator />
+                                                                <DropdownMenuItem
+                                                                    onClick={() =>
+                                                                        handleApproval(
+                                                                            invoice.id,
+                                                                            "approve",
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    Approve
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem
+                                                                    variant="destructive"
+                                                                    onClick={() =>
+                                                                        handleApproval(
+                                                                            invoice.id,
+                                                                            "reject",
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    Reject
+                                                                </DropdownMenuItem>
+                                                            </>
+                                                        ) : null}
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
                                             </Tdata>
                                         </Trow>
                                     );
@@ -396,3 +426,18 @@ export default function InvoiceIndex({
         </>
     );
 }
+const Table = ({ children, pagination, ...props }) => (
+    <>
+        <ShadTable {...props}>{children}</ShadTable>
+        <TablePagination pagination={pagination} />
+    </>
+);
+const Thead = ({ children, ...props }) => (
+    <TableHeader {...props}>
+        <TableRow>{children}</TableRow>
+    </TableHeader>
+);
+const THdata = (props) => <TableHead {...props} />;
+const Tbody = (props) => <TableBody {...props} />;
+const Trow = (props) => <TableRow {...props} />;
+const Tdata = (props) => <TableCell {...props} />;

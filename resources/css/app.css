@@ -1,58 +1,169 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/figtree";
 
-/* Add this to your global CSS */
-/* Print only the table, hide everything else */
-/* Hide everything except table when printing */
-/* Print styles */
+/* =========================
+   Print Styles
+========================= */
 @media print {
-    /* Hide everything except the table wrapper */
     body * {
         visibility: hidden;
     }
+
     .printable-table,
     .printable-table * {
         visibility: visible;
     }
+
     .printable-table {
         position: absolute;
         top: 0;
         left: 0;
         width: 100%;
     }
-    /* Hide footer only on print */
+
     .printable-table .TFooter {
         display: none !important;
     }
 
-    /* Force header styling */
-    table thead tr th {
-        -webkit-print-color-adjust: exact; /* Chrome, Safari */
-        print-color-adjust: exact; /* Firefox */
-        background-color: #64748b !important; /* Tailwind slate-500 */
-        color: white !important;
-        border: 1px solid #94a3b8 !important; /* Tailwind slate-400 */
-        padding: 8px !important;
-    }
-
-    /* Force body cells styling */
-    table tbody tr td {
-        border: 1px solid #cbd5e1 !important; /* Tailwind slate-300 */
-        padding: 8px !important;
-    }
-
-    /* Alternate row shading */
-    table tbody tr:nth-child(odd) {
-        background-color: #f1f5f9 !important; /* Tailwind slate-100 */
-    }
-    table tbody tr:nth-child(even) {
-        background-color: white !important;
-    }
-
-    /* Ensure full width and border collapse */
     table {
         width: 100% !important;
         border-collapse: collapse !important;
+    }
+
+    table thead tr th {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        background-color: #64748b !important;
+        color: white !important;
+        border: 1px solid #94a3b8 !important;
+        padding: 8px !important;
+    }
+
+    table tbody tr td {
+        border: 1px solid #cbd5e1 !important;
+        padding: 8px !important;
+    }
+
+    table tbody tr:nth-child(odd) {
+        background-color: #f1f5f9 !important;
+    }
+
+    table tbody tr:nth-child(even) {
+        background-color: white !important;
+    }
+}
+
+/* =========================
+   Theme Variables
+========================= */
+@layer base {
+    .theme {
+        --font-heading: var(--font-sans);
+        --font-sans: "Figtree Variable", sans-serif;
+    }
+
+    :root {
+        --background: oklch(1 0 0);
+        --foreground: oklch(0.145 0 0);
+
+        --card: oklch(1 0 0);
+        --card-foreground: oklch(0.145 0 0);
+
+        --popover: oklch(1 0 0);
+        --popover-foreground: oklch(0.145 0 0);
+
+        --primary: oklch(0.205 0 0);
+        --primary-foreground: oklch(0.985 0 0);
+
+        --secondary: oklch(0.97 0 0);
+        --secondary-foreground: oklch(0.205 0 0);
+
+        --muted: oklch(0.97 0 0);
+        --muted-foreground: oklch(0.556 0 0);
+
+        --accent: oklch(0.97 0 0);
+        --accent-foreground: oklch(0.205 0 0);
+
+        --destructive: oklch(0.577 0.245 27.325);
+
+        --border: oklch(0.922 0 0);
+        --input: oklch(0.922 0 0);
+        --ring: oklch(0.708 0 0);
+
+        --chart-1: oklch(0.87 0 0);
+        --chart-2: oklch(0.556 0 0);
+        --chart-3: oklch(0.439 0 0);
+        --chart-4: oklch(0.371 0 0);
+        --chart-5: oklch(0.269 0 0);
+
+        --radius: 0.625rem;
+
+        --sidebar: oklch(0.985 0 0);
+        --sidebar-foreground: oklch(0.145 0 0);
+        --sidebar-primary: oklch(0.205 0 0);
+        --sidebar-primary-foreground: oklch(0.985 0 0);
+        --sidebar-accent: oklch(0.97 0 0);
+        --sidebar-accent-foreground: oklch(0.205 0 0);
+        --sidebar-border: oklch(0.922 0 0);
+        --sidebar-ring: oklch(0.708 0 0);
+    }
+
+    .dark {
+        --background: oklch(0.145 0 0);
+        --foreground: oklch(0.985 0 0);
+
+        --card: oklch(0.205 0 0);
+        --card-foreground: oklch(0.985 0 0);
+
+        --popover: oklch(0.205 0 0);
+        --popover-foreground: oklch(0.985 0 0);
+
+        --primary: oklch(0.922 0 0);
+        --primary-foreground: oklch(0.205 0 0);
+
+        --secondary: oklch(0.269 0 0);
+        --secondary-foreground: oklch(0.985 0 0);
+
+        --muted: oklch(0.269 0 0);
+        --muted-foreground: oklch(0.708 0 0);
+
+        --accent: oklch(0.269 0 0);
+        --accent-foreground: oklch(0.985 0 0);
+
+        --destructive: oklch(0.704 0.191 22.216);
+
+        --border: oklch(1 0 0 / 10%);
+        --input: oklch(1 0 0 / 15%);
+        --ring: oklch(0.556 0 0);
+
+        --chart-1: oklch(0.87 0 0);
+        --chart-2: oklch(0.556 0 0);
+        --chart-3: oklch(0.439 0 0);
+        --chart-4: oklch(0.371 0 0);
+        --chart-5: oklch(0.269 0 0);
+
+        --sidebar: oklch(0.205 0 0);
+        --sidebar-foreground: oklch(0.985 0 0);
+        --sidebar-primary: oklch(0.488 0.243 264.376);
+        --sidebar-primary-foreground: oklch(0.985 0 0);
+        --sidebar-accent: oklch(0.269 0 0);
+        --sidebar-accent-foreground: oklch(0.985 0 0);
+        --sidebar-border: oklch(1 0 0 / 10%);
+        --sidebar-ring: oklch(0.556 0 0);
+    }
+
+    html {
+        font-family: "Figtree Variable", sans-serif;
+    }
+
+    body {
+        background: var(--background);
+        color: var(--foreground);
+    }
+
+    * {
+        border-color: var(--border);
     }
 }

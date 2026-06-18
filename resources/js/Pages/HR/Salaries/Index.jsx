@@ -4,12 +4,15 @@ import { useState } from "react";
 import InputError from "@/Components/InputError";
 import InputLabel from "@/Components/InputLabel";
 import SearchSelect from "@/Components/SearchSelect";
-import Table from "@/Components/Table/Table";
-import Tbody from "@/Components/Table/Tbody";
-import Tdata from "@/Components/Table/Tdata";
-import THdata from "@/Components/Table/THdata";
-import Thead from "@/Components/Table/Thead";
-import Trow from "@/Components/Table/Trow";
+import {
+    Table as ShadTable,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+import TablePagination from "@/Components/TablePagination";
 import TextInput from "@/Components/TextInput";
 
 const money = (value) =>
@@ -436,3 +439,18 @@ export default function SalaryManagement({ staffs, loanReductions, filters }) {
         </>
     );
 }
+const Table = ({ children, pagination, ...props }) => (
+    <>
+        <ShadTable {...props}>{children}</ShadTable>
+        <TablePagination pagination={pagination} />
+    </>
+);
+const Thead = ({ children, ...props }) => (
+    <TableHeader {...props}>
+        <TableRow>{children}</TableRow>
+    </TableHeader>
+);
+const THdata = (props) => <TableHead {...props} />;
+const Tbody = (props) => <TableBody {...props} />;
+const Trow = (props) => <TableRow {...props} />;
+const Tdata = (props) => <TableCell {...props} />;

@@ -1,11 +1,22 @@
 import { Head, router } from "@inertiajs/react";
+import { MoreHorizontalIcon } from "lucide-react";
 import { useState } from "react";
-import Table from "@/Components/Table/Table";
-import Thead from "@/Components/Table/Thead";
-import THdata from "@/Components/Table/THdata";
-import Tbody from "@/Components/Table/Tbody";
-import Trow from "@/Components/Table/Trow";
-import Tdata from "@/Components/Table/Tdata";
+import { Button } from "@/components/ui/button";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+    Table as ShadTable,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+import TablePagination from "@/Components/TablePagination";
 import FilterPanel from "@/Components/FilterPanel";
 import { downloadExport } from "@/utils/exportDownload";
 
@@ -210,16 +221,38 @@ export default function Index({
                                     <Tdata>
                                         {unit.curriculum_mapping ?? "-"}
                                     </Tdata>
-                                    <Tdata>
-                                        <a
-                                            href={route(
-                                                "curriculum-units.edit",
-                                                unit.id,
-                                            )}
-                                            className="text-indigo-600 hover:text-indigo-900"
-                                        >
-                                            Edit
-                                        </a>
+                                    <Tdata className="text-right">
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="size-8"
+                                                >
+                                                    <MoreHorizontalIcon />
+                                                    <span className="sr-only">
+                                                        Open menu
+                                                    </span>
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent
+                                                side="left"
+                                                align="start"
+                                                sideOffset={8}
+                                                className="w-40"
+                                            >
+                                                <DropdownMenuItem asChild>
+                                                    <a
+                                                        href={route(
+                                                            "curriculum-units.edit",
+                                                            unit.id,
+                                                        )}
+                                                    >
+                                                        Edit
+                                                    </a>
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
                                     </Tdata>
                                 </Trow>
                             ))
@@ -236,3 +269,20 @@ export default function Index({
         </>
     );
 }
+const Table = ({ children, pagination, ...props }) => (
+    <>
+        <ShadTable {...props}>{children}</ShadTable>
+        <TablePagination pagination={pagination} />
+    </>
+);
+
+const Thead = ({ children, ...props }) => (
+    <TableHeader {...props}>
+        <TableRow>{children}</TableRow>
+    </TableHeader>
+);
+
+const THdata = (props) => <TableHead {...props} />;
+const Tbody = (props) => <TableBody {...props} />;
+const Trow = (props) => <TableRow {...props} />;
+const Tdata = (props) => <TableCell {...props} />;

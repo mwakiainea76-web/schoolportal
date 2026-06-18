@@ -1,11 +1,23 @@
 import React, { useState } from "react";
 import { Head, router } from "@inertiajs/react";
-import Table from "@/Components/Table/Table";
-import Thead from "@/Components/Table/Thead";
-import THdata from "@/Components/Table/THdata";
-import Tbody from "@/Components/Table/Tbody";
-import Trow from "@/Components/Table/Trow";
-import Tdata from "@/Components/Table/Tdata";
+import { MoreHorizontalIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+    Table as ShadTable,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+import TablePagination from "@/Components/TablePagination";
 import SearchSelect from "@/Components/SearchSelect";
 import Modal from "@/Components/Modal";
 import EditModal from "./EditModal";
@@ -145,29 +157,48 @@ export default function Index({
                                         <Tdata>{index + 1}</Tdata>
                                         <Tdata>{feePlanItem?.name}</Tdata>
                                         <Tdata>{feePlanItem.amount}</Tdata>
-                                        <Tdata>
-                                            <div className="flex justify-center gap-4">
-                                                <button
-                                                    onClick={() =>
-                                                        openEditModal(
-                                                            feePlanItem,
-                                                        )
-                                                    }
-                                                    className="text-emerald-600 hover:underline"
+                                        <Tdata className="text-right">
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="size-8"
+                                                    >
+                                                        <MoreHorizontalIcon />
+                                                        <span className="sr-only">
+                                                            Open menu
+                                                        </span>
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent
+                                                    side="left"
+                                                    align="start"
+                                                    sideOffset={8}
+                                                    className="w-40"
                                                 >
-                                                    Edit
-                                                </button>
-                                                <button
-                                                    onClick={() =>
-                                                        deleteItem(
-                                                            feePlanItem.id,
-                                                        )
-                                                    }
-                                                    className="text-red-600 hover:underline"
-                                                >
-                                                    Delete
-                                                </button>
-                                            </div>
+                                                    <DropdownMenuItem
+                                                        onClick={() =>
+                                                            openEditModal(
+                                                                feePlanItem,
+                                                            )
+                                                        }
+                                                    >
+                                                        Edit
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuSeparator />
+                                                    <DropdownMenuItem
+                                                        variant="destructive"
+                                                        onClick={() =>
+                                                            deleteItem(
+                                                                feePlanItem.id,
+                                                            )
+                                                        }
+                                                    >
+                                                        Delete
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
                                         </Tdata>
                                     </Trow>
                                 ),
@@ -203,3 +234,20 @@ export default function Index({
         </>
     );
 }
+const Table = ({ children, pagination, ...props }) => (
+    <>
+        <ShadTable {...props}>{children}</ShadTable>
+        <TablePagination pagination={pagination} />
+    </>
+);
+
+const Thead = ({ children, ...props }) => (
+    <TableHeader {...props}>
+        <TableRow>{children}</TableRow>
+    </TableHeader>
+);
+
+const THdata = (props) => <TableHead {...props} />;
+const Tbody = (props) => <TableBody {...props} />;
+const Trow = (props) => <TableRow {...props} />;
+const Tdata = (props) => <TableCell {...props} />;
