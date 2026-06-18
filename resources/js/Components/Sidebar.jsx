@@ -212,14 +212,8 @@ export default function Sidebar({
                     </CollapsibleTrigger>
                 </MaybeTooltip>
 
-                <CollapsibleContent
-                    className={`overflow-hidden transition-all duration-300 ${
-                        isOpen && !collapsed
-                            ? "max-h-[80rem] opacity-100"
-                            : "max-h-0 opacity-0"
-                    }`}
-                >
-                    {renderSidebarChildren(children)}
+                <CollapsibleContent className="grid overflow-hidden transition-[grid-template-rows,opacity] duration-300 ease-in-out data-[state=closed]:grid-rows-[0fr] data-[state=closed]:opacity-0 data-[state=open]:grid-rows-[1fr] data-[state=open]:opacity-100">
+                    <div className="min-h-0">{renderSidebarChildren(children)}</div>
                 </CollapsibleContent>
                 <Separator />
             </Collapsible>
