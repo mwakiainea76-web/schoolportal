@@ -1,6 +1,13 @@
 import { Link } from "@inertiajs/react";
 
-export default function NavLink({ href, label, active, onClick, depth = 0 }) {
+export default function NavLink({
+    href,
+    label,
+    active,
+    onClick,
+    depth = 0,
+    collapsed = false,
+}) {
     const paddingClass = depth > 0 ? "pl-16" : "pl-12";
 
     return (
@@ -18,7 +25,13 @@ export default function NavLink({ href, label, active, onClick, depth = 0 }) {
                     active ? "bg-emerald-500" : "bg-zinc-700"
                 }`}
             />
-            <span className="truncate">{label}</span>
+            <span
+                className={`overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-300 ease-in-out ${
+                    collapsed ? "max-w-0 opacity-0" : "max-w-[12rem] opacity-100"
+                }`}
+            >
+                <span className="truncate">{label}</span>
+            </span>
         </Link>
     );
 }

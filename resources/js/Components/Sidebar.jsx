@@ -146,6 +146,7 @@ export default function Sidebar({
                     )}
                     depth={Math.max(0, depth - 1)}
                     onClick={handleSidebarLinkClick}
+                    collapsed={collapsed}
                 />
             );
         });
@@ -163,16 +164,22 @@ export default function Sidebar({
                         <Link
                             href={safeRoute(routeName, fallback)}
                             onClick={handleSidebarLinkClick}
-                            className={`flex min-h-12 w-full items-center gap-3 px-4 text-sm transition ${
+                            className={`flex min-h-12 w-full items-center gap-3 px-4 text-sm transition-colors duration-300 ${
                                 parentActive
                                     ? "bg-emerald-500 text-white"
                                     : "text-zinc-400 hover:bg-white/5 hover:text-white"
                             }`}
                         >
                             {ICONS[icon]}
-                            {!collapsed && (
+                            <span
+                                className={`overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-300 ease-in-out ${
+                                    collapsed
+                                        ? "max-w-0 opacity-0"
+                                        : "max-w-[12rem] opacity-100"
+                                }`}
+                            >
                                 <span className="truncate">{label}</span>
-                            )}
+                            </span>
                         </Link>
                     </MaybeTooltip>
                     <Separator />
@@ -189,7 +196,7 @@ export default function Sidebar({
                 <MaybeTooltip label={label}>
                     <CollapsibleTrigger asChild>
                         <button
-                            className={`flex min-h-12 w-full items-center justify-between gap-3 px-4 text-sm transition ${
+                            className={`flex min-h-12 w-full items-center justify-between gap-3 px-4 text-sm transition-colors duration-300 ${
                                 parentActive
                                     ? "bg-emerald-500 text-white"
                                     : "text-zinc-400 hover:bg-white/5 hover:text-white"
@@ -197,17 +204,29 @@ export default function Sidebar({
                         >
                             <div className="flex min-w-0 items-center gap-3">
                                 {ICONS[icon]}
-                                {!collapsed && (
+                                <span
+                                    className={`overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-300 ease-in-out ${
+                                        collapsed
+                                            ? "max-w-0 opacity-0"
+                                            : "max-w-[12rem] opacity-100"
+                                    }`}
+                                >
                                     <span className="truncate">{label}</span>
-                                )}
+                                </span>
                             </div>
-                            {!collapsed && (
+                            <span
+                                className={`overflow-hidden transition-[max-width,opacity] duration-300 ease-in-out ${
+                                    collapsed
+                                        ? "max-w-0 opacity-0"
+                                        : "max-w-6 opacity-100"
+                                }`}
+                            >
                                 <ChevronLeft
-                                    className={`w-4 h-4 transition-transform duration-300 ${
+                                    className={`h-4 w-4 transition-transform duration-300 ${
                                         isOpen ? "-rotate-90" : "rotate-0"
                                     }`}
                                 />
-                            )}
+                            </span>
                         </button>
                     </CollapsibleTrigger>
                 </MaybeTooltip>
@@ -233,11 +252,15 @@ export default function Sidebar({
                             <path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3z" />
                         </svg>
                     </div>
-                    {!collapsed && (
-                        <span className="font-bold text-white uppercase">
-                            Apex
-                        </span>
-                    )}
+                    <span
+                        className={`overflow-hidden whitespace-nowrap font-bold uppercase text-white transition-[max-width,opacity] duration-300 ease-in-out ${
+                            collapsed
+                                ? "max-w-0 opacity-0"
+                                : "max-w-[8rem] opacity-100"
+                        }`}
+                    >
+                        Apex
+                    </span>
                 </div>
             </div>
 
@@ -258,18 +281,24 @@ export default function Sidebar({
                                         dashboardFallback,
                                     )}
                                     onClick={handleSidebarLinkClick}
-                                    className={`flex min-h-12 items-center gap-3 px-4 transition ${
+                                    className={`flex min-h-12 items-center gap-3 px-4 transition-colors duration-300 ${
                                         isDashboardActive
                                             ? "bg-emerald-500 text-white"
                                             : "text-zinc-400 hover:bg-white/5 hover:text-white"
                                     }`}
                                 >
                                     {ICONS.dashboard}
-                                    {!collapsed && (
+                                    <span
+                                        className={`overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-300 ease-in-out ${
+                                            collapsed
+                                                ? "max-w-0 opacity-0"
+                                                : "max-w-[12rem] opacity-100"
+                                        }`}
+                                    >
                                         <span className="truncate">
                                             {dashboardLabel}
                                         </span>
-                                    )}
+                                    </span>
                                 </Link>
                             </MaybeTooltip>
                             <Separator />
