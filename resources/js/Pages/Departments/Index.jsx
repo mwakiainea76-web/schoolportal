@@ -4,7 +4,7 @@ import { MoreHorizontalIcon } from "lucide-react";
 import SearchSelect from "@/Components/SearchSelect";
 import formatDate from "@/utils/date";
 import { downloadExport } from "@/utils/exportDownload";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/Components/ui/button";
 
 import {
     Table,
@@ -14,7 +14,7 @@ import {
     TableHead,
     TableHeader,
     TableRow,
-} from "@/components/ui/table";
+} from "@/Components/ui/table";
 
 import {
     DropdownMenu,
@@ -22,7 +22,7 @@ import {
     DropdownMenuItem,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@/Components/ui/dropdown-menu";
 
 export default function DepartmentsIndex({ departments }) {
     const [sortField, setSortField] = useState(

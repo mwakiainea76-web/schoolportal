@@ -3,8 +3,16 @@ import axios from "axios";
 import "./app2.js";
 import { createRoot } from "react-dom/client";
 import { usePage, Link, router, createInertiaApp } from "@inertiajs/react";
+import * as React from "react";
 import { useState, useRef, useEffect, createContext, useContext } from "react";
-import { MessageSquareWarning, BriefcaseBusiness, DoorOpen, Clock, Send, Eye, ClipboardPenLine, Presentation, Home, Landmark, UsersRound, UserRound, ShieldCheck, LayoutGrid, BookMarked, Building2, BookOpen, ArrowRightLeft, Settings, UserCog, GraduationCap, CalendarClock, School, BarChart3, LayoutDashboard, ChevronLeft } from "lucide-react";
+import { X, LayoutDashboard, MessageSquareWarning, BriefcaseBusiness, DoorOpen, Clock, Send, Eye, ClipboardPenLine, Presentation, Home, Landmark, UsersRound, UserRound, ShieldCheck, LayoutGrid, BookMarked, Building2, BookOpen, ArrowRightLeft, Settings, UserCog, GraduationCap, CalendarClock, School, BarChart3, ChevronLeft } from "lucide-react";
+import * as CollapsiblePrimitive from "@radix-ui/react-collapsible";
+import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area";
+import { clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+import * as SeparatorPrimitive from "@radix-ui/react-separator";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
+import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import { toast, ToastContainer } from "react-toastify";
 window.axios = axios;
 window.axios.defaults.headers.common["X-Requested-With"] = "XMLHttpRequest";
@@ -48,6 +56,136 @@ function NavLink({ href, label, active, onClick, depth = 0 }) {
     }
   );
 }
+const Collapsible = CollapsiblePrimitive.Root;
+const CollapsibleTrigger = CollapsiblePrimitive.CollapsibleTrigger;
+const CollapsibleContent = CollapsiblePrimitive.CollapsibleContent;
+function cn(...inputs) {
+  return twMerge(clsx(inputs));
+}
+const ScrollArea = React.forwardRef(({ className, children, ...props }, ref) => /* @__PURE__ */ jsxs(
+  ScrollAreaPrimitive.Root,
+  {
+    ref,
+    className: cn("relative overflow-hidden", className),
+    ...props,
+    children: [
+      children,
+      /* @__PURE__ */ jsx(ScrollBar, {}),
+      /* @__PURE__ */ jsx(ScrollAreaPrimitive.Corner, {})
+    ]
+  }
+));
+ScrollArea.displayName = ScrollAreaPrimitive.Root.displayName;
+const ScrollAreaViewport = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
+  ScrollAreaPrimitive.Viewport,
+  {
+    ref,
+    className: cn("h-full w-full rounded-[inherit]", className),
+    ...props
+  }
+));
+ScrollAreaViewport.displayName = ScrollAreaPrimitive.Viewport.displayName;
+const ScrollBar = React.forwardRef(
+  ({ className, orientation = "vertical", ...props }, ref) => /* @__PURE__ */ jsx(
+    ScrollAreaPrimitive.ScrollAreaScrollbar,
+    {
+      ref,
+      orientation,
+      className: cn(
+        "flex touch-none select-none p-0.5 transition-colors",
+        orientation === "vertical" && "h-full w-2.5 border-l border-l-transparent",
+        orientation === "horizontal" && "h-2.5 flex-col border-t border-t-transparent",
+        className
+      ),
+      ...props,
+      children: /* @__PURE__ */ jsx(ScrollAreaPrimitive.ScrollAreaThumb, { className: "relative flex-1 rounded-full bg-white/10" })
+    }
+  )
+);
+ScrollBar.displayName = ScrollAreaPrimitive.ScrollAreaScrollbar.displayName;
+const Separator = React.forwardRef(
+  ({ className, orientation = "horizontal", decorative = true, ...props }, ref) => /* @__PURE__ */ jsx(
+    SeparatorPrimitive.Root,
+    {
+      ref,
+      decorative,
+      orientation,
+      className: cn(
+        "shrink-0 bg-white/5",
+        orientation === "horizontal" ? "h-px w-full" : "h-full w-px",
+        className
+      ),
+      ...props
+    }
+  )
+);
+Separator.displayName = SeparatorPrimitive.Root.displayName;
+const Sheet = DialogPrimitive.Root;
+const SheetPortal = DialogPrimitive.Portal;
+const SheetOverlay = React.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ jsx(
+  DialogPrimitive.Overlay,
+  {
+    ref,
+    className: cn("fixed inset-0 z-40 bg-black/40", className),
+    ...props
+  }
+));
+SheetOverlay.displayName = DialogPrimitive.Overlay.displayName;
+const sheetVariants = {
+  left: "inset-y-0 left-0 h-full",
+  right: "inset-y-0 right-0 h-full",
+  top: "inset-x-0 top-0",
+  bottom: "inset-x-0 bottom-0"
+};
+const SheetContent = React.forwardRef(
+  ({
+    className,
+    children,
+    side = "right",
+    hideClose = false,
+    ...props
+  }, ref) => /* @__PURE__ */ jsxs(SheetPortal, { children: [
+    /* @__PURE__ */ jsx(SheetOverlay, {}),
+    /* @__PURE__ */ jsxs(
+      DialogPrimitive.Content,
+      {
+        ref,
+        className: cn(
+          "fixed z-50 flex flex-col bg-background shadow-lg outline-none",
+          sheetVariants[side],
+          className
+        ),
+        ...props,
+        children: [
+          !hideClose ? /* @__PURE__ */ jsxs(DialogPrimitive.Close, { className: "absolute top-4 right-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:outline-none", children: [
+            /* @__PURE__ */ jsx(X, { className: "h-4 w-4" }),
+            /* @__PURE__ */ jsx("span", { className: "sr-only", children: "Close" })
+          ] }) : null,
+          children
+        ]
+      }
+    )
+  ] })
+);
+SheetContent.displayName = DialogPrimitive.Content.displayName;
+const TooltipProvider = TooltipPrimitive.Provider;
+const Tooltip = TooltipPrimitive.Root;
+const TooltipTrigger = TooltipPrimitive.Trigger;
+const TooltipContent = React.forwardRef(
+  ({ className, sideOffset = 6, ...props }, ref) => /* @__PURE__ */ jsx(TooltipPrimitive.Portal, { children: /* @__PURE__ */ jsx(
+    TooltipPrimitive.Content,
+    {
+      ref,
+      sideOffset,
+      className: cn(
+        "z-50 overflow-hidden rounded-md border border-slate-700 bg-[#24334d] px-3 py-1.5 text-xs text-white shadow-md",
+        className
+      ),
+      ...props
+    }
+  ) })
+);
+TooltipContent.displayName = TooltipPrimitive.Content.displayName;
 const ICONS = {
   dashboard: /* @__PURE__ */ jsx(LayoutDashboard, { className: "w-5 h-5 shrink-0" }),
   reports: /* @__PURE__ */ jsx(BarChart3, { className: "w-5 h-5 shrink-0" }),
@@ -823,6 +961,10 @@ function Sidebar({
   };
   const toggleMenu = (key) => setOpenMenu((prev) => prev === key ? null : key);
   const isDashboardActive = isRouteCurrent("dashboard", "/dashboard", url) || isRouteCurrent(dashboardRouteName, dashboardFallback, url);
+  const MaybeTooltip = ({ label, children }) => collapsed ? /* @__PURE__ */ jsxs(Tooltip, { children: [
+    /* @__PURE__ */ jsx(TooltipTrigger, { asChild: true, children }),
+    /* @__PURE__ */ jsx(TooltipContent, { side: "right", children: label })
+  ] }) : children;
   const renderSidebarChildren = (items, depth = 0) => items.map((child) => {
     if (child.children) {
       const headingIndent = depth > 0 ? "pl-12" : "pl-8";
@@ -864,107 +1006,123 @@ function Sidebar({
     const isSingle = children.length === 1 && !children[0].children;
     if (isSingle) {
       const { routeName, fallback } = children[0];
-      return /* @__PURE__ */ jsx("div", { className: "border-b border-white/5", children: /* @__PURE__ */ jsxs(
-        Link,
-        {
-          href: safeRoute(routeName, fallback),
-          onClick: handleSidebarLinkClick,
-          title: collapsed ? label : void 0,
-          className: `flex min-h-12 w-full items-center gap-3 px-4 text-sm transition ${parentActive ? "bg-emerald-500 text-white" : "text-zinc-400 hover:bg-white/5 hover:text-white"}`,
-          children: [
-            ICONS[icon],
-            !collapsed && /* @__PURE__ */ jsx("span", { className: "truncate", children: label })
-          ]
-        }
-      ) }, key);
-    }
-    return /* @__PURE__ */ jsxs("div", { className: "border-b border-white/5", children: [
-      /* @__PURE__ */ jsxs(
-        "button",
-        {
-          onClick: () => toggleMenu(key),
-          title: collapsed ? label : void 0,
-          className: `flex min-h-12 w-full items-center justify-between gap-3 px-4 text-sm transition ${parentActive ? "bg-emerald-500 text-white" : "text-zinc-400 hover:bg-white/5 hover:text-white"}`,
-          children: [
-            /* @__PURE__ */ jsxs("div", { className: "flex min-w-0 items-center gap-3", children: [
+      return /* @__PURE__ */ jsxs("div", { children: [
+        /* @__PURE__ */ jsx(MaybeTooltip, { label, children: /* @__PURE__ */ jsxs(
+          Link,
+          {
+            href: safeRoute(routeName, fallback),
+            onClick: handleSidebarLinkClick,
+            className: `flex min-h-12 w-full items-center gap-3 px-4 text-sm transition ${parentActive ? "bg-emerald-500 text-white" : "text-zinc-400 hover:bg-white/5 hover:text-white"}`,
+            children: [
               ICONS[icon],
               !collapsed && /* @__PURE__ */ jsx("span", { className: "truncate", children: label })
-            ] }),
-            !collapsed && /* @__PURE__ */ jsx(
-              ChevronLeft,
-              {
-                className: `w-4 h-4 transition-transform duration-300 ${isOpen ? "-rotate-90" : "rotate-0"}`
-              }
-            )
-          ]
-        }
-      ),
-      /* @__PURE__ */ jsx(
-        "div",
-        {
-          className: `overflow-hidden transition-all duration-300 ${isOpen && !collapsed ? "max-h-[80rem] opacity-100" : "max-h-0 opacity-0"}`,
-          children: renderSidebarChildren(children)
-        }
-      )
-    ] }, key);
-  };
-  return /* @__PURE__ */ jsxs(Fragment, { children: [
-    /* @__PURE__ */ jsx(
-      "div",
+            ]
+          }
+        ) }),
+        /* @__PURE__ */ jsx(Separator, {})
+      ] }, key);
+    }
+    return /* @__PURE__ */ jsxs(
+      Collapsible,
       {
-        className: `fixed inset-0 bg-black/40 z-40 transition lg:hidden ${mobileOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`,
-        onClick: () => setMobileOpen(false)
-      }
-    ),
-    /* @__PURE__ */ jsxs(
-      "aside",
-      {
-        className: `fixed lg:static inset-y-0 left-0 z-50 flex flex-col bg-[#1b263b] transform transition duration-300 h-screen overflow-hidden ${mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"} ${collapsed ? "w-20" : "w-64"}`,
+        open: isOpen && !collapsed,
+        onOpenChange: () => toggleMenu(key),
         children: [
-          /* @__PURE__ */ jsx("div", { className: "h-20 flex items-center px-5 border-b border-white/5", children: /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-3", children: [
-            /* @__PURE__ */ jsx("div", { className: "min-w-[32px] h-[32px] bg-emerald-500 rounded-lg flex items-center justify-center text-black", children: /* @__PURE__ */ jsx(
-              "svg",
-              {
-                className: "w-4 h-4",
-                fill: "currentColor",
-                viewBox: "0 0 20 20",
-                children: /* @__PURE__ */ jsx("path", { d: "M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3z" })
-              }
-            ) }),
-            !collapsed && /* @__PURE__ */ jsx("span", { className: "font-bold text-white uppercase", children: "Apex" })
-          ] }) }),
-          /* @__PURE__ */ jsxs(
-            "nav",
+          /* @__PURE__ */ jsx(MaybeTooltip, { label, children: /* @__PURE__ */ jsx(CollapsibleTrigger, { asChild: true, children: /* @__PURE__ */ jsxs(
+            "button",
             {
-              ref: navRef,
-              onScroll: preserveSidebarScroll,
-              className: "flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]",
+              className: `flex min-h-12 w-full items-center justify-between gap-3 px-4 text-sm transition ${parentActive ? "bg-emerald-500 text-white" : "text-zinc-400 hover:bg-white/5 hover:text-white"}`,
               children: [
-                /* @__PURE__ */ jsx("div", { className: "border-b border-white/5", children: /* @__PURE__ */ jsxs(
-                  Link,
+                /* @__PURE__ */ jsxs("div", { className: "flex min-w-0 items-center gap-3", children: [
+                  ICONS[icon],
+                  !collapsed && /* @__PURE__ */ jsx("span", { className: "truncate", children: label })
+                ] }),
+                !collapsed && /* @__PURE__ */ jsx(
+                  ChevronLeft,
                   {
-                    href: safeRoute(
-                      dashboardRouteName,
-                      dashboardFallback
-                    ),
-                    onClick: handleSidebarLinkClick,
-                    title: collapsed ? dashboardLabel : void 0,
-                    className: `flex min-h-12 items-center gap-3 px-4 transition ${isDashboardActive ? "bg-emerald-500 text-white" : "text-zinc-400 hover:bg-white/5 hover:text-white"}`,
-                    children: [
-                      ICONS.dashboard,
-                      !collapsed && /* @__PURE__ */ jsx("span", { className: "truncate", children: dashboardLabel })
-                    ]
+                    className: `w-4 h-4 transition-transform duration-300 ${isOpen ? "-rotate-90" : "rotate-0"}`
                   }
-                ) }),
-                visibleNav.map(renderNestedSection)
+                )
               ]
             }
+          ) }) }),
+          /* @__PURE__ */ jsx(
+            CollapsibleContent,
+            {
+              className: `overflow-hidden transition-all duration-300 ${isOpen && !collapsed ? "max-h-[80rem] opacity-100" : "max-h-0 opacity-0"}`,
+              children: renderSidebarChildren(children)
+            }
           ),
-          /* @__PURE__ */ jsx("div", { className: "p-3 border-t border-white/5" })
+          /* @__PURE__ */ jsx(Separator, {})
         ]
+      },
+      key
+    );
+  };
+  const SidebarBody = () => /* @__PURE__ */ jsxs(Fragment, { children: [
+    /* @__PURE__ */ jsx("div", { className: "h-20 flex items-center px-5", children: /* @__PURE__ */ jsxs("div", { className: "flex items-center gap-3", children: [
+      /* @__PURE__ */ jsx("div", { className: "min-w-[32px] h-[32px] bg-emerald-500 rounded-lg flex items-center justify-center text-black", children: /* @__PURE__ */ jsx(
+        "svg",
+        {
+          className: "w-4 h-4",
+          fill: "currentColor",
+          viewBox: "0 0 20 20",
+          children: /* @__PURE__ */ jsx("path", { d: "M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3z" })
+        }
+      ) }),
+      !collapsed && /* @__PURE__ */ jsx("span", { className: "font-bold text-white uppercase", children: "Apex" })
+    ] }) }),
+    /* @__PURE__ */ jsx(Separator, {}),
+    /* @__PURE__ */ jsx(ScrollArea, { className: "flex-1", children: /* @__PURE__ */ jsx(
+      ScrollAreaViewport,
+      {
+        ref: navRef,
+        onScroll: preserveSidebarScroll,
+        className: "h-full [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]",
+        children: /* @__PURE__ */ jsxs("nav", { children: [
+          /* @__PURE__ */ jsxs("div", { children: [
+            /* @__PURE__ */ jsx(MaybeTooltip, { label: dashboardLabel, children: /* @__PURE__ */ jsxs(
+              Link,
+              {
+                href: safeRoute(
+                  dashboardRouteName,
+                  dashboardFallback
+                ),
+                onClick: handleSidebarLinkClick,
+                className: `flex min-h-12 items-center gap-3 px-4 transition ${isDashboardActive ? "bg-emerald-500 text-white" : "text-zinc-400 hover:bg-white/5 hover:text-white"}`,
+                children: [
+                  ICONS.dashboard,
+                  !collapsed && /* @__PURE__ */ jsx("span", { className: "truncate", children: dashboardLabel })
+                ]
+              }
+            ) }),
+            /* @__PURE__ */ jsx(Separator, {})
+          ] }),
+          visibleNav.map(renderNestedSection)
+        ] })
+      }
+    ) }),
+    /* @__PURE__ */ jsx(Separator, {}),
+    /* @__PURE__ */ jsx("div", { className: "p-3" })
+  ] });
+  return /* @__PURE__ */ jsx(TooltipProvider, { delayDuration: 150, children: /* @__PURE__ */ jsxs(Fragment, { children: [
+    /* @__PURE__ */ jsx(Sheet, { open: mobileOpen, onOpenChange: setMobileOpen, children: /* @__PURE__ */ jsx(
+      SheetContent,
+      {
+        side: "left",
+        hideClose: true,
+        className: `p-0 bg-[#1b263b] text-zinc-900 h-screen overflow-hidden border-none ${collapsed ? "w-20" : "w-64"} lg:hidden`,
+        children: /* @__PURE__ */ jsx(SidebarBody, {})
+      }
+    ) }),
+    /* @__PURE__ */ jsx(
+      "aside",
+      {
+        className: `hidden lg:flex lg:static inset-y-0 left-0 z-30 flex-col bg-[#1b263b] transition duration-300 h-screen overflow-hidden ${collapsed ? "w-20" : "w-64"}`,
+        children: /* @__PURE__ */ jsx(SidebarBody, {})
       }
     )
-  ] });
+  ] }) });
 }
 function Navbar({
   open,
@@ -1337,7 +1495,7 @@ createInertiaApp({
   resolve: async (name) => {
     const page = await resolvePageComponent(
       `./Pages/${name}.jsx`,
-      /* @__PURE__ */ Object.assign({ "./Pages/Academic/Exams.jsx": () => import("./assets/Exams-B0W3ChEM.js"), "./Pages/Academic/Schedules.jsx": () => import("./assets/Schedules-Cw0wZqDE.js"), "./Pages/Academic/Timetables/Create.jsx": () => import("./assets/Create-BeOKToyU.js"), "./Pages/Academic/Timetables/CreateHod.jsx": () => import("./assets/CreateHod-CBEKyrkD.js"), "./Pages/Academic/Timetables/Edit.jsx": () => import("./assets/Edit-CYKiJv-o.js"), "./Pages/Academic/Timetables/Index.jsx": () => import("./assets/Index-CrRMTkNj.js"), "./Pages/AcademicSessionEnrollments/ChangeStatus.jsx": () => import("./assets/ChangeStatus-C3H83I3m.js"), "./Pages/AcademicSessionEnrollments/Create.jsx": () => import("./assets/Create-YaFyWa1j.js"), "./Pages/AcademicSessionEnrollments/Edit.jsx": () => import("./assets/Edit-tEt2x9bb.js"), "./Pages/AcademicSessionEnrollments/Index.jsx": () => import("./assets/Index-BBsFoXvh.js"), "./Pages/AcademicSessions/Create.jsx": () => import("./assets/Create-CXbfGxYY.js"), "./Pages/AcademicSessions/Edit.jsx": () => import("./assets/Edit-CQ41snrP.js"), "./Pages/AcademicSessions/Index.jsx": () => import("./assets/Index-CpSFbSko.js"), "./Pages/AcademicYears/Create.jsx": () => import("./assets/Create-Ba9diuG5.js"), "./Pages/AcademicYears/Edit.jsx": () => import("./assets/Edit-CF4ztwkK.js"), "./Pages/AcademicYears/Index.jsx": () => import("./assets/Index-B594o882.js"), "./Pages/Admin/AuditLogs/Index.jsx": () => import("./assets/Index-D1NSW4x_.js"), "./Pages/Admin/AuditLogs/Show.jsx": () => import("./assets/Show-C5Dx37dB.js"), "./Pages/Auth/ConfirmPassword.jsx": () => import("./assets/ConfirmPassword-DFboMMJZ.js"), "./Pages/Auth/ForgotPassword.jsx": () => import("./assets/ForgotPassword-CeJQbQUS.js"), "./Pages/Auth/Login.jsx": () => import("./assets/Login-VE91NJ9D.js"), "./Pages/Auth/Register.jsx": () => import("./assets/Register-a9wNU5mE.js"), "./Pages/Auth/ResetPassword.jsx": () => import("./assets/ResetPassword-xnC8nx0r.js"), "./Pages/Auth/VerifyEmail.jsx": () => import("./assets/VerifyEmail-j-RF3ZYH.js"), "./Pages/Billing/BulkOperations.jsx": () => import("./assets/BulkOperations-50eNhThE.js"), "./Pages/Billing/InvoiceCreate.jsx": () => import("./assets/InvoiceCreate-CxtFXMFM.js"), "./Pages/Billing/InvoiceIndex.jsx": () => import("./assets/InvoiceIndex-Be6pDyk6.js"), "./Pages/Billing/InvoiceShow.jsx": () => import("./assets/InvoiceShow-BDNbvR3c.js"), "./Pages/Billing/LedgerIndex.jsx": () => import("./assets/LedgerIndex-CnXQ0iMe.js"), "./Pages/Billing/ManualOperations/ActionCard.jsx": () => import("./assets/ActionCard-BqjP59Fa.js"), "./Pages/Billing/ManualOperations/AdditionalInvoice.jsx": () => import("./assets/AdditionalInvoice-CHItFGgV.js"), "./Pages/Billing/ManualOperations/ApplyAdjustment.jsx": () => import("./assets/ApplyAdjustment-Cy_mQHWS.js"), "./Pages/Billing/ManualOperations/Fields.jsx": () => import("./assets/Fields-OQdD82hf.js"), "./Pages/Billing/ManualOperations/FormScaffold.jsx": () => import("./assets/FormScaffold-B_tTLrQJ.js"), "./Pages/Billing/ManualOperations/Index.jsx": () => import("./assets/Index-CfR1q50z.js"), "./Pages/Billing/ManualOperations/PostPenalty.jsx": () => import("./assets/PostPenalty-Ddoc1I0O.js"), "./Pages/Billing/ManualOperations/RecordPayment.jsx": () => import("./assets/RecordPayment-49aCk7MC.js"), "./Pages/Billing/StudentStatements/Index.jsx": () => import("./assets/Index-3rPCgHKW.js"), "./Pages/Billing/StudentStatements/Show.jsx": () => import("./assets/Show-C_Jmv6M3.js"), "./Pages/CertificationLevels/Create.jsx": () => import("./assets/Create-eFGJN6oD.js"), "./Pages/CertificationLevels/Edit.jsx": () => import("./assets/Edit-C_JWWuOh.js"), "./Pages/CertificationLevels/Index.jsx": () => import("./assets/Index-CcNmgWzn.js"), "./Pages/Complaints/AdminIndex.jsx": () => import("./assets/AdminIndex-Bv72alEY.js"), "./Pages/Complaints/AdminShow.jsx": () => import("./assets/AdminShow-CAD5YaSi.js"), "./Pages/Complaints/Create.jsx": () => import("./assets/Create-B86lw5Hv.js"), "./Pages/Complaints/Index.jsx": () => import("./assets/Index-COEmGMI0.js"), "./Pages/CourseEnrollments/HodIndex.jsx": () => import("./assets/HodIndex-cGmDo9xy.js"), "./Pages/CourseEnrollments/Index.jsx": () => import("./assets/Index-BToJsZpw.js"), "./Pages/Courses/Create.jsx": () => import("./assets/Create-BKKyRJ89.js"), "./Pages/Courses/Edit.jsx": () => import("./assets/Edit-q9aY3A-8.js"), "./Pages/Courses/EditIndex.jsx": () => import("./assets/EditIndex-EDLEMpbg.js"), "./Pages/Courses/HodIndex.jsx": () => import("./assets/HodIndex-B3eFA1DU.js"), "./Pages/Courses/Index.jsx": () => import("./assets/Index-Db5waED4.js"), "./Pages/Courses/Reports.jsx": () => import("./app2.js").then((n) => n.R), "./Pages/CurriculumMappings/Create.jsx": () => import("./assets/Create-CBh63wAn.js"), "./Pages/CurriculumMappings/Edit.jsx": () => import("./assets/Edit-DJSjJEZZ.js"), "./Pages/CurriculumMappings/Index.jsx": () => import("./assets/Index-D7Ss3Zwb.js"), "./Pages/CurriculumUnits/Create.jsx": () => import("./assets/Create-DJ33FoUE.js"), "./Pages/CurriculumUnits/Edit.jsx": () => import("./assets/Edit-DUHlNNu-.js"), "./Pages/CurriculumUnits/Index.jsx": () => import("./assets/Index-ChFREnPx.js"), "./Pages/CurriculumUnits/RegisteredUnits.jsx": () => import("./assets/RegisteredUnits-CROZgz83.js"), "./Pages/CurriculumUnits/StudentIndex.jsx": () => import("./assets/StudentIndex-D-fcpAs1.js"), "./Pages/Curriculums/Create.jsx": () => import("./assets/Create-CizOBYM5.js"), "./Pages/Curriculums/Edit.jsx": () => import("./assets/Edit-D6T_zkb7.js"), "./Pages/Curriculums/EditIndex.jsx": () => import("./assets/EditIndex-DXcN5FoV.js"), "./Pages/Curriculums/Index.jsx": () => import("./assets/Index-qgFXqkra.js"), "./Pages/Dashboard.jsx": () => import("./assets/Dashboard-Cn3YZCh6.js"), "./Pages/Dashboards/AdminDashboard.jsx": () => import("./assets/AdminDashboard-Pd-CVQBt.js"), "./Pages/Dashboards/BursarDashboard.jsx": () => import("./assets/BursarDashboard-BpDXTMsJ.js"), "./Pages/Dashboards/HodDashboard.jsx": () => import("./assets/HodDashboard-Baa1Ho9o.js"), "./Pages/Dashboards/StudentDashboard.jsx": () => import("./assets/StudentDashboard-BYQRqyEz.js"), "./Pages/Dashboards/TrainerDashboard.jsx": () => import("./assets/TrainerDashboard-BneZlsT9.js"), "./Pages/Departments/Create.jsx": () => import("./assets/Create-2h7uCfVz.js"), "./Pages/Departments/Edit.jsx": () => import("./assets/Edit-MexHgPbX.js"), "./Pages/Departments/Index.jsx": () => import("./assets/Index-CyNoifZt.js"), "./Pages/Error.jsx": () => import("./assets/Error-DR4jYpLA.js"), "./Pages/ExamBodies/Create.jsx": () => import("./assets/Create-DrovKtzY.js"), "./Pages/ExamBodies/Edit.jsx": () => import("./assets/Edit-D_whKe6w.js"), "./Pages/ExamBodies/Index.jsx": () => import("./assets/Index--9I_VRZK.js"), "./Pages/ExamBodies/Reports.jsx": () => import("./assets/Reports-1letVrDS.js"), "./Pages/ExamBodies/Workspace.jsx": () => import("./assets/Workspace-CqaknF4D.js"), "./Pages/Fees/FeeAssignments/BulkAssign.jsx": () => import("./assets/BulkAssign-RJBP3h5_.js"), "./Pages/Fees/FeeAssignments/BulkPreview.jsx": () => import("./assets/BulkPreview-FcIBgdoe.js"), "./Pages/Fees/FeeAssignments/Create.jsx": () => import("./assets/Create-lDQ2vGE9.js"), "./Pages/Fees/FeeAssignments/Edit.jsx": () => import("./assets/Edit-dc3SyZmQ.js"), "./Pages/Fees/FeeAssignments/Index.jsx": () => import("./assets/Index-FILhO9jK.js"), "./Pages/Fees/FeePlanItems/Create.jsx": () => import("./assets/Create-B_rTtDhF.js"), "./Pages/Fees/FeePlanItems/Edit.jsx": () => import("./assets/Edit-DASPZR85.js"), "./Pages/Fees/FeePlanItems/EditModal.jsx": () => import("./assets/EditModal-C0jG6w5_.js"), "./Pages/Fees/FeePlanItems/Index.jsx": () => import("./assets/Index-Dt3MMNKI.js"), "./Pages/Fees/FeePlans/Create.jsx": () => import("./assets/Create-CE6_2k3s.js"), "./Pages/Fees/FeePlans/Edit.jsx": () => import("./assets/Edit-Dw-jHX6T.js"), "./Pages/Fees/FeePlans/Index.jsx": () => import("./assets/Index-24lnsYjI.js"), "./Pages/Grades/Add.jsx": () => import("./assets/Add-B9Ln7auk.js"), "./Pages/Grades/Index.jsx": () => import("./assets/Index-iGfvqRIq.js"), "./Pages/Grades/Marksheet.jsx": () => import("./assets/Marksheet-CvY-vi72.js"), "./Pages/Grades/Publish.jsx": () => import("./assets/Publish-D8F6TMiw.js"), "./Pages/Grades/StudentResults.jsx": () => import("./assets/StudentResults-DEGVNNWF.js"), "./Pages/Grades/View.jsx": () => import("./assets/View-zOmijf8F.js"), "./Pages/HR/IdCards/Index.jsx": () => import("./assets/Index-y2ORTnCd.js"), "./Pages/HR/LeaveRequests/Create.jsx": () => import("./assets/Create-BaSduRYK.js"), "./Pages/HR/LeaveRequests/Index.jsx": () => import("./assets/Index-DSAB-fzo.js"), "./Pages/HR/Payslips/Index.jsx": () => import("./assets/Index-Ca2vPsoS.js"), "./Pages/HR/Salaries/Index.jsx": () => import("./assets/Index-Dj4eieMU.js"), "./Pages/Home.jsx": () => import("./assets/Home-Cucyz_fC.js"), "./Pages/HostelAllocations/Create.jsx": () => import("./assets/Create-ejB6Gxp6.js"), "./Pages/HostelAllocations/Edit.jsx": () => import("./assets/Edit-DUlqEUhg.js"), "./Pages/HostelAllocations/Form.jsx": () => import("./assets/Form-7C8Wb0nG.js"), "./Pages/HostelAllocations/Index.jsx": () => import("./assets/Index-BIC01VJC.js"), "./Pages/Hostels/Create.jsx": () => import("./assets/Create-DvYsWK2w.js"), "./Pages/Hostels/Edit.jsx": () => import("./assets/Edit-CgjEPDgM.js"), "./Pages/Hostels/Form.jsx": () => import("./assets/Form-CHozdKvX.js"), "./Pages/Hostels/Index.jsx": () => import("./assets/Index-DF4RQOwE.js"), "./Pages/LectureRooms/Create.jsx": () => import("./assets/Create-Ud89RKLh.js"), "./Pages/LectureRooms/Edit.jsx": () => import("./assets/Edit-Cp71--GL.js"), "./Pages/LectureRooms/Index.jsx": () => import("./assets/Index-D73Gy-5P.js"), "./Pages/Permissions/Create.jsx": () => import("./assets/Create-S088ZXyN.js"), "./Pages/Permissions/Edit.jsx": () => import("./assets/Edit-3KzXuBij.js"), "./Pages/Permissions/Index.jsx": () => import("./assets/Index-CfYQei2H.js"), "./Pages/Profile/Edit.jsx": () => import("./assets/Edit-nTnIX6V_.js"), "./Pages/Profile/Partials/DeleteUserForm.jsx": () => import("./assets/DeleteUserForm-CCDeHVdY.js"), "./Pages/Profile/Partials/UpdatePasswordForm.jsx": () => import("./assets/UpdatePasswordForm-DxqsXSv4.js"), "./Pages/Profile/Partials/UpdateProfileInformationForm.jsx": () => import("./assets/UpdateProfileInformationForm-Bkby2YAl.js"), "./Pages/Reports/Index.jsx": () => import("./assets/Index-BZIYk4Cr.js"), "./Pages/Roles/AssignRole.jsx": () => import("./app2.js").then((n) => n.A), "./Pages/Roles/Create.jsx": () => import("./assets/Create-DIP16iKu.js"), "./Pages/Roles/Edit.jsx": () => import("./assets/Edit-ZfwSx9NJ.js"), "./Pages/Roles/EditPermissions.jsx": () => import("./assets/EditPermissions-XTBr8ZKz.js"), "./Pages/Roles/Index.jsx": () => import("./assets/Index-Co8Ogihf.js"), "./Pages/Settings/LogViewer.jsx": () => import("./assets/LogViewer-DJu3Hwkn.js"), "./Pages/Settings/PerformanceDashboard.jsx": () => import("./assets/PerformanceDashboard-NMwJqqZC.js"), "./Pages/Settings/SecurityMonitoring.jsx": () => import("./assets/SecurityMonitoring-BhzkNiev.js"), "./Pages/Settings/UserMonitor.jsx": () => import("./assets/UserMonitor-CCH-9X1e.js"), "./Pages/Staff/Dashboard.jsx": () => import("./assets/Dashboard-C-lpnU8E.js"), "./Pages/Staffs/ChangeStatus.jsx": () => import("./assets/ChangeStatus-YRTks4GP.js"), "./Pages/Staffs/Create.jsx": () => import("./assets/Create-BVAodT1q.js"), "./Pages/Staffs/DepartmentIndex.jsx": () => import("./assets/DepartmentIndex-WWkfi_lL.js"), "./Pages/Staffs/Edit.jsx": () => import("./assets/Edit-CPvLfYU3.js"), "./Pages/Staffs/Index.jsx": () => import("./assets/Index-YzoAOley.js"), "./Pages/Staffs/ResetPassword.jsx": () => import("./assets/ResetPassword-BmopRUjQ.js"), "./Pages/StudentHostelBooking/Index.jsx": () => import("./assets/Index-C3DmdVd2.js"), "./Pages/students/CourseChange.jsx": () => import("./assets/CourseChange-CnvxvuJz.js"), "./Pages/students/Create.jsx": () => import("./assets/Create-Be5sWaRj.js"), "./Pages/students/Edit.jsx": () => import("./assets/Edit-RzKCz_IM.js"), "./Pages/students/Index.jsx": () => import("./assets/Index-Ceh4r_u4.js"), "./Pages/students/ResetPassword.jsx": () => import("./assets/ResetPassword-BHOV1et4.js") })
+      /* @__PURE__ */ Object.assign({ "./Pages/Academic/Exams.jsx": () => import("./assets/Exams-B-nk55wn.js"), "./Pages/Academic/Schedules.jsx": () => import("./assets/Schedules-BBAJwVEL.js"), "./Pages/Academic/Timetables/Create.jsx": () => import("./assets/Create-BhWGh7J2.js"), "./Pages/Academic/Timetables/CreateHod.jsx": () => import("./assets/CreateHod-D2UT_ePG.js"), "./Pages/Academic/Timetables/Edit.jsx": () => import("./assets/Edit-DkAtFinU.js"), "./Pages/Academic/Timetables/Index.jsx": () => import("./assets/Index-D3B30unG.js"), "./Pages/AcademicSessionEnrollments/ChangeStatus.jsx": () => import("./assets/ChangeStatus-BIZoB0Ec.js"), "./Pages/AcademicSessionEnrollments/Create.jsx": () => import("./assets/Create--dUJro3F.js"), "./Pages/AcademicSessionEnrollments/Edit.jsx": () => import("./assets/Edit-tEt2x9bb.js"), "./Pages/AcademicSessionEnrollments/Index.jsx": () => import("./assets/Index-CkpsNTL1.js"), "./Pages/AcademicSessions/Create.jsx": () => import("./assets/Create-CXbfGxYY.js"), "./Pages/AcademicSessions/Edit.jsx": () => import("./assets/Edit-CQ41snrP.js"), "./Pages/AcademicSessions/Index.jsx": () => import("./assets/Index-CcjEaVcK.js"), "./Pages/AcademicYears/Create.jsx": () => import("./assets/Create-Ba9diuG5.js"), "./Pages/AcademicYears/Edit.jsx": () => import("./assets/Edit-CF4ztwkK.js"), "./Pages/AcademicYears/Index.jsx": () => import("./assets/Index-BbSA-vmi.js"), "./Pages/Admin/AuditLogs/Index.jsx": () => import("./assets/Index-C1L_bonu.js"), "./Pages/Admin/AuditLogs/Show.jsx": () => import("./assets/Show-Do2N7ce0.js"), "./Pages/Auth/ConfirmPassword.jsx": () => import("./assets/ConfirmPassword-DFboMMJZ.js"), "./Pages/Auth/ForgotPassword.jsx": () => import("./assets/ForgotPassword-CeJQbQUS.js"), "./Pages/Auth/Login.jsx": () => import("./assets/Login-VE91NJ9D.js"), "./Pages/Auth/Register.jsx": () => import("./assets/Register-a9wNU5mE.js"), "./Pages/Auth/ResetPassword.jsx": () => import("./assets/ResetPassword-xnC8nx0r.js"), "./Pages/Auth/VerifyEmail.jsx": () => import("./assets/VerifyEmail-j-RF3ZYH.js"), "./Pages/Billing/BulkOperations.jsx": () => import("./assets/BulkOperations-50eNhThE.js"), "./Pages/Billing/InvoiceCreate.jsx": () => import("./assets/InvoiceCreate-CejpUbtE.js"), "./Pages/Billing/InvoiceIndex.jsx": () => import("./assets/InvoiceIndex-BmcLZ7F5.js"), "./Pages/Billing/InvoiceShow.jsx": () => import("./assets/InvoiceShow-BDNbvR3c.js"), "./Pages/Billing/LedgerIndex.jsx": () => import("./assets/LedgerIndex-D0-LE3l2.js"), "./Pages/Billing/ManualOperations/ActionCard.jsx": () => import("./assets/ActionCard-BqjP59Fa.js"), "./Pages/Billing/ManualOperations/AdditionalInvoice.jsx": () => import("./assets/AdditionalInvoice-CHItFGgV.js"), "./Pages/Billing/ManualOperations/ApplyAdjustment.jsx": () => import("./assets/ApplyAdjustment-Cy_mQHWS.js"), "./Pages/Billing/ManualOperations/Fields.jsx": () => import("./assets/Fields-OQdD82hf.js"), "./Pages/Billing/ManualOperations/FormScaffold.jsx": () => import("./assets/FormScaffold-B_tTLrQJ.js"), "./Pages/Billing/ManualOperations/Index.jsx": () => import("./assets/Index-CfR1q50z.js"), "./Pages/Billing/ManualOperations/PostPenalty.jsx": () => import("./assets/PostPenalty-Ddoc1I0O.js"), "./Pages/Billing/ManualOperations/RecordPayment.jsx": () => import("./assets/RecordPayment-49aCk7MC.js"), "./Pages/Billing/StudentStatements/Index.jsx": () => import("./assets/Index-3rPCgHKW.js"), "./Pages/Billing/StudentStatements/Show.jsx": () => import("./assets/Show-C_Jmv6M3.js"), "./Pages/CertificationLevels/Create.jsx": () => import("./assets/Create-C-HBM3V9.js"), "./Pages/CertificationLevels/Edit.jsx": () => import("./assets/Edit-BKDS_E3F.js"), "./Pages/CertificationLevels/Index.jsx": () => import("./assets/Index-CTpiysLg.js"), "./Pages/Complaints/AdminIndex.jsx": () => import("./assets/AdminIndex-BGU-SOTs.js"), "./Pages/Complaints/AdminShow.jsx": () => import("./assets/AdminShow-CAD5YaSi.js"), "./Pages/Complaints/Create.jsx": () => import("./assets/Create-B86lw5Hv.js"), "./Pages/Complaints/Index.jsx": () => import("./assets/Index-BweTaUGa.js"), "./Pages/CourseEnrollments/HodIndex.jsx": () => import("./assets/HodIndex-CLiL67nW.js"), "./Pages/CourseEnrollments/Index.jsx": () => import("./assets/Index-D0NgbY-W.js"), "./Pages/Courses/Create.jsx": () => import("./assets/Create-BDtDciY4.js"), "./Pages/Courses/Edit.jsx": () => import("./assets/Edit-CP3iIJeo.js"), "./Pages/Courses/EditIndex.jsx": () => import("./assets/EditIndex-D8zuLUmS.js"), "./Pages/Courses/HodIndex.jsx": () => import("./assets/HodIndex-TNGsoFeu.js"), "./Pages/Courses/Index.jsx": () => import("./assets/Index-Db5waED4.js"), "./Pages/Courses/Reports.jsx": () => import("./assets/Reports-Db5waED4.js"), "./Pages/CurriculumMappings/Create.jsx": () => import("./assets/Create-Cn1gLg8I.js"), "./Pages/CurriculumMappings/Edit.jsx": () => import("./assets/Edit-DY5Jn6Bx.js"), "./Pages/CurriculumMappings/Index.jsx": () => import("./assets/Index-rfMOq3yk.js"), "./Pages/CurriculumUnits/Create.jsx": () => import("./assets/Create-D_eniG3Z.js"), "./Pages/CurriculumUnits/Edit.jsx": () => import("./assets/Edit-BsKCZX94.js"), "./Pages/CurriculumUnits/Index.jsx": () => import("./assets/Index-DkdDqwTb.js"), "./Pages/CurriculumUnits/RegisteredUnits.jsx": () => import("./assets/RegisteredUnits-CROZgz83.js"), "./Pages/CurriculumUnits/StudentIndex.jsx": () => import("./assets/StudentIndex-D-fcpAs1.js"), "./Pages/Curriculums/Create.jsx": () => import("./assets/Create-PyvTyXCW.js"), "./Pages/Curriculums/Edit.jsx": () => import("./assets/Edit-BX-cZX-x.js"), "./Pages/Curriculums/EditIndex.jsx": () => import("./assets/EditIndex-CgIItqJ2.js"), "./Pages/Curriculums/Index.jsx": () => import("./assets/Index-DWe4rwau.js"), "./Pages/Dashboard.jsx": () => import("./assets/Dashboard-Cn3YZCh6.js"), "./Pages/Dashboards/AdminDashboard.jsx": () => import("./assets/AdminDashboard-Pd-CVQBt.js"), "./Pages/Dashboards/BursarDashboard.jsx": () => import("./assets/BursarDashboard-BpDXTMsJ.js"), "./Pages/Dashboards/HodDashboard.jsx": () => import("./assets/HodDashboard-Baa1Ho9o.js"), "./Pages/Dashboards/StudentDashboard.jsx": () => import("./assets/StudentDashboard-BYQRqyEz.js"), "./Pages/Dashboards/TrainerDashboard.jsx": () => import("./assets/TrainerDashboard-BneZlsT9.js"), "./Pages/Departments/Create.jsx": () => import("./assets/Create-C3j8YYI7.js"), "./Pages/Departments/Edit.jsx": () => import("./assets/Edit-BNcBHylN.js"), "./Pages/Departments/Index.jsx": () => import("./assets/Index-BxBv_dqO.js"), "./Pages/Error.jsx": () => import("./assets/Error-DR4jYpLA.js"), "./Pages/ExamBodies/Create.jsx": () => import("./assets/Create-DrovKtzY.js"), "./Pages/ExamBodies/Edit.jsx": () => import("./assets/Edit-D_whKe6w.js"), "./Pages/ExamBodies/Index.jsx": () => import("./assets/Index-DciAGE75.js"), "./Pages/ExamBodies/Reports.jsx": () => import("./assets/Reports-BX-YEeSs.js"), "./Pages/ExamBodies/Workspace.jsx": () => import("./assets/Workspace-DAWPWC54.js"), "./Pages/Fees/FeeAssignments/BulkAssign.jsx": () => import("./assets/BulkAssign-DRHJ0Vhw.js"), "./Pages/Fees/FeeAssignments/BulkPreview.jsx": () => import("./assets/BulkPreview-DD322Oyo.js"), "./Pages/Fees/FeeAssignments/Create.jsx": () => import("./assets/Create-Bc7QxN-h.js"), "./Pages/Fees/FeeAssignments/Edit.jsx": () => import("./assets/Edit-BMejrYmf.js"), "./Pages/Fees/FeeAssignments/Index.jsx": () => import("./assets/Index-gmGaUzoS.js"), "./Pages/Fees/FeePlanItems/Create.jsx": () => import("./assets/Create-CuuyfDM-.js"), "./Pages/Fees/FeePlanItems/Edit.jsx": () => import("./assets/Edit-CqHU5HLv.js"), "./Pages/Fees/FeePlanItems/EditModal.jsx": () => import("./assets/EditModal-DQzLv2Yh.js"), "./Pages/Fees/FeePlanItems/Index.jsx": () => import("./assets/Index-CkakLAO6.js"), "./Pages/Fees/FeePlans/Create.jsx": () => import("./assets/Create-CE6_2k3s.js"), "./Pages/Fees/FeePlans/Edit.jsx": () => import("./assets/Edit-Dw-jHX6T.js"), "./Pages/Fees/FeePlans/Index.jsx": () => import("./assets/Index-B96dawv1.js"), "./Pages/Grades/Add.jsx": () => import("./assets/Add-CF-7On4_.js"), "./Pages/Grades/Index.jsx": () => import("./assets/Index-BqkN_bDa.js"), "./Pages/Grades/Marksheet.jsx": () => import("./assets/Marksheet-DyT7JhIC.js"), "./Pages/Grades/Publish.jsx": () => import("./assets/Publish-Csbdjp3c.js"), "./Pages/Grades/StudentResults.jsx": () => import("./assets/StudentResults-B4R51GLX.js"), "./Pages/Grades/View.jsx": () => import("./assets/View-CciEFIRm.js"), "./Pages/HR/IdCards/Index.jsx": () => import("./assets/Index-CWCq9ZnC.js"), "./Pages/HR/LeaveRequests/Create.jsx": () => import("./assets/Create-BeTn8-3H.js"), "./Pages/HR/LeaveRequests/Index.jsx": () => import("./assets/Index-Bvt_B1In.js"), "./Pages/HR/Payslips/Index.jsx": () => import("./assets/Index-CLkuz9lq.js"), "./Pages/HR/Salaries/Index.jsx": () => import("./assets/Index-ClyaXsAk.js"), "./Pages/Home.jsx": () => import("./assets/Home-Cucyz_fC.js"), "./Pages/HostelAllocations/Create.jsx": () => import("./assets/Create-3r2_TYH1.js"), "./Pages/HostelAllocations/Edit.jsx": () => import("./assets/Edit-BUXd3i1O.js"), "./Pages/HostelAllocations/Form.jsx": () => import("./assets/Form-BNKutuHE.js"), "./Pages/HostelAllocations/Index.jsx": () => import("./assets/Index-C5HLqPEI.js"), "./Pages/Hostels/Create.jsx": () => import("./assets/Create-DvYsWK2w.js"), "./Pages/Hostels/Edit.jsx": () => import("./assets/Edit-CgjEPDgM.js"), "./Pages/Hostels/Form.jsx": () => import("./assets/Form-CHozdKvX.js"), "./Pages/Hostels/Index.jsx": () => import("./assets/Index-DRLp10zG.js"), "./Pages/LectureRooms/Create.jsx": () => import("./assets/Create-_A2XXGoG.js"), "./Pages/LectureRooms/Edit.jsx": () => import("./assets/Edit-O8LMjsxo.js"), "./Pages/LectureRooms/Index.jsx": () => import("./assets/Index-Du5R5zrs.js"), "./Pages/Permissions/Create.jsx": () => import("./assets/Create-S088ZXyN.js"), "./Pages/Permissions/Edit.jsx": () => import("./assets/Edit-3KzXuBij.js"), "./Pages/Permissions/Index.jsx": () => import("./assets/Index-daGbAqgc.js"), "./Pages/Profile/Edit.jsx": () => import("./assets/Edit-C9GSq31Q.js"), "./Pages/Profile/Partials/DeleteUserForm.jsx": () => import("./assets/DeleteUserForm-CCDeHVdY.js"), "./Pages/Profile/Partials/UpdatePasswordForm.jsx": () => import("./assets/UpdatePasswordForm-DxqsXSv4.js"), "./Pages/Profile/Partials/UpdateProfileInformationForm.jsx": () => import("./assets/UpdateProfileInformationForm-Bkby2YAl.js"), "./Pages/Reports/Index.jsx": () => import("./assets/Index-BDXhZks5.js"), "./Pages/Roles/AssignRole.jsx": () => import("./app2.js").then((n) => n.A), "./Pages/Roles/Create.jsx": () => import("./assets/Create-BXpFbFs7.js"), "./Pages/Roles/Edit.jsx": () => import("./assets/Edit-D5sN73Nb.js"), "./Pages/Roles/EditPermissions.jsx": () => import("./assets/EditPermissions-CdpQCUnm.js"), "./Pages/Roles/Index.jsx": () => import("./assets/Index-FGEcKAmD.js"), "./Pages/Settings/LogViewer.jsx": () => import("./assets/LogViewer-foZ8BOll.js"), "./Pages/Settings/PerformanceDashboard.jsx": () => import("./assets/PerformanceDashboard-BXDRdD05.js"), "./Pages/Settings/SecurityMonitoring.jsx": () => import("./assets/SecurityMonitoring-Dn8xxavS.js"), "./Pages/Settings/UserMonitor.jsx": () => import("./assets/UserMonitor-EfCim-9o.js"), "./Pages/Staff/Dashboard.jsx": () => import("./assets/Dashboard-C-lpnU8E.js"), "./Pages/Staffs/ChangeStatus.jsx": () => import("./assets/ChangeStatus-DaIgtn5T.js"), "./Pages/Staffs/Create.jsx": () => import("./assets/Create-CK8gNEIX.js"), "./Pages/Staffs/DepartmentIndex.jsx": () => import("./assets/DepartmentIndex-B8cNbiEV.js"), "./Pages/Staffs/Edit.jsx": () => import("./assets/Edit-DBRrTGxa.js"), "./Pages/Staffs/Index.jsx": () => import("./assets/Index-BXU75IwU.js"), "./Pages/Staffs/ResetPassword.jsx": () => import("./assets/ResetPassword-CMm42dJU.js"), "./Pages/StudentHostelBooking/Index.jsx": () => import("./assets/Index-C3DmdVd2.js"), "./Pages/students/CourseChange.jsx": () => import("./assets/CourseChange-DomLZg02.js"), "./Pages/students/Create.jsx": () => import("./assets/Create-rhczQJAS.js"), "./Pages/students/Edit.jsx": () => import("./assets/Edit-w5OYnFg6.js"), "./Pages/students/Index.jsx": () => import("./assets/Index-CAN-Z_iz.js"), "./Pages/students/ResetPassword.jsx": () => import("./assets/ResetPassword-Dqhc5oYz.js") })
     );
     if (page.default.layout === void 0) {
       if (name.startsWith("Auth/")) {
@@ -1363,5 +1521,6 @@ createInertiaApp({
 });
 export {
   AuthenticatedLayout as A,
+  cn as c,
   useRbac as u
 };

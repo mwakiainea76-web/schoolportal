@@ -11,7 +11,7 @@ import {
     TableHead,
     TableHeader,
     TableRow,
-} from "@/components/ui/table";
+} from "@/Components/ui/table";
 import TablePagination from "@/Components/TablePagination";
 import TextInput from "@/Components/TextInput";
 

@@ -6,7 +6,7 @@ import {
     TableHead,
     TableHeader,
     TableRow,
-} from "@/components/ui/table";
+} from "@/Components/ui/table";
 import TablePagination from "@/Components/TablePagination";
 
 const STATUS_STYLES = {

@@ -2,14 +2,14 @@ import { Head, Link, router } from "@inertiajs/react";
 import { MoreHorizontalIcon } from "lucide-react";
 import { useState } from "react";
 import { Download, ListChecks, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/Components/ui/button";
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@/Components/ui/dropdown-menu";
 import {
     Table as ShadTable,
     TableBody,
@@ -17,7 +17,7 @@ import {
     TableHead,
     TableHeader,
     TableRow,
-} from "@/components/ui/table";
+} from "@/Components/ui/table";
 import TablePagination from "@/Components/TablePagination";
 import SearchSelect from "@/Components/SearchSelect";
 import useRbac from "@/Hooks/UseRBAC";

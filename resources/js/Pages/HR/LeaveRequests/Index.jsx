@@ -7,7 +7,7 @@ import {
     TableHead,
     TableHeader,
     TableRow,
-} from "@/components/ui/table";
+} from "@/Components/ui/table";
 import TablePagination from "@/Components/TablePagination";
 import { statusClass, typeLabel } from "@/Pages/HR/LeaveRequests/shared";
 

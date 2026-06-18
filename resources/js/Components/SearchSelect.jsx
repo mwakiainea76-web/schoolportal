@@ -1,5 +1,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { route } from "ziggy-js";
+import { CheckIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from "@/Components/ui/command";
+import {
+    Popover,
+    PopoverAnchor,
+    PopoverContent,
+} from "@/Components/ui/popover";
 
 export default function SearchSelect({
     value,
@@ -20,9 +35,9 @@ export default function SearchSelect({
     const [isTyping, setIsTyping] = useState(false);
 
     const debounceRef = useRef(null);
-    const wrapperRef = useRef(null);
     const isOpenRef = useRef(open);
     const queryRef = useRef(query);
+    const inputRef = useRef(null);
     const routeParamsKey = JSON.stringify(routeParams ?? {});
 
     isOpenRef.current = open;
@@ -144,21 +159,6 @@ export default function SearchSelect({
     };
 
     // -----------------------------
-    // CLOSE ON OUTSIDE CLICK
-    // -----------------------------
-    useEffect(() => {
-        const handleClick = (e) => {
-            if (!wrapperRef.current?.contains(e.target)) {
-                setIsTyping(false);
-                setOpen(false);
-            }
-        };
-
-        document.addEventListener("click", handleClick);
-        return () => document.removeEventListener("click", handleClick);
-    }, []);
-
-    // -----------------------------
     // PRELOAD ON MOUNT / PARAM CHANGE
     // -----------------------------
     useEffect(() => {
@@ -174,50 +174,90 @@ export default function SearchSelect({
     }, []);
 
     return (
-        <div
-            ref={wrapperRef}
-            className={`relative w-full ${open ? "z-[60]" : ""}`}
-        >
-            <input
-                value={query}
-                onChange={(e) =>
-                    routeName
-                        ? handleSearch(e.target.value)
-                        : setQuery(e.target.value)
+        <Popover
+            open={open && !disabled}
+            onOpenChange={(nextOpen) => {
+                setOpen(nextOpen);
+                if (!nextOpen) {
+                    setIsTyping(false);
                 }
-                onFocus={() => {
-                    if (!disabled) {
-                        setIsTyping(false);
-                        setOpen(true);
-                        if (preloadOptions && routeName) fetchOptions("");
-                    }
-                }}
-                placeholder={placeholder}
-                disabled={disabled}
-                className={`w-full bg-zinc-50 border rounded-xl px-5 py-2.5 text-sm outline-none transition ${
-                    error ? "border-red-400" : "border-zinc-200"
-                } ${disabled ? "bg-zinc-200 cursor-not-allowed" : ""}`}
-            />
+            }}
+        >
+            <div className={`relative w-full ${open ? "z-[60]" : ""}`}>
+                <PopoverAnchor asChild>
+                    <input
+                        ref={inputRef}
+                        value={query}
+                        onChange={(e) =>
+                            routeName
+                                ? handleSearch(e.target.value)
+                                : setQuery(e.target.value)
+                        }
+                        onFocus={() => {
+                            if (!disabled) {
+                                setIsTyping(false);
+                                setOpen(true);
+                                if (preloadOptions && routeName) fetchOptions("");
+                            }
+                        }}
+                        onKeyDown={(event) => {
+                            if (event.key === "Escape") {
+                                setOpen(false);
+                                inputRef.current?.blur();
+                            }
+                        }}
+                        placeholder={placeholder}
+                        disabled={disabled}
+                        className={`w-full rounded-xl border bg-zinc-50 px-5 py-2.5 text-sm outline-none transition ${
+                            error ? "border-red-400" : "border-zinc-200"
+                        } ${disabled ? "cursor-not-allowed bg-zinc-200" : ""}`}
+                    />
+                </PopoverAnchor>
 
-            {open && (
-                <div className="absolute z-[70] mt-1 w-full bg-white border rounded-xl shadow-lg max-h-60 overflow-y-auto">
-                    {!visibleOptions.length ? (
-                        <div className="p-3 text-sm text-zinc-400">
-                            No results found
-                        </div>
-                    ) : (
-                        visibleOptions.map((item) => (
-                            <div
-                                key={item.id ?? item.name}
-                                onClick={() => handleSelect(item)}
-                                className="px-5 py-2.5 text-sm cursor-pointer hover:bg-zinc-100"
-                            >
-                                {item.name}
-                            </div>
-                        ))
-                    )}
-                </div>
-            )}
-        </div>
+                <PopoverContent
+                    className="w-[var(--radix-popover-trigger-width)] p-0"
+                    align="start"
+                >
+                    <Command shouldFilter={false}>
+                        <CommandInput
+                            value={query}
+                            onValueChange={(text) =>
+                                routeName ? handleSearch(text) : setQuery(text)
+                            }
+                            placeholder={placeholder}
+                        />
+                        <CommandList>
+                            <CommandEmpty>No results found</CommandEmpty>
+                            <CommandGroup>
+                                {visibleOptions.map((item) => {
+                                    const isSelected =
+                                        String(item?.id) === String(value);
+
+                                    return (
+                                        <CommandItem
+                                            key={item.id ?? item.name}
+                                            value={String(item.name ?? "")}
+                                            onSelect={() =>
+                                                handleSelect(item)
+                                            }
+                                        >
+                                            <CheckIcon
+                                                className={cn(
+                                                    "mr-2 h-4 w-4",
+                                                    isSelected
+                                                        ? "opacity-100"
+                                                        : "opacity-0",
+                                                )}
+                                            />
+                                            <span>{item.name}</span>
+                                        </CommandItem>
+                                    );
+                                })}
+                            </CommandGroup>
+                        </CommandList>
+                    </Command>
+                </PopoverContent>
+            </div>
+        </Popover>
     );
 }

@@ -1,13 +1,13 @@
 import { Head, Link, router } from "@inertiajs/react";
 import { MoreHorizontalIcon } from "lucide-react";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/Components/ui/button";
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@/Components/ui/dropdown-menu";
 import {
     Table as ShadTable,
     TableBody,
@@ -15,7 +15,7 @@ import {
     TableHead,
     TableHeader,
     TableRow,
-} from "@/components/ui/table";
+} from "@/Components/ui/table";
 import TablePagination from "@/Components/TablePagination";
 import FilterPanel from "@/Components/FilterPanel";
 import formatDate from "@/utils/date";
@@ -109,6 +109,28 @@ export default function Index({
         });
     };
 
+    const displayValue = (value, fallback = "-") => {
+        if (value == null || value === "") {
+            return fallback;
+        }
+
+        if (typeof value === "string" || typeof value === "number") {
+            return value;
+        }
+
+        if (typeof value === "object") {
+            return (
+                value.display_name ??
+                value.name ??
+                value.title ??
+                value.label ??
+                fallback
+            );
+        }
+
+        return fallback;
+    };
+
     return (
         <>
             <Head title="Curriculum Mappings" />
@@ -193,9 +215,9 @@ export default function Index({
                             curriculumMappings.data.map((mapping) => (
                                 <Trow key={mapping.id}>
                                     <Tdata>{mapping.id}</Tdata>
-                                    <Tdata>{mapping.curriculum}</Tdata>
-                                    <Tdata>{mapping.course}</Tdata>
-                                    <Tdata>{mapping.mapping_type}</Tdata>
+                                    <Tdata>{displayValue(mapping.curriculum)}</Tdata>
+                                    <Tdata>{displayValue(mapping.course)}</Tdata>
+                                    <Tdata>{displayValue(mapping.mapping_type)}</Tdata>
                                     <Tdata>
                                         <span
                                             className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${

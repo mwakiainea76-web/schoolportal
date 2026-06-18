@@ -71,7 +71,7 @@ class CurriculumController extends Controller
 
     public function edit(Curriculum $curriculum)
     {
-        $curriculum->load(['course.certificationLevel.examBody', 'examBody:id,code,name']);
+        $curriculum->load(['examBody:id,code,name']);
 
         return inertia('Curriculums/Edit', [
             'curriculum' => $curriculum,

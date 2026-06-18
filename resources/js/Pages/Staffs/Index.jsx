@@ -3,14 +3,14 @@ import { useState } from "react";
 import { MoreHorizontalIcon } from "lucide-react";
 
 import TextInput from "@/Components/TextInput";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/Components/ui/button";
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@/Components/ui/dropdown-menu";
 import {
     Table,
     TableBody,
@@ -19,7 +19,7 @@ import {
     TableHead,
     TableHeader,
     TableRow,
-} from "@/components/ui/table";
+} from "@/Components/ui/table";
 
 export default function StaffIndex({ staffs }) {
     const [searchTerm, setSearchTerm] = useState("");
