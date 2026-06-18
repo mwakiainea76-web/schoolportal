@@ -54,7 +54,9 @@ class Staff extends Model
 
     public function getFullNameAttribute()
     {
-        return "{$this->first_name} {$this->last_name}".($this->other_name ? " {$this->other_name}" : '');
+        $otherName = $this->attributes['other_name'] ?? null;
+
+        return "{$this->first_name} {$this->last_name}".($otherName ? " {$otherName}" : '');
     }
 
     public function user()

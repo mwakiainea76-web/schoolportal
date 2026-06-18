@@ -23,6 +23,7 @@ import {
     Clock,
     DoorOpen,
     BriefcaseBusiness,
+    MessageSquareWarning,
 } from "lucide-react";
 
 /**
@@ -55,6 +56,7 @@ export const ICONS = {
     timetable: <Clock className="w-5 h-5 shrink-0" />,
     lectureRoom: <DoorOpen className="w-5 h-5 shrink-0" />,
     hr: <BriefcaseBusiness className="w-5 h-5 shrink-0" />,
+    complaints: <MessageSquareWarning className="w-5 h-5 shrink-0" />,
 };
 
 /**
@@ -587,6 +589,22 @@ export const STAFF_NAV_ITEMS = [
             },
         ],
     },
+    // --- Complaints ---
+    {
+        key: "complaints",
+        label: "Complaints",
+        icon: "complaints",
+        basePath: "/complaints",
+        roles: ["admin"],
+        children: [
+            {
+                routeName: "complaints.admin.index",
+                fallback: "/complaints",
+                label: "Manage Complaints",
+            },
+        ],
+    },
+
     // --- System ---
     {
         key: "system",
@@ -669,6 +687,24 @@ export const STUDENT_NAV_ITEMS = [
                 routeName: "student.fee-statements.index",
                 fallback: "/student/fee-statements",
                 label: "Fee Statements",
+            },
+        ],
+    },
+    {
+        key: "complaints",
+        label: "Complaints",
+        icon: "complaints",
+        basePath: "/student/complaints",
+        children: [
+            {
+                routeName: "student.complaints.index",
+                fallback: "/student/complaints",
+                label: "My Complaints",
+            },
+            {
+                routeName: "student.complaints.create",
+                fallback: "/student/complaints/create",
+                label: "Submit Complaint",
             },
         ],
     },

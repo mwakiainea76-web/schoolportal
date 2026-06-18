@@ -1,4 +1,4 @@
-import { Head, Link, router, usePage } from "@inertiajs/react";
+import { Head, Link, router } from "@inertiajs/react";
 import { useState } from "react";
 import Table from "@/Components/Table/Table";
 import Thead from "@/Components/Table/Thead";
@@ -6,9 +6,8 @@ import THdata from "@/Components/Table/THdata";
 import Tbody from "@/Components/Table/Tbody";
 import Trow from "@/Components/Table/Trow";
 import Tdata from "@/Components/Table/Tdata";
+import FilterPanel from "@/Components/FilterPanel";
 import formatDate from "@/utils/date";
-import InputLabel from "@/Components/InputLabel";
-import SearchSelect from "@/Components/SearchSelect";
 
 const STATUS_STYLES = {
     active: "bg-green-100 text-green-700",
@@ -18,31 +17,12 @@ const STATUS_STYLES = {
     suspended: "bg-gray-100 text-gray-600",
 };
 
-const EMPTY_FILTERS = {
-    course_id: "",
-    curriculum_id: "",
-    academic_year_id: "",
-    academic_session_id: "",
-    department_id: "",
-    year_of_study: "",
-    admission_number: "",
-    status: "",
-};
-
 const FILTER_DEFINITIONS = [
     {
         key: "admission_number",
         label: "Admission Number",
         type: "text",
         placeholder: "Search by Reg No...",
-    },
-    {
-        key: "department_id",
-        label: "Department",
-        type: "search",
-        routeName: "departments.search",
-        placeholder: "Search department...",
-        selectedLabelKey: "department",
     },
     {
         key: "course_id",
@@ -62,6 +42,14 @@ const FILTER_DEFINITIONS = [
         selectedLabelKey: "curriculum",
         dependsOn: "course_id",
         disabledPlaceholder: "Select course first",
+    },
+    {
+        key: "department_id",
+        label: "Department",
+        type: "search",
+        routeName: "departments.search",
+        placeholder: "Search department...",
+        selectedLabelKey: "department",
     },
     {
         key: "academic_year_id",
@@ -126,199 +114,6 @@ export default function Index({
         pageFilters.direction || "desc",
     );
 
-    const [form, setForm] = useState({
-        ...EMPTY_FILTERS,
-        course_id: pageFilters.course_id || "",
-        curriculum_id: pageFilters.curriculum_id || "",
-        academic_year_id: pageFilters.academic_year_id || "",
-        academic_session_id: pageFilters.academic_session_id || "",
-        department_id: pageFilters.department_id || "",
-        year_of_study: pageFilters.year_of_study || "",
-        admission_number: pageFilters.admission_number || "",
-        status: pageFilters.status || "",
-    });
-
-    const [currentFilterKey, setCurrentFilterKey] = useState("");
-    const [activeFilterKeys, setActiveFilterKeys] = useState(
-        FILTER_DEFINITIONS.map((filter) => filter.key).filter(
-            (key) => Boolean(pageFilters[key]),
-        ),
-    );
-
-    const setFilter = (key, value) => {
-        const definition = FILTER_DEFINITIONS.find(
-            (filter) => filter.key === key,
-        );
-
-        setForm((current) => {
-            const next = {
-                ...current,
-                [key]: value || "",
-            };
-
-            definition?.clears?.forEach((childKey) => {
-                next[childKey] = "";
-            });
-
-            return next;
-        });
-
-        if (definition?.clears?.length) {
-            setActiveFilterKeys((current) =>
-                current.filter((filterKey) => !definition.clears.includes(filterKey)),
-            );
-        }
-    };
-
-    const selectFilterColumn = (key) => {
-        setCurrentFilterKey(key);
-    };
-
-    const addCurrentFilter = () => {
-        if (!currentFilterKey || !form[currentFilterKey]) return;
-
-        setActiveFilterKeys((current) =>
-            current.includes(currentFilterKey)
-                ? current
-                : [...current, currentFilterKey],
-        );
-        setCurrentFilterKey("");
-    };
-
-    const clearSingleFilter = (key) => {
-        const definition = FILTER_DEFINITIONS.find(
-            (filter) => filter.key === key,
-        );
-
-        setForm((current) => {
-            const next = {
-                ...current,
-                [key]: "",
-            };
-
-            definition?.clears?.forEach((childKey) => {
-                next[childKey] = "";
-            });
-
-            return next;
-        });
-
-        setActiveFilterKeys((current) =>
-            current.filter(
-                (filterKey) =>
-                    filterKey !== key &&
-                    !definition?.clears?.includes(filterKey),
-            ),
-        );
-
-        if (currentFilterKey === key) {
-            setCurrentFilterKey("");
-        }
-    };
-
-    const activeFilters = FILTER_DEFINITIONS.filter(
-        (filter) =>
-            activeFilterKeys.includes(filter.key) && Boolean(form[filter.key]),
-    );
-
-    const getSelectedOptionLabel = (filter) => {
-        if (filter.type === "status") return labelStatus(form[filter.key]);
-
-        if (filter.type === "select") {
-            return (
-                filter.options.find(
-                    (option) => String(option.value) === String(form[filter.key]),
-                )?.label || form[filter.key]
-            );
-        }
-
-        if (filter.type === "text") return form[filter.key];
-
-        return (
-            selectedFilters?.[filter.selectedLabelKey] ||
-            selectedFilters?.[filter.key] ||
-            form[filter.key]
-        );
-    };
-
-    const renderFilterInput = (filter) => {
-        if (!filter) {
-            return (
-                <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 px-4 py-2 text-sm text-zinc-400">
-                    Select a column to show its input
-                </div>
-            );
-        }
-
-        if (filter.type === "text") {
-            return (
-                <input
-                    type="text"
-                    value={form[filter.key]}
-                    onChange={(e) => setFilter(filter.key, e.target.value)}
-                    placeholder={filter.placeholder}
-                    className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
-                />
-            );
-        }
-
-        if (filter.type === "select") {
-            return (
-                <select
-                    value={form[filter.key]}
-                    onChange={(e) => setFilter(filter.key, e.target.value)}
-                    className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
-                >
-                    <option value="">{filter.placeholder}</option>
-                    {filter.options.map((option) => (
-                        <option key={option.value} value={option.value}>
-                            {option.label}
-                        </option>
-                    ))}
-                </select>
-            );
-        }
-
-        if (filter.type === "status") {
-            return (
-                <select
-                    value={form.status}
-                    onChange={(e) => setFilter("status", e.target.value)}
-                    className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
-                >
-                    <option value="">{filter.placeholder}</option>
-                    {statuses.map((status) => (
-                        <option key={status} value={status}>
-                            {labelStatus(status)}
-                        </option>
-                    ))}
-                </select>
-            );
-        }
-
-        const disabled = filter.dependsOn && !form[filter.dependsOn];
-
-        return (
-            <SearchSelect
-                routeName={filter.routeName}
-                routeParams={
-                    typeof filter.routeParams === "function"
-                        ? filter.routeParams(form)
-                        : undefined
-                }
-                disabled={Boolean(disabled)}
-                defaultOptions={[]}
-                value={form[filter.key]}
-                selectedLabel={selectedFilters?.[filter.selectedLabelKey]}
-                placeholder={
-                    disabled ? filter.disabledPlaceholder : filter.placeholder
-                }
-                preloadOptions
-                onChange={(option) => setFilter(filter.key, option?.id || "")}
-            />
-        );
-    };
-
     const handleSort = (field) => {
         const direction =
             sortField === field && sortDirection === "asc" ? "desc" : "asc";
@@ -326,46 +121,23 @@ export default function Index({
         setSortDirection(direction);
         router.get(
             route("academic.sessions.enrollments.index"),
-            { ...form, sort: field, direction, page: 1 },
-            { preserveState: true, replace: true },
-        );
-    };
-
-    const renderArrow = (field) => {
-        if (sortField !== field) return null;
-        return sortDirection === "asc" ? "↑" : "↓";
-    };
-
-    const submit = (e) => {
-        e.preventDefault();
-
-        const appliedFilters = activeFilters.reduce((values, filter) => {
-            values[filter.key] = form[filter.key];
-            return values;
-        }, {});
-
-        router.get(
-            route("academic.sessions.enrollments.index"),
             {
-                ...appliedFilters,
-                sort: sortField,
-                direction: sortDirection,
+                ...Object.fromEntries(
+                    Object.entries(pageFilters).filter(
+                        ([, v]) => v !== "" && v !== null,
+                    ),
+                ),
+                sort: field,
+                direction,
                 page: 1,
             },
             { preserveState: true, replace: true },
         );
     };
 
-    const clearFilters = () => {
-        setForm(EMPTY_FILTERS);
-        setCurrentFilterKey("");
-        setActiveFilterKeys([]);
-
-        router.get(
-            route("academic.sessions.enrollments.index"),
-            { sort: sortField, direction: sortDirection, page: 1 },
-            { preserveState: true, replace: true },
-        );
+    const renderArrow = (field) => {
+        if (sortField !== field) return null;
+        return sortDirection === "asc" ? "\u2191" : "\u2193";
     };
 
     const handleDelete = (id) => {
@@ -377,102 +149,31 @@ export default function Index({
         });
     };
 
-    const currentFilter = FILTER_DEFINITIONS.find(
-        (filter) => filter.key === currentFilterKey,
-    );
-
     return (
         <>
             <Head title="Academic Session Enrollments" />
 
-            <div className="max-w-7xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
-                <form
-                    className="mb-4 rounded-lg border border-zinc-100 bg-white p-4 shadow-sm"
-                    onSubmit={submit}
-                >
-                    <div className="grid grid-cols-1 items-end gap-3 lg:grid-cols-[minmax(220px,300px)_minmax(300px,1fr)_auto_auto_auto]">
-                        <div>
-                            <InputLabel value="Filter Column" />
-                            <select
-                                value={currentFilterKey}
-                                onChange={(e) => selectFilterColumn(e.target.value)}
-                                className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
-                            >
-                                <option value="">Choose column...</option>
-                                {FILTER_DEFINITIONS.map((filter) => (
-                                    <option key={filter.key} value={filter.key}>
-                                        {filter.label}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
+            <div className="mx-auto w-full max-w-7xl">
+                <FilterPanel
+                    definitions={FILTER_DEFINITIONS}
+                    filters={filters}
+                    selectedFilters={selectedFilters}
+                    statuses={statuses}
+                    routeName="academic.sessions.enrollments.index"
+                    extraParams={{
+                        sort: sortField,
+                        direction: sortDirection,
+                        page: 1,
+                    }}
+                    quickKeys={[
+                        "admission_number",
+                        "course_id",
+                        "year_of_study",
+                        "status",
+                    ]}
+                />
 
-                        <div>
-                            <InputLabel
-                                value={
-                                    currentFilter ? currentFilter.label : "Filter Value"
-                                }
-                            />
-
-                            {renderFilterInput(currentFilter)}
-                        </div>
-
-                        <button
-                            type="button"
-                            onClick={addCurrentFilter}
-                            disabled={!currentFilterKey || !form[currentFilterKey]}
-                            className="inline-flex h-10 items-center justify-center rounded-lg border border-zinc-300 bg-white px-4 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                            + Add filter
-                        </button>
-
-                        <button
-                            type="button"
-                            onClick={clearFilters}
-                            className="inline-flex h-10 items-center justify-center rounded-lg border border-zinc-300 bg-white px-4 text-sm text-zinc-700 hover:bg-zinc-50"
-                        >
-                            Clear all
-                        </button>
-
-                        <button
-                            className="inline-flex h-10 items-center justify-center rounded-lg bg-emerald-600 px-4 text-sm text-white hover:bg-emerald-700"
-                            type="submit"
-                        >
-                            Apply
-                        </button>
-                    </div>
-
-                    <div className="mt-4 border-t border-zinc-100 pt-3">
- 
-                        {activeFilters.length ? (
-                            <div className="flex flex-wrap gap-2">
-                                {activeFilters.map((filter) => (
-                                    <button
-                                        key={filter.key}
-                                        type="button"
-                                        onClick={() => clearSingleFilter(filter.key)}
-                                        className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 ring-1 ring-emerald-100 hover:bg-emerald-100"
-                                    >
-                                        <span>
-                                            {filter.label}: {getSelectedOptionLabel(filter)}
-                                        </span>
-                                        <span className="text-emerald-900">×</span>
-                                    </button>
-                                ))}
-                            </div>
-                        ) : (
-                            <p className="text-sm text-zinc-500">
-                                No filters selected. Choose a column above to filter this table.
-                            </p>
-                        )}
-                    </div>
-                </form>
-
-                <Table
-                    pagination={enrollments}
-                    sortField={sortField}
-                    sortDirection={sortDirection}
-                >
+                <Table pagination={enrollments}>
                     <Thead>
                         <THdata
                             onClick={() => handleSort("id")}

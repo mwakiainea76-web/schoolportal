@@ -31,16 +31,7 @@ function Marksheet({
     academic_year_id: filters.academic_year_id || "",
     academic_session_id: filters.academic_session_id || ""
   });
-  const [currentFilterKey, setCurrentFilterKey] = useState(
-    FILTER_DEFINITIONS.find((filter) => filterForm.data[filter.key])?.key || ""
-  );
   const [exportFormat, setExportFormat] = useState("pdf");
-  const currentFilter = FILTER_DEFINITIONS.find(
-    (filter) => filter.key === currentFilterKey
-  );
-  const activeFilters = FILTER_DEFINITIONS.filter(
-    (filter) => filterForm.data[filter.key]
-  );
   const loadMarksheet = (event) => {
     event?.preventDefault();
     router.get(route("academic.marks.marksheet.index"), filterForm.data, {
@@ -56,7 +47,6 @@ function Marksheet({
       academic_session_id: "",
       admission_number: ""
     });
-    setCurrentFilterKey("");
   };
   const clearSingleFilter = (key) => {
     const updates = { [key]: "" };
@@ -69,9 +59,6 @@ function Marksheet({
       updates.academic_session_id = "";
     }
     filterForm.setData({ ...filterForm.data, ...updates });
-    if (currentFilterKey === key) {
-      setCurrentFilterKey("");
-    }
   };
   const downloadMarksheet = () => {
     const params = new URLSearchParams();
@@ -112,104 +99,9 @@ function Marksheet({
     }
     return value;
   };
-  const renderFilterInput = (filter) => {
-    if (!filter) {
-      return /* @__PURE__ */ jsx("div", { className: "rounded-xl border border-dashed border-zinc-200 bg-zinc-50 px-4 py-2 text-sm text-zinc-400", children: "Select a column to show its input" });
-    }
-    if (filter.key === "admission_number") {
-      return /* @__PURE__ */ jsx(
-        "input",
-        {
-          type: "text",
-          value: filterForm.data.admission_number,
-          onChange: (e) => filterForm.setData("admission_number", e.target.value),
-          placeholder: "Search admission number...",
-          className: "w-full rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
-        }
-      );
-    }
-    if (filter.key === "curriculum_mapping_id") {
-      return /* @__PURE__ */ jsxs(
-        "select",
-        {
-          value: filterForm.data.curriculum_mapping_id,
-          onChange: (event) => {
-            filterForm.setData(
-              "curriculum_mapping_id",
-              event.target.value
-            );
-            filterForm.setData("curriculum_unit_id", "");
-            filterForm.setData("academic_year_id", "");
-            filterForm.setData("academic_session_id", "");
-          },
-          className: "w-full rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100",
-          children: [
-            /* @__PURE__ */ jsx("option", { value: "", children: "Select course mapping..." }),
-            course_mappings.map((mapping) => /* @__PURE__ */ jsx("option", { value: mapping.id, children: mapping.name }, mapping.id))
-          ]
-        }
-      );
-    }
-    if (filter.key === "curriculum_unit_id") {
-      return /* @__PURE__ */ jsx(
-        SearchSelect,
-        {
-          routeName: "units.search",
-          routeParams: {
-            curriculum_mapping_id: filterForm.data.curriculum_mapping_id,
-            limit: 10
-          },
-          defaultOptions: unit_options,
-          value: filterForm.data.curriculum_unit_id,
-          selectedLabel: selectedLabel({ key: "curriculum_unit_id" }),
-          placeholder: filterForm.data.curriculum_mapping_id ? "Search unit..." : "Select course mapping first...",
-          preloadOptions: true,
-          onChange: (unit) => filterForm.setData("curriculum_unit_id", unit?.id || ""),
-          error: filterForm.errors.curriculum_unit_id,
-          disabled: !filterForm.data.curriculum_mapping_id
-        }
-      );
-    }
-    if (filter.key === "academic_year_id") {
-      return /* @__PURE__ */ jsx(
-        SearchSelect,
-        {
-          routeName: "academic.years.search",
-          value: filterForm.data.academic_year_id,
-          selectedLabel: selectedLabel({ key: "academic_year_id" }),
-          placeholder: "Select academic year...",
-          defaultOptions: filter_options?.academic_years?.map((year) => ({
-            id: year.value,
-            name: year.label
-          })) ?? [],
-          preloadOptions: true,
-          onChange: (academicYear) => {
-            filterForm.setData("academic_year_id", academicYear?.id || "");
-            filterForm.setData("academic_session_id", "");
-          }
-        }
-      );
-    }
-    return /* @__PURE__ */ jsx(
-      SearchSelect,
-      {
-        routeName: "academic.sessions.search",
-        routeParams: {
-          academic_year_id: filterForm.data.academic_year_id
-        },
-        value: filterForm.data.academic_session_id,
-        selectedLabel: selectedLabel({ key: "academic_session_id" }),
-        placeholder: filterForm.data.academic_year_id ? "Search session..." : "Select academic year first...",
-        defaultOptions: filter_options?.sessions?.map((session) => ({
-          id: session.value,
-          name: session.label
-        })) ?? [],
-        preloadOptions: true,
-        onChange: (session) => filterForm.setData("academic_session_id", session?.id || ""),
-        disabled: !filterForm.data.academic_year_id
-      }
-    );
-  };
+  const activeFilters = FILTER_DEFINITIONS.filter(
+    (filter) => filterForm.data[filter.key]
+  );
   const rows = marksheet?.rows ?? [];
   const pagination = marksheet?.pagination ?? {
     current_page: 1,
@@ -239,59 +131,135 @@ function Marksheet({
           onSubmit: loadMarksheet,
           className: "rounded-lg border border-zinc-100 bg-white p-4 shadow-sm",
           children: [
-            /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-1 items-end gap-3 lg:grid-cols-[minmax(220px,300px)_minmax(300px,1fr)_auto_auto_auto]", children: [
+            /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3", children: [
               /* @__PURE__ */ jsxs("div", { children: [
-                /* @__PURE__ */ jsx(InputLabel, { value: "Filter Column" }),
+                /* @__PURE__ */ jsx(InputLabel, { value: "Admission Number" }),
+                /* @__PURE__ */ jsx(
+                  "input",
+                  {
+                    type: "text",
+                    value: filterForm.data.admission_number,
+                    onChange: (e) => filterForm.setData(
+                      "admission_number",
+                      e.target.value
+                    ),
+                    placeholder: "Search admission number...",
+                    className: "w-full rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+                  }
+                )
+              ] }),
+              /* @__PURE__ */ jsxs("div", { children: [
+                /* @__PURE__ */ jsx(InputLabel, { value: "Course Mapping" }),
                 /* @__PURE__ */ jsxs(
                   "select",
                   {
-                    value: currentFilterKey,
-                    onChange: (event) => setCurrentFilterKey(event.target.value),
+                    value: filterForm.data.curriculum_mapping_id,
+                    onChange: (event) => {
+                      filterForm.setData(
+                        "curriculum_mapping_id",
+                        event.target.value
+                      );
+                      filterForm.setData("curriculum_unit_id", "");
+                      filterForm.setData("academic_year_id", "");
+                      filterForm.setData(
+                        "academic_session_id",
+                        ""
+                      );
+                    },
                     className: "w-full rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100",
                     children: [
-                      /* @__PURE__ */ jsx("option", { value: "", children: "Choose column..." }),
-                      FILTER_DEFINITIONS.map((filter) => /* @__PURE__ */ jsx("option", { value: filter.key, children: filter.label }, filter.key))
+                      /* @__PURE__ */ jsx("option", { value: "", children: "Select course mapping..." }),
+                      course_mappings.map((mapping) => /* @__PURE__ */ jsx("option", { value: mapping.id, children: mapping.name }, mapping.id))
                     ]
                   }
                 )
               ] }),
               /* @__PURE__ */ jsxs("div", { children: [
+                /* @__PURE__ */ jsx(InputLabel, { value: "Unit" }),
                 /* @__PURE__ */ jsx(
-                  InputLabel,
+                  SearchSelect,
                   {
-                    value: currentFilter?.label || "Filter Value"
+                    routeName: "units.search",
+                    routeParams: {
+                      curriculum_mapping_id: filterForm.data.curriculum_mapping_id,
+                      limit: 10
+                    },
+                    defaultOptions: unit_options,
+                    value: filterForm.data.curriculum_unit_id,
+                    selectedLabel: selectedLabel({
+                      key: "curriculum_unit_id"
+                    }),
+                    placeholder: filterForm.data.curriculum_mapping_id ? "Search unit..." : "Select course mapping first...",
+                    preloadOptions: true,
+                    onChange: (unit) => filterForm.setData(
+                      "curriculum_unit_id",
+                      unit?.id || ""
+                    ),
+                    error: filterForm.errors.curriculum_unit_id,
+                    disabled: !filterForm.data.curriculum_mapping_id
                   }
-                ),
-                renderFilterInput(currentFilter)
+                )
               ] }),
-              /* @__PURE__ */ jsx(
-                "button",
-                {
-                  type: "button",
-                  onClick: () => setCurrentFilterKey(""),
-                  disabled: !currentFilterKey || !filterForm.data[currentFilterKey],
-                  className: "inline-flex h-10 items-center justify-center rounded-lg border border-zinc-300 bg-white px-4 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50",
-                  children: "+ Add filter"
-                }
-              ),
-              /* @__PURE__ */ jsx(
-                "button",
-                {
-                  type: "button",
-                  onClick: clearFilters,
-                  className: "inline-flex h-10 items-center justify-center rounded-lg border border-zinc-300 bg-white px-4 text-sm text-zinc-700 hover:bg-zinc-50",
-                  children: "Clear all"
-                }
-              ),
-              /* @__PURE__ */ jsx(
-                "button",
-                {
-                  type: "submit",
-                  disabled: !filterForm.data.curriculum_unit_id,
-                  className: "inline-flex h-10 items-center justify-center rounded-lg bg-emerald-600 px-4 text-sm text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60",
-                  children: "Apply"
-                }
-              )
+              /* @__PURE__ */ jsxs("div", { children: [
+                /* @__PURE__ */ jsx(InputLabel, { value: "Academic Year" }),
+                /* @__PURE__ */ jsx(
+                  SearchSelect,
+                  {
+                    routeName: "academic.years.search",
+                    value: filterForm.data.academic_year_id,
+                    selectedLabel: selectedLabel({
+                      key: "academic_year_id"
+                    }),
+                    placeholder: "Select academic year...",
+                    defaultOptions: filter_options?.academic_years?.map(
+                      (year) => ({
+                        id: year.value,
+                        name: year.label
+                      })
+                    ) ?? [],
+                    preloadOptions: true,
+                    onChange: (academicYear) => {
+                      filterForm.setData(
+                        "academic_year_id",
+                        academicYear?.id || ""
+                      );
+                      filterForm.setData(
+                        "academic_session_id",
+                        ""
+                      );
+                    }
+                  }
+                )
+              ] }),
+              /* @__PURE__ */ jsxs("div", { children: [
+                /* @__PURE__ */ jsx(InputLabel, { value: "Session" }),
+                /* @__PURE__ */ jsx(
+                  SearchSelect,
+                  {
+                    routeName: "academic.sessions.search",
+                    routeParams: {
+                      academic_year_id: filterForm.data.academic_year_id
+                    },
+                    value: filterForm.data.academic_session_id,
+                    selectedLabel: selectedLabel({
+                      key: "academic_session_id"
+                    }),
+                    placeholder: filterForm.data.academic_year_id ? "Search session..." : "Select academic year first...",
+                    defaultOptions: filter_options?.sessions?.map(
+                      (session) => ({
+                        id: session.value,
+                        name: session.label
+                      })
+                    ) ?? [],
+                    preloadOptions: true,
+                    onChange: (session) => filterForm.setData(
+                      "academic_session_id",
+                      session?.id || ""
+                    ),
+                    disabled: !filterForm.data.academic_year_id
+                  }
+                )
+              ] })
             ] }),
             /* @__PURE__ */ jsx(
               InputError,
@@ -324,14 +292,34 @@ function Marksheet({
                 ]
               },
               filter.key
-            )) }) : /* @__PURE__ */ jsx("p", { className: "text-sm text-zinc-500", children: "No filters selected. Choose a column above to filter this table." }) }),
-            /* @__PURE__ */ jsxs("div", { className: "mt-4 flex flex-col gap-3 border-t border-zinc-100 pt-3 sm:flex-row sm:items-center sm:justify-between", children: [
-              /* @__PURE__ */ jsx("div", { className: "text-sm text-zinc-500", children: selected_unit ? /* @__PURE__ */ jsxs("span", { className: "font-semibold text-zinc-800", children: [
-                selected_unit.code,
-                " - ",
-                selected_unit.name
-              ] }) : "Choose a unit and apply filters to load the marksheet." }),
+            )) }) : /* @__PURE__ */ jsx("p", { className: "text-sm text-zinc-500", children: "No filters selected. Set filter values above to load the marksheet." }) }),
+            /* @__PURE__ */ jsxs("div", { className: "mt-4 flex items-center justify-between border-t border-zinc-100 pt-3", children: [
+              /* @__PURE__ */ jsxs("div", { className: "flex gap-2", children: [
+                /* @__PURE__ */ jsx(
+                  "button",
+                  {
+                    type: "submit",
+                    disabled: !filterForm.data.curriculum_unit_id,
+                    className: "inline-flex h-10 items-center justify-center rounded-lg bg-emerald-600 px-6 text-sm text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60",
+                    children: "Apply"
+                  }
+                ),
+                /* @__PURE__ */ jsx(
+                  "button",
+                  {
+                    type: "button",
+                    onClick: clearFilters,
+                    className: "inline-flex h-10 items-center justify-center rounded-lg border border-zinc-300 bg-white px-4 text-sm text-zinc-700 hover:bg-zinc-50",
+                    children: "Clear all"
+                  }
+                )
+              ] }),
               /* @__PURE__ */ jsxs("div", { className: "flex items-center", children: [
+                selected_unit && /* @__PURE__ */ jsxs("span", { className: "mr-3 text-sm font-semibold text-zinc-800", children: [
+                  selected_unit.code,
+                  " - ",
+                  selected_unit.name
+                ] }),
                 /* @__PURE__ */ jsxs(
                   "select",
                   {

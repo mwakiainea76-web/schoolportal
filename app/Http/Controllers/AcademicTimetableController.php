@@ -233,7 +233,7 @@ class AcademicTimetableController extends Controller
 
     public function createHod(Request $request)
     {
-        abort_unless($request->user()?->hasRole('hod'), 403);
+        abort_unless($request->user()?->hasRole('hod') || $request->user()?->hasRole('admin'), 403);
 
         $department = $request->user()?->staff?->department;
         abort_unless($department, 403, 'Your staff profile is not linked to a department.');
@@ -515,7 +515,9 @@ class AcademicTimetableController extends Controller
             'time_range' => substr((string) $entry->start_time, 0, 5).' - '.substr((string) $entry->end_time, 0, 5),
             'unit_name' => $entry->curriculumUnit?->name,
             'unit_code' => $entry->curriculumUnit?->code,
+            'curriculum_mapping_id' => (string) ($entry->curriculumUnit?->curriculum_mapping_id ?? ''),
             'module_taught' => $entry->curriculumUnit?->module_taught,
+            'module_number' => $entry->curriculumUnit?->module_taught ? (string) $entry->curriculumUnit?->module_taught : '',
             'course_name' => $entry->curriculumUnit?->curriculumMapping?->course?->name,
             'curriculum_name' => $entry->curriculumUnit?->curriculumMapping?->curriculum?->name,
             'merged_units' => $entry->curriculumUnits
@@ -845,6 +847,6 @@ class AcademicTimetableController extends Controller
     {
         $user = $request->user();
 
-        return (bool) $user?->hasRole('hod');
+        return (bool) ($user?->hasRole('hod') || $user?->hasRole('admin'));
     }
 }

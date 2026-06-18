@@ -2,15 +2,16 @@ import { jsxs, Fragment, jsx } from "react/jsx-runtime";
 import { Head, router } from "@inertiajs/react";
 import { useState } from "react";
 import { T as Table, a as Thead, b as THdata, c as Tbody, d as Trow, e as Tdata } from "./Tdata-BYbinPOB.js";
+import { F as FilterPanel } from "./FilterPanel-B_xT30Ex.js";
 import { f as formatDate } from "./date-CQXYOX-2.js";
-import { S as SearchSelect } from "./SearchSelect-CY7NDfHZ.js";
-import { I as InputLabel } from "./InputLabel-DlDnrkJG.js";
 import { d as downloadExport } from "./exportDownload-D_MQvCpZ.js";
 import "ziggy-js";
+import "./SearchSelect-CY7NDfHZ.js";
 const FILTER_DEFINITIONS = [
   {
     key: "course_id",
     label: "Course Name",
+    type: "search",
     routeName: "courses.hod.search",
     placeholder: "Select active course...",
     selectedLabelKey: "course"
@@ -18,13 +19,12 @@ const FILTER_DEFINITIONS = [
   {
     key: "curriculum_id",
     label: "Curriculum",
+    type: "search",
     routeName: "curriculums.search",
     placeholder: "Select curriculum...",
     selectedLabelKey: "curriculum"
   }
 ];
-const FILTER_KEYS = FILTER_DEFINITIONS.map((filter) => filter.key);
-const emptyFilterState = () => FILTER_KEYS.reduce((values, key) => ({ ...values, [key]: "" }), {});
 function HodIndex({
   courses,
   filters = {},
@@ -38,62 +38,19 @@ function HodIndex({
   const [sortDirection, setSortDirection] = useState(
     pageFilters.direction || "desc"
   );
-  const [form, setForm] = useState({
-    ...emptyFilterState(),
-    course_id: pageFilters.course_id || "",
-    curriculum_id: pageFilters.curriculum_id || ""
-  });
-  const [currentFilterKey, setCurrentFilterKey] = useState(
-    FILTER_DEFINITIONS.find((filter) => pageFilters[filter.key])?.key || ""
-  );
   const [exportFormat, setExportFormat] = useState("pdf");
-  const setFilter = (key, value) => {
-    setForm((current) => ({
-      ...current,
-      [key]: value
-    }));
-  };
-  const currentFilters = () => FILTER_KEYS.reduce(
-    (values, key) => ({ ...values, [key]: form[key] }),
-    {}
-  );
-  const selectedFilterDefinition = FILTER_DEFINITIONS.find(
-    (filter) => filter.key === currentFilterKey
-  );
-  const activeFilters = FILTER_DEFINITIONS.filter(
-    (filter) => form[filter.key]
-  );
-  const clearSingleFilter = (key) => {
-    setFilter(key, "");
-    if (currentFilterKey === key) {
-      setCurrentFilterKey("");
-    }
-  };
-  const getSelectedOptionLabel = (filter) => selectedFilters?.[filter.selectedLabelKey] || form[filter.key];
-  const renderFilterInput = (filter) => {
-    if (!filter) {
-      return /* @__PURE__ */ jsx("div", { className: "rounded-xl border border-dashed border-zinc-200 bg-zinc-50 px-4 py-2 text-sm text-zinc-400", children: "Select a column to show its input" });
-    }
-    return /* @__PURE__ */ jsx(
-      SearchSelect,
-      {
-        routeName: filter.routeName,
-        defaultOptions: [],
-        value: form[filter.key],
-        selectedLabel: selectedFilters?.[filter.selectedLabelKey],
-        placeholder: filter.placeholder,
-        preloadOptions: true,
-        onChange: (option) => setFilter(filter.key, option?.id || "")
-      }
-    );
-  };
   const handleSort = (field) => {
     const direction = sortField === field && sortDirection === "asc" ? "desc" : "asc";
     setSortField(field);
     setSortDirection(direction);
+    const cleanFilters = Object.fromEntries(
+      Object.entries(pageFilters).filter(
+        ([, v]) => v !== "" && v !== null
+      )
+    );
     router.get(
       route("courses.hod.index"),
-      { ...currentFilters(), sort: field, direction, page: 1 },
+      { ...cleanFilters, sort: field, direction, page: 1 },
       { preserveState: true, replace: true }
     );
   };
@@ -101,32 +58,14 @@ function HodIndex({
     if (sortField !== field) return null;
     return sortDirection === "asc" ? "^" : "v";
   };
-  const submit = (e) => {
-    e.preventDefault();
-    router.get(
-      route("courses.hod.index"),
-      {
-        ...currentFilters(),
-        sort: sortField,
-        direction: sortDirection,
-        page: 1
-      },
-      { preserveState: true, replace: true }
-    );
-  };
-  const clearFilters = () => {
-    setForm(emptyFilterState());
-    setCurrentFilterKey("");
-    router.get(
-      route("courses.hod.index"),
-      { sort: sortField, direction: sortDirection, page: 1 },
-      { preserveState: true, replace: true }
-    );
-  };
   const handleExport = () => {
+    const cleanFilters = Object.fromEntries(
+      Object.entries(pageFilters).filter(
+        ([, v]) => v !== "" && v !== null
+      )
+    );
     downloadExport("courses", exportFormat, {
-      ...currentFilters(),
-      search: pageFilters.search || "",
+      ...cleanFilters,
       sort: sortField,
       direction: sortDirection
     });
@@ -139,84 +78,15 @@ function HodIndex({
         " ",
         /* @__PURE__ */ jsx("span", { className: " rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 ring-1 ring-emerald-100", children: department_context?.label })
       ] }) }),
-      /* @__PURE__ */ jsxs(
-        "form",
+      /* @__PURE__ */ jsx(
+        FilterPanel,
         {
-          className: "mb-4 rounded-lg border border-zinc-100 bg-white p-4 shadow-sm",
-          onSubmit: submit,
-          children: [
-            /* @__PURE__ */ jsxs("div", { className: "grid grid-cols-1 items-end gap-3 lg:grid-cols-[minmax(220px,300px)_minmax(300px,1fr)_auto_auto_auto]", children: [
-              /* @__PURE__ */ jsxs("div", { children: [
-                /* @__PURE__ */ jsx(InputLabel, { value: "Filter Column" }),
-                /* @__PURE__ */ jsxs(
-                  "select",
-                  {
-                    value: currentFilterKey,
-                    onChange: (e) => setCurrentFilterKey(e.target.value),
-                    className: "w-full rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100",
-                    children: [
-                      /* @__PURE__ */ jsx("option", { value: "", children: "Choose column..." }),
-                      FILTER_DEFINITIONS.map((filter) => /* @__PURE__ */ jsx("option", { value: filter.key, children: filter.label }, filter.key))
-                    ]
-                  }
-                )
-              ] }),
-              /* @__PURE__ */ jsxs("div", { children: [
-                /* @__PURE__ */ jsx(
-                  InputLabel,
-                  {
-                    value: selectedFilterDefinition?.label || "Filter Value"
-                  }
-                ),
-                renderFilterInput(selectedFilterDefinition)
-              ] }),
-              /* @__PURE__ */ jsx(
-                "button",
-                {
-                  type: "button",
-                  onClick: () => currentFilterKey && form[currentFilterKey] && setCurrentFilterKey(""),
-                  disabled: !currentFilterKey || !form[currentFilterKey],
-                  className: "inline-flex h-10 items-center justify-center rounded-lg border border-zinc-300 bg-white px-4 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50",
-                  children: "+ Add filter"
-                }
-              ),
-              /* @__PURE__ */ jsx(
-                "button",
-                {
-                  type: "button",
-                  onClick: clearFilters,
-                  className: "inline-flex h-10 items-center justify-center rounded-lg border border-zinc-300 bg-white px-4 text-sm text-zinc-700 hover:bg-zinc-50",
-                  children: "Clear all"
-                }
-              ),
-              /* @__PURE__ */ jsx(
-                "button",
-                {
-                  className: "inline-flex h-10 items-center justify-center rounded-lg bg-emerald-600 px-4 text-sm text-white hover:bg-emerald-700",
-                  type: "submit",
-                  children: "Apply"
-                }
-              )
-            ] }),
-            /* @__PURE__ */ jsx("div", { className: "mt-4 border-t border-zinc-100 pt-3", children: activeFilters.length ? /* @__PURE__ */ jsx("div", { className: "flex flex-wrap gap-2", children: activeFilters.map((filter) => /* @__PURE__ */ jsxs(
-              "button",
-              {
-                type: "button",
-                onClick: () => clearSingleFilter(filter.key),
-                className: "inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 ring-1 ring-emerald-100 hover:bg-emerald-100",
-                children: [
-                  /* @__PURE__ */ jsxs("span", { children: [
-                    filter.label,
-                    ":",
-                    " ",
-                    getSelectedOptionLabel(filter)
-                  ] }),
-                  /* @__PURE__ */ jsx("span", { className: "text-emerald-900", children: "x" })
-                ]
-              },
-              filter.key
-            )) }) : /* @__PURE__ */ jsx("p", { className: "text-sm text-zinc-500", children: "No filters selected. Choose a column above to filter this table." }) })
-          ]
+          definitions: FILTER_DEFINITIONS,
+          filters,
+          selectedFilters,
+          routeName: "courses.hod.index",
+          extraParams: { sort: sortField, direction: sortDirection, page: 1 },
+          quickKeys: ["course_id", "curriculum_id"]
         }
       ),
       /* @__PURE__ */ jsx("div", { className: "mb-2 flex justify-end", children: /* @__PURE__ */ jsxs("div", { className: "flex items-center", children: [

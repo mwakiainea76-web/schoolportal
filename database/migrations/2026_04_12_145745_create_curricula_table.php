@@ -36,8 +36,6 @@ return new class extends Migration
             $table->softDeletes();
             $table->timestamps();
 
-            $table->index(['course_id', 'exam_body_id', 'is_active']);
-
         });
 
         if (! Schema::hasTable('exam_bodies') || ! Schema::hasTable('users')) {
@@ -61,7 +59,6 @@ return new class extends Migration
                 }
 
                 DB::table('curricula')->insert([
-                    'course_id' => null,
                     'exam_body_id' => $examBody->id,
                     'name' => $name,
                     'is_active' => true,

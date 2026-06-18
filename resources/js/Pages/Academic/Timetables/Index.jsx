@@ -1,5 +1,4 @@
 import { Head, Link, router } from "@inertiajs/react";
-import { useState } from "react";
 import SearchSelect from "@/Components/SearchSelect";
 
 export default function Index({
@@ -16,20 +15,12 @@ export default function Index({
     is_trainer,
     should_load_timetable,
     current_session_note,
+    current_department_id,
 }) {
     const pageFilters =
         filters && !Array.isArray(filters) && typeof filters === "object"
             ? filters
             : {};
-
-    const [currentFilterKey, setCurrentFilterKey] = useState("");
-    const [draftFilters, setDraftFilters] = useState({
-        academic_session_id: pageFilters.academic_session_id || "",
-        trainer_staff_id: pageFilters.trainer_staff_id || "",
-        curriculum_mapping_id: pageFilters.curriculum_mapping_id || "",
-        module_number: pageFilters.module_number || "",
-        day_of_week: pageFilters.day_of_week || "",
-    });
 
     const applyFilters = (nextFilters) => {
         router.get(route("academic.timetables.index"), nextFilters, {
@@ -38,319 +29,23 @@ export default function Index({
         });
     };
 
-    const buildNextFilters = (field, value) => {
-        const nextFilters = {
+    const setFilter = (field, value) => {
+        const next = {
             ...pageFilters,
-            lecture_room_id: "",
             [field]: value,
+            lecture_room_id: "",
         };
-
         if (field === "curriculum_mapping_id") {
-            nextFilters.module_number = "";
+            next.module_number = "";
         }
-
         if (is_trainer) {
-            nextFilters.academic_session_id = draftFilters.academic_session_id;
-            nextFilters.trainer_staff_id = draftFilters.trainer_staff_id;
+            next.trainer_staff_id = pageFilters.trainer_staff_id || "";
         }
-
-        return nextFilters;
+        applyFilters(next);
     };
-
-    const setDraftFilter = (field, value) => {
-        setDraftFilters((current) => {
-            const nextFilters = {
-                ...current,
-                [field]: value,
-            };
-
-            if (field === "curriculum_mapping_id") {
-                nextFilters.module_number = "";
-            }
-
-            return nextFilters;
-        });
-    };
-
-    const resetFilters = () => {
-        const nextFilters = {
-            academic_session_id: "",
-            trainer_staff_id: is_trainer ? pageFilters.trainer_staff_id : "",
-            curriculum_mapping_id: "",
-            module_number: "",
-            day_of_week: "",
-        };
-
-        setCurrentFilterKey("");
-        setDraftFilters(nextFilters);
-    };
-
-    const trainerFiltersReady =
-        is_hod || is_trainer
-            ? Boolean(draftFilters.academic_session_id)
-            : Boolean(draftFilters.academic_session_id);
-
-    const adminLoadPathReady = Boolean(
-        draftFilters.academic_session_id &&
-        (draftFilters.trainer_staff_id ||
-            (draftFilters.curriculum_mapping_id && draftFilters.module_number)),
-    );
 
     const handleDownloadPdf = () => {
         window.print();
-    };
-
-    const FILTER_DEFINITIONS = [
-        ...(!is_trainer
-            ? [
-                  {
-                      key: "academic_session_id",
-                      label: "Academic Session",
-                  },
-              ]
-            : []),
-        {
-            key: "curriculum_mapping_id",
-            label: "Course",
-        },
-        {
-            key: "module_number",
-            label: "Module",
-        },
-        ...(!is_hod && !is_trainer
-            ? [
-                  {
-                      key: "trainer_staff_id",
-                      label: "Trainer",
-                  },
-              ]
-            : []),
-        {
-            key: "day_of_week",
-            label: "Day",
-        },
-    ];
-
-    const currentFilter = FILTER_DEFINITIONS.find(
-        (filter) => filter.key === currentFilterKey,
-    );
-
-    const hasCurrentFilterValue =
-        currentFilterKey && Boolean(draftFilters[currentFilterKey]);
-
-    const activeFilters = FILTER_DEFINITIONS.filter(
-        (filter) => draftFilters[filter.key],
-    );
-
-    const findOptionLabel = (options, value, labelKey = "name") => {
-        const option = options.find(
-            (item) => String(item.id) === String(value),
-        );
-
-        return option?.[labelKey] || value;
-    };
-
-    const getSelectedOptionLabel = (filter) => {
-        const value = draftFilters[filter.key];
-
-        if (!value) return "";
-
-        if (filter.key === "academic_session_id") {
-            return findOptionLabel(session_options, value);
-        }
-
-        if (filter.key === "curriculum_mapping_id") {
-            return findOptionLabel(course_options, value);
-        }
-
-        if (filter.key === "module_number") {
-            return findOptionLabel(module_options, value);
-        }
-
-        if (filter.key === "trainer_staff_id") {
-            return findOptionLabel(trainers, value);
-        }
-
-        if (filter.key === "day_of_week") {
-            return findOptionLabel(days, value);
-        }
-
-        return value;
-    };
-
-    const clearSingleFilter = (key) => {
-        const nextFilters = buildNextFilters(key, "");
-
-        setDraftFilters((current) => ({
-            ...current,
-            ...nextFilters,
-        }));
-    };
-
-    const selectFilterColumn = (key) => {
-        setCurrentFilterKey(key);
-
-        if (!key) return;
-
-        setDraftFilters((current) => ({
-            ...current,
-            [key]: current[key] || "",
-        }));
-    };
-
-    const addCurrentFilter = () => {
-        if (!hasCurrentFilterValue) return;
-
-        setCurrentFilterKey("");
-    };
-
-    const submitFilters = (event) => {
-        event.preventDefault();
-
-        const cleanFilters = Object.fromEntries(
-            Object.entries(draftFilters).filter(
-                ([, value]) => value !== "" && value !== null,
-            ),
-        );
-
-        applyFilters(cleanFilters);
-    };
-
-    const renderFilterInput = (filter) => {
-        if (!filter) {
-            return (
-                <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 px-4 py-2.5 text-sm text-zinc-400">
-                    Select a column to show its input
-                </div>
-            );
-        }
-
-        if (filter.key === "academic_session_id") {
-            return (
-                <select
-                    value={draftFilters.academic_session_id}
-                    onChange={(e) =>
-                        setDraftFilter("academic_session_id", e.target.value)
-                    }
-                    disabled={!session_options.length}
-                    className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-zinc-100"
-                >
-                    {session_options.length ? (
-                        session_options.map((session) => (
-                            <option key={session.id} value={session.id}>
-                                {session.name}
-                                {session.is_active ? " (Current)" : ""}
-                            </option>
-                        ))
-                    ) : (
-                        <option value="">
-                            Run migration to enable sessions
-                        </option>
-                    )}
-                </select>
-            );
-        }
-
-        if (filter.key === "curriculum_mapping_id") {
-            if (is_hod || is_trainer) {
-                return (
-                    <select
-                        value={draftFilters.curriculum_mapping_id}
-                        onChange={(e) =>
-                            setDraftFilter(
-                                "curriculum_mapping_id",
-                                e.target.value,
-                            )
-                        }
-                        className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
-                    >
-                        <option value="">All versioned courses</option>
-                        {course_options.map((course) => (
-                            <option key={course.id} value={course.id}>
-                                {course.name}
-                            </option>
-                        ))}
-                    </select>
-                );
-            }
-
-            return (
-                <SearchSelect
-                    routeName="academic.timetables.courses.search"
-                    routeParams={{
-                        limit: 4,
-                    }}
-                    defaultOptions={course_options}
-                    value={draftFilters.curriculum_mapping_id}
-                    placeholder="Search versioned course..."
-                    onChange={(item) =>
-                        setDraftFilter("curriculum_mapping_id", item.id)
-                    }
-                />
-            );
-        }
-
-        if (filter.key === "module_number") {
-            return (
-                <select
-                    value={draftFilters.module_number}
-                    onChange={(e) =>
-                        setDraftFilter("module_number", e.target.value)
-                    }
-                    disabled={!draftFilters.curriculum_mapping_id}
-                    className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-zinc-100"
-                >
-                    <option value="">Select module</option>
-                    {module_options.map((module) => (
-                        <option key={module.id} value={module.id}>
-                            {module.name}
-                        </option>
-                    ))}
-                </select>
-            );
-        }
-
-        if (filter.key === "trainer_staff_id") {
-            return (
-                <select
-                    value={draftFilters.trainer_staff_id}
-                    onChange={(e) =>
-                        setDraftFilter("trainer_staff_id", e.target.value)
-                    }
-                    disabled={!trainerFiltersReady}
-                    className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-zinc-100"
-                >
-                    <option value="">All trainers</option>
-                    {trainers.map((trainer) => (
-                        <option key={trainer.id} value={trainer.id}>
-                            {trainer.name}
-                        </option>
-                    ))}
-                </select>
-            );
-        }
-
-        if (filter.key === "day_of_week") {
-            return (
-                <select
-                    value={draftFilters.day_of_week}
-                    onChange={(e) =>
-                        setDraftFilter("day_of_week", e.target.value)
-                    }
-                    disabled={!adminLoadPathReady}
-                    className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-zinc-100"
-                >
-                    <option value="">All days</option>
-                    {days.map((day) => (
-                        <option key={day.id} value={day.id}>
-                            {day.name}
-                        </option>
-                    ))}
-                </select>
-            );
-        }
-
-        return null;
     };
 
     return (
@@ -358,130 +53,177 @@ export default function Index({
             <Head title="Timetable" />
             <style>{`
                 @media print {
-                    body * {
-                        visibility: hidden;
-                    }
-
-                    #timetable-print-area,
-                    #timetable-print-area * {
-                        visibility: visible;
-                    }
-
-                    #timetable-print-area {
-                        position: absolute;
-                        left: 0;
-                        top: 0;
-                        width: 100%;
-                        padding: 0;
-                        margin: 0;
-                    }
-
-                    #timetable-print-area table {
-                        width: 100%;
-                        border-collapse: collapse;
-                    }
-
-                    #timetable-print-area th,
-                    #timetable-print-area td {
-                        break-inside: avoid;
-                        page-break-inside: avoid;
-                    }
-
-                    .print-hide {
-                        display: none !important;
-                    }
+                    body * { visibility: hidden; }
+                    #timetable-print-area, #timetable-print-area * { visibility: visible; }
+                    #timetable-print-area { position: absolute; left: 0; top: 0; width: 100%; padding: 0; margin: 0; }
+                    #timetable-print-area table { width: 100%; border-collapse: collapse; }
+                    #timetable-print-area th, #timetable-print-area td { break-inside: avoid; page-break-inside: avoid; }
+                    .print-hide { display: none !important; }
                 }
             `}</style>
 
             <div className="space-y-8">
                 <section className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
-                    <form onSubmit={submitFilters}>
-                        <div className="grid grid-cols-1 items-end gap-3 lg:grid-cols-[minmax(220px,300px)_minmax(280px,1fr)_auto_auto_auto]">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+                        {session_options.length > 0 && (
                             <div>
-                                <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
-                                    Filter Column
+                                <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                                    Academic Session
                                 </label>
                                 <select
-                                    value={currentFilterKey}
+                                    value={pageFilters.academic_session_id || ""}
                                     onChange={(e) =>
-                                        selectFilterColumn(e.target.value)
+                                        setFilter(
+                                            "academic_session_id",
+                                            e.target.value,
+                                        )
                                     }
-                                    className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+                                    className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
                                 >
-                                    <option value="">Choose column...</option>
-                                    {FILTER_DEFINITIONS.map((filter) => (
+                                    <option value="">All sessions</option>
+                                    {session_options.map((session) => (
                                         <option
-                                            key={filter.key}
-                                            value={filter.key}
+                                            key={session.id}
+                                            value={session.id}
                                         >
-                                            {filter.label}
+                                            {session.name}
+                                            {session.is_active
+                                                ? " (Current)"
+                                                : ""}
                                         </option>
                                     ))}
                                 </select>
                             </div>
+                        )}
 
-                            <div>
-                                <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
-                                    {currentFilter?.label || "Filter Value"}
-                                </label>
-                                {renderFilterInput(currentFilter)}
-                            </div>
-
-                            <button
-                                type="button"
-                                onClick={addCurrentFilter}
-                                disabled={!hasCurrentFilterValue}
-                                className="inline-flex h-10 items-center justify-center rounded-lg border border-zinc-300 bg-white px-4 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                                + Add filter
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={resetFilters}
-                                className="inline-flex h-10 items-center justify-center rounded-lg border border-zinc-300 bg-white px-4 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50"
-                            >
-                                Reset Filters
-                            </button>
-
-                            <button
-                                type="submit"
-                                className="inline-flex h-10 items-center justify-center rounded-lg bg-emerald-600 px-4 text-sm font-medium text-white transition hover:bg-emerald-700"
-                            >
-                                Apply
-                            </button>
-                        </div>
-
-                        <div className="mt-4 border-t border-zinc-100 pt-3">
-                            {activeFilters.length ? (
-                                <div className="flex flex-wrap gap-2">
-                                    {activeFilters.map((filter) => (
-                                        <button
-                                            key={filter.key}
-                                            type="button"
-                                            onClick={() =>
-                                                clearSingleFilter(filter.key)
-                                            }
-                                            className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 ring-1 ring-emerald-100 hover:bg-emerald-100"
-                                        >
-                                            <span>
-                                                {filter.label}:{" "}
-                                                {getSelectedOptionLabel(filter)}
-                                            </span>
-                                            <span className="text-emerald-900">
-                                                ×
-                                            </span>
-                                        </button>
-                                    ))}
-                                </div>
+                        <div>
+                            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                                Course
+                            </label>
+                            {!is_hod && !is_trainer ? (
+                                <SearchSelect
+                                    routeName="academic.timetables.courses.search"
+                                    routeParams={{ limit: 4 }}
+                                    defaultOptions={course_options}
+                                    value={pageFilters.curriculum_mapping_id || ""}
+                                    placeholder="Search course..."
+                                    onChange={(item) =>
+                                        setFilter(
+                                            "curriculum_mapping_id",
+                                            item.id,
+                                        )
+                                    }
+                                />
                             ) : (
-                                <p className="text-sm text-zinc-500">
-                                    No filters selected. Choose a column above
-                                    to filter this timetable.
-                                </p>
+                                <select
+                                    value={
+                                        pageFilters.curriculum_mapping_id || ""
+                                    }
+                                    onChange={(e) =>
+                                        setFilter(
+                                            "curriculum_mapping_id",
+                                            e.target.value,
+                                        )
+                                    }
+                                    className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+                                >
+                                    <option value="">All courses</option>
+                                    {course_options.map((course) => (
+                                        <option key={course.id} value={course.id}>
+                                            {course.name}
+                                        </option>
+                                    ))}
+                                </select>
                             )}
                         </div>
-                    </form>
+
+                        <div>
+                            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                                Module
+                            </label>
+                            <select
+                                value={pageFilters.module_number || ""}
+                                onChange={(e) =>
+                                    setFilter("module_number", e.target.value)
+                                }
+                                disabled={
+                                    !pageFilters.curriculum_mapping_id
+                                }
+                                className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-zinc-100"
+                            >
+                                <option value="">All modules</option>
+                                {module_options.map((mod) => (
+                                    <option key={mod.id} value={mod.id}>
+                                        {mod.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {!is_hod && !is_trainer && (
+                            <div>
+                                <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                                    Trainer
+                                </label>
+                                <select
+                                    value={
+                                        pageFilters.trainer_staff_id || ""
+                                    }
+                                    onChange={(e) =>
+                                        setFilter(
+                                            "trainer_staff_id",
+                                            e.target.value,
+                                        )
+                                    }
+                                    className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+                                >
+                                    <option value="">All trainers</option>
+                                    {trainers.map((trainer) => (
+                                        <option
+                                            key={trainer.id}
+                                            value={trainer.id}
+                                        >
+                                            {trainer.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+
+                        <div>
+                            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                                Day
+                            </label>
+                            <select
+                                value={pageFilters.day_of_week || ""}
+                                onChange={(e) =>
+                                    setFilter("day_of_week", e.target.value)
+                                }
+                                className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+                            >
+                                <option value="">All days</option>
+                                {days.map((day) => (
+                                    <option key={day.id} value={day.id}>
+                                        {day.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+
+                    {current_session_note && (
+                        <p className="mt-3 text-sm text-zinc-500">
+                            {current_session_note}
+                        </p>
+                    )}
+
+                    {(is_hod || is_trainer) && (
+                        <p className="mt-2 text-xs text-zinc-400">
+                            {is_trainer
+                                ? "Timetable is scoped to your assigned courses and trainer profile."
+                                : "Timetable is scoped to your department."}
+                        </p>
+                    )}
                 </section>
 
                 <section
@@ -539,13 +281,9 @@ export default function Index({
                                                             </p>
                                                             <p className="mt-1 text-xs text-zinc-500">
                                                                 Time from{" "}
-                                                                {
-                                                                    lesson.start_time
-                                                                }{" "}
+                                                                {lesson.start_time}{" "}
                                                                 to{" "}
-                                                                {
-                                                                    lesson.end_time
-                                                                }
+                                                                {lesson.end_time}
                                                             </p>
                                                         </th>
                                                     ),
@@ -619,6 +357,51 @@ export default function Index({
                                                                                             session.lecture_room_name
                                                                                         }
                                                                                     </p>
+                                                                                    {!is_trainer && (
+                                                                                        <div className="print-hide mt-2 flex gap-2 border-t border-zinc-200 pt-2">
+                                                                                            <Link
+                                                                                                href={route(
+                                                                                                    "academic.timetables.edit",
+                                                                                                    session.id,
+                                                                                                )}
+                                                                                                className="text-xs font-medium text-emerald-600 hover:underline"
+                                                                                            >
+                                                                                                Edit
+                                                                                            </Link>
+                                                                                            <Link
+                                                                                                href={route(
+                                                                                                    "academic.timetables.create",
+                                                                                                    {
+                                                                                                        department_id:
+                                                                                                            session.department_id ||
+                                                                                                            current_department_id,
+                                                                                                        curriculum_mapping_id:
+                                                                                                            session.curriculum_mapping_id ||
+                                                                                                            pageFilters.curriculum_mapping_id,
+                                                                                                        module_number:
+                                                                                                            session.module_number ||
+                                                                                                            pageFilters.module_number,
+                                                                                                    },
+                                                                                                )}
+                                                                                                className="text-xs font-medium text-indigo-600 hover:underline"
+                                                                                            >
+                                                                                                Clone
+                                                                                            </Link>
+                                                                                            <Link
+                                                                                                href={route(
+                                                                                                    "academic.timetables.create",
+                                                                                                    {
+                                                                                                        department_id:
+                                                                                                            session.department_id ||
+                                                                                                            current_department_id,
+                                                                                                    },
+                                                                                                )}
+                                                                                                className="text-xs font-medium text-amber-600 hover:underline"
+                                                                                            >
+                                                                                                + New
+                                                                                            </Link>
+                                                                                        </div>
+                                                                                    )}
                                                                                 </div>
                                                                             ),
                                                                         )}
@@ -650,8 +433,8 @@ export default function Index({
                                 Timetable Grid Awaits Filters
                             </p>
                             <p className="mt-2 text-sm text-zinc-500">
-                                Select a versioned course and module, or select
-                                a trainer, to load the timetable grid.
+                                Select a session and course above to load the
+                                timetable grid.
                             </p>
                         </div>
                     )}

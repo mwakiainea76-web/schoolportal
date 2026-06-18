@@ -8,6 +8,7 @@ use App\Http\Controllers\AdminPasswordResetController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\Api\ExportController;
 use App\Http\Controllers\CertificationLevelController;
+use App\Http\Controllers\ComplaintController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\CourseEnrollmentController;
 use App\Http\Controllers\CurriculumController;
@@ -79,6 +80,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/results', [StudentMarkController::class, 'studentResultsIndex'])->name('results.index');
         Route::get('/fee-statements', [InvoiceController::class, 'studentStatementsIndex'])->name('fee-statements.index');
         Route::get('/fee-statements/{invoice}', [InvoiceController::class, 'studentStatementShow'])->name('fee-statements.show');
+
+        Route::prefix('complaints')->name('complaints.')->group(function () {
+            Route::get('/', [ComplaintController::class, 'studentIndex'])->name('index');
+            Route::get('/create', [ComplaintController::class, 'create'])->name('create');
+            Route::post('/', [ComplaintController::class, 'store'])->name('store');
+        });
     });
 
     /*
@@ -262,7 +269,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::prefix('timetables')->name('timetables.')->group(function () {
                 Route::get('/', [AcademicTimetableController::class, 'index'])->name('index');
                 Route::get('/courses/search', [AcademicTimetableController::class, 'searchCourseMappings'])->name('courses.search');
-                Route::middleware('role:hod')->group(function () {
+                Route::middleware('role:hod|admin')->group(function () {
                     Route::get('/create', [AcademicTimetableController::class, 'createHod'])->name('create');
                     Route::get('/{timetable}/edit', [AcademicTimetableController::class, 'edit'])->name('edit');
                     Route::put('/{timetable}', [AcademicTimetableController::class, 'update'])->name('update');
@@ -485,6 +492,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 Route::post('/course-change', [StudentCourseChangeController::class, 'store'])->name('course-change.store');
                 Route::get('/{student}/admission-letter', [StudentController::class, 'admissionLetter'])->name('admission-letter');
             });
+        });
+
+        /*
+        |--------------------------------------------------------------------------
+        | Complaints Management
+        |--------------------------------------------------------------------------
+        */
+        Route::middleware('role:admin')->prefix('complaints')->name('complaints.admin.')->group(function () {
+            Route::get('/', [ComplaintController::class, 'adminIndex'])->name('index');
+            Route::get('/{complaint}', [ComplaintController::class, 'show'])->name('show');
+            Route::post('/{complaint}/escalate', [ComplaintController::class, 'escalate'])->name('escalate');
+            Route::post('/{complaint}/resolve', [ComplaintController::class, 'resolve'])->name('resolve');
         });
 
         /*

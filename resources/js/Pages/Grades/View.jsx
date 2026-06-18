@@ -1,11 +1,10 @@
 import { Head, router, useForm } from "@inertiajs/react";
 import { useState } from "react";
-import InputLabel from "@/Components/InputLabel";
 import InputError from "@/Components/InputError";
+import InputLabel from "@/Components/InputLabel";
 import SearchSelect from "@/Components/SearchSelect";
 
 const FILTER_DEFINITIONS = [
-    { key: "curriculum_mapping_id", label: "Course " },
     { key: "curriculum_unit_id", label: "Unit" },
     {
         key: "assessment_type",
@@ -24,15 +23,12 @@ export default function View({
     filters,
     selected_unit,
     submitted_marks,
-    course_mappings,
     unit_options,
     filter_options,
     blocker,
-    can_publish,
     selected_filters,
 }) {
     const filterForm = useForm({
-        curriculum_mapping_id: filters.curriculum_mapping_id || "",
         curriculum_unit_id: filters.curriculum_unit_id || "",
         assessment_type: filters.assessment_type || "",
         assessment_number: filters.assessment_number || "",
@@ -43,61 +39,24 @@ export default function View({
     const marks = submitted_marks?.data ?? [];
     const currentPage = submitted_marks?.current_page ?? 1;
     const lastPage = submitted_marks?.last_page ?? 1;
-    const [currentFilterKey, setCurrentFilterKey] = useState(
-        FILTER_DEFINITIONS.find((filter) => filterForm.data[filter.key])?.key ||
-            "",
-    );
     const [exportFormat, setExportFormat] = useState("pdf");
-
-    const currentFilter = FILTER_DEFINITIONS.find(
-        (filter) => filter.key === currentFilterKey,
-    );
-    const activeFilters = FILTER_DEFINITIONS.filter(
-        (filter) => filterForm.data[filter.key],
-    );
 
     const searchMarks = (page = 1) => {
         router.get(
             route("academic.marks.view.index"),
-            {
-                ...filterForm.data,
-                search_marks: true,
-                page,
-            },
+            { ...filterForm.data, search_marks: true, page },
             { preserveState: true, preserveScroll: true },
         );
     };
 
     const clearFilters = () => {
         filterForm.setData({
-            curriculum_mapping_id: "",
             curriculum_unit_id: "",
             assessment_type: "",
             assessment_number: "",
             academic_year_id: "",
             academic_session_id: "",
         });
-        setCurrentFilterKey("");
-    };
-
-    const clearSingleFilter = (key) => {
-        const updates = { [key]: "" };
-
-        if (key === "curriculum_mapping_id") {
-            updates.curriculum_unit_id = "";
-            updates.academic_year_id = "";
-            updates.academic_session_id = "";
-        }
-
-        if (key === "academic_year_id") {
-            updates.academic_session_id = "";
-        }
-
-        filterForm.setData({ ...filterForm.data, ...updates });
-
-        if (currentFilterKey === key) {
-            setCurrentFilterKey("");
-        }
     };
 
     const exportMarks = () => {
@@ -124,14 +83,6 @@ export default function View({
         const value = filterForm.data[filter.key];
 
         if (!value) return "";
-
-        if (filter.key === "curriculum_mapping_id") {
-            return (
-                course_mappings.find(
-                    (mapping) => String(mapping.id) === String(value),
-                )?.name || value
-            );
-        }
 
         if (filter.key === "curriculum_unit_id") {
             return (
@@ -179,174 +130,6 @@ export default function View({
         return value;
     };
 
-    const renderFilterInput = (filter) => {
-        if (!filter) {
-            return (
-                <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 px-4 py-2 text-sm text-zinc-400">
-                    Select a column to show its input
-                </div>
-            );
-        }
-
-        if (filter.key === "curriculum_mapping_id") {
-            return (
-                <select
-                    value={filterForm.data.curriculum_mapping_id}
-                    onChange={(e) => {
-                        filterForm.setData(
-                            "curriculum_mapping_id",
-                            e.target.value,
-                        );
-                        filterForm.setData("curriculum_unit_id", "");
-                        filterForm.setData("academic_year_id", "");
-                        filterForm.setData("academic_session_id", "");
-                    }}
-                    className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
-                >
-                    <option value="">Select course mapping...</option>
-                    {course_mappings.map((mapping) => (
-                        <option key={mapping.id} value={mapping.id}>
-                            {mapping.name}
-                        </option>
-                    ))}
-                </select>
-            );
-        }
-
-        if (filter.key === "curriculum_unit_id") {
-            return (
-                <SearchSelect
-                    routeName="units.search"
-                    routeParams={{
-                        curriculum_mapping_id:
-                            filterForm.data.curriculum_mapping_id,
-                        limit: 10,
-                    }}
-                    defaultOptions={unit_options}
-                    value={filterForm.data.curriculum_unit_id}
-                    selectedLabel={selectedLabel({ key: "curriculum_unit_id" })}
-                    placeholder={
-                        filterForm.data.curriculum_mapping_id
-                            ? "Search unit..."
-                            : "Select course mapping first..."
-                    }
-                    preloadOptions
-                    onChange={(unit) =>
-                        filterForm.setData("curriculum_unit_id", unit?.id || "")
-                    }
-                    error={filterForm.errors.curriculum_unit_id}
-                    disabled={!filterForm.data.curriculum_mapping_id}
-                />
-            );
-        }
-
-        if (filter.key === "assessment_type") {
-            return (
-                <select
-                    value={filterForm.data.assessment_type}
-                    onChange={(e) =>
-                        filterForm.setData("assessment_type", e.target.value)
-                    }
-                    className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
-                >
-                    <option value="">All Assessment Types</option>
-                    {filter.options.map((option) => (
-                        <option key={option.value} value={option.value}>
-                            {option.label}
-                        </option>
-                    ))}
-                </select>
-            );
-        }
-
-        if (filter.key === "assessment_number") {
-            return (
-                <>
-                    <input
-                        type="number"
-                        min="1"
-                        step="1"
-                        list="view-assessment-number-options"
-                        value={filterForm.data.assessment_number}
-                        onChange={(e) => {
-                            const value = e.target.value;
-                            filterForm.setData(
-                                "assessment_number",
-                                value === "" ? "" : value.replace(/\D/g, ""),
-                            );
-                        }}
-                        placeholder="All Assessments or type a number"
-                        className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
-                    />
-                    <datalist id="view-assessment-number-options">
-                        {(filter_options?.assessment_numbers ?? []).map(
-                            (assessment) => (
-                                <option
-                                    key={assessment.value}
-                                    value={assessment.value}
-                                >
-                                    {assessment.label}
-                                </option>
-                            ),
-                        )}
-                    </datalist>
-                </>
-            );
-        }
-
-        if (filter.key === "academic_year_id") {
-            return (
-                <SearchSelect
-                    routeName="academic.years.search"
-                    value={filterForm.data.academic_year_id}
-                    selectedLabel={selectedLabel({ key: "academic_year_id" })}
-                    placeholder="Select academic year..."
-                    defaultOptions={
-                        filter_options?.academic_years?.map((year) => ({
-                            id: year.value,
-                            name: year.label,
-                        })) ?? []
-                    }
-                    preloadOptions
-                    onChange={(academicYear) => {
-                        filterForm.setData(
-                            "academic_year_id",
-                            academicYear?.id || "",
-                        );
-                        filterForm.setData("academic_session_id", "");
-                    }}
-                />
-            );
-        }
-
-        return (
-            <SearchSelect
-                routeName="academic.sessions.search"
-                routeParams={{
-                    academic_year_id: filterForm.data.academic_year_id,
-                }}
-                value={filterForm.data.academic_session_id}
-                selectedLabel={selectedLabel({ key: "academic_session_id" })}
-                placeholder={
-                    filterForm.data.academic_year_id
-                        ? "Search session..."
-                        : "Select academic year first..."
-                }
-                defaultOptions={
-                    filter_options?.sessions?.map((session) => ({
-                        id: session.value,
-                        name: session.label,
-                    })) ?? []
-                }
-                preloadOptions
-                onChange={(session) =>
-                    filterForm.setData("academic_session_id", session?.id || "")
-                }
-                disabled={!filterForm.data.academic_year_id}
-            />
-        );
-    };
-
     return (
         <>
             <Head title="View Marks" />
@@ -359,115 +142,184 @@ export default function View({
                         searchMarks();
                     }}
                 >
-                    <div className="grid grid-cols-1 items-end gap-3 lg:grid-cols-[minmax(220px,300px)_minmax(300px,1fr)_auto_auto_auto]">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                         <div>
-                            <InputLabel value="Filter Column" />
+                            <InputLabel value="Unit" />
+                            <SearchSelect
+                                routeName="units.search"
+                                routeParams={{ limit: 10 }}
+                                defaultOptions={unit_options}
+                                value={filterForm.data.curriculum_unit_id}
+                                selectedLabel={selectedLabel({
+                                    key: "curriculum_unit_id",
+                                })}
+                                placeholder="Search unit..."
+                                preloadOptions
+                                onChange={(unit) =>
+                                    filterForm.setData(
+                                        "curriculum_unit_id",
+                                        unit?.id || "",
+                                    )
+                                }
+                                error={filterForm.errors.curriculum_unit_id}
+                            />
+                        </div>
+
+                        <div>
+                            <InputLabel value="Academic Year" />
+                            <SearchSelect
+                                routeName="academic.years.search"
+                                value={filterForm.data.academic_year_id}
+                                selectedLabel={selectedLabel({
+                                    key: "academic_year_id",
+                                })}
+                                placeholder="Select academic year..."
+                                defaultOptions={
+                                    filter_options?.academic_years?.map(
+                                        (year) => ({
+                                            id: year.value,
+                                            name: year.label,
+                                        }),
+                                    ) ?? []
+                                }
+                                preloadOptions
+                                onChange={(academicYear) => {
+                                    filterForm.setData(
+                                        "academic_year_id",
+                                        academicYear?.id || "",
+                                    );
+                                    filterForm.setData(
+                                        "academic_session_id",
+                                        "",
+                                    );
+                                }}
+                            />
+                        </div>
+
+                        <div>
+                            <InputLabel value="Session" />
+                            <SearchSelect
+                                routeName="academic.sessions.search"
+                                routeParams={{
+                                    academic_year_id:
+                                        filterForm.data.academic_year_id,
+                                }}
+                                value={filterForm.data.academic_session_id}
+                                selectedLabel={selectedLabel({
+                                    key: "academic_session_id",
+                                })}
+                                placeholder={
+                                    filterForm.data.academic_year_id
+                                        ? "Search session..."
+                                        : "Select academic year first..."
+                                }
+                                defaultOptions={
+                                    filter_options?.sessions?.map(
+                                        (session) => ({
+                                            id: session.value,
+                                            name: session.label,
+                                        }),
+                                    ) ?? []
+                                }
+                                preloadOptions
+                                onChange={(session) =>
+                                    filterForm.setData(
+                                        "academic_session_id",
+                                        session?.id || "",
+                                    )
+                                }
+                                disabled={
+                                    !filterForm.data.academic_year_id
+                                }
+                            />
+                        </div>
+
+                        <div>
+                            <InputLabel value="Assessment Type" />
                             <select
-                                value={currentFilterKey}
-                                onChange={(event) =>
-                                    setCurrentFilterKey(event.target.value)
+                                value={filterForm.data.assessment_type}
+                                onChange={(e) =>
+                                    filterForm.setData(
+                                        "assessment_type",
+                                        e.target.value,
+                                    )
                                 }
                                 className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
                             >
-                                <option value="">Choose column...</option>
-                                {FILTER_DEFINITIONS.map((filter) => (
-                                    <option key={filter.key} value={filter.key}>
-                                        {filter.label}
-                                    </option>
-                                ))}
+                                <option value="">All Assessment Types</option>
+                                <option value="theory">Theory</option>
+                                <option value="practical">Practical</option>
                             </select>
                         </div>
 
                         <div>
-                            <InputLabel
-                                value={currentFilter?.label || "Filter Value"}
+                            <InputLabel value="Assessment Number" />
+                            <input
+                                type="number"
+                                min="1"
+                                step="1"
+                                list="view-assessment-number-options"
+                                value={filterForm.data.assessment_number}
+                                onChange={(e) => {
+                                    const value = e.target.value;
+                                    filterForm.setData(
+                                        "assessment_number",
+                                        value === ""
+                                            ? ""
+                                            : value.replace(/\D/g, ""),
+                                    );
+                                }}
+                                placeholder="All Assessments or type a number"
+                                className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
                             />
-                            {renderFilterInput(currentFilter)}
+                            <datalist id="view-assessment-number-options">
+                                {(filter_options?.assessment_numbers ?? []).map(
+                                    (assessment) => (
+                                        <option
+                                            key={assessment.value}
+                                            value={assessment.value}
+                                        >
+                                            {assessment.label}
+                                        </option>
+                                    ),
+                                )}
+                            </datalist>
                         </div>
-
-                        <button
-                            type="button"
-                            onClick={() => setCurrentFilterKey("")}
-                            disabled={
-                                !currentFilterKey ||
-                                !filterForm.data[currentFilterKey]
-                            }
-                            className="inline-flex h-10 items-center justify-center rounded-lg border border-zinc-300 bg-white px-4 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                            + Add filter
-                        </button>
-
-                        <button
-                            type="button"
-                            onClick={clearFilters}
-                            className="inline-flex h-10 items-center justify-center rounded-lg border border-zinc-300 bg-white px-4 text-sm text-zinc-700 hover:bg-zinc-50"
-                        >
-                            Clear all
-                        </button>
-
-                        <button
-                            type="submit"
-                            disabled={
-                                !filterForm.data.curriculum_mapping_id ||
-                                !filterForm.data.curriculum_unit_id
-                            }
-                            className="inline-flex h-10 items-center justify-center rounded-lg bg-emerald-600 px-4 text-sm text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                            Apply
-                        </button>
                     </div>
 
-                    <InputError
-                        message={filterForm.errors.curriculum_mapping_id}
-                        className="mt-2"
-                    />
                     <InputError
                         message={filterForm.errors.curriculum_unit_id}
                         className="mt-2"
                     />
 
-                    <div className="mt-4 border-t border-zinc-100 pt-3">
-                        {activeFilters.length ? (
-                            <div className="flex flex-wrap gap-2">
-                                {activeFilters.map((filter) => (
-                                    <button
-                                        key={filter.key}
-                                        type="button"
-                                        onClick={() =>
-                                            clearSingleFilter(filter.key)
-                                        }
-                                        className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 ring-1 ring-emerald-100 hover:bg-emerald-100"
-                                    >
-                                        <span>
-                                            {filter.label}:{" "}
-                                            {selectedLabel(filter)}
-                                        </span>
-                                        <span className="text-emerald-900">
-                                            x
-                                        </span>
-                                    </button>
-                                ))}
-                            </div>
-                        ) : (
-                            <p className="text-sm text-zinc-500">
-                                No filters selected. Choose a column above to
-                                filter this table.
-                            </p>
-                        )}
-                    </div>
-
                     <div className="mt-4 flex flex-col gap-3 border-t border-zinc-100 pt-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="text-sm text-zinc-500">
-                            {selected_unit ? (
-                                <span className="font-semibold text-zinc-800">
-                                    {selected_unit.code} - {selected_unit.name}
-                                </span>
-                            ) : (
-                                "Choose a unit and apply filters to load submitted marks."
-                            )}
+                        <div className="flex gap-2">
+                            <button
+                                type="submit"
+                                disabled={
+                                    !filterForm.data.curriculum_unit_id ||
+                                    !filterForm.data.academic_year_id ||
+                                    !filterForm.data.academic_session_id
+                                }
+                                className="inline-flex h-10 items-center justify-center rounded-lg bg-emerald-600 px-6 text-sm text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                                Apply
+                            </button>
+                            <button
+                                type="button"
+                                onClick={clearFilters}
+                                className="inline-flex h-10 items-center justify-center rounded-lg border border-zinc-300 bg-white px-4 text-sm text-zinc-700 hover:bg-zinc-50"
+                            >
+                                Clear all
+                            </button>
                         </div>
 
                         <div className="flex items-center">
+                            {selected_unit && (
+                                <span className="mr-3 text-sm font-semibold text-zinc-800">
+                                    {selected_unit.code} - {selected_unit.name}
+                                </span>
+                            )}
                             <select
                                 value={exportFormat}
                                 onChange={(event) =>
@@ -482,7 +334,11 @@ export default function View({
                             <button
                                 type="button"
                                 onClick={exportMarks}
-                                disabled={!filterForm.data.curriculum_unit_id}
+                                disabled={
+                                    !filterForm.data.curriculum_unit_id ||
+                                    !filterForm.data.academic_year_id ||
+                                    !filterForm.data.academic_session_id
+                                }
                                 className="h-[34px] whitespace-nowrap rounded-r bg-gray-400 px-4 text-sm font-medium text-white transition-colors hover:bg-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
                             >
                                 Export {exportFormat.toUpperCase()}
@@ -607,7 +463,9 @@ export default function View({
                             <div className="mt-5 flex justify-end gap-2">
                                 <button
                                     type="button"
-                                    onClick={() => searchMarks(currentPage - 1)}
+                                    onClick={() =>
+                                        searchMarks(currentPage - 1)
+                                    }
                                     disabled={currentPage === 1}
                                     className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40"
                                 >
@@ -615,7 +473,9 @@ export default function View({
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={() => searchMarks(currentPage + 1)}
+                                    onClick={() =>
+                                        searchMarks(currentPage + 1)
+                                    }
                                     disabled={currentPage === lastPage}
                                     className="rounded-lg border border-zinc-200 px-3 py-1.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40"
                                 >
