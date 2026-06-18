@@ -28,6 +28,7 @@ return new class extends Migration
                     ->constrained('fee_assignments')
                     ->nullOnDelete()
                     ->cascadeOnUpdate();
+                $table->uuid('fee_plan_assignment_id')->nullable();
                 $table->enum('invoice_type', ['fees', 'penalty', 'hostel', 'default_fees'])->default('fees');
                 $table->foreignId('academic_session_id')
                     ->nullable()
@@ -62,6 +63,12 @@ return new class extends Migration
                 $table->index(['student_id', 'status', 'issue_date', 'id']);
                 $table->index(['student_id', 'academic_session_id', 'invoice_type', 'status']);
                 $table->index(['academic_session_id', 'invoice_type', 'status']);
+
+                $table->foreign('fee_plan_assignment_id')
+                    ->references('id')
+                    ->on('fee_plan_assignments')
+                    ->nullOnDelete()
+                    ->cascadeOnUpdate();
             });
         }
 

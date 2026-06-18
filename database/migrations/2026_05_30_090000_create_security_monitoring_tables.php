@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -59,6 +60,15 @@ return new class extends Migration
             $table->index(['device_id', 'is_active']);
             $table->index(['is_active', 'ends_at']);
         });
+
+        if (DB::connection()->getDriverName() === 'pgsql') {
+            DB::statement('CREATE INDEX IF NOT EXISTS security_blocks_active_user_window_idx ON security_blocks (user_id, starts_at, ends_at, id DESC) WHERE is_active = true');
+            DB::statement('CREATE INDEX IF NOT EXISTS security_blocks_active_login_window_idx ON security_blocks (login_identifier, starts_at, ends_at, id DESC) WHERE is_active = true AND login_identifier IS NOT NULL');
+            DB::statement('CREATE INDEX IF NOT EXISTS security_blocks_active_email_window_idx ON security_blocks (email, starts_at, ends_at, id DESC) WHERE is_active = true AND email IS NOT NULL');
+            DB::statement('CREATE INDEX IF NOT EXISTS security_blocks_active_ip_window_idx ON security_blocks (ip_address, starts_at, ends_at, id DESC) WHERE is_active = true AND ip_address IS NOT NULL');
+            DB::statement('CREATE INDEX IF NOT EXISTS security_blocks_active_device_window_idx ON security_blocks (device_id, starts_at, ends_at, id DESC) WHERE is_active = true AND device_id IS NOT NULL');
+            DB::statement('CREATE INDEX IF NOT EXISTS security_blocks_active_location_window_idx ON security_blocks (location_hint, starts_at, ends_at, id DESC) WHERE is_active = true AND location_hint IS NOT NULL');
+        }
     }
 
     public function down(): void

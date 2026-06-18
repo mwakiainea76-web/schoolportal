@@ -20,7 +20,7 @@ export default function Create() {
         <>
             <Head title="Submit Complaint" />
 
-            <div className="mx-auto max-w-2xl">
+            <div className="w-full">
                 <div className="mb-6">
                     <h1 className="text-lg font-semibold text-zinc-950">
                         Submit a Complaint

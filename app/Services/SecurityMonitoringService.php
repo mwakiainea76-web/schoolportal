@@ -83,7 +83,7 @@ class SecurityMonitoringService
         $loginIdentifier = $this->normalize($loginIdentifier, 191);
         $email = $this->normalize($email, 191);
 
-        $blocks = SecurityBlock::query()
+        $query = SecurityBlock::query()
             ->where('is_active', true)
             ->where(function ($query) {
                 $query->whereNull('starts_at')
@@ -93,37 +93,55 @@ class SecurityMonitoringService
                 $query->whereNull('ends_at')
                     ->orWhere('ends_at', '>', now());
             })
-            ->where(function ($query) use ($user, $loginIdentifier, $email, $context) {
-                if ($user) {
-                    $query->orWhere('user_id', $user->id);
-                }
+            ->when(
+                collect([$user?->id, $loginIdentifier, $email, $context['ip_address'], $context['device_id'], $context['location_hint']])
+                    ->filter(fn ($value) => $value !== null && $value !== '')
+                    ->isNotEmpty(),
+                function ($query) use ($user, $loginIdentifier, $email, $context) {
+                    $query->where(function ($candidateQuery) use ($user, $loginIdentifier, $email, $context) {
+                        if ($user) {
+                            $candidateQuery->orWhere('user_id', $user->id);
+                        }
 
-                if ($loginIdentifier) {
-                    $query->orWhere('login_identifier', $loginIdentifier);
-                }
+                        if ($loginIdentifier) {
+                            $candidateQuery->orWhere('login_identifier', $loginIdentifier);
+                        }
 
-                if ($email) {
-                    $query->orWhere('email', $email);
-                }
+                        if ($email) {
+                            $candidateQuery->orWhere('email', $email);
+                        }
 
-                if ($context['ip_address']) {
-                    $query->orWhere('ip_address', $context['ip_address']);
-                }
+                        if ($context['ip_address']) {
+                            $candidateQuery->orWhere('ip_address', $context['ip_address']);
+                        }
 
-                if ($context['device_id']) {
-                    $query->orWhere('device_id', $context['device_id']);
-                }
+                        if ($context['device_id']) {
+                            $candidateQuery->orWhere('device_id', $context['device_id']);
+                        }
 
-                if ($context['location_hint']) {
-                    $query->orWhere('location_hint', $context['location_hint']);
+                        if ($context['location_hint']) {
+                            $candidateQuery->orWhere('location_hint', $context['location_hint']);
+                        }
+                    });
                 }
-            })
+            )
+            ->where(fn ($query) => $this->nullableMatch($query, 'user_id', $user?->id))
+            ->where(fn ($query) => $this->nullableMatch($query, 'login_identifier', $loginIdentifier))
+            ->where(fn ($query) => $this->nullableMatch($query, 'email', $email))
+            ->where(fn ($query) => $this->nullableMatch($query, 'ip_address', $context['ip_address']))
+            ->where(fn ($query) => $this->nullableMatch($query, 'device_id', $context['device_id']))
+            ->where(fn ($query) => $this->nullableMatch($query, 'location_hint', $context['location_hint']));
+
+        return $query
+            ->orderByRaw(
+                '(CASE WHEN user_id IS NULL THEN 0 ELSE 1 END
+                + CASE WHEN login_identifier IS NULL THEN 0 ELSE 1 END
+                + CASE WHEN email IS NULL THEN 0 ELSE 1 END
+                + CASE WHEN ip_address IS NULL THEN 0 ELSE 1 END
+                + CASE WHEN device_id IS NULL THEN 0 ELSE 1 END
+                + CASE WHEN location_hint IS NULL THEN 0 ELSE 1 END) DESC'
+            )
             ->latest('id')
-            ->get();
-
-        return $blocks
-            ->filter(fn (SecurityBlock $block) => $this->blockMatches($block, $user, $loginIdentifier, $email, $context))
-            ->sortByDesc(fn (SecurityBlock $block) => $this->specificityScore($block))
             ->first();
     }
 
@@ -243,6 +261,15 @@ class SecurityMonitoringService
         $value = trim((string) ($value ?? ''));
 
         return $value === '' ? null : Str::limit($value, $limit, '');
+    }
+
+    protected function nullableMatch($query, string $column, mixed $value): void
+    {
+        $query->whereNull($column);
+
+        if ($value !== null && $value !== '') {
+            $query->orWhere($column, $value);
+        }
     }
 
     protected function logLevel(string $riskLevel): string

@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -26,6 +27,11 @@ return new class extends Migration
                 $table->index('is_active');
                 $table->index('email');
             });
+        }
+
+        if (DB::connection()->getDriverName() === 'pgsql') {
+            DB::statement('CREATE INDEX IF NOT EXISTS users_login_id_normalized_idx ON users ((LOWER(TRIM(login_id)))) WHERE login_id IS NOT NULL AND deleted_at IS NULL');
+            DB::statement('CREATE INDEX IF NOT EXISTS users_email_normalized_idx ON users ((LOWER(TRIM(email)))) WHERE deleted_at IS NULL');
         }
 
         if (! Schema::hasTable('password_reset_tokens')) {

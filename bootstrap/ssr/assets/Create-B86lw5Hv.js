@@ -17,7 +17,7 @@ function Create() {
   };
   return /* @__PURE__ */ jsxs(Fragment, { children: [
     /* @__PURE__ */ jsx(Head, { title: "Submit Complaint" }),
-    /* @__PURE__ */ jsxs("div", { className: "mx-auto max-w-2xl", children: [
+    /* @__PURE__ */ jsxs("div", { className: "w-full", children: [
       /* @__PURE__ */ jsxs("div", { className: "mb-6", children: [
         /* @__PURE__ */ jsx("h1", { className: "text-lg font-semibold text-zinc-950", children: "Submit a Complaint" }),
         /* @__PURE__ */ jsx("p", { className: "mt-1 text-sm text-zinc-500", children: "Describe your issue below. Admin will review and respond." })

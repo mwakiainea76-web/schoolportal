@@ -32,19 +32,19 @@ class HandleInertiaRequests extends Middleware
 
         return array_merge(parent::share($request), [
             'auth' => [
-                'user' => function () use ($user) {
+                'user' => function () use ($user, $authPayload) {
                     if (! $user) {
                         return null;
                     }
 
                     // Load roles first to determine profile source
-                    $user->loadMissing('roles:id,name');
-                    $isStudent = $user->roles->pluck('name')->contains('student');
+                    $roles = $authPayload()['roles'];
+                    $isStudent = in_array('student', $roles, true);
 
                     // Load only the relevant profile — no guessing
                     $profile = $isStudent
-                        ? $user->loadMissing('student')->student
-                        : $user->loadMissing('staff')->staff;
+                        ? $user->loadMissing('student:id,user_id,first_name,last_name,profile_photo')->student
+                        : $user->loadMissing('staff:id,user_id,first_name,last_name,profile_photo')->staff;
 
                     return [
                         'id' => $user->id,

@@ -115,8 +115,12 @@ class DashboardController extends Controller
 
     protected function staffProfilePayload(?User $user, ?object $staff, array $roleNames): array
     {
+        $staffName = $staff
+            ? trim("{$staff->first_name} {$staff->last_name}".($staff->other_name ? " {$staff->other_name}" : ''))
+            : null;
+
         return [
-            'name' => $user?->staff?->full_name,
+            'name' => $staffName,
             'staff_number' => $staff?->staff_number,
             'designation' => $staff?->designation,
             'department_id' => $staff?->department_id ? (string) $staff->department_id : null,
@@ -221,6 +225,9 @@ class DashboardController extends Controller
             ->first([
                 'staffs.id',
                 'staffs.department_id',
+                'staffs.first_name',
+                'staffs.last_name',
+                'staffs.other_name',
                 'staffs.staff_number',
                 'staffs.designation',
                 'departments.name as department_name',
