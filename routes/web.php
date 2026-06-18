@@ -39,6 +39,7 @@ use App\Http\Controllers\StaffPayslipController;
 use App\Http\Controllers\StaffSalaryController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\StudentCourseChangeController;
+use App\Http\Controllers\StudentHostelBookingController;
 use App\Http\Controllers\StudentMarkController;
 use App\Http\Controllers\UnitController;
 use App\Http\Controllers\UserMonitorController;
@@ -80,6 +81,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/results', [StudentMarkController::class, 'studentResultsIndex'])->name('results.index');
         Route::get('/fee-statements', [InvoiceController::class, 'studentStatementsIndex'])->name('fee-statements.index');
         Route::get('/fee-statements/{invoice}', [InvoiceController::class, 'studentStatementShow'])->name('fee-statements.show');
+        Route::get('/hostel-booking', [StudentHostelBookingController::class, 'index'])->name('hostel-booking.index');
+        Route::post('/hostel-booking', [StudentHostelBookingController::class, 'store'])->name('hostel-booking.store');
 
         Route::prefix('complaints')->name('complaints.')->group(function () {
             Route::get('/', [ComplaintController::class, 'studentIndex'])->name('index');

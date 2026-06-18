@@ -502,6 +502,9 @@
   "resources/js/Pages/Staffs/ResetPassword.jsx": [
     "/build/assets/ResetPassword-DZStubSC.js"
   ],
+  "resources/js/Pages/StudentHostelBooking/Index.jsx": [
+    "/build/assets/Index-C3DmdVd2.js"
+  ],
   "resources/js/Pages/students/CourseChange.jsx": [
     "/build/assets/CourseChange-ifiAjYWO.js"
   ],

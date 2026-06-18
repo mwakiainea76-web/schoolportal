@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\AcademicSessionEnrollment;
 use App\Models\FeeAdjustment;
 use App\Models\FeePlanAssignment;
+use App\Models\Hostel;
 use App\Models\HostelAllocation;
 use App\Models\InvoiceItem;
 use App\Models\LedgerTransaction;
@@ -277,6 +278,37 @@ class BillingService
         return $invoice;
     }
 
+    public function createHostelInvoiceForEnrollment(
+        AcademicSessionEnrollment $enrollment,
+        Hostel $hostel,
+        ?int $createdBy = null,
+        ?string $issueDate = null,
+        ?string $dueDate = null
+    ): StudentInvoice {
+        $studentId = $this->studentIdForEnrollment($enrollment);
+        $invoiceCreatorId = $createdBy ?? $this->resolveFallbackStaffId();
+
+        if (! $invoiceCreatorId) {
+            throw ValidationException::withMessages([
+                'hostel_id' => 'No staff account is available to create the hostel invoice. Please contact the finance office.',
+            ]);
+        }
+
+        $effectiveIssueDate = $issueDate ?? now()->toDateString();
+
+        return $this->createManualInvoice(
+            $enrollment,
+            (float) $hostel->session_fee_amount,
+            $invoiceCreatorId,
+            $this->hostelInvoiceDescription($hostel),
+            $effectiveIssueDate,
+            $dueDate ?? Carbon::parse($effectiveIssueDate)->addDays(14)->toDateString(),
+            self::NOTE_HOSTEL,
+            "student-hostel-booking:{$enrollment->id}:{$hostel->id}:{$studentId}",
+            'hostel'
+        );
+    }
+
     protected function resolveFeePlanAssignment(AcademicSessionEnrollment $enrollment): ?FeePlanAssignment
     {
         $academicYearId = $enrollment->academicSession?->academic_year_id;
@@ -303,6 +335,22 @@ class BillingService
             ->first();
 
         return $staff?->id;
+    }
+
+    protected function resolveFallbackStaffId(): ?int
+    {
+        return Staff::query()
+            ->orderBy('id')
+            ->value('id');
+    }
+
+    protected function hostelInvoiceDescription(Hostel $hostel): string
+    {
+        return trim(collect([
+            'Hostel accommodation',
+            $hostel->name,
+            $hostel->code,
+        ])->filter()->implode(' - '));
     }
 
     protected function studentIdForEnrollment(AcademicSessionEnrollment $enrollment, bool $throw = true): ?int

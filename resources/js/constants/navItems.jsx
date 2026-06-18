@@ -691,6 +691,19 @@ export const STUDENT_NAV_ITEMS = [
         ],
     },
     {
+        key: "hostel",
+        label: "Hostel",
+        icon: "hostel",
+        basePath: "/student/hostel-booking",
+        children: [
+            {
+                routeName: "student.hostel-booking.index",
+                fallback: "/student/hostel-booking",
+                label: "Book Hostel",
+            },
+        ],
+    },
+    {
         key: "complaints",
         label: "Complaints",
         icon: "complaints",
