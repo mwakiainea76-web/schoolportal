@@ -4,11 +4,13 @@ namespace App\Services;
 
 use App\Models\AcademicSessionEnrollment;
 use App\Models\FeeAdjustment;
+use App\Models\FeePlanAssignment;
 use App\Models\HostelAllocation;
 use App\Models\InvoiceItem;
 use App\Models\LedgerTransaction;
 use App\Models\Payment;
 use App\Models\PaymentAllocation;
+use App\Models\Staff;
 use App\Models\Student;
 use App\Models\StudentInvoice;
 use App\Services\FeeAssignmentService;
@@ -41,13 +43,12 @@ class BillingService
         return DB::transaction(function () use ($enrollment, $createdBy, $issueDate, $dueDate) {
             $studentId = $this->studentIdForEnrollment($enrollment);
 
-            $assignment = $this->feeAssignmentService->resolveActiveAssignment(
-                $enrollment->academicSession?->academic_year_id ?? 0,
-                $enrollment->courseEnrollment?->curriculum_mapping_id ?? null,
-                $enrollment->year_of_study,
-                $enrollment->session_number ?: ($enrollment->academicSession?->session_number ?? $enrollment->academicSession?->session_No ?? null),
-                $issueDate
-            );
+            $enrollment->loadMissing([
+                'courseEnrollment',
+                'academicSession',
+            ]);
+
+            $assignment = $this->resolveFeePlanAssignment($enrollment);
 
             if (! $assignment) {
                 $courseName = $enrollment->courseEnrollment?->curriculumMapping?->course?->name ?? 'your course';
@@ -59,7 +60,7 @@ class BillingService
                 ]);
             }
 
-            $invoiceCreatorId = $createdBy ?? $assignment->created_by;
+            $invoiceCreatorId = $createdBy ?? $this->resolveCreatorFromAssignment($assignment);
 
             if (! $invoiceCreatorId) {
                 throw ValidationException::withMessages([
@@ -89,7 +90,7 @@ class BillingService
                 'invoice_number' => StudentInvoice::generateInvoiceNumber(),
                 'student_id' => $studentId,
                 'enrollment_id' => $enrollment->id,
-                'fee_assignment_id' => $assignment->id,
+                'fee_plan_assignment_id' => $assignment->id,
                 'invoice_type' => 'default_fees',
                 'academic_session_id' => $enrollment->academic_session_id,
                 'status' => 'issued',
@@ -274,6 +275,34 @@ class BillingService
         ]);
 
         return $invoice;
+    }
+
+    protected function resolveFeePlanAssignment(AcademicSessionEnrollment $enrollment): ?FeePlanAssignment
+    {
+        $academicYearId = $enrollment->academicSession?->academic_year_id;
+        $curriculumMapping = $enrollment->courseEnrollment?->curriculumMapping;
+
+        if (! $academicYearId || ! $curriculumMapping?->curriculum_id) {
+            return null;
+        }
+
+        return FeePlanAssignment::query()
+            ->where('curriculum_id', $curriculumMapping->curriculum_id)
+            ->where('session_id', $enrollment->academic_session_id)
+            ->where('academic_year_id', $academicYearId)
+            ->where('status', 'active')
+            ->with('feePlan.feePlanItems')
+            ->latest('assigned_at')
+            ->first();
+    }
+
+    protected function resolveCreatorFromAssignment(FeePlanAssignment $assignment): ?int
+    {
+        $staff = Staff::query()
+            ->where('user_id', $assignment->assigned_by)
+            ->first();
+
+        return $staff?->id;
     }
 
     protected function studentIdForEnrollment(AcademicSessionEnrollment $enrollment, bool $throw = true): ?int
@@ -757,20 +786,18 @@ class BillingService
         $invoices = [];
         $errors = [];
 
-        DB::transaction(function () use ($enrollmentIds, $createdBy, $issueDate, $dueDate, &$invoices, &$errors) {
-            foreach ($enrollmentIds as $enrollmentId) {
-                try {
-                    $enrollment = AcademicSessionEnrollment::findOrFail($enrollmentId);
-                    $invoice = $this->createInvoiceForEnrollment($enrollment, $createdBy, $issueDate, $dueDate);
-                    $invoices[] = $invoice;
-                } catch (\Exception $e) {
-                    $errors[] = [
-                        'enrollment_id' => $enrollmentId,
-                        'error' => $e->getMessage(),
-                    ];
-                }
+        foreach ($enrollmentIds as $enrollmentId) {
+            try {
+                $enrollment = AcademicSessionEnrollment::findOrFail($enrollmentId);
+                $invoice = $this->createInvoiceForEnrollment($enrollment, $createdBy, $issueDate, $dueDate);
+                $invoices[] = $invoice;
+            } catch (\Exception $e) {
+                $errors[] = [
+                    'enrollment_id' => $enrollmentId,
+                    'error' => $e->getMessage(),
+                ];
             }
-        });
+        }
 
         return [
             'invoices_created' => count($invoices),
@@ -783,32 +810,29 @@ class BillingService
         $adjustments = [];
         $errors = [];
 
-        DB::transaction(function () use ($discountData, $studentIds, $createdBy, &$adjustments, &$errors) {
-            foreach ($studentIds as $studentId) {
-                try {
-                    $invoices = StudentInvoice::where('student_id', $studentId)
-                        ->outstanding()
-                        ->notRejected()
-                        ->get();
+        foreach ($studentIds as $studentId) {
+            try {
+                $invoices = StudentInvoice::where('student_id', $studentId)
+                    ->outstanding()
+                    ->get();
 
-                    foreach ($invoices as $invoice) {
-                        $adjustment = $this->applyAdjustment(
-                            $invoice,
-                            $discountData['type'] ?? 'discount',
-                            $discountData['amount'],
-                            $createdBy,
-                            $discountData['description']
-                        );
-                        $adjustments[] = $adjustment;
-                    }
-                } catch (\Exception $e) {
-                    $errors[] = [
-                        'student_id' => $studentId,
-                        'error' => $e->getMessage(),
-                    ];
+                foreach ($invoices as $invoice) {
+                    $adjustment = $this->applyAdjustment(
+                        $invoice,
+                        $discountData['type'] ?? 'discount',
+                        $discountData['amount'],
+                        $createdBy,
+                        $discountData['description']
+                    );
+                    $adjustments[] = $adjustment;
                 }
+            } catch (\Exception $e) {
+                $errors[] = [
+                    'student_id' => $studentId,
+                    'error' => $e->getMessage(),
+                ];
             }
-        });
+        }
 
         return [
             'adjustments_created' => count($adjustments),
@@ -826,7 +850,6 @@ class BillingService
                 ->where('student_id', $student->id)
                 ->whereKey($preferredInvoiceId)
                 ->outstanding()
-                ->notRejected()
                 ->lockForUpdate()
                 ->first();
         }
@@ -834,7 +857,6 @@ class BillingService
         $outstandingInvoices = StudentInvoice::query()
             ->where('student_id', $student->id)
             ->outstanding()
-            ->notRejected()
             ->when($preferredInvoiceId, fn ($query) => $query->whereKeyNot($preferredInvoiceId))
             ->orderBy('issue_date')
             ->orderBy('id')
@@ -938,9 +960,9 @@ class BillingService
 
             $this->recordLedgerTransaction([
                 'student_id' => $invoice->student_id,
-                'student_invoice_id' => null,
+                'student_invoice_id' => $invoice->id,
                 'academic_session_id' => $invoice->academic_session_id,
-                'type' => 'reversal',
+                'type' => 'payment',
                 'debit' => $allocationAmount,
                 'credit' => 0,
                 'reference' => $payment->reference,

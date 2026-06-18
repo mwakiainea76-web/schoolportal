@@ -33,7 +33,7 @@ class FeePlanService
             'plan_type' => $data['plan_type'] ?? 'original',
             'status' => 'draft',
             'created_by' => $createdBy,
-            'version' => $data['plan_type'] ?? 'original',
+            'version' => $data['version'] ?? '1.0',
             'is_active' => false,
         ]);
     }
@@ -73,10 +73,6 @@ class FeePlanService
         $components = $this->components->planComponents($plan);
 
         $checks = [];
-
-        if (blank($plan->name)) {
-            $checks[] = 'Plan name is required.';
-        }
 
         if ($components->isEmpty()) {
             $checks[] = 'Plan must have at least one component.';

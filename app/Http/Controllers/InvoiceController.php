@@ -251,9 +251,9 @@ class InvoiceController extends Controller
             || (float) $invoice->paid_amount !== 0.0
             || (float) $invoice->balance_due !== 0.0;
 
-        if ($invoice->status !== 'draft' || $invoice->approval_status !== 'draft' || $hasFinancialActivity) {
+        if ($hasFinancialActivity || $invoice->approval_status === 'approved') {
             throw ValidationException::withMessages([
-                'invoice' => 'Only empty draft invoices with no financial activity can be deleted.',
+                'invoice' => 'Only invoices with no financial activity and that have not been approved can be deleted.',
             ]);
         }
 
@@ -561,7 +561,7 @@ class InvoiceController extends Controller
 
         $invoice = $payment->allocations()
             ->with('invoice')
-            ->latest('id')
+            ->orderBy('id')
             ->first()
             ?->invoice;
 

@@ -84,7 +84,7 @@ class FeePlanController extends Controller
             ->withQueryString();
 
         return inertia('Fees/FeePlanItems/Index', [
-            'feePlans' => $items,
+            'items' => $items,
             'feePlan' => $feePlan,
             'feePlanOptions' => FeePlan::all(),
         ]);

@@ -26,6 +26,7 @@ class StudentInvoice extends Model
         'student_id',
         'enrollment_id',
         'fee_assignment_id',
+        'fee_plan_assignment_id',
         'invoice_type',
         'academic_session_id',
         'status',
@@ -64,6 +65,11 @@ class StudentInvoice extends Model
     public function feeAssignment()
     {
         return $this->belongsTo(FeeAssignment::class, 'fee_assignment_id');
+    }
+
+    public function feePlanAssignment()
+    {
+        return $this->belongsTo(FeePlanAssignment::class, 'fee_plan_assignment_id');
     }
 
     public function items()
@@ -161,6 +167,8 @@ class StudentInvoice extends Model
 
     public function scopeOutstanding(Builder $query): Builder
     {
-        return $query->where('balance_due', '>', 0);
+        return $query
+            ->where('balance_due', '>', 0)
+            ->notRejected();
     }
 }

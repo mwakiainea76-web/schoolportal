@@ -244,7 +244,7 @@ class BillingStatementService
     protected function resolveStatus(float $amountDue, float $paidAmount, float $balanceDue, ?string $fallback = null): string
     {
         if ($amountDue <= 0 || $balanceDue <= 0) {
-            return 'paid';
+            return $paidAmount > 0 ? 'paid' : ($fallback ?: 'draft');
         }
 
         if ($paidAmount > 0 && $balanceDue > 0) {
