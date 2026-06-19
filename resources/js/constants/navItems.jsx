@@ -135,19 +135,19 @@ export const STAFF_NAV_ITEMS = [
                     {
                         routeName: "courses.create",
                         fallback: "/courses/create",
-                        label: "Add Course",
+                        label: "Add New Course",
                         exceptRoles: ["hod"],
                     },
                     {
                         routeName: "courses.curriculum-mappings.index",
                         fallback: "/courses/curriculum-mappings",
-                        label: "Curriculum Mapping",
+                        label: "Link Courses to Curriculums",
                         exceptRoles: ["hod"],
                     },
                     {
                         routeName: "courses.curriculum-mappings.create",
                         fallback: "/courses/curriculum-mappings/create",
-                        label: "Add Mapping",
+                        label: "Add Course Mapping",
                         exceptRoles: ["hod"],
                     },
                 ],
@@ -317,9 +317,10 @@ export const STAFF_NAV_ITEMS = [
         permissions: ["students.view"],
         children: [
             {
-                routeName: "students.index",
-                fallback: "/students",
+                routeName: "courses.enrollments.index",
+                fallback: "/courses/enrollments",
                 label: "Student Registry",
+                activeRouteNames: ["courses.enrollments.hod.index"],
             },
             {
                 routeName: "students.create",
@@ -330,13 +331,13 @@ export const STAFF_NAV_ITEMS = [
             {
                 routeName: "students.session-enrollment.create",
                 fallback: "/students/session-enrollment",
-                label: "Session Enrolment",
+                label: "Enroll in Session",
                 roles: ["admin"],
             },
             {
                 routeName: "students.session-enrollment-status.create",
                 fallback: "/students/session-enrollment-status",
-                label: "Student Status",
+                label: "Update Student Status",
                 roles: ["admin"],
             },
             {
@@ -374,7 +375,7 @@ export const STAFF_NAV_ITEMS = [
                     {
                         routeName: "billing.manual.index",
                         fallback: "/billing/manual-operations",
-                        label: "Direct Billing",
+                        label: "Manual Invoice",
                     },
                     {
                         routeName: "billing.ledger.index",
@@ -423,7 +424,7 @@ export const STAFF_NAV_ITEMS = [
                     {
                         routeName: "academic.sessions.enrollments.index",
                         fallback: "/academic/sessions/enrollments",
-                        label: "Enrollments",
+                        label: "Session Enrollments",
                     },
                 ],
             },
@@ -530,7 +531,7 @@ export const STAFF_NAV_ITEMS = [
             {
                 routeName: "staffs.create",
                 fallback: "/staffs/create",
-                label: "Onboarding",
+                label: "Add Staff Member",
                 exceptRoles: ["hod"],
             },
             {
@@ -542,7 +543,7 @@ export const STAFF_NAV_ITEMS = [
             {
                 routeName: "staffs.status.create",
                 fallback: "/staffs/status",
-                label: "Staff Status",
+                label: "Update Staff Status",
                 roles: ["admin"],
             },
         ],
@@ -616,7 +617,7 @@ export const STAFF_NAV_ITEMS = [
             {
                 routeName: "settings.performance.index",
                 fallback: "/settings/performance",
-                label: "Health Metrics",
+                label: "System Health",
             },
             {
                 routeName: "settings.logs.index",
@@ -631,7 +632,7 @@ export const STAFF_NAV_ITEMS = [
             {
                 routeName: "settings.security.index",
                 fallback: "/settings/security",
-                label: "Security Audit",
+                label: "Security Activities",
             },
         ],
     },

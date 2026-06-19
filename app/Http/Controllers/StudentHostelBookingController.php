@@ -6,6 +6,7 @@ use App\Models\AcademicSession;
 use App\Models\AcademicSessionEnrollment;
 use App\Models\Hostel;
 use App\Models\HostelAllocation;
+use App\Models\LedgerTransaction;
 use App\Models\StudentInvoice;
 use App\Services\BillingService;
 use Illuminate\Http\Request;
@@ -47,6 +48,8 @@ class StudentHostelBookingController extends Controller
             ? $this->existingHostelInvoice((int) $student->id, (int) $enrollment->academic_session_id)
             : null;
 
+        $availableBalance = $this->studentAvailableBalance((int) $student->id);
+
         return inertia('StudentHostelBooking/Index', [
             'activeSession' => $activeSession ? [
                 'id' => (string) $activeSession->id,
@@ -62,6 +65,7 @@ class StudentHostelBookingController extends Controller
                 'can_book' => (bool) ($activeSession && $enrollment && ! $existingAllocation && ! $existingInvoice),
                 'message' => $this->eligibilityMessage($activeSession, $enrollment, $existingAllocation, $existingInvoice),
             ],
+            'accountBalance' => $availableBalance,
             'hostels' => $enrollment && ! $existingAllocation && ! $existingInvoice
                 ? $this->hostelOptions((int) $activeSession->id, $student->gender)
                 : [],
@@ -119,6 +123,14 @@ class StudentHostelBookingController extends Controller
         $hostel = Hostel::query()
             ->where('is_active', true)
             ->findOrFail((int) $validated['hostel_id']);
+
+        $availableBalance = $this->studentAvailableBalance((int) $student->id);
+
+        if ($availableBalance < (float) $hostel->session_fee_amount) {
+            throw ValidationException::withMessages([
+                'hostel_id' => 'Your account balance ('.number_format($availableBalance, 2).') is insufficient to cover the hostel fee of '.number_format((float) $hostel->session_fee_amount, 2).'. Please deposit sufficient funds before booking.',
+            ]);
+        }
 
         if (! $this->hostelMatchesStudentGender($hostel, $student->gender)) {
             throw ValidationException::withMessages([
@@ -191,6 +203,18 @@ class StudentHostelBookingController extends Controller
 
         return 'Select a hostel to generate your hostel accommodation invoice.';
     }
+
+    protected function studentAvailableBalance(int $studentId): float
+    {
+        $totals = LedgerTransaction::query()
+            ->where('student_id', $studentId)
+            ->selectRaw('COALESCE(SUM(debit), 0) as total_debit, COALESCE(SUM(credit), 0) as total_credit')
+            ->first();
+
+        return max(0, (float) ($totals?->total_credit ?? 0) - (float) ($totals?->total_debit ?? 0));
+    }
+
+
 
     protected function hostelOptions(int $academicSessionId, ?string $studentGender): array
     {

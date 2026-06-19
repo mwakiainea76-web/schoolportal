@@ -16,6 +16,7 @@ export default function Index({
     hostels = [],
     existingInvoice,
     allocation,
+    accountBalance = 0,
 }) {
     const { data, setData, post, processing, errors } = useForm({
         hostel_id: "",
@@ -61,7 +62,7 @@ export default function Index({
                     </div>
                 </div>
 
-                <div className="mt-6 grid gap-4 md:grid-cols-3">
+                <div className="mt-6 grid gap-4 md:grid-cols-4">
                     <div className="rounded-2xl border border-zinc-100 bg-white p-5 shadow-sm">
                         <div className="inline-flex rounded-xl bg-emerald-50 p-3 text-emerald-700">
                             <CheckCircle2 className="h-5 w-5" />
@@ -110,6 +111,18 @@ export default function Index({
                                     .join(" - ")}
                             </p>
                         ) : null}
+                    </div>
+
+                    <div className="rounded-2xl border border-zinc-100 bg-white p-5 shadow-sm">
+                        <div className="inline-flex rounded-xl bg-indigo-50 p-3 text-indigo-700">
+                            <Wallet className="h-5 w-5" />
+                        </div>
+                        <p className="mt-4 text-sm text-zinc-500">
+                            Account Balance
+                        </p>
+                        <p className="mt-1 font-semibold text-zinc-900">
+                            {currency(accountBalance)}
+                        </p>
                     </div>
                 </div>
 
@@ -240,11 +253,29 @@ export default function Index({
                                         ? `Invoice amount ${currency(selectedHostel.session_fee_amount)}`
                                         : "A hostel invoice will be generated for payment."}
                                 </p>
+                                {selectedHostel &&
+                                accountBalance <
+                                    selectedHostel.session_fee_amount ? (
+                                    <p className="mt-1 text-xs font-medium text-red-500">
+                                        Insufficient balance — you need{" "}
+                                        {currency(
+                                            selectedHostel.session_fee_amount -
+                                                accountBalance,
+                                        )}{" "}
+                                        more
+                                    </p>
+                                ) : null}
                             </div>
 
                             <button
                                 type="submit"
-                                disabled={processing || !data.hostel_id}
+                                disabled={
+                                    processing ||
+                                    !data.hostel_id ||
+                                    (selectedHostel &&
+                                        accountBalance <
+                                            selectedHostel.session_fee_amount)
+                                }
                                 className="inline-flex justify-center rounded-xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
                             >
                                 {processing ? "Booking..." : "Book Hostel"}

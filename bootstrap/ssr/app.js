@@ -4,7 +4,7 @@ import "./app2.js";
 import { createRoot } from "react-dom/client";
 import { usePage, Link, router, createInertiaApp } from "@inertiajs/react";
 import * as React from "react";
-import { useState, useRef, useEffect, createContext, useContext } from "react";
+import { useState, useRef, useEffect, Fragment as Fragment$1, createContext, useContext } from "react";
 import { X, LayoutDashboard, MessageSquareWarning, BriefcaseBusiness, DoorOpen, Clock, Send, Eye, ClipboardPenLine, Presentation, Home, Landmark, UsersRound, UserRound, ShieldCheck, LayoutGrid, BookMarked, Building2, BookOpen, ArrowRightLeft, Settings, UserCog, GraduationCap, CalendarClock, School, BarChart3, ChevronLeft } from "lucide-react";
 import * as CollapsiblePrimitive from "@radix-ui/react-collapsible";
 import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area";
@@ -240,11 +240,12 @@ const ACADEMIC_ACTIVE = [
   "academic.sessions.enrollments.edit"
 ];
 const STAFF_NAV_ITEMS = [
-  // --- Courses & Units (standalone) ---
+  // ── Teaching ──────────────────────────────────────────────
   {
     key: "courses",
     label: "Courses & Units",
     icon: "courses",
+    group: "Teaching",
     basePath: "/courses",
     permissions: ["courses.view"],
     roles: ["admin", "hod"],
@@ -333,11 +334,11 @@ const STAFF_NAV_ITEMS = [
       }
     ]
   },
-  // --- Timetables (standalone) ---
   {
     key: "timetables",
     label: "Timetables",
     icon: "timetable",
+    group: "Teaching",
     basePath: "/academic/timetables",
     permissions: ["academic.sessions.view"],
     roles: ["hod"],
@@ -355,11 +356,11 @@ const STAFF_NAV_ITEMS = [
       }
     ]
   },
-  // --- Assessments (standalone) ---
   {
     key: "assessments",
     label: "Assessments",
     icon: "grading",
+    group: "Teaching",
     basePath: "/academic/marks",
     permissions: ["academic.sessions.view"],
     roles: ["hod"],
@@ -386,88 +387,12 @@ const STAFF_NAV_ITEMS = [
       }
     ]
   },
-  // --- Hostels (standalone) ---
-  {
-    key: "hostels",
-    label: "Hostels",
-    icon: "hostel",
-    basePath: "/hostels",
-    permissions: ["hostels.view"],
-    children: [
-      {
-        key: "hostel-management",
-        label: "Hostel Management",
-        children: [
-          {
-            routeName: "hostels.index",
-            fallback: "/hostels",
-            label: "View Hostels"
-          },
-          {
-            routeName: "hostels.create",
-            fallback: "/hostels/create",
-            label: "Add Hostel"
-          }
-        ]
-      },
-      {
-        key: "hostel-allocations",
-        label: "Allocations",
-        children: [
-          {
-            routeName: "hostel-allocations.index",
-            fallback: "/hostel-allocations",
-            label: "View Allocations"
-          },
-          {
-            routeName: "hostel-allocations.create",
-            fallback: "/hostel-allocations/create",
-            label: "Add Allocation"
-          }
-        ]
-      }
-    ]
-  },
-  // --- Lecture Rooms (standalone) ---
-  {
-    key: "lecture-rooms",
-    label: "Lecture Rooms",
-    icon: "lectureRoom",
-    basePath: "/lecture-rooms",
-    permissions: ["lecture-rooms.view"],
-    children: [
-      {
-        routeName: "lecture-rooms.index",
-        fallback: "/lecture-rooms",
-        label: "View Rooms"
-      },
-      {
-        routeName: "lecture-rooms.create",
-        fallback: "/lecture-rooms/create",
-        label: "Add Room"
-      }
-    ]
-  },
-  // --- Analytics ---
-  {
-    key: "analytics",
-    label: "Analytics",
-    icon: "reports",
-    basePath: "/reports",
-    permissions: ["students.view"],
-    children: [
-      {
-        routeName: "reports.executive",
-        fallback: "/reports/executive",
-        label: "Reporting Dashboard"
-      }
-    ]
-  },
-  // --- Students ---
+  // ── People ────────────────────────────────────────────────
   {
     key: "students",
     label: "Students",
     icon: "students",
+    group: "People",
     basePath: "/students",
     permissions: ["students.view"],
     children: [
@@ -507,11 +432,95 @@ const STAFF_NAV_ITEMS = [
       }
     ]
   },
-  // --- Finance ---
+  {
+    key: "staffing",
+    label: "Staffing",
+    icon: "staffAccess",
+    group: "People",
+    basePath: "/staffs",
+    permissions: ["staffs.view"],
+    children: [
+      {
+        routeName: "staffs.department.index",
+        fallback: "/staffs/department-staff",
+        label: "Department Staff",
+        roles: ["hod"]
+      },
+      {
+        routeName: "staffs.index",
+        fallback: "/staffs",
+        label: "Staff Directory",
+        exceptRoles: ["hod"]
+      },
+      {
+        routeName: "staffs.create",
+        fallback: "/staffs/create",
+        label: "Onboarding",
+        exceptRoles: ["hod"]
+      },
+      {
+        routeName: "staffs.password-reset.create",
+        fallback: "/staffs/reset-password",
+        label: "Reset Password",
+        roles: ["admin"]
+      },
+      {
+        routeName: "staffs.status.create",
+        fallback: "/staffs/status",
+        label: "Staff Status",
+        roles: ["admin"]
+      }
+    ]
+  },
+  {
+    key: "hr",
+    label: "HR",
+    icon: "hr",
+    group: "People",
+    basePath: "/hr",
+    children: [
+      {
+        key: "leave-requests",
+        label: "Leave Requests",
+        children: [
+          {
+            routeName: "hr.leave-requests.create",
+            fallback: "/hr/leave-requests/create",
+            label: "Add Leave Request"
+          },
+          {
+            routeName: "hr.leave-requests.index",
+            fallback: "/hr/leave-requests",
+            label: "View Leave Requests"
+          }
+        ]
+      },
+      {
+        routeName: "hr.salaries.index",
+        fallback: "/hr/salaries",
+        label: "Salary Management",
+        roles: ["admin"]
+      },
+      {
+        routeName: "hr.payslips.index",
+        fallback: "/hr/payslips",
+        label: "Monthly Payslips",
+        roles: ["admin"]
+      },
+      {
+        routeName: "hr.id-cards.index",
+        fallback: "/hr/id-cards",
+        label: "School ID Cards",
+        roles: ["admin"]
+      }
+    ]
+  },
+  // ── Finance & Facilities ──────────────────────────────────
   {
     key: "finance",
     label: "Finance",
     icon: "financeBilling",
+    group: "Finance & Facilities",
     basePath: "/fees",
     permissions: ["billing.ledger.view"],
     roles: ["bursar"],
@@ -555,38 +564,74 @@ const STAFF_NAV_ITEMS = [
       }
     ]
   },
-  // --- Operations ---
   {
-    key: "operations",
-    label: "Operations",
-    icon: "academicOps",
-    basePath: "/academic",
-    permissions: ["academic.years.view", "students.view"],
+    key: "hostels",
+    label: "Hostels",
+    icon: "hostel",
+    group: "Finance & Facilities",
+    basePath: "/hostels",
+    permissions: ["hostels.view"],
     children: [
       {
-        key: "calendar-group",
-        label: "Academic Calendar",
+        key: "hostel-management",
+        label: "Hostel Management",
         children: [
           {
-            routeName: "academic.sessions.index",
-            fallback: "/academic/sessions",
-            label: "Academic Years & Sessions",
-            activeRouteNames: ACADEMIC_ACTIVE
+            routeName: "hostels.index",
+            fallback: "/hostels",
+            label: "View Hostels"
           },
           {
-            routeName: "academic.sessions.enrollments.index",
-            fallback: "/academic/sessions/enrollments",
-            label: "Enrollments"
+            routeName: "hostels.create",
+            fallback: "/hostels/create",
+            label: "Add Hostel"
+          }
+        ]
+      },
+      {
+        key: "hostel-allocations",
+        label: "Allocations",
+        children: [
+          {
+            routeName: "hostel-allocations.index",
+            fallback: "/hostel-allocations",
+            label: "View Allocations"
+          },
+          {
+            routeName: "hostel-allocations.create",
+            fallback: "/hostel-allocations/create",
+            label: "Add Allocation"
           }
         ]
       }
     ]
   },
-  // --- Institution ---
+  {
+    key: "lecture-rooms",
+    label: "Lecture Rooms",
+    icon: "lectureRoom",
+    group: "Finance & Facilities",
+    basePath: "/lecture-rooms",
+    permissions: ["lecture-rooms.view"],
+    children: [
+      {
+        routeName: "lecture-rooms.index",
+        fallback: "/lecture-rooms",
+        label: "View Rooms"
+      },
+      {
+        routeName: "lecture-rooms.create",
+        fallback: "/lecture-rooms/create",
+        label: "Add Room"
+      }
+    ]
+  },
+  // ── Institution ───────────────────────────────────────────
   {
     key: "institution",
     label: "Institution",
     icon: "academicSetup",
+    group: "Institution",
     basePath: "/departments",
     permissions: ["departments.view"],
     children: [
@@ -613,95 +658,70 @@ const STAFF_NAV_ITEMS = [
       }
     ]
   },
-  // --- Human Resource ---
   {
-    key: "hr",
-    label: "HR",
-    icon: "hr",
-    basePath: "/hr",
+    key: "operations",
+    label: "Operations",
+    icon: "academicOps",
+    group: "Institution",
+    basePath: "/academic",
+    permissions: ["academic.years.view", "students.view"],
     children: [
       {
-        key: "leave-requests",
-        label: "Leave Requests",
+        key: "calendar-group",
+        label: "Academic Calendar",
         children: [
           {
-            routeName: "hr.leave-requests.create",
-            fallback: "/hr/leave-requests/create",
-            label: "Add Leave Request"
+            routeName: "academic.sessions.index",
+            fallback: "/academic/sessions",
+            label: "Academic Years & Sessions",
+            activeRouteNames: ACADEMIC_ACTIVE
           },
           {
-            routeName: "hr.leave-requests.index",
-            fallback: "/hr/leave-requests",
-            label: "View Leave Requests"
+            routeName: "academic.sessions.enrollments.index",
+            fallback: "/academic/sessions/enrollments",
+            label: "Enrollments"
           }
         ]
-      },
-      {
-        routeName: "hr.salaries.index",
-        fallback: "/hr/salaries",
-        label: "Salary Management",
-        roles: ["admin"]
-      },
-      {
-        routeName: "hr.payslips.index",
-        fallback: "/hr/payslips",
-        label: "Monthly Payslips",
-        roles: ["admin"]
-      },
-      {
-        routeName: "hr.id-cards.index",
-        fallback: "/hr/id-cards",
-        label: "School ID Cards",
-        roles: ["admin"]
       }
     ]
   },
-  // --- Staffing ---
+  // ── Oversight ─────────────────────────────────────────────
   {
-    key: "staffing",
-    label: "Staffing",
-    icon: "staffAccess",
-    basePath: "/staffs",
-    permissions: ["staffs.view"],
-    roles: ["hod"],
+    key: "analytics",
+    label: "Analytics",
+    icon: "reports",
+    group: "Oversight",
+    basePath: "/reports",
+    permissions: ["students.view"],
     children: [
       {
-        routeName: "staffs.department.index",
-        fallback: "/staffs/department-staff",
-        label: "Department Staff",
-        roles: ["hod"]
-      },
-      {
-        routeName: "staffs.index",
-        fallback: "/staffs",
-        label: "Staff Directory",
-        exceptRoles: ["hod"]
-      },
-      {
-        routeName: "staffs.create",
-        fallback: "/staffs/create",
-        label: "Onboarding",
-        exceptRoles: ["hod"]
-      },
-      {
-        routeName: "staffs.password-reset.create",
-        fallback: "/staffs/reset-password",
-        label: "Reset Password",
-        roles: ["admin"]
-      },
-      {
-        routeName: "staffs.status.create",
-        fallback: "/staffs/status",
-        label: "Staff Status",
-        roles: ["admin"]
+        routeName: "reports.executive",
+        fallback: "/reports/executive",
+        label: "Reporting Dashboard"
       }
     ]
   },
-  // --- Access Control (standalone) ---
+  {
+    key: "complaints",
+    label: "Complaints",
+    icon: "complaints",
+    group: "Oversight",
+    basePath: "/complaints",
+    roles: ["admin"],
+    children: [
+      {
+        routeName: "complaints.admin.index",
+        fallback: "/complaints",
+        label: "Manage Complaints"
+      }
+    ]
+  },
+  // ── System ────────────────────────────────────────────────
   {
     key: "access-control",
     label: "Access Control",
     icon: "roles",
+    group: "System",
     basePath: "/roles",
     permissions: ["roles.view"],
     children: [
@@ -739,26 +759,11 @@ const STAFF_NAV_ITEMS = [
       }
     ]
   },
-  // --- Complaints ---
-  {
-    key: "complaints",
-    label: "Complaints",
-    icon: "complaints",
-    basePath: "/complaints",
-    roles: ["admin"],
-    children: [
-      {
-        routeName: "complaints.admin.index",
-        fallback: "/complaints",
-        label: "Manage Complaints"
-      }
-    ]
-  },
-  // --- System ---
   {
     key: "system",
     label: "System",
     icon: "settings",
+    group: "System",
     basePath: "/settings",
     permissions: ["roles.view"],
     children: [
@@ -788,6 +793,7 @@ const STAFF_NAV_ITEMS = [
     key: "account",
     label: "Account",
     icon: "users",
+    group: "System",
     basePath: "/profile",
     children: [
       {
@@ -803,6 +809,7 @@ const STUDENT_NAV_ITEMS = [
     key: "academics",
     label: "Academics",
     icon: "academic",
+    group: "Academics",
     basePath: "/student",
     children: [
       {
@@ -826,6 +833,7 @@ const STUDENT_NAV_ITEMS = [
     key: "finance",
     label: "Finance",
     icon: "finance",
+    group: "Finance",
     basePath: "/student/fee-statements",
     children: [
       {
@@ -836,22 +844,10 @@ const STUDENT_NAV_ITEMS = [
     ]
   },
   {
-    key: "hostel",
-    label: "Hostel",
-    icon: "hostel",
-    basePath: "/student/hostel-booking",
-    children: [
-      {
-        routeName: "student.hostel-booking.index",
-        fallback: "/student/hostel-booking",
-        label: "Book Hostel"
-      }
-    ]
-  },
-  {
     key: "complaints",
     label: "Complaints",
     icon: "complaints",
+    group: "Services",
     basePath: "/student/complaints",
     children: [
       {
@@ -867,9 +863,24 @@ const STUDENT_NAV_ITEMS = [
     ]
   },
   {
+    key: "hostel",
+    label: "Hostel",
+    icon: "hostel",
+    group: "Services",
+    basePath: "/student/hostel-booking",
+    children: [
+      {
+        routeName: "student.hostel-booking.index",
+        fallback: "/student/hostel-booking",
+        label: "Book Hostel"
+      }
+    ]
+  },
+  {
     key: "account",
     label: "Account",
     icon: "users",
+    group: "Account",
     basePath: "/profile",
     children: [
       {
@@ -1045,7 +1056,7 @@ function Sidebar({
     return /* @__PURE__ */ jsxs(
       Collapsible,
       {
-        open: isOpen && !collapsed,
+        open: isOpen,
         onOpenChange: () => toggleMenu(key),
         children: [
           /* @__PURE__ */ jsx(MaybeTooltip, { label, children: /* @__PURE__ */ jsx(CollapsibleTrigger, { asChild: true, children: /* @__PURE__ */ jsxs(
@@ -1078,7 +1089,7 @@ function Sidebar({
               ]
             }
           ) }) }),
-          /* @__PURE__ */ jsx(CollapsibleContent, { className: "grid overflow-hidden transition-[grid-template-rows,opacity] duration-300 ease-in-out data-[state=closed]:grid-rows-[0fr] data-[state=closed]:opacity-0 data-[state=open]:grid-rows-[1fr] data-[state=open]:opacity-100", children: /* @__PURE__ */ jsx("div", { className: "min-h-0", children: renderSidebarChildren(children) }) }),
+          /* @__PURE__ */ jsx(CollapsibleContent, { className: "sidebar-collapsible-content", children: /* @__PURE__ */ jsx("div", { children: renderSidebarChildren(children) }) }),
           /* @__PURE__ */ jsx(Separator, {})
         ]
       },
@@ -1136,7 +1147,20 @@ function Sidebar({
             ) }),
             /* @__PURE__ */ jsx(Separator, {})
           ] }),
-          visibleNav.map(renderNestedSection)
+          visibleNav.map((item, index) => {
+            const prevGroup = index > 0 ? visibleNav[index - 1].group : null;
+            const showHeader = item.group && item.group !== prevGroup;
+            return /* @__PURE__ */ jsxs(Fragment$1, { children: [
+              showHeader && /* @__PURE__ */ jsx(
+                "div",
+                {
+                  className: `overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-300 ease-in-out ${collapsed ? "max-w-0 opacity-0" : "max-w-full opacity-100"}`,
+                  children: /* @__PURE__ */ jsx("div", { className: "px-4 py-2 pt-4", children: /* @__PURE__ */ jsx("span", { className: "text-[10px] font-semibold uppercase tracking-[0.15em] text-zinc-600", children: item.group }) })
+                }
+              ),
+              renderNestedSection(item)
+            ] }, item.key);
+          })
         ] })
       }
     ) }),

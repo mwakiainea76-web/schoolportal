@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Filters\StudentFilter;
 use App\Http\Requests\StoreStudentRequest;
 use App\Http\Requests\UpdateStudentRequest;
 use App\Models\Course;
@@ -89,41 +88,6 @@ class StudentController extends Controller
         $request->validate($rules);
 
         return response()->json(['ok' => true]);
-    }
-
-    // ----------------------------------------------------------------
-    // INDEX
-    // ----------------------------------------------------------------
-
-    public function index(Request $request, StudentFilter $filter)
-    {
-        $students = $filter
-            ->apply(Student::query(), $request->all())
-            ->select([
-                'students.id',
-                'students.admission_number',
-                'students.current_module',
-                'students.created_at',
-                'students.enrollment_status',
-                'students.first_name',
-                'students.last_name',
-                'students.email',
-            ])
-            ->latest('students.id')
-            ->paginate(10)
-            ->through(fn ($student) => [
-                'id' => $student->id,
-                'admission_number' => $student->admission_number,
-                'first_name' => $student->first_name,
-                'last_name' => $student->last_name,
-                'email' => $student->email,
-                'current_module' => $student->current_module,
-                'admission_date' => $student->created_at->toDateString(),
-                'student_status' => $student->enrollment_status,
-            ])
-            ->withQueryString();
-
-        return inertia('students/Index', compact('students'));
     }
 
     // ----------------------------------------------------------------
