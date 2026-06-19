@@ -176,6 +176,7 @@ class AuditService
 
         $changedOld = [];
         $changedNew = [];
+        $maxFields = (int) config('audit.max_diff_fields', 20);
 
         foreach ($keys as $key) {
             $before = $sanitizedOld[$key] ?? null;
@@ -185,12 +186,17 @@ class AuditService
                 continue;
             }
 
+            if (count($changedOld) >= $maxFields) {
+                $changedOld['__truncated'] = count($keys) - $maxFields . ' more fields changed';
+                break;
+            }
+
             if (array_key_exists($key, $sanitizedOld)) {
-                $changedOld[$key] = $before;
+                $changedOld[$key] = $this->truncateValue($before);
             }
 
             if (array_key_exists($key, $sanitizedNew)) {
-                $changedNew[$key] = $after;
+                $changedNew[$key] = $this->truncateValue($after);
             }
         }
 
@@ -199,6 +205,21 @@ class AuditService
             $changedNew !== [] ? $changedNew : null,
             true,
         ];
+    }
+
+    protected function truncateValue(mixed $value): mixed
+    {
+        if (! is_string($value)) {
+            return $value;
+        }
+
+        $maxLen = (int) config('audit.max_field_length', 500);
+
+        if (mb_strlen($value) <= $maxLen) {
+            return $value;
+        }
+
+        return mb_substr($value, 0, $maxLen).'…';
     }
 
     protected function sanitizeAuditValues(array $values, array $auditOnly = [], array $auditExclude = []): array

@@ -2,20 +2,13 @@
 
 namespace App\Models;
 
-use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class LoginAccountHistory extends Model
 {
-    use Auditable, HasFactory;
-
-    protected string $auditModule = 'login_account_histories';
-
-    protected array $auditExclude = [
-        'deactivated_by',
-    ];
+    use HasFactory;
 
     protected $fillable = [
         'student_id',

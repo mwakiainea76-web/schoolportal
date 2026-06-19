@@ -2,15 +2,12 @@
 
 namespace App\Models;
 
-use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class AppRequestMetric extends Model
 {
-    use Auditable, HasFactory;
-
-    protected string $auditModule = 'app_request_metrics';
+    use HasFactory;
 
     protected $fillable = [
         'method',

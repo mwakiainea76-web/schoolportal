@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -10,9 +9,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class FeePlanItem extends Model
 {
     /** @use HasFactory<\Database\Factories\FeePlanItemFactory> */
-    use Auditable, HasFactory,SoftDeletes;
-
-    protected string $auditModule = 'fee_plan_items';
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'fee_plan_id',

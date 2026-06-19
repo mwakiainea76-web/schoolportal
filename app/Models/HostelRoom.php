@@ -2,16 +2,13 @@
 
 namespace App\Models;
 
-use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class HostelRoom extends Model
 {
-    use Auditable, HasFactory, SoftDeletes;
-
-    protected string $auditModule = 'hostel_rooms';
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'hostel_id',

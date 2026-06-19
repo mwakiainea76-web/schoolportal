@@ -2,15 +2,12 @@
 
 namespace App\Models;
 
-use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class InvoiceItem extends Model
 {
-    use Auditable, HasFactory;
-
-    protected string $auditModule = 'invoice_items';
+    use HasFactory;
 
     protected $table = 'invoice_items';
 

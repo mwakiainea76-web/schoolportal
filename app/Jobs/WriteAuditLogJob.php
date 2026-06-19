@@ -24,7 +24,33 @@ class WriteAuditLogJob implements ShouldQueue
 
     public function handle(): void
     {
-        AuditLog::query()->create($this->payload);
+        $data = $this->payload;
+
+        if (! $this->hasMeaningfulChange($data)) {
+            return;
+        }
+
+        AuditLog::query()->create($data);
+    }
+
+    protected function hasMeaningfulChange(array $data): bool
+    {
+        $old = $data['old_values'] ?? null;
+        $new = $data['new_values'] ?? null;
+
+        if ($old === null && $new === null) {
+            return true;
+        }
+
+        if ($old === $new) {
+            return false;
+        }
+
+        if (is_array($old) && is_array($new) && $old === $new) {
+            return false;
+        }
+
+        return true;
     }
 
     public function failed(Throwable $exception): void

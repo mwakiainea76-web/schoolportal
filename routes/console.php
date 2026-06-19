@@ -34,3 +34,5 @@ Artisan::command('analytics:queue-backfill-snapshots {--from=} {--to=}', functio
 })->purpose('Queue analytics snapshot backfill jobs for a date range');
 
 Schedule::command('analytics:refresh-snapshots')->dailyAt('01:00');
+
+Schedule::command('audit:prune')->dailyAt('03:00');
